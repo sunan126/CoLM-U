@@ -1,0 +1,121 @@
+#include <define.h> 
+
+MODULE MOD_UrbanTimeInvars
+
+! -------------------------------
+! Created by Hua Yuan, 12/2020
+! -------------------------------
+
+   USE precision
+   IMPLICIT NONE
+   SAVE
+
+   ! 城市形态结构参数
+   REAL(r8), allocatable :: froof     (:)  !roof fractional cover [-]
+   REAL(r8), allocatable :: fgimp     (:)  !impervious fraction to ground area [-]
+   REAL(r8), allocatable :: flake     (:)  !lake fraction to ground area [-]
+   REAL(r8), allocatable :: btop      (:)  !average building height [m]
+   REAL(r8), allocatable :: hwr       (:)  !average building height to their distance [-]
+   
+   REAL(r8), allocatable :: z_roof  (:,:)  !thickness of roof [m]
+   REAL(r8), allocatable :: z_wall  (:,:)  !thickness of wall [m]
+   REAL(r8), allocatable :: dz_roof (:,:)  !thickness of each layer [m]
+   REAL(r8), allocatable :: dz_wall (:,:)  !thickness of each layer [m]
+  
+   ! albedo
+   !TODO: global mapping from input files
+   REAL(r8) :: alb_roof(2,2)               !albedo of roof [-]
+   REAL(r8) :: alb_wall(2,2)               !albedo of walls [-]
+   REAL(r8) :: alb_gimp(2,2)               !albedo of impervious [-]
+   REAL(r8) :: alb_gper(2,2)               !albedo of pervious [-]
+   
+   ! emissivity
+   !TODO: global mapping from input files
+   REAL(r8) :: emroof                      !emissivity of roof [-]
+   REAL(r8) :: emwall                      !emissivity of walls [-]
+   REAL(r8) :: emgimp                      !emissivity of impervious [-]
+   REAL(r8) :: emgper                      !emissivity of pervious [-]
+
+   ! thermal pars of roof, wall, impervious
+   REAL(r8), allocatable :: cv_roof (:,:)  !heat capacity of roof [J/(m2 K)]
+   REAL(r8), allocatable :: cv_wall (:,:)  !heat capacity of wall [J/(m2 K)]
+   REAL(r8), allocatable :: cv_gimp (:,:)  !heat capacity of impervious [J/(m2 K)]
+
+   REAL(r8), allocatable :: tk_roof (:,:)  !thermal conductivity of roof [W/m-K]
+   REAL(r8), allocatable :: tk_wall (:,:)  !thermal conductivity of wall [W/m-K]
+   REAL(r8), allocatable :: tk_gimp (:,:)  !thermal conductivity of impervious [W/m-K]
+
+   ! room maximum and minimum temperature
+   REAL(r8), allocatable :: t_roommax (:)  !maximum temperature of inner room [K]
+   REAL(r8), allocatable :: t_roommin (:)  !minimum temperature of inner room [K]
+
+! PUBLIC MEMBER FUNCTIONS:
+   PUBLIC :: allocate_UrbanTimeInvars
+   PUBLIC :: deallocate_UrbanTimeInvars
+
+! PRIVATE MEMBER FUNCTIONS:
+
+!-----------------------------------------------------------------------
+
+CONTAINS
+
+!-----------------------------------------------------------------------
+   
+   SUBROUTINE allocate_UrbanTimeInvars ()
+! ------------------------------------------------------
+! Allocates memory for CLM 1d [numurban] variants
+! ------------------------------------------------------
+      USE precision
+      USE GlobalVars
+      IMPLICIT NONE
+
+      allocate (froof                (numurban))
+      allocate (fgimp                (numurban))
+      allocate (flake                (numurban))
+      allocate (btop                 (numurban))
+      allocate (hwr                  (numurban))
+
+      allocate (z_roof     (1:nl_roof,numurban))
+      allocate (z_wall     (1:nl_wall,numurban))
+      allocate (dz_roof    (1:nl_roof,numurban))
+      allocate (dz_wall    (1:nl_wall,numurban))
+
+      allocate (cv_roof    (1:nl_roof,numurban))
+      allocate (cv_wall    (1:nl_wall,numurban))
+      allocate (cv_gimp    (1:nl_soil,numurban))
+      allocate (tk_roof    (1:nl_roof,numurban))
+      allocate (tk_wall    (1:nl_wall,numurban))
+      allocate (tk_gimp    (1:nl_soil,numurban))
+      
+      allocate (t_roommax            (numurban))
+      allocate (t_roommin            (numurban))
+
+   END SUBROUTINE allocate_UrbanTimeInvars
+ 
+   SUBROUTINE deallocate_UrbanTimeInvars
+
+      deallocate (froof     )
+      deallocate (fgimp     )
+      deallocate (flake     )
+      deallocate (btop      )
+      deallocate (hwr       )
+      
+      deallocate (z_roof    )
+      deallocate (z_wall    )
+      deallocate (dz_roof   )
+      deallocate (dz_wall   )
+
+      deallocate (cv_roof   )
+      deallocate (cv_wall   )
+      deallocate (cv_gimp   )
+      deallocate (tk_roof   )
+      deallocate (tk_wall   )
+      deallocate (tk_gimp   )
+      
+      deallocate (t_roommax )
+      deallocate (t_roommin )
+
+   END SUBROUTINE deallocate_UrbanTimeInvars
+  
+END MODULE MOD_UrbanTimeInvars
+! ---------- EOP ------------

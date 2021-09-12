@@ -444,8 +444,6 @@ SUBROUTINE UrbanCLMMAIN ( &
         rootr(1:nl_soil),&! root resistance of a layer, all layers add to 1.0
 
         zi_wall   (       0:nl_wall) ,&! interface level below a "z" level [m] 
-        z_soisno  (maxsnl+1:nl_soil) ,&! layer depth [m]
-        dz_soisno (maxsnl+1:nl_soil) ,&! layer thickness [m]
         z_roofsno (maxsnl+1:nl_roof) ,&! layer depth [m]
         z_gimpsno (maxsnl+1:nl_soil) ,&! layer depth [m]
         z_gpersno (maxsnl+1:nl_soil) ,&! layer depth [m]
@@ -508,11 +506,6 @@ SUBROUTINE UrbanCLMMAIN ( &
       forc_snow = prc_snow + prl_snow
 
 !======================================================================
-
-      z_soisno  (maxsnl+1:0) = z_sno (maxsnl+1:0)
-      z_soisno  (1:nl_soil ) = z_soi (1:nl_soil)
-      dz_soisno (maxsnl+1:0) = dz_sno(maxsnl+1:0)
-      dz_soisno (1:nl_soil ) = dz_soi(1:nl_soil)
 
       z_roofsno (maxsnl+1:0) = z_sno_roof (maxsnl+1:0)
       z_roofsno (1:nl_roof ) = z_roof (1:nl_roof)
@@ -984,16 +977,25 @@ SUBROUTINE UrbanCLMMAIN ( &
       h2osoi = wliq_soisno(1:)/(dz_soi(1:)*denh2o) + wice_soisno(1:)/(dz_soi(1:)*denice)
       wat = sum(wice_soisno(1:)+wliq_soisno(1:))+ldew+scv + wa
 
-      z_sno      (maxsnl+1:0) = z_soisno  (maxsnl+1:0)
-      dz_sno     (maxsnl+1:0) = dz_soisno (maxsnl+1:0)
       z_sno_roof (maxsnl+1:0) = z_roofsno (maxsnl+1:0)
       z_sno_gimp (maxsnl+1:0) = z_gimpsno (maxsnl+1:0)
       z_sno_gper (maxsnl+1:0) = z_gpersno (maxsnl+1:0)
       z_sno_lake (maxsnl+1:0) = z_lakesno (maxsnl+1:0)
+
       dz_sno_roof(maxsnl+1:0) = dz_roofsno(maxsnl+1:0)
       dz_sno_gimp(maxsnl+1:0) = dz_gimpsno(maxsnl+1:0)
       dz_sno_gper(maxsnl+1:0) = dz_gpersno(maxsnl+1:0)
       dz_sno_lake(maxsnl+1:0) = dz_lakesno(maxsnl+1:0)
+
+      z_sno(:) = z_sno_roof(:)*froof
+      z_sno(:) = z_sno(:) + z_sno_gper(:)*(1-froof)*(1-fgimp)
+      z_sno(:) = z_sno(:) + z_sno_gimp(:)*(1-froof)*fgimp
+      z_sno(:) = z_sno(:)*(1-flake) + z_sno_lake(:)*flake
+
+      dz_sno(:) = dz_sno_roof(:)*froof
+      dz_sno(:) = dz_sno(:) + dz_sno_gper(:)*(1-froof)*(1-fgimp)
+      dz_sno(:) = dz_sno(:) + dz_sno_gimp(:)*(1-froof)*fgimp
+      dz_sno(:) = dz_sno(:)*(1-flake) + dz_sno_lake(:)*flake
 
    END SUBROUTINE UrbanCLMMAIN
 ! ----------------------------------------------------------------------

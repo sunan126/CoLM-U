@@ -160,7 +160,6 @@
 
       j     =  nl_roof
       fn(j) = tk(j)*(troof_inner - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
-      !fn_roof = cnfac*tk(j)*(troof_inner-t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
       tkdz_roof = tk(j)/(zi_roofsno(j)-z_roofsno(j))
 
 ! set up vector r and vectors a, b, c that define tridiagonal matrix
@@ -202,7 +201,6 @@
 
       j = nl_roof
       fn1(j) = tk(j)*(troof_inner - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
-      !fn_roof = fn_roof + (1.-cnfac)*tk(j)*(troof_inner-t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
 
       j = lb
       brr(j) = cnfac*fn(j) + (1.-cnfac)*fn1(j)

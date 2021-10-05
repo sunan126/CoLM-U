@@ -43,7 +43,6 @@ SUBROUTINE CLMDRIVER (idate,deltim)
 
         u = patch2urb(i)
         !print *, "patch:", i, "urban:", u
-        !cycle
 
         CALL UrbanCLMMAIN ( &
       ! MODEL RUNNING PARAMETERS

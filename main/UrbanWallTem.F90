@@ -104,7 +104,6 @@
 
       j     =  nl_wall
       fn(j) = tk(j)*(twall_inner - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
-      !fn_wall= cnfac*tk(j)*(twall_inner-t_wall(j))/(zi_wall(j)-z_wall(j))
       tkdz_wall= tk(j)/(zi_wall(j)-z_wall(j))
 
 ! set up vector r and vectors a, b, c that define tridiagonal matrix
@@ -138,7 +137,6 @@
 
       j = nl_wall
       fn1(j) = tk(j)*(twall_inner - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
-      !fn_wall= fn_wall + (1.-cnfac)*tk(j)*(twall_inner-t_wall(j))/(zi_wall(j)-z_wall(j))
 
  END SUBROUTINE UrbanWallTem
 ! ---------- EOP ------------

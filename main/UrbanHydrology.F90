@@ -154,7 +154,7 @@
        dfseng            ,&! change of lake sensible heat [W/m2]
        dfgrnd              ! change of lake ground heat flux [W/m2]
 
-  REAL(r8) :: a, aa, xs1, tot
+  REAL(r8) :: a, aa, xs1 
 
       fg = 1 - froof
       dfseng = 0.
@@ -164,16 +164,6 @@
 ! [1] for pervious road, the same as soil
 !=======================================================================
 
-      !print *, " --- WATER ----"
-      tot =  sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      tot = tot + (-etr - qseva_gper + qsdew_gper - qsubl_gper + qfros_gper)*deltim
-      !print *, etr*deltim, qseva_gper*deltim, qsdew_gper,qsubl_gper,qfros_gper
-      tot = tot + pgper_rain*deltim + sm_gper*deltim
-      !print *, pgper_rain*deltim,sm_gper*deltim
-      tot = tot + wa
-      !print *, "tot water before water:", tot
-      !print *, wliq_gpersno
       CALL WATER ( ipatch,patchtype   ,lbp         ,nl_soil   ,deltim    ,&
              z_gpersno   ,dz_gpersno  ,zi_gpersno  ,&
              bsw         ,porsl       ,psi0        ,hksati    ,rootr     ,&
@@ -182,30 +172,17 @@
              rsur_gper   ,rnof_gper   ,qinfl       ,wtfact    ,pondmx    ,&
              ssi         ,wimp        ,smpmin      ,zwt       ,wa        ,&
              qcharge                                                      )
-      !print *, " AFTER --- WATER ----"
-      !print *, wliq_gpersno
-      tot = sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      tot = tot + rnof_gper*deltim
-      tot = tot + wa
-      !print *, rnof_gper*deltim
-      !print *, "tot water after water: ", tot
 
 !=======================================================================
 ! [2] for roof and impervious road
 !=======================================================================
 
-      tot = sum(wice_roofsno(1:)+wliq_roofsno(1:))
-
       IF (lbr >= 1) THEN
          gwat = pg_rain + sm_roof - qseva_roof
-         tot = tot - qseva_roof*deltim
-         tot = tot + pg_rain*deltim + sm_roof*deltim
       ELSE
          CALL snowwater (lbr,deltim,ssi,wimp,&
                          pg_rain,qseva_roof,qsdew_roof,qsubl_roof,qfros_roof,&
                          dz_roofsno(lbr:0),wice_roofsno(lbr:0),wliq_roofsno(lbr:0),gwat)
-         tot = tot + gwat
       ENDIF
 
       wliq_roofsno(1) = wliq_roofsno(1) + gwat*deltim
@@ -228,21 +205,14 @@
       rsur_roof = xs1 / deltim
       rnof_roof = rsur_roof
 
-      tot =  sum(wice_roofsno(1:)+wliq_roofsno(1:)) + rsur_roof*deltim
-
       ! ================================================
-
-      tot = sum(wice_gimpsno(1:)+wliq_gimpsno(1:))
 
       IF (lbi >= 1) THEN
          gwat = pg_rain + sm_gimp - qseva_gimp
-         tot = tot - qseva_gimp*deltim
-         tot = tot + pg_rain*deltim + sm_gimp*deltim
       ELSE
          CALL snowwater (lbi,deltim,ssi,wimp,&
                          pg_rain,qseva_gimp,qsdew_gimp,qsubl_gimp,qfros_gimp,&
                          dz_gimpsno(lbi:0),wice_gimpsno(lbi:0),wliq_gimpsno(lbi:0),gwat)
-         tot = tot + gwat
       ENDIF
 
       wliq_gimpsno(1) = wliq_gimpsno(1) + gwat*deltim
@@ -264,8 +234,6 @@
 
       rsur_gimp = xs1 / deltim
       rnof_gimp = rsur_gimp
-
-      tot =  sum(wice_gimpsno(1:)+wliq_gimpsno(1:)) + rsur_gimp*deltim
 
 !=======================================================================
 ! [3] 湖泊水文过程

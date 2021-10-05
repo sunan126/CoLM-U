@@ -533,7 +533,6 @@
       ELSE
          doveg = .false.
       ENDIF
-      !print *, "doveg:", doveg   !fordebug
 
 !=======================================================================
 ! [2] specific humidity and its derivative at ground surface
@@ -1139,18 +1138,11 @@
 !=======================================================================
 
       ! Building energy model
-      !print *, "---------fordebug-----------"
-      !print *, "troom:", troom
-      !print *, "tkdz_roof, tkdz_wsun, tkdz_wsha:", tkdz_roof, tkdz_wsun, tkdz_wsha
-      !print *, "taf, forc:", tafu, forc_t
-      !print *, "t_wallsun:", t_wallsun
-      !print *, "t_roofsno:", t_roofsno
       CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), btop, troommax, troommin, &
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &
                        Fhac, Fwst, Fach )
-      !print *, "Fhac, Fwst, Fach:", Fhac, Fwst, Fach, troom
       deallocate ( fcover )
 
  END SUBROUTINE UrbanTHERMAL

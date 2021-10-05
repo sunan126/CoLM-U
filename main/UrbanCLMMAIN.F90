@@ -637,11 +637,8 @@ SUBROUTINE UrbanCLMMAIN ( &
       ENDIF
 
       !============================================================
-      !print *, "--- before ---"
       totwb  = sum(wice_soisno(1:)+wliq_soisno(1:))
       totwb  = totwb + scv + ldew*fveg + wa*(1-froof)*(1-fgimp)
-      !print *, "soil water:", totwb
-      !print *, "scv:", scv, "ldew:", ldew*fveg, "wa:", wa*(1-froof)*(1-fgimp)
 
 !----------------------------------------------------------------------
 ! [2] Canopy interception and precipitation onto ground surface
@@ -947,14 +944,12 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! ----------------------------------------
 
       wliq_soisno(:) = 0.
-      !wliq_soisno(:) = wliq_gimpsno(:)
       wliq_soisno(:nl_roof) = wliq_roofsno(:)*froof
       wliq_soisno(:) = wliq_soisno(:) + wliq_gpersno(:)*(1-froof)*(1-fgimp)
       wliq_soisno(:) = wliq_soisno(:) + wliq_gimpsno(:)*(1-froof)*fgimp
       !wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake
 
       wice_soisno(:) = 0.
-      !wice_soisno(:) = wice_gimpsno(:)
       wice_soisno(:nl_roof) = wice_roofsno(:)*froof
       wice_soisno(:) = wice_soisno(:) + wice_gpersno(:)*(1-froof)*(1-fgimp)
       wice_soisno(:) = wice_soisno(:) + wice_gimpsno(:)*(1-froof)*fgimp
@@ -963,20 +958,10 @@ SUBROUTINE UrbanCLMMAIN ( &
       scv = scv_roof*froof + scv_gper*(1-froof)*(1-fgimp) + scv_gimp*(1-froof)*fgimp
       !scv = scv*(1-flake) + scv_lake*flake
 
-      !print *, "--- after ---"
       endwb  = sum(wice_soisno(1:)+wliq_soisno(1:))
       endwb  = endwb + scv + ldew*fveg + wa*(1-froof)*(1-fgimp)
-      !endwb  = endwb + scv + ldew*fveg + wa
-      !print *, "soil water:", endwb
-      !print *, "scv:", scv, "ldew:", ldew*fveg, "wa:", wa*(1-froof)*(1-fgimp)
       errorw = (endwb-totwb) - (forc_prc+forc_prl-fevpa-rnof)*deltim
-      !print *, "input:", (forc_prc+forc_prl)*deltim, "out:", (fevpa+rnof)*deltim, "fevpa:", fevpa*deltim, "rnof:", rnof*deltim
       xerr   = errorw/deltim
-      !print *, "qseva:", qseva_roof*froof, qseva_gper*(1-froof)*(1-fgimp), qseva_gimp*(1-froof)*fgimp
-      !print *, "qsdew:", qsdew_roof*froof, qsdew_gper*(1-froof)*(1-fgimp), qsdew_gimp*(1-froof)*fgimp
-      !print *, "qsubl:", qsubl_roof*froof, qsubl_gper*(1-froof)*(1-fgimp), qsubl_gimp*(1-froof)*fgimp
-      !print *, "qfros:", qfros_roof*froof, qfros_gper*(1-froof)*(1-fgimp), qfros_gimp*(1-froof)*fgimp
-      !print *, "error:", xerr, errorw
 
 #if(defined CLMDEBUG)
       IF(abs(errorw)>1.e-3) THEN

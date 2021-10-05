@@ -111,9 +111,9 @@
 
            ! LAI PAR
            !TODO: 区别lai和sai的吸收
-           par     = par * lai*(1.-rho(1,1)-tau(1,1)) / &
-                         ( lai*(1.-rho(1,1)-tau(1,1)) + &
-                           sai*(1.-rho(1,2)-tau(1,2)) )
+           !par     = par * lai*(1.-rho(1,1)-tau(1,1)) / &
+           !              ( lai*(1.-rho(1,1)-tau(1,1)) + &
+           !                sai*(1.-rho(1,2)-tau(1,2)) )
 
            ! for lake
            sablake = forc_sols *slake(1,1) + forc_soll *slake(2,1) &

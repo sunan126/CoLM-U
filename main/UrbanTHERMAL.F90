@@ -14,7 +14,7 @@
         theta          ,sabroof        ,sabwsun        ,sabwsha        ,&
         sabgimp        ,sabgper        ,sablake        ,sabv           ,&
         par            ,Fhac           ,Fwst           ,Fach           ,&
-        
+
         ! 地面参数
         froof          ,flake          ,btop           ,hwr            ,&
         fgimp          ,pondmx         ,eroof          ,ewall          ,&
@@ -32,7 +32,7 @@
         hhti           ,trda           ,trdm           ,trop           ,&
         gradm          ,binter                                         ,&
 
-        ! 地面状态变量 
+        ! 地面状态变量
         fsno_roof      ,fsno_gimp      ,fsno_gper      ,scv_roof       ,&
         scv_gimp       ,scv_gper       ,scv_lake       ,snowdp_roof    ,&
         snowdp_gimp    ,snowdp_gper    ,snowdp_lake    ,fwsun          ,&
@@ -44,8 +44,9 @@
         wliq_gimpsno   ,wliq_gpersno   ,wliq_lakesno   ,wice_roofsno   ,&
         wice_gimpsno   ,wice_gpersno   ,wice_lakesno   ,t_lake         ,&
         lake_icefrac   ,lveg           ,tleaf          ,ldew           ,&
-        troom          ,troommax       ,troommin                       ,&
-        
+        troom          ,troof_inner    ,twsun_inner    ,twsha_inner    ,&
+        troommax       ,troommin                                       ,&
+
         ! 输出变量
         taux           ,tauy           ,fsena          ,fevpa          ,&
         lfevpa         ,fsenl          ,fevpl          ,etr            ,&
@@ -63,7 +64,7 @@
         fm             ,fh             ,fq                              )
 
 !=======================================================================
-! this is the main subroutine to execute the calculation 
+! this is the main subroutine to execute the calculation
 ! of urban thermal processes and surface fluxes
 !
 !=======================================================================
@@ -71,7 +72,7 @@
   USE precision
   USE GlobalVars
   USE PhysicalConstants, only: denh2o,roverg,hvap,hsub,rgas,cpair,&
-                               stefnc,denice,tfrz,vonkar,grav 
+                               stefnc,denice,tfrz,vonkar,grav
   USE UrbanShortwave
   USE UrbanLongwave
   USE UrbanFlux
@@ -79,17 +80,17 @@
   USE UrbanAnthropogenic
 
   IMPLICIT NONE
- 
+
 !---------------------Argument------------------------------------------
   INTEGER,  intent(in) :: &
         ipatch     ,&! patch index
         patchtype  ,&! land cover type (0=soil, 1=urban or built-up, 2=wetland,
                      ! 3=glacier/ice sheet, 4=land water bodies)
-        lbr        ,&! lower bound of array 
-        lbi        ,&! lower bound of array 
-        lbp        ,&! lower bound of array 
-        lbl          ! lower bound of array 
-     
+        lbr        ,&! lower bound of array
+        lbi        ,&! lower bound of array
+        lbp        ,&! lower bound of array
+        lbl          ! lower bound of array
+
   REAL(r8), intent(in) :: &
         deltim     ,&! seconds in a time step [second]
         patchlatr    ! latitude in radians
@@ -121,7 +122,7 @@
         sabgimp    ,&! absorbed shortwave radiation by impervious road [W/m2]
         sabgper    ,&! absorbed shortwave radiation by ground snow [W/m2]
         sablake      ! absorbed shortwave radiation by lake [W/m2]
-  
+
   REAL(r8), intent(in) :: &
         froof      ,&! roof fractional cover [-]
         flake      ,&! urban lake fractional cover [-]
@@ -133,7 +134,7 @@
         ewall      ,&! emissivity of walls
         egimp      ,&! emissivity of impervious road
         egper      ,&! emissivity of soil
- 
+
         trsmx0     ,&! max transpiration for moist soil+100% veg.  [mm/s]
         zlnd       ,&! roughness length for soil [m]
         zsno       ,&! roughness length for snow [m]
@@ -149,35 +150,35 @@
         dksatu (1:nl_soil) ,&! thermal conductivity of saturated soil [W/m-K]
         cv_roof(1:nl_roof) ,&! heat capacity of roof [J/(m2 K)]
         cv_wall(1:nl_wall) ,&! heat capacity of wall [J/(m2 K)]
-        cv_gimp(1:nl_wall) ,&! heat capacity of impervious [J/(m2 K)]
+        cv_gimp(1:nl_soil) ,&! heat capacity of impervious [J/(m2 K)]
         tk_roof(1:nl_roof) ,&! thermal conductivity of roof [W/m-K]
         tk_wall(1:nl_wall) ,&! thermal conductivity of wall [W/m-K]
-        tk_gimp(1:nl_wall) ,&! thermal conductivity of impervious [W/m-K]
+        tk_gimp(1:nl_soil) ,&! thermal conductivity of impervious [W/m-K]
 
-        dz_roofsno(lbr  :nl_wall) ,&! layer thickiness [m]
+        dz_roofsno(lbr  :nl_roof) ,&! layer thickiness [m]
         dz_gimpsno(lbi  :nl_soil) ,&! layer thickiness [m]
         dz_gpersno(lbp  :nl_soil) ,&! layer thickiness [m]
         dz_wall   (    1:nl_wall) ,&! layer thickiness [m]
-        z_roofsno (lbr  :nl_wall) ,&! node depth [m]
+        z_roofsno (lbr  :nl_roof) ,&! node depth [m]
         z_gimpsno (lbi  :nl_soil) ,&! node depth [m]
         z_gpersno (lbp  :nl_soil) ,&! node depth [m]
         z_wall    (    1:nl_wall) ,&! node depth [m]
-        zi_roofsno(lbr-1:nl_wall) ,&! interface depth [m]
+        zi_roofsno(lbr-1:nl_roof) ,&! interface depth [m]
         zi_gimpsno(lbi-1:nl_soil) ,&! interface depth [m]
         zi_gpersno(lbp-1:nl_soil) ,&! interface depth [m]
         zi_wall   (    0:nl_wall) ,&! interface depth [m]
         dz_lake   (    1:nl_lake) ,&! lake layer thickness (m)
-        lakedepth,                 &! lake depth (m)   
-        
+        lakedepth,                 &! lake depth (m)
+
         z_lakesno (maxsnl+1:nl_soil) ,&! node depth [m]
         dz_lakesno(maxsnl+1:nl_soil) ,&! layer thickiness [m]
         zi_lakesno(maxsnl  :nl_soil) ,&! interface depth [m]
-        
+
         ! vegetationparameters
         dewmx      ,&! maximum dew
         sqrtdi     ,&! inverse sqrt of leaf dimension [m**-0.5]
-        rootfr(1:nl_soil) ,&! root fraction 
-        
+        rootfr(1:nl_soil) ,&! root fraction
+
         effcon     ,&! quantum efficiency of RuBP regeneration (mol CO2/mol quanta)
         vmax25     ,&! maximum carboxylation rate at 25 C at canopy top
         slti       ,&! slope of low temperature inhibition function      [s3]
@@ -186,7 +187,7 @@
         hhti       ,&! 1/2 point of high temperature inhibition function [s2]
         trda       ,&! temperature coefficient in gs-a model             [s5]
         trdm       ,&! temperature coefficient in gs-a model             [s6]
-        trop       ,&! temperature coefficient in gs-a model          
+        trop       ,&! temperature coefficient in gs-a model
         gradm      ,&! conductance-photosynthesis slope parameter
         binter       ! conductance-photosynthesis intercept
 
@@ -194,12 +195,6 @@
         fsno_roof  ,&! fraction of ground covered by snow
         fsno_gimp  ,&! fraction of ground covered by snow
         fsno_gper  ,&! fraction of ground covered by snow
-        scv_roof   ,&! snow cover, water equivalent [mm, kg/m2]
-        scv_gimp   ,&! snow cover, water equivalent [mm, kg/m2]
-        scv_gper   ,&! snow cover, water equivalent [mm, kg/m2]
-        snowdp_roof,&! snow depth [m]
-        snowdp_gimp,&! snow depth [m]
-        snowdp_gper,&! snow depth [m]
         dfwsun     ,&! change of fwsun [%]
         lai        ,&! adjusted leaf area index for seasonal variation [-]
         sai        ,&! stem area index  [-]
@@ -208,9 +203,9 @@
         fveg       ,&! fraction of veg cover
         sigf       ,&! fraction of veg cover, excluding snow-covered veg [-]
         extkd        ! coefficient of leaf nitrogen allocation
-  
+
   REAL(r8), intent(inout) :: &
-        fwsun      ,&! fraction of sunlit wall [-] 
+        fwsun      ,&! fraction of sunlit wall [-]
         lwsun      ,&! net longwave radiation of sunlit wall
         lwsha      ,&! net longwave radiation of shaded wall
         lgimp      ,&! net longwave radiation of impervious road
@@ -221,10 +216,10 @@
         t_wallsha   (    nl_wall) ,&! temperatures of roof layers
         t_gimpsno   (lbi:nl_soil) ,&! temperatures of roof layers
         t_gpersno   (lbp:nl_soil) ,&! temperatures of roof layers
-        wliq_roofsno(lbr:nl_wall) ,&! liqui water [kg/m2]
+        wliq_roofsno(lbr:nl_roof) ,&! liqui water [kg/m2]
         wliq_gimpsno(lbi:nl_soil) ,&! liqui water [kg/m2]
         wliq_gpersno(lbp:nl_soil) ,&! liqui water [kg/m2]
-        wice_roofsno(lbr:nl_wall) ,&! ice lens [kg/m2]
+        wice_roofsno(lbr:nl_roof) ,&! ice lens [kg/m2]
         wice_gimpsno(lbi:nl_soil) ,&! ice lens [kg/m2]
         wice_gpersno(lbp:nl_soil) ,&! ice lens [kg/m2]
         t_lake      (    nl_lake) ,&! lake temperature [K]
@@ -232,12 +227,21 @@
         t_lakesno   (maxsnl+1:nl_soil) ,&! temperatures of roof layers
         wliq_lakesno(maxsnl+1:nl_soil) ,&! liqui water [kg/m2]
         wice_lakesno(maxsnl+1:nl_soil) ,&! ice lens [kg/m2]
+        scv_roof   ,&! snow cover, water equivalent [mm, kg/m2]
+        scv_gimp   ,&! snow cover, water equivalent [mm, kg/m2]
+        scv_gper   ,&! snow cover, water equivalent [mm, kg/m2]
         scv_lake   ,&! snow cover, water equivalent [mm, kg/m2]
+        snowdp_roof,&! snow depth [m]
+        snowdp_gimp,&! snow depth [m]
+        snowdp_gper,&! snow depth [m]
         snowdp_lake,&! snow depth [m]
         lveg       ,&! net longwave radiation of vegetation [W/m2]
         tleaf      ,&! leaf temperature [K]
-        ldew       ,&! depth of water on foliage [kg/(m2 s)] 
+        ldew       ,&! depth of water on foliage [kg/(m2 s)]
         troom      ,&! temperature of inner building
+        troof_inner,&! temperature of inner roof
+        twsun_inner,&! temperature of inner sunlit wall
+        twsha_inner,&! temperature of inner shaded wall
         troommax   ,&! maximum temperature of inner building
         troommin   ,&! minimum temperature of inner building
         Fhac       ,&! flux from heat or cool AC
@@ -276,19 +280,19 @@
         qfros_gper ,&! surface dew added to snow pack (mm h2o /s) [+]
         qfros_lake   ! surface dew added to snow pack (mm h2o /s) [+]
 
-  INTEGER, intent(out) :: & 
-        imelt_roof(maxsnl+1:0)       ,&! flag for melting or freezing [-]
-        imelt_gimp(maxsnl+1:0)       ,&! flag for melting or freezing [-]
-        imelt_gper(maxsnl+1:nl_soil) ,&! flag for melting or freezing [-]
-        imelt_lake(maxsnl+1:nl_soil)   ! flag for melting or freezing [-]
-  
+  INTEGER, intent(out) :: &
+        imelt_roof(lbr:nl_roof)       ,&! flag for melting or freezing [-]
+        imelt_gimp(lbi:nl_soil)       ,&! flag for melting or freezing [-]
+        imelt_gper(lbp:nl_soil)       ,&! flag for melting or freezing [-]
+        imelt_lake(maxsnl+1:nl_soil)    ! flag for melting or freezing [-]
+
   REAL(r8), intent(out) :: &
         sm_roof    ,&! rate of snowmelt [kg/(m2 s)]
         sm_gimp    ,&! rate of snowmelt [kg/(m2 s)]
         sm_gper    ,&! rate of snowmelt [kg/(m2 s)]
         sm_lake    ,&! rate of snowmelt [kg/(m2 s)]
         sabg       ,&! overall ground solar radiation absorption (+wall)
-        rstfac     ,&! factor of soil water stress 
+        rstfac     ,&! factor of soil water stress
         rootr(1:nl_soil) ,&! root resistance of a layer, all layers add to 1
 
         tref       ,&! 2 m height air temperature [kelvin]
@@ -316,7 +320,7 @@
   INTEGER :: nurb    ! number of aboveground urban components [-]
 
   LOGICAL :: doveg   ! run model with vegetation
-  
+
   REAL(r8) :: &
         hlr        ,&! average building height to length of side [-]
         fg         ,&! ground fraction ( impervious + soil + snow )
@@ -342,20 +346,20 @@
         dqroofdT   ,&! d(qroof)/dT
         dqgimpdT   ,&! d(qgimp)/dT
         dqgperdT   ,&! d(qgper)/dT
-       
+
         degdT      ,&! d(eg)/dT
         eg         ,&! water vapor pressure at temperature T [pa]
         egsmax     ,&! max. evaporation which soil can provide at one time step
         egidif     ,&! the excess of evaporation over "egsmax"
-        emg        ,&! ground emissivity (0.97 for snow, 
+        emg        ,&! ground emissivity (0.97 for snow,
                      ! glaciers and water surface; 0.96 for soil and wetland)
         errore     ,&! energy balnce error [w/m2]
         etrc       ,&! maximum possible transpiration rate [mm/s]
         fac        ,&! soil wetness of surface layer
-        factr(lbr:nl_soil) ,&! used in computing tridiagonal matrix
+        factr(lbr:nl_roof) ,&! used in computing tridiagonal matrix
         facti(lbi:nl_soil) ,&! used in computing tridiagonal matrix
         factp(lbp:nl_soil) ,&! used in computing tridiagonal matrix
-        hr         ,&! relative humidity 
+        hr         ,&! relative humidity
         htvp_roof  ,&! latent heat of vapor of water (or sublimation) [J/Kg]
         htvp_gimp  ,&! latent heat of vapor of water (or sublimation) [J/Kg]
         htvp_gper  ,&! latent heat of vapor of water (or sublimation) [J/Kg]
@@ -372,22 +376,22 @@
         thm        ,&! intermediate variable (forc_t+0.0098*forc_hgt_t)
         th         ,&! potential temperature (kelvin)
         thv        ,&! virtual potential temperature (kelvin)
-        
-        troof      ,&! temperature of roof 
+
+        troof      ,&! temperature of roof
         twsun      ,&! temperature of sunlit wall
         twsha      ,&! temperature of shaded wall
         tgimp      ,&! temperature of impervious road
         tgper      ,&! ground soil temperature
         tlake      ,&! lake surface temperature
         tafu       ,&! temperature of urban air
-        troof_bef  ,&! temperature of roof 
+        troof_bef  ,&! temperature of roof
         twsun_bef  ,&! temperature of sunlit wall
         twsha_bef  ,&! temperature of shaded wall
         tgimp_bef  ,&! temperature of impervious road
         tgper_bef  ,&! ground soil temperature
-        fn_roof    ,&! heat flux from room to roof
-        fn_wsun    ,&! heat flux from room to sunlit wall
-        fn_wsha    ,&! heat flux from room to shaded wall
+        tkdz_roof  ,&! heat flux from room to roof
+        tkdz_wsun  ,&! heat flux from room to sunlit wall
+        tkdz_wsha  ,&! heat flux from room to shaded wall
         tinc       ,&! temperature difference of two time step
         ev         ,&! emissivity of vegetation [-]
         lroof      ,&! net longwave radiation of roof
@@ -404,7 +408,7 @@
         clwsha     ,&! deriv of lwsha wrt wsha temp [w/m**2/k]
         clgimp     ,&! deriv of lgimp wrt gimp temp [w/m**2/k]
         clgper     ,&! deriv of lgper wrt soil temp [w/m**2/k]
-        fwsha      ,&! fraction of shaded wall [-] 
+        fwsha      ,&! fraction of shaded wall [-]
         ur         ,&! wind speed at reference height [m/s]
         wx         ,&! patitial volume of ice and water of surface layer
         xmf          ! total latent heat of phase change of ground water
@@ -452,11 +456,11 @@
 !=======================================================================
 ! [1] Initial set and propositional variables
 !=======================================================================
-      
-      ! fluxes 
-      fsenl = 0.;  fevpl = 0.  
+
+      ! fluxes
+      fsenl = 0.;  fevpl = 0.
       etr   = 0.;  rst   = 2.0e4
-      assim = 0.;  respc = 0. 
+      assim = 0.;  respc = 0.
 
       emis  = 0.;  z0m   = 0.
       zol   = 0.;  rib   = 0.
@@ -467,8 +471,8 @@
       htvp_roof = hvap
       htvp_gimp = hvap
       htvp_gper = hvap
-      IF (wliq_roofsno(lbp)<=0. .and. wice_roofsno(lbp)>0.) htvp_roof = hsub
-      IF (wliq_gimpsno(lbp)<=0. .and. wice_gimpsno(lbp)>0.) htvp_gimp = hsub
+      IF (wliq_roofsno(lbr)<=0. .and. wice_roofsno(lbr)>0.) htvp_roof = hsub
+      IF (wliq_gimpsno(lbi)<=0. .and. wice_gimpsno(lbi)>0.) htvp_gimp = hsub
       IF (wliq_gpersno(lbp)<=0. .and. wice_gpersno(lbp)>0.) htvp_gper = hsub
 
       ! potential temperatur at the reference height
@@ -481,11 +485,13 @@
       ! 调整墙面温度，根据fwsun, dfwsun进行加权平均
       !-------------------------------------------
       fwsha = 1. - fwsun
-      
+
       IF (dfwsun > 0) THEN
          t_wallsun = (fwsun*t_wallsun + dfwsun*t_wallsha) / (fwsun+dfwsun)
          lwsun = (fwsun*lwsun + dfwsun*lwsha ) / (fwsun+dfwsun)
-      ELSE
+      ENDIF
+
+      IF (dfwsun < 0) THEN
          t_wallsha = (fwsha*t_wallsha - dfwsun*t_wallsun) / (fwsha-dfwsun)
          lwsha = (fwsha*lwsha - dfwsun*lwsun ) / (fwsha-dfwsun)
       ENDIF
@@ -502,10 +508,10 @@
       !TODO: ???如何计算tlake
       IF (lbl < 1) THEN
          tlake = t_lakesno(lbl)
-      ELSE 
+      ELSE
          tlake = t_lake(1)
       ENDIF
-      
+
       ! 保留温度
       troof_bef = troof
       twsun_bef = twsun
@@ -524,9 +530,10 @@
 
       IF (lai+sai>1.e-6 .and. fveg>0.) THEN
          doveg = .true.
-      ELSE 
+      ELSE
          doveg = .false.
       ENDIF
+      !print *, "doveg:", doveg   !fordebug
 
 !=======================================================================
 ! [2] specific humidity and its derivative at ground surface
@@ -539,7 +546,7 @@
          wx = (wliq_gpersno(1)/denh2o + wice_gpersno(1)/denice)/dz_gpersno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
             fac = 0.001
-         ELSE 
+         ELSE
             fac = min(1.,wx/porsl(1))
             fac = max( fac, 0.001 )
          ENDIF
@@ -550,17 +557,17 @@
          qred = (1.-fsno_gper)*hr + fsno_gper
       ENDIF
 
-      qgper = qred*qsatg  
+      qgper = qred*qsatg
       dqgperdT = qred*qsatgdT
 
       IF (qsatg>forc_q .and. forc_q>qred*qsatg) THEN
         qgper = forc_q; dqgperdT = 0.
       ENDIF
-      
+
       CALL qsadv(tgimp,forc_psrf,eg,degdT,qsatg,qsatgdT)
       qgimp    = qsatg
       dqgimpdT = qsatgdT
-      
+
       CALL qsadv(troof,forc_psrf,eg,degdT,qsatg,qsatgdT)
       qroof    = qsatg
       dqroofdT = qsatgdT
@@ -570,17 +577,17 @@
 !=======================================================================
 
       IF ( doveg ) THEN
-         
+
          allocate ( Ainv(5,5)   )
          allocate ( X(5)        )
          allocate ( dX(5)       )
          allocate ( B(5)        )
-         allocate ( B1(5)       ) 
-         allocate ( dBdT(5)     ) 
-         allocate ( SkyVF(5)    ) 
-         allocate ( VegVF(5)    ) 
+         allocate ( B1(5)       )
+         allocate ( dBdT(5)     )
+         allocate ( SkyVF(5)    )
+         allocate ( VegVF(5)    )
          allocate ( fcover(0:5) )
-         allocate ( dT(0:5)     ) 
+         allocate ( dT(0:5)     )
 
          !调用长波辐射计算程序
          CALL UrbanVegLongwave ( &
@@ -589,16 +596,16 @@
                                 egper, lai, sai, fveg, (htop+hbot)/2., &
                                 ev, Ainv, B, B1, dBdT, SkyVF, VegVF, fcover)
       ELSE
-         
-         allocate ( Ainv(4,4)   ) 
+
+         allocate ( Ainv(4,4)   )
          allocate ( X(4)        )
          allocate ( dX(4)       )
-         allocate ( B(4)        ) 
-         allocate ( B1(4)       ) 
+         allocate ( B(4)        )
+         allocate ( B1(4)       )
          allocate ( dBdT(4)     )
          allocate ( SkyVF(4)    )
          allocate ( fcover(0:4) )
-         allocate ( dT(0:4)     ) 
+         allocate ( dT(0:4)     )
 
          !调用长波辐射计算程序，计算Ainv, B, B1, dBdT
          CALL UrbanOnlyLongwave ( &
@@ -609,24 +616,24 @@
          !计算净长波辐射, for UrbanOnlyLongwave
          !-------------------------------------------
          X = matmul(Ainv, B)
-         
+
          ! 根据辐射传播矩阵，计算各组分的长波净辐射
          ! LW radiation absorption by each surface
          ! 计算总的吸收
-         lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall) 
+         lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall)
          lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall)
          lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp)
          lgper = ( egper*X(4) - B1(4) ) / (1-egper)
 
          ! Out-going LW of urban canopy
          lout  = sum( X * SkyVF )
-         
+
          ! Energy balance check
          eb = lwsun + lwsha + lgimp + lgper + lout
 
          IF (abs(eb-forc_frl) > 1e-6) THEN
-            print *, "Longwave - Energy Balance Check error!", eb-forc_frl
-         ENDIF 
+            print *, "Urban Only Longwave - Energy Balance Check error!", eb-forc_frl
+         ENDIF
 
          ! 计算单位面积
          IF (fcover(1) >0.) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
@@ -645,7 +652,7 @@
       lroof = eroof*forc_frl - eroof*stefnc*troof**4
 
 !=======================================================================
-! [4] Compute sensible and latent fluxes and their derivatives with respect 
+! [4] Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.
 !=======================================================================
 
@@ -658,7 +665,7 @@
 
       ! SAVE variables for bareground case
       obu_g = forc_hgt_u / zol_g
- 
+
 !=======================================================================
 ! [5] Canopy temperature, fluxes from roof/wall/ground
 !=======================================================================
@@ -715,10 +722,10 @@
             qref        ,z0m         ,zol         ,rib         ,&
             ustar       ,qstar       ,tstar       ,fm          ,&
             fh          ,fq          ,tafu                      )
-      ELSE 
-         
+      ELSE
+
          nurb = 2
-         
+
          ! CALL urban flux
          CALL  UrbanOnlyFlux ( &
             ! 模型运行信息
@@ -758,7 +765,7 @@
          assim   = 0.0
          respc   = 0.0
 
-      ENDIF  
+      ENDIF
 
 !=======================================================================
 ! [6] roof/wall/ground temperature
@@ -778,35 +785,35 @@
 
       ! 计算各个组分的温度：屋顶、墙面、地面
       !TODO: 添加墙壁厚度信息
-      CALL UrbanRoofTem (lbr,nl_roof,deltim,capr,cnfac,&
+      CALL UrbanRoofTem (lbr,deltim,capr,cnfac,&
            cv_roof,tk_roof,dz_roofsno,z_roofsno,zi_roofsno,&
            t_roofsno,wice_roofsno,wliq_roofsno,scv_roof,snowdp_roof,&
-           troom,lroof,clroof,sabroof,fsenroof,fevproof,croof,htvp_roof,&
-           imelt_roof,sm_roof,xmf,factr,fn_roof)
+           troof_inner,lroof,clroof,sabroof,fsenroof,fevproof,croof,htvp_roof,&
+           imelt_roof,sm_roof,xmf,factr,tkdz_roof)
 
-      CALL UrbanWallTem (nl_wall,deltim,capr,cnfac,&
+      CALL UrbanWallTem (deltim,capr,cnfac,&
            cv_wall,tk_wall,t_wallsun,dz_wall,z_wall,zi_wall,&
-           troom,lwsun,clwsun,sabwsun,fsenwsun,cwalls,fn_wsun)
+           twsun_inner,lwsun,clwsun,sabwsun,fsenwsun,cwalls,tkdz_wsun)
 
-      CALL UrbanWallTem (nl_wall,deltim,capr,cnfac,&
+      CALL UrbanWallTem (deltim,capr,cnfac,&
            cv_wall,tk_wall,t_wallsha,dz_wall,z_wall,zi_wall,&
-           troom,lwsha,clwsha,sabwsha,fsenwsha,cwalls,fn_wsha)
+           twsha_inner,lwsha,clwsha,sabwsha,fsenwsha,cwalls,tkdz_wsha)
 
-      CALL UrbanImperviousTem (patchtype,lbi,nl_soil,deltim,&
+      CALL UrbanImperviousTem (patchtype,lbi,deltim,&
            capr,cnfac,csol,porsl,dkdry,dksatu,&
            cv_gimp,tk_gimp,dz_gimpsno,z_gimpsno,zi_gimpsno,&
            t_gimpsno,wice_gimpsno,wliq_gimpsno,scv_gimp,snowdp_gimp,&
            lgimp,clgimp,sabgimp,fsengimp,fevpgimp,cgimp,htvp_gimp,&
            imelt_gimp,sm_gimp,xmf,facti)
 
-      CALL UrbanPerviousTem (patchtype,lbp,nl_soil,deltim,&
+      CALL UrbanPerviousTem (patchtype,lbp,deltim,&
            capr,cnfac,csol,porsl,dkdry,dksatu,&
            dz_gpersno,z_gpersno,zi_gpersno,&
            t_gpersno,wice_gpersno,wliq_gpersno,scv_gper,snowdp_gper,&
            lgper,clgper,sabgper,fsengper,fevpgper,cgper,htvp_gper,&
            imelt_gper,sm_gper,xmf,factp)
-      
-      ! update temperature 
+
+      ! update temperature
       twsun = t_wallsun( 1 )
       twsha = t_wallsha( 1 )
       troof = t_roofsno(lbr)
@@ -843,8 +850,6 @@
            fm_lake      ,fh_lake      ,fq_lake         ,sm_lake          )
 
       lnet_lake = forc_frl - olrg_lake
-      print *, "olrg_lake", olrg_lake, "fgrnd", fgrnd_lake
-      print *, "fseng", fseng_lake, "lfevpg", lfevpa_lake
 
 !=======================================================================
 ! [7] Correct fluxes for temperature change
@@ -856,6 +861,7 @@
       dT(2) = twsha - twsha_bef
       dT(3) = tgimp - tgimp_bef
       dT(4) = tgper - tgper_bef
+      IF ( doveg ) dT(5) = 0.
 
       ! 计算温度变化带来的通量变化
       fsenroof = fsenroof + dT(0)*croofs
@@ -867,8 +873,8 @@
       fevproof = fevproof + dT(0)*croofl
       fevpgimp = fevpgimp + dT(3)*cgimpl
       fevpgper = fevpgper + dT(4)*cgperl
-      
-! calculation of evaporative potential; flux in kg m-2 s-1.  
+
+! calculation of evaporative potential; flux in kg m-2 s-1.
 ! egidif holds the excess energy if all water is evaporated
 ! during the timestep.  this energy is later added to the sensible heat flux.
 
@@ -922,25 +928,28 @@
 !=======================================================================
 
       lnet  = lroof   *fcover(0) + lwsun   *fcover(1) + lwsha   *fcover(2) + &
-              lgimp   *fcover(3) + lgper   *fcover(4) 
-      
+              lgimp   *fcover(3) + lgper   *fcover(4)
+
       sabg  = sabroof *fcover(0) + sabwsha *fcover(1) + sabwsha *fcover(2) + &
               sabgimp *fcover(3) + sabgper *fcover(4)
-      
+
       fseng = fsenroof*fcover(0) + fsenwsha*fcover(1) + fsenwsha*fcover(2) + &
               fsengimp*fcover(3) + fsengper*fcover(4)
 
-      fevpg = fevproof*fcover(0) + fevpgimp*fcover(3) + fevpgper*fcover(4) 
-      
+      fevpg = fevproof*fcover(0) + fevpgimp*fcover(3) + fevpgper*fcover(4)
+
       lfevpa = htvp_roof*fevproof*fcover(0) + &
                htvp_gimp*fevpgimp*fcover(3) + &
-               htvp_gper*fevpgper*fcover(4) 
+               htvp_gper*fevpgper*fcover(4)
 
-      IF ( doveg ) THEN 
-         fsena  = fsenl*fcover(5) + fseng
-         fevpa  = fevpl*fcover(5) + fevpg
-         lfevpa = lfevpa + hvap*fevpl*fcover(5) 
-      ELSE 
+      IF ( doveg ) THEN
+         fsenl  = fsenl*fcover(5)
+         fevpl  = fevpl*fcover(5)
+         etr    =   etr*fcover(5)
+         fsena  = fsenl + fseng
+         fevpa  = fevpl + fevpg
+         lfevpa = lfevpa + hvap*fevpl
+      ELSE
          fsena  = fseng
          fevpa  = fevpg
       ENDIF
@@ -953,7 +962,8 @@
       fseng  = fseng *(1-flake) + fseng_lake *flake
       fsena  = fsena *(1-flake) + fsena_lake *flake
       fevpg  = fevpg *(1-flake) + fevpg_lake *flake
-      fevpa  = fevpa *(1-flake) + fevpa_lake *flake
+      ! 10/01/2021, yuan: exclude lake fevpa
+      !fevpa  = fevpa *(1-flake) + fevpa_lake *flake
       lfevpa = lfevpa*(1-flake) + lfevpa_lake*flake
       tref   = tref  *(1-flake) + tref_lake  *flake
       qref   = qref  *(1-flake) + qref_lake  *flake
@@ -966,28 +976,29 @@
       fm     = fm    *(1-flake) + fm_lake    *flake
       fh     = fh    *(1-flake) + fh_lake    *flake
       fq     = fq    *(1-flake) + fq_lake    *flake
-      
-      ! ground heat flux
-      fgrnd = sabg + lnet - (fseng+lfevpa)
 
-      IF ( doveg ) THEN 
-         lnet = lveg*fcover(5)*(1-flake) + lnet
-      ENDIF 
+      ! ground heat flux
+      IF ( doveg ) THEN
+         lnet  = lveg*fcover(5)*(1-flake) + lnet
+         fgrnd = sabv*fcover(5)*(1-flake) + sabg + lnet - (fsena+lfevpa)
+      ELSE
+         fgrnd = sabg + lnet - (fsena+lfevpa)
+      ENDIF
 
       ! effective ground temperature, simple average
       t_grnd = troof*fcover(0) + twsun*fcover(1) + twsha*fcover(2) + &
-               tgimp*fcover(3) + tgper*fcover(4) 
+               tgimp*fcover(3) + tgper*fcover(4)
       t_grnd = t_grnd*(1-flake) + tlake*flake
 
       !==============================================
-      qseva_roof = 0. 
-      qsubl_roof = 0. 
-      qfros_roof = 0. 
+      qseva_roof = 0.
+      qsubl_roof = 0.
+      qfros_roof = 0.
       qsdew_roof = 0.
 
       IF (fevproof >= 0.)THEN
 ! not allow for sublimation in melting (melting ==> evap. ==> sublimation)
-         qseva_roof = min(wliq_roofsno(lbp)/deltim, fevproof)
+         qseva_roof = min(wliq_roofsno(lbr)/deltim, fevproof)
          qsubl_roof = fevproof - qseva_roof
       ELSE
          IF (troof < tfrz)THEN
@@ -998,14 +1009,14 @@
       ENDIF
 
       !==============================================
-      qseva_gimp = 0. 
-      qsubl_gimp = 0. 
-      qfros_gimp = 0. 
+      qseva_gimp = 0.
+      qsubl_gimp = 0.
+      qfros_gimp = 0.
       qsdew_gimp = 0.
 
       IF (fevpgimp >= 0.)THEN
 ! not allow for sublimation in melting (melting ==> evap. ==> sublimation)
-         qseva_gimp = min(wliq_gimpsno(lbp)/deltim, fevpgimp)
+         qseva_gimp = min(wliq_gimpsno(lbi)/deltim, fevpgimp)
          qsubl_gimp = fevpgimp - qseva_gimp
       ELSE
          IF (tgimp < tfrz)THEN
@@ -1016,9 +1027,9 @@
       ENDIF
 
       !==============================================
-      qseva_gper = 0. 
-      qsubl_gper = 0. 
-      qfros_gper = 0. 
+      qseva_gper = 0.
+      qsubl_gper = 0.
+      qfros_gper = 0.
       qsdew_gper = 0.
 
       IF (fevpgper >= 0.)THEN
@@ -1038,13 +1049,13 @@
 !=======================================================================
 
       dX = matmul(Ainv, dBdT*dT(1:))
-      lwsun = ( ewall*dX(1) - dBdT(1)*dT(1) ) / (1-ewall) 
-      lwsha = ( ewall*dX(2) - dBdT(2)*dT(2) ) / (1-ewall) 
-      lgimp = ( egimp*dX(3) - dBdT(3)*dT(3) ) / (1-egimp) 
-      lgper = ( egper*dX(4) - dBdT(4)*dT(4) ) / (1-egper) 
+      lwsun = ( ewall*dX(1) - dBdT(1)*dT(1) ) / (1-ewall)
+      lwsha = ( ewall*dX(2) - dBdT(2)*dT(2) ) / (1-ewall)
+      lgimp = ( egimp*dX(3) - dBdT(3)*dT(3) ) / (1-egimp)
+      lgper = ( egper*dX(4) - dBdT(4)*dT(4) ) / (1-egper)
 
       IF ( doveg ) THEN
-         lveg = ( sum(dX(1:5)*VegVF(1:5))*ev ) 
+         lveg = ( sum(dX(1:5)*VegVF(1:5))*ev )
       ELSE
          lveg = 0.
       ENDIF
@@ -1055,8 +1066,8 @@
       eb = lwsun + lwsha + lgimp + lgper + lveg + dlout
 
       IF (abs(eb) > 1e-6) THEN
-         print *, "Longwave - Energy Balance Check error!", eb
-      ENDIF 
+         print *, "Urban Vegetation Longwave - Energy Balance Check error!", eb
+      ENDIF
 
       ! 计算单位面积
       IF (fcover(1) >0. ) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
@@ -1075,16 +1086,15 @@
 
       IF (olrg < 0) THEN !fordebug
          print *, ipatch, olrg
-         write(6,*) ipatch,errore,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa
-         olrg = 0.
-      ENDIF 
-      
+         write(6,*) ipatch,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa
+      ENDIF
+
       ! radiative temperature
       trad = (olrg/stefnc)**0.25
 
-! averaged bulk surface emissivity 
+! averaged bulk surface emissivity
 !TODO: 城市怎么计算
-! 03/10/2020, yuan: 
+! 03/10/2020, yuan:
       !olrb = stefnc*t_soisno_bef(lb)**3*(4.*tinc)
       !olrb = stefnc*t_grnd_bef**3*(4.*tinc)
       !olru = ulrad + emg*olrb
@@ -1095,26 +1105,28 @@
 ! [10] energy balance error
 !=======================================================================
 
-      errore = sabv*fcover(5)*(1-flake) + sabg + lnet - fsena - lfevpa - fgrnd
-      print *, "errore: ", errore
+      IF ( doveg ) THEN
+         errore = sabv*fcover(5)*(1-flake) + sabg + lnet - fsena - lfevpa - fgrnd
+      ELSE
+         errore = sabg + lnet - fsena - lfevpa - fgrnd
+      ENDIF
 
       ! deallocate memory
-      deallocate ( Ainv   ) 
+      deallocate ( Ainv   )
       deallocate ( X      )
       deallocate ( dX     )
-      deallocate ( B      ) 
-      deallocate ( B1     ) 
-      deallocate ( dBdT   ) 
-      deallocate ( SkyVF  ) 
-      deallocate ( fcover )
+      deallocate ( B      )
+      deallocate ( B1     )
+      deallocate ( dBdT   )
+      deallocate ( SkyVF  )
       deallocate ( dT     )
-      
+
       IF ( doveg ) THEN
          deallocate ( VegVF )
-      ENDIF 
+      ENDIF
 
 #if (defined CLMDEBUG)
-     IF (abs(errore)>.5) THEN 
+     IF (abs(errore)>.5) THEN
      write(6,*) 'THERMAL.F90: energy balance violation'
      write(6,*) ipatch,errore,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa,xmf
      ENDIF
@@ -1127,8 +1139,19 @@
 !=======================================================================
 
       ! Building energy model
+      !print *, "---------fordebug-----------"
+      !print *, "troom:", troom
+      !print *, "tkdz_roof, tkdz_wsun, tkdz_wsha:", tkdz_roof, tkdz_wsun, tkdz_wsha
+      !print *, "taf, forc:", tafu, forc_t
+      !print *, "t_wallsun:", t_wallsun
+      !print *, "t_roofsno:", t_roofsno
       CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), btop, troommax, troommin, &
-                       fn_roof, fn_wsun, fn_wsha, tafu, troom, Fhac, Fwst, Fach )
+                       t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
+                       tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
+                       troof_inner, twsun_inner, twsha_inner, &
+                       Fhac, Fwst, Fach )
+      !print *, "Fhac, Fwst, Fach:", Fhac, Fwst, Fach, troom
+      deallocate ( fcover )
 
  END SUBROUTINE UrbanTHERMAL
 ! ---------- EOP ------------

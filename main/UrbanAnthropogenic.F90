@@ -5,86 +5,144 @@ MODULE UrbanAnthropogenic
   USE precision
   USE GlobalVars
   USE PhysicalConstants
-  
+  USE UrbanShortwave, only: MatrixInverse
+
   IMPLICIT NONE
   SAVE
-  PRIVATE 
+  PRIVATE
 
-  PUBLIC :: SimpleBEM   !a simple building energy model to calculate room temperature
+  ! A simple building energy model to calculate room temperature
+  PUBLIC :: SimpleBEM
 
 CONTAINS
 
   !-------------------------------------------------
   SUBROUTINE SimpleBEM ( deltim, rhoair, fcover, H, troom_max, troom_min, &
-                         fn_roof, fn_wsun, fn_wsha, taf, troom, Fhac, Fwst, Fach )
+                         troof_nl, twsun_nl, twsha_nl, &
+                         tkdz_roof, tkdz_wsun, tkdz_wsha, taf,
+                         troom, troof_inner, twsun_inner, twsha_inner, &
+                         Fhac, Fwst, Fach )
 
      IMPLICIT NONE
-     
+
      REAL(r8), intent(in) :: &
-        deltim,     &! 
-        rhoair,     &!
-        fcover(0:2),&! 
-        H,          &! 
-        troom_max,  &! 
-        troom_min,  &! 
-        fn_roof,    &! 
-        fn_wsun,    &! 
-        fn_wsha,    &! 
-        taf          !
+        deltim,     &! seconds in a time step [second]
+        rhoair,     &! density air [kg/m3]
+        fcover(0:2),&! fractional cover of roof, wall
+        H,          &! average building height [m]
+        troom_max,  &! maximum temperature of inner building
+        troom_min,  &! minimum temperature of inner building
+        troof_nl,   &! roof temperature at layer nl_roof
+        twsun_nl,   &! sunlit wall temperature at layer nl_wall
+        twsha_nl,   &! shaded wall temperature at layer nl_wall
+        tkdz_roof,  &! temporal var for heat transfer of roof
+        tkdz_wsun,  &! temporal var for heat transfer of sunlit wall
+        tkdz_wsha,  &! temporal var for heat transfer of shaded wall
+        taf          ! temperature of urban air
 
      REAL(r8), intent(inout) :: &
-        troom,      &! 
-        Fhac,       &! 
-        Fwst,       &! 
-        Fach         ! 
+        troom        ! temperature of inner building
+
+     REAL(r8), intent(out) :: &
+        troof_inner,&! temperature of inner roof
+        twsun_inner,&! temperature of inner sunlit wall
+        twsha_inner,&! temperature of inner shaded wall
+        Fhac,       &! flux from heat or cool AC
+        Fwst,       &! waste heat from cool or heat
+        Fach         ! flux from air exchange
 
      ! local variables
      REAL(r8) ::    &
-        ACH,        &!
-        waste_cool, &!
-        waste_heat   !
-     
+        ACH,        &! air exchange coefficience
+        hcv_roof,   &! convective exchange ceofficience for roof<->room
+        hcv_wall,   &! convective exchange ceofficience for wall<->room
+        waste_cool, &! waste heat for AC cooling
+        waste_heat   ! waste heat for AC heating
+
      REAL(r8) ::    &
-        troom_,     &!
-        f_wsun,     &! 
-        f_wsha       ! 
+        f_wsun,     &! weight factor for sunlit wall
+        f_wsha       ! weight factor for shaded wall
+
+     REAL(r8) ::    &
+        A(4,4),     &! Heat transfer matrix
+        Ainv(4,4),  &! Inverse of Heat transfer matrix
+        B(4),       &! B for Ax=B
+        X(4)         ! x for Ax=B
 
   !=================================================================
   !
-  !                Troom' - Troom   
-  ! H*rhoair*cpair*-------------- =
-  !                      dt          
-  !    ACH
-  !   ------*H*rhoair*cpair*(Taf-Troom) - Fn_roof - Fn_wsun - Fn_wsha
-  !    3600? dt? 
+  ! o 求解以下联立方程组
+  ! o 隐式求解troom, troof_inner, twsun_inner, twsha_innter
+  !
+  !    Hc_roof = Fn_roof        .................................(1)
+  !    Hc_wsun = Fn_wsun        .................................(2)
+  !    Hc_wsha = Fn_wsha        .................................(3)
+  !
+  !                   Troom' - Troom
+  !    H*rhoair*cpair*-------------- =
+  !                         dt
+  !     ACH
+  !    -----*H*rhoair*cpair*(Taf-Troom') - Fn_roof - Fn_wsun - Fn_wsha
+  !    3600? dt?
+  !                             .................................(4)
   !=================================================================
 
      ACH = 0.3
+     hcv_roof   = 4.040
+     hcv_wall   = 3.076
      waste_cool = 0.6
      waste_heat = 0.2
      f_wsun = fcover(1)/fcover(0)
      f_wsha = fcover(2)/fcover(0)
-     
-     Fach   = (ACH/3600.)*H*rhoair*cpair*(taf-troom)
-     troom_ = Fach - fn_roof - f_wsun*fn_wsun - f_wsha*fn_wsha
-     troom_ = (troom_*deltim)/(H*rhoair*cpair) + troom
-            
-     IF (troom_ > troom_max) THEN !cooling case
-        Fhac  = H*rhoair*cpair*(troom_-troom_max)
-        troom = troom_
-        Fwst  = Fhac*waste_cool
-     ENDIF 
 
-     IF (troom_ < troom_min) THEN !heating case
-        Fhac  = H*rhoair*cpair*(troom_-troom_min)
-        troom = troom_
+     ! Ax = B
+     ! set values for heat transfer matrix
+     A(:,:) = 0.
+     A(1,:) = (/-0.5*hcv_roof-0.5*tkdz_roof, 0., 0., 0.5*hcv_roof/)
+     A(2,:) = (/0., -0.5*hcv_wall-0.5*tkdz_wsun, 0., 0.5*hcv_wall/)
+     A(3,:) = (/0., 0., -0.5*hcv_wall-0.5*tkdz_wsha, 0.5*hcv_wall/)
+
+     A(4,:) = (/-0.5*hcv_roof, -0.5*hcv_wall*f_wsun, -0.5*hcv_wall*f_wsha, &
+                H*rhoair*cpair/deltim + (ACH/3600.)*H*rhoair*cpair + &
+                0.5*hcv_roof + 0.5*hcv_wall*f_wsun + 0.5*hcv_wall*f_wsha/)
+
+     B(1) = -0.5*hcv_roof + 0.5*tkdz_roof*(troof_inner-troof_nl) - 0.5*tkdz_roof*troof_nl
+     B(2) = -0.5*hcv_wall + 0.5*tkdz_wsun*(twsun_inner-twsun_nl) - 0.5*tkdz_wsun*twsun_nl
+     B(3) = -0.5*hcv_wall + 0.5*tkdz_wsha*(twsha_inner-twsha_nl) - 0.5*tkdz_wsha*twsha_nl
+
+     B(4) = H*rhoair*cpair*troom/deltim + (ACH/3600.)*H*rhoair*cpair*taf &
+          - 0.5*hcv_roof*(troom-troof_inner) - 0.5*hcv_wall*(troom-twsun_inner)*f_wsun &
+          - 0.5*hcv_wall*(troom-twsha_inner)*f_wsha
+
+     ! Inverse of matrix A
+     Ainv = MatrixInverse(A)
+
+     ! Matrix computing to revole multiple reflections
+     X = matmul(Ainv, B)
+
+     troof_inner = X(1)
+     twsun_inner = X(2)
+     twsha_inner = X(3)
+     troom       = X(4)
+
+     Fach = (ACH/3600.)*H*rhoair*cpair*(taf - troom)
+
+     IF (troom > troom_max) THEN !cooling case
+        Fhac  = H*rhoair*cpair*(troom-troom_max)/deltim
+        troom = troom_max
+        Fwst  = Fhac*waste_cool
+     ENDIF
+
+     IF (troom < troom_min) THEN !heating case
+        Fhac  = H*rhoair*cpair*(troom-troom_min)/deltim
+        troom = troom_min
         Fwst  = abs(Fhac)*waste_heat
-     ENDIF 
+     ENDIF
 
      Fach = Fach*fcover(0)
      Fwst = Fwst*fcover(0)
      Fhac = Fhac*fcover(0)
 
-  END SUBROUTINE 
+  END SUBROUTINE
 
 END MODULE UrbanAnthropogenic

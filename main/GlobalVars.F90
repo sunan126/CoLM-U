@@ -12,9 +12,14 @@ MODULE GlobalVars
 #ifdef USGS_CLASSIFICATION
    ! GLCC USGS number of land cover category
    INTEGER, parameter :: N_land_classification = 24 
+   INTEGER, parameter :: URBAN    = 1
 #else 
    ! MODIS IGBP number of land cover category
    INTEGER, parameter :: N_land_classification = 17 
+   INTEGER, parameter :: WETLAND  = 11
+   INTEGER, parameter :: URBAN    = 13
+   INTEGER, parameter :: GLACIER  = 15
+   INTEGER, parameter :: WATERBODY= 17
 #endif
    
    ! number of plant functional types
@@ -27,10 +32,10 @@ MODULE GlobalVars
    INTEGER, parameter :: nl_roof  = 5
    INTEGER, parameter :: nl_wall  = 5
    
-   INTEGER, parameter :: numurban = 1  !total number of Urban patches of grids
    INTEGER :: numpatch                 !total number of patches of grids
    INTEGER :: numpft                   !total number of PFT patches of grids
    INTEGER :: numpc                    !total number of PC patches of grids
+   INTEGER :: numurban                 !total number of Urban patches of grids
 
    REAL(r8) :: z_soi (1:nl_soil)       !node depth [m]
    REAL(r8) :: z_soih(1:nl_soil)       !interface level below a zsoi level [m]

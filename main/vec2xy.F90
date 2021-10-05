@@ -2,7 +2,7 @@
 
 SUBROUTINE vec2xy (lon_points,lat_points,nac,nac_ln,a_rnof)
 ! ----------------------------------------------------------------------
-! perfrom the grid average mapping: average a subgrid input 1d vector 
+! perfrom the grid average mapping: average a subgrid input 1d vector
 ! of length numpatch to a output 2d array of length [lon_points,lat_points]
 !
 ! Created by Yongjiu Dai, 03/2014
@@ -10,7 +10,7 @@ SUBROUTINE vec2xy (lon_points,lat_points,nac,nac_ln,a_rnof)
 
 use precision
 USE GlobalVars
-use PhysicalConstants, only: vonkar, stefnc, cpair, rgas, grav 
+use PhysicalConstants, only: vonkar, stefnc, cpair, rgas, grav
 use MOD_TimeInvariants
 use MOD_TimeVariables
 use MOD_1D_Forcing
@@ -26,7 +26,7 @@ integer, INTENT(in) :: lon_points
 integer, INTENT(in) :: lat_points
 integer, INTENT(inout) :: nac
 integer, INTENT(inout) :: nac_ln(lon_points,lat_points)
-      
+
 !---------------------------------------------------------------------
 real(r8) a_xy_us  (lon_points,lat_points)  ! wind in eastward direction [m/s]
 real(r8) a_xy_vs  (lon_points,lat_points)  ! wind in northward direction [m/s]
@@ -67,7 +67,7 @@ real(r8) a_qdrip  (lon_points,lat_points)  ! throughfall [mm/s]
 
 real(r8) a_assim  (lon_points,lat_points)  ! canopy assimilation rate [mol m-2 s-1]
 real(r8) a_respc  (lon_points,lat_points)  ! respiration (plant+soil) [mol m-2 s-1]
-real(r8) a_qcharge(lon_points,lat_points)  ! groundwater recharge rate [mm/s] 
+real(r8) a_qcharge(lon_points,lat_points)  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
 real(r8) a_t_grnd (lon_points,lat_points)  ! ground surface temperature [K]
@@ -94,7 +94,7 @@ real(r8) a_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points)  ! soil temperatu
 real(r8) a_wliq_soisno(maxsnl+1:nl_soil,lon_points,lat_points)  ! liquid water in soil layers [kg/m2]
 real(r8) a_wice_soisno(maxsnl+1:nl_soil,lon_points,lat_points)  ! ice lens in soil layers [kg/m2]
 real(r8) a_h2osoi            (1:nl_soil,lon_points,lat_points)  ! volumetric soil water in layers [m3/m3]
-real(r8) a_rstfac                      (lon_points,lat_points)  ! factor of soil water stress 
+real(r8) a_rstfac                      (lon_points,lat_points)  ! factor of soil water stress
 real(r8) a_zwt                         (lon_points,lat_points)  ! the depth to water table [m]
 real(r8) a_wa                          (lon_points,lat_points)  ! water storage in aquifer [mm]
 real(r8) a_wat                         (lon_points,lat_points)  ! total water storage [mm]
@@ -239,7 +239,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
-               
+
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
 ! Fluxes
                a_taux   (i,j) = a_taux   (i,j) + patchfrac(np)*taux   (np)
@@ -305,7 +305,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                call acc(srvi   (np), patchfrac(np), a_srvi   (i,j))
                call acc(srnd   (np), patchfrac(np), a_srnd   (i,j))
                call acc(srni   (np), patchfrac(np), a_srni   (i,j))
-               ! local noon fluxes 
+               ! local noon fluxes
                call acc(solvdln(np), patchfrac(np), a_solvdln(i,j))
                call acc(solviln(np), patchfrac(np), a_solviln(i,j))
                call acc(solndln(np), patchfrac(np), a_solndln(i,j))
@@ -317,7 +317,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             ENDDO
             area(i,j) = gridarea(i,j)
          enddo
-      ENDDO 
+      ENDDO
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
@@ -350,7 +350,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_rnet   (i,j) = a_rnet   (i,j) / sumwt(i,j) + a_xy_frl(i,j)
                a_xerr   (i,j) = a_xerr   (i,j) / sumwt(i,j)
                a_zerr   (i,j) = a_zerr   (i,j) / sumwt(i,j)
-            
+
                a_rsur   (i,j) = a_rsur   (i,j) / sumwt(i,j)
                a_rnof   (i,j) = a_rnof   (i,j) / sumwt(i,j)
                a_qintr  (i,j) = a_qintr  (i,j) / sumwt(i,j)
@@ -385,7 +385,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_qref   (i,j) = a_qref   (i,j) / sumwt(i,j)
                a_xy_rain(i,j) = a_xy_rain(i,j) / sumwt(i,j)
                a_xy_snow(i,j) = a_xy_snow(i,j) / sumwt(i,j)
-               
+
                if (a_sr     (i,j) /= spval) a_sr     (i,j) = a_sr     (i,j) / sumwt(i,j)
                if (a_solvd  (i,j) /= spval) a_solvd  (i,j) = a_solvd  (i,j) / sumwt(i,j)
                if (a_solvi  (i,j) /= spval) a_solvi  (i,j) = a_solvi  (i,j) / sumwt(i,j)
@@ -403,58 +403,58 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                if (a_srviln (i,j) /= spval) a_srviln (i,j) = a_srviln (i,j) / sumwt(i,j)
                if (a_srndln (i,j) /= spval) a_srndln (i,j) = a_srndln (i,j) / sumwt(i,j)
                if (a_srniln (i,j) /= spval) a_srniln (i,j) = a_srniln (i,j) / sumwt(i,j)
-               
+
                mask(i,j) = 1
                frac(i,j) = sumwt(i,j)
 
             else
-               a_taux   (i,j) = spval 
-               a_tauy   (i,j) = spval 
-               a_fsena  (i,j) = spval 
-               a_lfevpa (i,j) = spval 
-               a_fevpa  (i,j) = spval 
-               a_fsenl  (i,j) = spval 
-               a_fevpl  (i,j) = spval 
-               a_etr    (i,j) = spval 
-               a_fseng  (i,j) = spval 
-               a_fevpg  (i,j) = spval 
-               a_fgrnd  (i,j) = spval 
-               a_sabvsun(i,j) = spval 
-               a_sabvsha(i,j) = spval 
-               a_sabg   (i,j) = spval 
-               a_olrg   (i,j) = spval 
-               a_rnet   (i,j) = spval 
-               a_xerr   (i,j) = spval 
-               a_zerr   (i,j) = spval 
+               a_taux   (i,j) = spval
+               a_tauy   (i,j) = spval
+               a_fsena  (i,j) = spval
+               a_lfevpa (i,j) = spval
+               a_fevpa  (i,j) = spval
+               a_fsenl  (i,j) = spval
+               a_fevpl  (i,j) = spval
+               a_etr    (i,j) = spval
+               a_fseng  (i,j) = spval
+               a_fevpg  (i,j) = spval
+               a_fgrnd  (i,j) = spval
+               a_sabvsun(i,j) = spval
+               a_sabvsha(i,j) = spval
+               a_sabg   (i,j) = spval
+               a_olrg   (i,j) = spval
+               a_rnet   (i,j) = spval
+               a_xerr   (i,j) = spval
+               a_zerr   (i,j) = spval
 
-               a_rsur   (i,j) = spval 
-               a_rnof   (i,j) = spval 
-               a_qintr  (i,j) = spval 
-               a_qinfl  (i,j) = spval 
-               a_qdrip  (i,j) = spval 
-               a_wat    (i,j) = spval 
-               a_assim  (i,j) = spval 
-               a_respc  (i,j) = spval 
+               a_rsur   (i,j) = spval
+               a_rnof   (i,j) = spval
+               a_qintr  (i,j) = spval
+               a_qinfl  (i,j) = spval
+               a_qdrip  (i,j) = spval
+               a_wat    (i,j) = spval
+               a_assim  (i,j) = spval
+               a_respc  (i,j) = spval
 
-               a_qcharge(i,j) = spval 
+               a_qcharge(i,j) = spval
 
-               a_t_grnd (i,j) = spval 
-               a_tleaf  (i,j) = spval 
-               a_ldew   (i,j) = spval 
-               a_scv    (i,j) = spval 
-               a_snowdp (i,j) = spval 
-               a_fsno   (i,j) = spval 
-               a_sigf   (i,j) = spval 
-               a_green  (i,j) = spval 
-               a_lai    (i,j) = spval 
-               a_laisun (i,j) = spval 
-               a_laisha (i,j) = spval 
-               a_sai    (i,j) = spval 
-               a_alb(1,1,i,j) = spval 
-               a_alb(1,2,i,j) = spval 
-               a_alb(2,1,i,j) = spval 
-               a_alb(2,2,i,j) = spval 
-               a_emis   (i,j) = spval 
+               a_t_grnd (i,j) = spval
+               a_tleaf  (i,j) = spval
+               a_ldew   (i,j) = spval
+               a_scv    (i,j) = spval
+               a_snowdp (i,j) = spval
+               a_fsno   (i,j) = spval
+               a_sigf   (i,j) = spval
+               a_green  (i,j) = spval
+               a_lai    (i,j) = spval
+               a_laisun (i,j) = spval
+               a_laisha (i,j) = spval
+               a_sai    (i,j) = spval
+               a_alb(1,1,i,j) = spval
+               a_alb(1,2,i,j) = spval
+               a_alb(2,1,i,j) = spval
+               a_alb(2,2,i,j) = spval
+               a_emis   (i,j) = spval
                a_z0m    (i,j) = spval
                a_trad   (i,j) = spval
                a_tref   (i,j) = spval
@@ -542,9 +542,9 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   a_wice_soisno(l,i,j) = a_wice_soisno(l,i,j) / sumwt(i,j)
                enddo
             else
-               a_t_soisno   (maxsnl+1:nl_soil,i,j) = spval 
-               a_wliq_soisno(maxsnl+1:nl_soil,i,j) = spval 
-               a_wice_soisno(maxsnl+1:nl_soil,i,j) = spval 
+               a_t_soisno   (maxsnl+1:nl_soil,i,j) = spval
+               a_wliq_soisno(maxsnl+1:nl_soil,i,j) = spval
+               a_wice_soisno(maxsnl+1:nl_soil,i,j) = spval
             endif
 
          ENDDO
@@ -702,7 +702,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       DO j = 1, lat_points
          DO i = 1, lon_points
             if(sumwt(i,j) > 0.00001)then
-               z0m_av = a_z0m (i,j) 
+               z0m_av = a_z0m (i,j)
                z0h_av = a_z0m (i,j)
                z0q_av = a_z0m (i,j)
                displa_av = 2./3.*z0m_av/0.07
@@ -724,7 +724,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
                a_tstar(i,j) = -a_fsena(i,j)/(rhoair*a_ustar(i,j))/cpair
                a_qstar(i,j) = -a_fevpa(i,j)/(rhoair*a_ustar(i,j))
-   
+
                thm = tm + 0.0098*hgt_t
                th = tm*(100000./psrf)**(rgas/cpair)
                thv = th*(1.+0.61*qm)
@@ -751,18 +751,18 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                endif
 
                obu = zldis/a_zol(i,j)
-               
+
 !NOTE: for single point debug [注释下面]
-               call moninobuk(hgt_u,hgt_t,hgt_q,displa_av,z0m_av,z0h_av,z0q_av,& ! fordebug
-                    obu,um,a_ustar(i,j),fh2m,fq2m,&
-                    a_fm10m(i,j),a_fm(i,j),a_fh(i,j),a_fq(i,j))
-
-! bug found by chen qiying 2013/07/01 
-               a_rib(i,j) = a_zol(i,j)/vonkar*a_ustar(i,j)**2/(vonkar/a_fh(i,j)*um**2)
-               a_rib(i,j) = min(5.,a_rib(i,j))
-
-               a_us10m(i,j) = us/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
-               a_vs10m(i,j) = vs/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
+!               call moninobuk(hgt_u,hgt_t,hgt_q,displa_av,z0m_av,z0h_av,z0q_av,& ! fordebug
+!                    obu,um,a_ustar(i,j),fh2m,fq2m,&
+!                    a_fm10m(i,j),a_fm(i,j),a_fh(i,j),a_fq(i,j))
+!
+!! bug found by chen qiying 2013/07/01
+!               a_rib(i,j) = a_zol(i,j)/vonkar*a_ustar(i,j)**2/(vonkar/a_fh(i,j)*um**2)
+!               a_rib(i,j) = min(5.,a_rib(i,j))
+!
+!               a_us10m(i,j) = us/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
+!               a_vs10m(i,j) = vs/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
 
             else
 
@@ -868,7 +868,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                call acc(a_wliq_soisno(l,i,j), 1., f_wliq_soisno(l,i,j))
                call acc(a_wice_soisno(l,i,j), 1., f_wice_soisno(l,i,j))
             end do
-            
+
             do l = 1, nl_soil
                call acc(a_h2osoi     (l,i,j), 1., f_h2osoi     (l,i,j))
             end do
@@ -920,7 +920,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 END SUBROUTINE vec2xy
 
 SUBROUTINE acc(var, wgt, s)
-   
+
    use precision
    USE GlobalVars
 

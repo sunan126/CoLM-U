@@ -78,6 +78,7 @@ MODULE MOD_1D_Fluxes
      USE GlobalVars
      USE MOD_1D_PFTFluxes
      USE MOD_1D_PCFluxes
+     USE MOD_1D_UrbanFluxes
      IMPLICIT NONE
 
      allocate (taux    (numpatch))  !wind stress: E-W [kg/m/s2]
@@ -134,6 +135,10 @@ MODULE MOD_1D_Fluxes
      CALL allocate_1D_PCFluxes
 #endif
 
+#ifdef URBAN_MODEL
+     CALL allocate_1D_UrbanFluxes
+#endif
+
   END SUBROUTINE allocate_1D_Fluxes
 
   SUBROUTINE deallocate_1D_Fluxes
@@ -142,6 +147,7 @@ MODULE MOD_1D_Fluxes
   ! --------------------------------------------------------------------
      USE MOD_1D_PFTFluxes
      USE MOD_1D_PCFluxes
+     USE MOD_1D_UrbanFluxes
 
      deallocate (taux    )  !wind stress: E-W [kg/m/s2]
      deallocate (tauy    )  !wind stress: N-S [kg/m/s2]
@@ -195,6 +201,10 @@ MODULE MOD_1D_Fluxes
 
 #ifdef PC_CLASSIFICATION
      CALL deallocate_1D_PCFluxes
+#endif
+
+#ifdef URBAN_MODEL
+     CALL deallocate_1D_UrbanFluxes
 #endif
 
   END SUBROUTINE deallocate_1D_Fluxes

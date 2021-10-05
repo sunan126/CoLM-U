@@ -2,8 +2,8 @@
  SUBROUTINE UrbanRoofTem (lb,deltim,capr,cnfac,&
                           cv_roof,tk_roof,dz_roofsno,z_roofsno,zi_roofsno,&
                           t_roofsno,wice_roofsno,wliq_roofsno,scv_roof,snowdp_roof,&
-                          troom,lroof,clroof,sabroof,fsenroof,fevproof,croof,htvp,&
-                          imelt_roof,sm_roof,xmf_roof,fact,fn_roof)
+                          troof_inner,lroof,clroof,sabroof,fsenroof,fevproof,croof,htvp,&
+                          imelt_roof,sm_roof,xmf_roof,fact,tkdz_roof)
 
 !=======================================================================
 ! Snow and roof temperatures
@@ -12,9 +12,9 @@
 ! o The thermal conductivity of roof is given by LOOK-UP table, and of snow is from
 !   the formulation used in SNTHERM (Jordan 1991).
 ! o Boundary conditions:
-!   F = Rnet - Hg - LEg (top),  
+!   F = Rnet - Hg - LEg (top),
 !   For urban sunwall, shadewall, and roof columns, there is a non-zero heat flux across
-!   the bottom "building inner surface" layer and the equations are derived assuming 
+!   the bottom "building inner surface" layer and the equations are derived assuming
 !   a prescribed or adjusted internal building temperature.
 !   T = T_roof_inner (at the roof inner surface).
 ! o Roof / snow temperature is predicted from heat conduction
@@ -26,7 +26,7 @@
 !   method and resulted in a tridiagonal system equation.
 !
 ! Phase change (see meltf.F90)
-! 
+!
 ! Original author : Yongjiu Dai, 05/2020
 !=======================================================================
 
@@ -37,7 +37,6 @@
   IMPLICIT NONE
 
   INTEGER , intent(in) :: lb       !lower bound of array
-  !INTEGER , intent(in) :: nl_roof  !upper bound of array
   REAL(r8), intent(in) :: deltim   !seconds in a time step [second]
   REAL(r8), intent(in) :: capr     !tuning factor to turn first layer T into surface T
   REAL(r8), intent(in) :: cnfac    !Crank Nicholson factor between 0 and 1
@@ -48,8 +47,8 @@
   REAL(r8), intent(in) :: dz_roofsno(lb:nl_roof)   !layer thickiness [m]
   REAL(r8), intent(in) :: z_roofsno (lb:nl_roof)   !node depth [m]
   REAL(r8), intent(in) :: zi_roofsno(lb-1:nl_roof) !interface depth [m]
-  
-  REAL(r8), intent(in) :: troom    !temperature at the roof inner surface [K]
+
+  REAL(r8), intent(in) :: troof_inner !temperature at the roof inner surface [K]
   REAL(r8), intent(in) :: lroof    !atmospheric infrared (longwave) radiation [W/m2]
   REAL(r8), intent(in) :: clroof   !atmospheric infrared (longwave) radiation [W/m2]
   REAL(r8), intent(in) :: sabroof  !solar radiation absorbed by roof [W/m2]
@@ -67,7 +66,7 @@
   REAL(r8), intent(out) :: sm_roof                    !rate of snowmelt [kg/(m2 s)]
   REAL(r8), intent(out) :: xmf_roof                   !total latent heat of phase change of roof residual water
   REAL(r8), intent(out) :: fact(lb:nl_roof)           !used in computing tridiagonal matrix
-  REAL(r8), intent(out) :: fn_roof                    !heat diffusion with inner room space
+  REAL(r8), intent(out) :: tkdz_roof                  !heat diffusion with inner room space
   INTEGER , intent(out) :: imelt_roof(lb:nl_roof)     !flag for melting or freezing [-]
 
 !------------------------ local variables ------------------------------
@@ -98,9 +97,9 @@
       wice_roofsno(2:) = 0.0 !ice lens [kg/m2]
       wliq_roofsno(2:) = 0.0 !liquid water [kg/m2]
 
-! heat capacity 
-      IF (lb+1 <= 0) THEN
-         DO j = lb+1, 0
+! heat capacity
+      IF (lb <= 0) THEN
+         DO j = lb, 0
             cv(j) = max(1.0e-6_r8,(cpliq*wliq_roofsno(j) + cpice*wice_roofsno(j)))
          ENDDO
       ENDIF
@@ -115,8 +114,8 @@
 
 ! thermal conductivity
       ! Thermal conductivity of snow, which from Yen (1980)
-      IF (lb+1 <= 0) THEN
-         DO j = lb+1, 0
+      IF (lb <= 0) THEN
+         DO j = lb, 0
          bw = (wice_roofsno(j)+wliq_roofsno(j))/(dz_roofsno(j))
          thk(j) = tkair + (7.75e-5_r8 *bw + 1.105e-6_r8*bw*bw)*(tkice-tkair) ! Yen, 1980
          !thk(j) = 0.024 - 1.23e-4_r8*bw + 2.5e-6_r8*bw*bw ! Calonne et al., 2011
@@ -125,8 +124,8 @@
 
     ! thermal conductivity at the layer interface
       thk(1) = tk_roof(1)
-      IF (lb+1 <= 0) THEN
-         DO j = lb+1, 0
+      IF (lb <= 0) THEN
+         DO j = lb, 0
          tk(j) = thk(j)*thk(j+1)*(z_roofsno(j+1)-z_roofsno(j)) &
                /(thk(j)*(z_roofsno(j+1)-zi_roofsno(j))+thk(j+1)*(zi_roofsno(j)-z_roofsno(j)))
          ENDDO
@@ -142,7 +141,7 @@
 !     ENDDO
 
 ! net ground heat flux into the roof surface and its temperature derivative
-      hs = sabroof + lroof - (fsenroof+fevproof*htvp) 
+      hs = sabroof + lroof - (fsenroof+fevproof*htvp)
       dhsdT = - croof + clroof
 
       t_roofsno_bef(lb:) = t_roofsno(lb:)
@@ -160,7 +159,9 @@
       ENDDO
 
       j     =  nl_roof
-      fn(j) = tk(j)*(troom - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
+      fn(j) = tk(j)*(troof_inner - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
+      !fn_roof = cnfac*tk(j)*(troof_inner-t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
+      tkdz_roof = tk(j)/(zi_roofsno(j)-z_roofsno(j))
 
 ! set up vector r and vectors a, b, c that define tridiagonal matrix
       j     = lb
@@ -189,19 +190,19 @@
 
 ! solve for t_roofsno
       i = size(at)
-      CALL tridia (i ,at ,bt ,ct ,rt ,t_roofsno) 
+      CALL tridia (i ,at ,bt ,ct ,rt ,t_roofsno)
 
 !=======================================================================
-! melting or freezing 
+! melting or freezing
 !=======================================================================
 
       DO j = lb, nl_roof - 1
          fn1(j) = tk(j)*(t_roofsno(j+1)-t_roofsno(j))/(z_roofsno(j+1)-z_roofsno(j))
       ENDDO
-      
+
       j = nl_roof
-      fn1(j) = tk(j)*(troom - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
-      fn_roof = cnfac*fn(j) + (1.-cnfac)*fn1(j)
+      fn1(j) = tk(j)*(troof_inner - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
+      !fn_roof = fn_roof + (1.-cnfac)*tk(j)*(troof_inner-t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
 
       j = lb
       brr(j) = cnfac*fn(j) + (1.-cnfac)*fn1(j)
@@ -210,9 +211,9 @@
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       ENDDO
 
-      CALL meltf (lb,0,deltim, &
-                  fact(lb:0),brr(lb:0),hs,dhsdT, &
-                  t_roofsno_bef(lb:0),t_roofsno(lb:0),wliq_roofsno(lb:0),wice_roofsno(lb:0),imelt_roof(lb:0), &
+      CALL meltf (lb,1,deltim, &
+                  fact(lb:1),brr(lb:1),hs,dhsdT, &
+                  t_roofsno_bef(lb:1),t_roofsno(lb:1),wliq_roofsno(lb:1),wice_roofsno(lb:1),imelt_roof(lb:1), &
                   scv_roof,snowdp_roof,sm_roof,xmf_roof)
 
  END SUBROUTINE UrbanRoofTem

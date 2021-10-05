@@ -20,8 +20,10 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
    USE MOD_TimeVariables
    USE MOD_PFTimeInvars
    USE MOD_PCTimeInvars
+   USE MOD_UrbanTimeInvars
    USE MOD_PFTimeVars
    USE MOD_PCTimeVars
+   USE MOD_UrbanTimeVars
    USE LC_Const
    USE PFT_Const
    USE timemanager
@@ -92,7 +94,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   REAL(r8) :: calday                   !Julian cal day (1.xx to 365.xx)
   INTEGER  :: year, jday, msec         !Julian day and seconds
   INTEGER  :: month, mday              !month and day of month
-  INTEGER  :: i,j,k,l,m,npatch,np,nsl  !indices
+  INTEGER  :: i,j,k,l,m,u,npatch,np,nsl!indices
   INTEGER  :: numpatch_lat(lat_points) !number of patches of grids at lon. strip
 
   CHARACTER(LEN=256) :: c
@@ -101,7 +103,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   INTEGER iunit
   INTEGER Julian_8day
 
-  INTEGER npft, npc
+  INTEGER npft, npc, nurb
   INTEGER ncid, landfrac_vid, pctlc_vid, pctelc_vid
   INTEGER pctpft_vid, pctpc_vid
   INTEGER pcturban_vid, pctwater_vid, pctwetland_vid, pctglacier_vid
@@ -170,14 +172,14 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
          DO i = 1, lon_points
 #if(defined LANDONLY)
             DO np = 1, N_land_classification
-               IF(fraction_patches(np,i,j)> 0.)THEN
+               IF (fraction_patches(np,i,j) > 0.) THEN
                   npatch = npatch+1 !subgrid patch number
                   numpatch_lat(j) = numpatch_lat(j) + 1
                ENDIF
             ENDDO
 #elif(defined LAND_SEA || defined USE_POINT_DATA)
             DO np = 0, N_land_classification
-               IF(fraction_patches(np,i,j)> 0.)THEN
+               IF (fraction_patches(np,i,j) > 0.) THEN
                   npatch = npatch+1 !subgrid patch number
                   numpatch_lat(j) = numpatch_lat(j) + 1
                ENDIF
@@ -186,7 +188,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
          ENDDO
       ENDDO
       numpatch = npatch
-      IF(numpatch.ne.sum(numpatch_lat))THEN
+      IF (numpatch .ne. sum(numpatch_lat)) THEN
          write(6,*) 'Total number of patches NOT as the summation of numpatch_lat'
          CALL abort
       ENDIF
@@ -222,21 +224,24 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
       npatch = 0
       numpatch_lat(:) = 0
+      nurb = 0
 
       ! NOTE: support for land ONLY right now
       DO j = 1, lat_points
          DO i = 1, lon_points
             DO np = 1, N_land_classification
-               IF(fraction_patches(i,j,np)> 0.)THEN
+               IF (fraction_patches(i,j,np) > 0.) THEN
                   npatch = npatch+1 !subgrid patch number
                   numpatch_lat(j) = numpatch_lat(j) + 1
+                  IF (np == URBAN) nurb = nurb + 1
                ENDIF
             ENDDO
          ENDDO
       ENDDO
 
       numpatch = npatch
-      IF(numpatch.ne.sum(numpatch_lat))THEN
+      numurban = nurb
+      IF (numpatch .ne. sum(numpatch_lat)) THEN
          write(6,*) 'Total number of patches NOT as the summation of numpatch_lat'
          CALL abort
       ENDIF
@@ -280,6 +285,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       npatch = 0
       numpatch_lat(:) = 0
       npft = 0
+      nurb = 0
 
       ! NOTE: support for land ONLY right now
       DO j = 1, lat_points
@@ -300,6 +306,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
             IF (pcturban(i,j) > 0.) THEN
                npatch = npatch + 1 
                numpatch_lat(j) = numpatch_lat(j) + 1
+               nurb = nurb + 1
             ENDIF 
             IF (pctwetland(i,j) > 0.) THEN
                npatch = npatch + 1 
@@ -318,7 +325,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
       numpatch = npatch
       numpft   = npft
-      IF(numpatch.ne.sum(numpatch_lat))THEN
+      numurban = nurb
+      IF (numpatch .ne. sum(numpatch_lat)) THEN
          write(6,*) 'Total number of patches NOT as the summation of numpatch_lat'
          CALL abort
       ENDIF
@@ -366,9 +374,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                IF (fraction_patches(i,j,np) > 0.) THEN
                   npatch = npatch + 1 !subgrid patch number
                   numpatch_lat(j) = numpatch_lat(j) + 1
-                  IF (patchtypes(np) == 0) THEN
-                     npc = npc + 1
-                  ENDIF 
+                  IF (patchtypes(np) == 0) npc = npc + 1
+                  IF (np == URBAN) nurb = nurb + 1
                ENDIF
             ENDDO
          ENDDO
@@ -376,7 +383,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
       numpatch = npatch
       numpc = npc
-      IF(numpatch.ne.sum(numpatch_lat))THEN
+      numurban = nurb
+      IF (numpatch .ne. sum(numpatch_lat)) THEN
          write(6,*) 'Total number of patches NOT as the summation of numpatch_lat'
          CALL abort
       ENDIF
@@ -391,7 +399,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
       CALL allocate_TimeInvariants (lon_points,lat_points)
       CALL allocate_TimeVariables 
-
 
 ! set the lat/lon values
       gridlatd(:) = latdeg(:)
@@ -420,7 +427,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #elif(defined LAND_SEA || defined USE_POINT_DATA)
             DO np = 0, N_land_classification
 #endif
-               IF(fraction_patches(np,i,j)>0.)THEN                
+               IF (fraction_patches(np,i,j) > 0.) THEN
 
                   npatch             = npatch+1                      
                   patch2lon(npatch)  = i  !patch longitude index
@@ -442,7 +449,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
          ENDDO
       ENDDO
 
-      IF(numpatch.ne.npatch)THEN
+      IF (numpatch .ne. npatch) THEN
          write(6,*) 'the number of patches is not identical ', numpatch, npatch
          CALL abort
       ENDIF
@@ -453,6 +460,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
 #ifdef IGBP_CLASSIFICATION
       npatch = 0
+      nurb = 0
       patchfrac(:) = 0.
       l = 0; m = 0
       grid_patch_s(:,:) = -1
@@ -464,7 +472,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
             gridarea(i,j) = area_gridcells(i,j) !grid cell area
             
             DO np = 1, N_land_classification
-               IF(fraction_patches(i,j,np)>0.)THEN                
+               IF (fraction_patches(i,j,np) > 0.) THEN
 
                   npatch             = npatch+1                      
                   patch2lon(npatch)  = i  !patch longitude index
@@ -481,12 +489,18 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                      l = i; m = j; grid_patch_s(i,j) = npatch
                   ENDIF
 
+                  IF (np == URBAN) THEN
+                     nurb              = nurb + 1
+                     patch2urb(npatch) = nurb
+                     urb2patch(nurb)   = npatch
+                  ENDIF
+
                ENDIF
             ENDDO
          ENDDO
       ENDDO
 
-      IF(numpatch.ne.npatch)THEN
+      IF (numpatch .ne. npatch) THEN
          write(6,*) 'the number of patches is not identical ', numpatch, npatch
          CALL abort
       ENDIF
@@ -499,7 +513,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
    
 #ifdef PFT_CLASSIFICATION
       npatch = 0
-      npft   = 0
+      npft = 0
+      nurb = 0
       patchfrac(:) = 0.
       l = 0; m = 0
       grid_patch_s(:,:) = -1
@@ -551,7 +566,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                npatch             = npatch + 1 
                patch2lon(npatch)  = i  !patch longitude index
                patch2lat(npatch)  = j  !patch latitude index
-               patchclass(npatch) = 13 !index of land cover type 
+               patchclass(npatch) = URBAN !index of land cover type
                patchlatr(npatch)  = latixy(i,j) !latitude in radians
                patchlonr(npatch)  = longxy(i,j) !longitude in radians
 
@@ -562,13 +577,18 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                IF (l.ne.i .OR. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
+
+               nurb               = nurb + 1
+               patch2urb(npatch)  = nurb
+               urb2patch(nurb)    = npatch
+
             ENDIF 
 
             IF (pctwetland(i,j) > 0.) THEN
                npatch             = npatch + 1 
                patch2lon(npatch)  = i  !patch longitude index
                patch2lat(npatch)  = j  !patch latitude index
-               patchclass(npatch) = 11 !index of land cover type
+               patchclass(npatch) = WETLAND !index of land cover type
                patchlatr(npatch)  = latixy(i,j) !latitude in radians
                patchlonr(npatch)  = longxy(i,j) !longitude in radians
 
@@ -585,7 +605,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                npatch             = npatch + 1 
                patch2lon(npatch)  = i  !patch longitude index
                patch2lat(npatch)  = j  !patch latitude index
-               patchclass(npatch) = 15 !index of land cover type
+               patchclass(npatch) = GLACIER !index of land cover type
                patchlatr(npatch)  = latixy(i,j) !latitude in radians
                patchlonr(npatch)  = longxy(i,j) !longitude in radians
 
@@ -602,7 +622,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                npatch             = npatch + 1 
                patch2lon(npatch)  = i  !patch longitude index
                patch2lat(npatch)  = j  !patch latitude index
-               patchclass(npatch) = 17 !index of land cover type
+               patchclass(npatch) = WATERBODY !index of land cover type
                patchlatr(npatch)  = latixy(i,j) !latitude in radians
                patchlonr(npatch)  = longxy(i,j) !longitude in radians
 
@@ -618,7 +638,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
          ENDDO
       ENDDO
 
-      IF(numpatch.ne.npatch)THEN
+      IF (numpatch .ne. npatch) THEN
          write(6,*) 'the number of patches is not identical ', numpatch, npatch
          CALL abort
       ENDIF
@@ -635,6 +655,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #ifdef PC_CLASSIFICATION
       npatch = 0
       npc = 0
+      nurb = 0
       patchfrac(:) = 0.
       l = 0; m = 0
       grid_patch_s(:,:) = -1
@@ -646,7 +667,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
             gridarea(i,j) = area_gridcells(i,j) !grid cell area
 
             DO np = 1, N_land_classification
-               IF(fraction_patches(i,j,np)>0.)THEN                
+               IF (fraction_patches(i,j,np) > 0.) THEN
 
                   npatch             = npatch+1                      
                   patch2lon(npatch)  = i  !patch longitude index
@@ -671,12 +692,19 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                      pc2patch(npc)    = npatch
                   ENDIF 
 
+                  ! for urban patches
+                  IF (np == URBAN) THEN
+                     nurb              = nurb + 1
+                     patch2urb(npatch) = nurb
+                     urb2patch(nurb)   = npatch
+                  ENDIF 
+
                ENDIF
             ENDDO
          ENDDO
       ENDDO
 
-      IF(numpatch.ne.npatch)THEN
+      IF (numpatch .ne. npatch) THEN
          write(6,*) 'the number of patches is not identical ', numpatch, npatch
          CALL abort
       ENDIF
@@ -722,6 +750,60 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       CALL HTOP_readin_nc (lon_points, lat_points, dir_model_landdata)
 #endif
 
+! ...............................................................
+! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
+! TODO: update needed
+! ...............................................................
+
+      froof(:)          = 0.454598    !roof fractional cover
+      flake(:)          = 0.2         !lake fractional cover
+      btop(:)           = 18.8        !average building height
+      hwr(:)            = 1.18        !average building height to their distance
+      fgimp(:)          = 0.2         !impervious fraction to ground area
+
+      alb_roof(:,:,:)   = 0.2         !albedo of roof
+      alb_wall(:,:,:)   = 0.3         !albedo of walls
+      alb_gimp(:,:,:)   = 0.1         !albedo of impervious
+      alb_gper(:,:,:)   = 0.08        !albedo of pervious road
+
+      emroof(:)         = 0.9         !emissivity of roof
+      emwall(:)         = 0.85        !emissiviry of wall
+      emgimp(:)         = 0.95        !emissivity of impervious
+      emgper(:)         = 0.95        !emissivity of pervious
+
+      cv_roof(:,:)      = 1.5e6       !heat capacity of roof [J/(m2 K)]
+      cv_wall(:,:)      = 1.54e6      !heat capacity of wall [J/(m2 K)]
+      cv_gimp(:,:)      = 2.0e6       !heat capacity of impervious [J/(m2 K)]
+
+      tk_roof(:,:)      = 0.8         !thermal conductivity of roof [W/m-K]
+      tk_wall(:,:)      = 0.88        !thermal conductivity of wall [W/m-K]
+      tk_gimp(:,:)      = 1.2         !thermal conductivity of impervious [W/m-K]
+
+      t_roommax(:)      = 303.0       !maximum temperature of inner room [K]
+      t_roommin(:)      = 280.0       !minimum temperature of inner room [K]
+
+      !NOTE: test only, 0.3m for both roof and walls
+      ! 5 layers, eqaul depth
+      DO j=1, nl_roof
+         z_roof(j,:) = (j-0.5)*(0.3/nl_roof)
+      ENDDO
+
+      DO j=1, nl_wall
+         z_wall(j,:) = (j-0.5)*(0.3/nl_wall)
+      ENDDO
+
+      dz_roof(1,:) = 0.5*(z_roof(1,1)+z_roof(2,1))
+      DO j = 2,nl_roof-1
+         dz_roof(j,:)= 0.5*(z_roof(j+1,1)-z_roof(j-1,1))
+      ENDDO
+      dz_roof(nl_roof,:) = z_roof(nl_roof,1)-z_roof(nl_roof-1,1)
+
+      dz_wall(1,:) = 0.5*(z_wall(1,1)+z_wall(2,1))
+      DO j = 2,nl_wall-1
+         dz_wall(j,:)= 0.5*(z_wall(j+1,1)-z_wall(j-1,1))
+      ENDDO
+      dz_wall(nl_wall,:) = z_wall(nl_wall,1)-z_wall(nl_wall-1,1)
+
 ! ................................
 ! 3.4 Initialize TUNABLE constants
 ! ................................
@@ -764,7 +846,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
       CALL initimetype (greenwich)
 
-      IF(.not. greenwich)THEN
+      IF (.not. greenwich) THEN
          print *, ".........greenwich false", longxy(1,1)
       ENDIF
 
@@ -840,7 +922,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #endif
        ! Call Ecological Model() 
          m = patchclass(i)
-         IF(m>0)THEN
+         IF (m > 0) THEN
             CALL lai_empirical (m,nl_soil,rootfr(1:,m),&
                                 t_soisno(1:,i),lai(i),sai(i),fveg(i),green(i))
 
@@ -868,14 +950,25 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
          dz_soisno(1:nl_soil ,i) = dz_soi(1:nl_soil)
       ENDDO
 
+    ! ------------------------------------------
+    ! PLEASE
+    ! PLEASE UPDATE
+    ! PLEASE UPDATE when have the observed lake status
+      t_lake      (:,:) = 285.
+      lake_icefrac(:,:) = 0.
+    ! ------------------------------------------
+
 ! 03/09/2020, yuan: TODO, may change the below from serial->parallel
 #ifdef OPENMP
 print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
-!$OMP PRIVATE (m) &
+!$OMP PRIVATE (i, m, u) &
 !$OMP SCHEDULE(STATIC, 1)
 #endif
       DO i = 1, numpatch
+      !DO i = 26864, numpatch    !wliq_gpersno为0
+      !DO i = 58162, numpatch    !参数传递错误
+      !DO i = 153995, numpatch   !no sai in UrbanShortwave.F90
          m = patchclass(i)
       CALL iniTimeVar (i, patchtype(i)&
           ,porsl(1:,i)&
@@ -895,6 +988,75 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #else
           )
 #endif
+
+#if(defined URBAN_MODEL)
+      IF (m == URBAN) THEN
+
+         u = patch2urb(i)
+         !print *, "patch:", i, "urban:", u, "coszen:", coszen(i)
+         !fordebug
+         fveg(i)           = 0.10006 !fraction of veg cover
+
+         lwsun(u)          = 0.   !net longwave radiation of sunlit wall
+         lwsha(u)          = 0.   !net longwave radiation of shaded wall
+         lgimp(u)          = 0.   !net longwave radiation of impervious road
+         lgper(u)          = 0.   !net longwave radiation of pervious road
+         lveg(u)           = 0.   !net longwave radiation of vegetation [W/m2]
+
+         t_roofsno(:,u)    = 283. !temperatures of roof layers
+         t_wallsun(:,u)    = 283. !temperatures of sunlit wall layers
+         t_wallsha(:,u)    = 283. !temperatures of shaded wall layers
+         t_gimpsno(:,u)    = 283. !temperatures of impervious road layers
+         t_gpersno(:,u)    = 283. !soil temperature [K]
+         t_lakesno(:,u)    = 283. !lake soil temperature [K]
+
+         wice_roofsno(:,u) = 0.  !ice lens [kg/m2]
+         wice_gimpsno(:,u) = 0.  !ice lens [kg/m2]
+         wice_gpersno(:,u) = 0.  !ice lens [kg/m2]
+         wice_lakesno(:,u) = 0.  !ice lens [kg/m2]
+         wliq_roofsno(:,u) = 0.  !liqui water [kg/m2]
+         wliq_gimpsno(:,u) = 0.  !liqui water [kg/m2]
+         wliq_gpersno(:,u) = wliq_soisno(:,i) !liqui water [kg/m2]
+         wliq_lakesno(:,u) = wliq_soisno(:,i) !liqui water [kg/m2]
+         
+         wliq_soisno(:,i) = 0.
+         wliq_soisno(:nl_roof,i) = wliq_roofsno(:,u)*froof(u)
+         wliq_soisno(:,i) = wliq_soisno(:,i) + wliq_gpersno(:,u)*(1-froof(u))*(1-fgimp(u))
+         wliq_soisno(:,i) = wliq_soisno(:,i) + wliq_gimpsno(:,u)*(1-froof(u))*fgimp(u)
+
+         snowdp_roof(u)    = 0.   !snow depth [m]
+         snowdp_gimp(u)    = 0.   !snow depth [m]
+         snowdp_gper(u)    = 0.   !snow depth [m]
+
+         z_sno_roof(:,u)   = 0.   !node depth of roof [m]
+         z_sno_gimp(:,u)   = 0.   !node depth of impervious [m]
+         z_sno_gper(:,u)   = 0.   !node depth pervious [m]
+         z_sno_lake(:,u)   = 0.   !node depth lake [m]
+
+         dz_sno_roof(:,u)  = 0.   !interface depth of roof [m]
+         dz_sno_gimp(:,u)  = 0.   !interface depth of impervious [m]
+         dz_sno_gper(:,u)  = 0.   !interface depth pervious [m]
+         dz_sno_lake(:,u)  = 0.   !interface depth lake [m]
+
+         t_room(u)         = 283. !temperature of inner building [K]
+         troof_inner(u)    = 283. !temperature of inner roof [K]
+         twsun_inner(u)    = 283. !temperature of inner sunlit wall [K]
+         twsha_inner(u)    = 283. !temperature of inner shaded wall [K]
+         Fhac(u)           = 0.   !sensible flux from heat or cool AC [W/m2]
+         Fwst(u)           = 0.   !waste heat flux from heat or cool AC [W/m2]
+         Fach(u)           = 0.   !flux from inner and outter air exchange [W/m2]
+
+      CALL UrbanIniTimeVar(i,froof(u),fgimp(u),flake(u),hwr(u),btop(u),&
+          alb_roof(:,:,u),alb_wall(:,:,u),alb_gimp(:,:,u),alb_gper(:,:,u),&
+          rho(:,:,m),tau(:,:,m),fveg(i),htop(i),hbot(i),lai(i),sai(i),coszen(i),&
+          fsno_roof(u),fsno_gimp(u),fsno_gper(u),fsno_lake(u),&
+          scv_roof(u),scv_gimp(u),scv_gper(u),scv_lake(u),&
+          sag_roof(u),sag_gimp(u),sag_gper(u),sag_lake(u),t_lake(1,i),&
+          fwsun(u),dfwsun(u),alb(:,:,i),ssun(:,:,i),ssha(:,:,i),sroof(:,:,u),&
+          swsun(:,:,u),swsha(:,:,u),sgimp(:,:,u),sgper(:,:,u),slake(:,:,u))
+      ENDIF
+#endif
+
       ENDDO
 
 ! 03/13/2020, yuan: 
@@ -906,14 +1068,6 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
          z_sno (maxsnl+1:0,i) = z_soisno (maxsnl+1:0,i)
          dz_sno(maxsnl+1:0,i) = dz_soisno(maxsnl+1:0,i)
       ENDDO
-
-    ! ------------------------------------------
-    ! PLEASE  
-    ! PLEASE UPDATE
-    ! PLEASE UPDATE when have the observed lake status
-      t_lake      (:,:) = 285.
-      lake_icefrac(:,:) = 0.
-    ! ------------------------------------------
 
 ! ...............................................................
 ! 4.6 Write out the model variables for restart run [histTimeVar]

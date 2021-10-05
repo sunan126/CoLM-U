@@ -4,7 +4,7 @@ SUBROUTINE UrbanCLMMAIN ( &
 
          ! 模式运行信息
            ipatch       ,idate        ,coszen       ,deltim       ,&
-           patchlonr    ,patchlatr    ,patchclass   ,patchtype    ,& 
+           patchlonr    ,patchlatr    ,patchclass   ,patchtype    ,&
 
          ! urban and lake depth
            froof        ,flake        ,btop         ,hwr          ,&
@@ -32,7 +32,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            forc_rain    ,forc_snow    ,forc_psrf    ,forc_pbot    ,&
            forc_sols    ,forc_soll    ,forc_solsd   ,forc_solld   ,&
            forc_frl     ,forc_hgt_u   ,forc_hgt_t   ,forc_hgt_q   ,&
-           forc_rhoair  ,Fhac         ,Fwst         ,Fach         ,& 
+           forc_rhoair  ,Fhac         ,Fwst         ,Fach         ,&
 
          ! land surface variables required for restart
            z_sno_roof   ,z_sno_gimp   ,z_sno_gper   ,z_sno_lake   ,&
@@ -40,7 +40,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            t_roofsno    ,t_gimpsno    ,t_gpersno    ,t_lakesno    ,&
            wliq_roofsno ,wliq_gimpsno ,wliq_gpersno ,wliq_lakesno ,&
            wice_roofsno ,wice_gimpsno ,wice_gpersno ,wice_lakesno ,&
-           z_sno        ,dz_sno       ,wliq_soisno  ,wice_soisno  ,& 
+           z_sno        ,dz_sno       ,wliq_soisno  ,wice_soisno  ,&
            t_soisno     ,t_wallsun    ,t_wallsha                  ,&
 
            lai          ,sai          ,fveg         ,sigf         ,&
@@ -55,7 +55,8 @@ SUBROUTINE UrbanCLMMAIN ( &
            swsun        ,swsha        ,sgimp        ,sgper        ,&
            slake        ,lwsun        ,lwsha        ,lgimp        ,&
            lgper        ,lveg         ,fwsun        ,dfwsun       ,&
-           t_room       ,t_roommax    ,t_roommin                  ,&
+           t_room       ,troof_inner  ,twsun_inner  ,twsha_inner  ,&
+           t_roommax    ,t_roommin                                ,&
 
            zwt          ,wa                                       ,&
            t_lake       ,lake_icefrac                             ,&
@@ -82,30 +83,31 @@ SUBROUTINE UrbanCLMMAIN ( &
            zlnd         ,zsno         ,csoilc       ,dewmx        ,&
            wtfact       ,capr         ,cnfac        ,ssi          ,&
            wimp         ,pondmx       ,smpmax       ,smpmin       ,&
-           trsmx0       ,tcrit                                    ,& 
+           trsmx0       ,tcrit                                    ,&
 
          ! additional variables required by coupling with WRF model
            emis         ,z0m          ,zol          ,rib          ,&
            ustar        ,qstar        ,tstar        ,fm           ,&
            fh           ,fq                                        )
-        
+
   USE precision
   USE GlobalVars
   USE PhysicalConstants, only: tfrz, denh2o, denice
+  USE MOD_TimeVariables, only: tlai, tsai
   USE MOD_TimeInvariants, only: gridlond
   USE SNOW_Layers_CombineDivide
   USE UrbanALBEDO
   USE LAKE
   USE timemanager
- 
+
   IMPLICIT NONE
- 
+
 ! ------------------------ Dummy Argument ------------------------------
-  INTEGER, intent(in) :: & 
+  INTEGER, intent(in) :: &
         ipatch     ,&! maximum number of snow layers
         idate(3)   ,&! next time-step /year/julian day/second in a day/
         patchclass ,&! land cover type of USGS classification or others
-        patchtype    ! land water type (0=soil, 1=urban and built-up, 
+        patchtype    ! land water type (0=soil, 1=urban and built-up,
                      ! 2=wetland, 3=land ice, 4=land water bodies, 99 = ocean)
 
   REAL(r8),intent(in) :: &
@@ -159,13 +161,13 @@ SUBROUTINE UrbanCLMMAIN ( &
         chil       ,&! leaf angle distribution factor
         effcon     ,&! quantum efficiency of RuBP regeneration (mol CO2/mol quanta)
         vmax25     ,&! maximum carboxylation rate at 25 C at canopy top
-        slti       ,&! slope of low temperature inhibition function      [s3] 
+        slti       ,&! slope of low temperature inhibition function      [s3]
         hlti       ,&! 1/2 point of low temperature inhibition function  [s4]
         shti       ,&! slope of high temperature inhibition function     [s1]
         hhti       ,&! 1/2 point of high temperature inhibition function [s2]
         trda       ,&! temperature coefficient in gs-a model             [s5]
         trdm       ,&! temperature coefficient in gs-a model             [s6]
-        trop       ,&! temperature coefficient in gs-a model          
+        trop       ,&! temperature coefficient in gs-a model
         gradm      ,&! conductance-photosynthesis slope parameter
         binter     ,&! conductance-photosynthesis intercep
         extkd      ,&! diffuse and scattered diffuse PAR extinction coefficient
@@ -231,7 +233,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         wice_gimpsno(maxsnl+1:nl_soil) ,&! ice lens (kg/m2)
         wice_gpersno(maxsnl+1:nl_soil) ,&! ice lens (kg/m2)
         wice_lakesno(maxsnl+1:nl_soil) ,&! ice lens (kg/m2)
-        
+
         z_sno       (maxsnl+1:0)       ,&! node depth [m]
         dz_sno      (maxsnl+1:0)       ,&! interface depth [m]
         z_sno_roof  (maxsnl+1:0)       ,&! node depth of roof [m]
@@ -294,12 +296,15 @@ SUBROUTINE UrbanCLMMAIN ( &
         fwsun      ,&! sunlit fraction of walls [-]
         dfwsun     ,&! change of sunlit fraction of walls [-]
         t_room     ,&! temperature of inner building [K]
+        troof_inner,&! temperature of inner roof [K]
+        twsun_inner,&! temperature of inner sunlit wall [K]
+        twsha_inner,&! temperature of inner shaded wall [K]
         t_roommax  ,&! maximum temperature of inner room [K]
         t_roommin  ,&! minimum temperature of inner room [K]
         Fhac       ,&! sensible flux from heat or cool AC [W/m2]
-        Fwst       ,&! waste heat flux from heat or cool AC [W/m2]  
+        Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
- 
+
         alb  (2,2) ,&! averaged albedo [-]
         ssun (2,2) ,&! sunlit canopy absorption for solar radiation
         ssha (2,2) ,&! shaded canopy absorption for solar radiation
@@ -309,12 +314,12 @@ SUBROUTINE UrbanCLMMAIN ( &
         sgimp(2,2) ,&! shaded canopy absorption for solar radiation
         sgper(2,2) ,&! shaded canopy absorption for solar radiation
         slake(2,2)   ! shaded canopy absorption for solar radiation
-        
+
 ! additional diagnostic variables for output
   REAL(r8), intent(out) :: &
         laisun     ,&! sunlit leaf area index
         laisha     ,&! shaded leaf area index
-        rstfac     ,&! factor of soil water stress 
+        rstfac     ,&! factor of soil water stress
         wat        ,&! total water storage
         h2osoi(nl_soil)! volumetric soil water in layers [m3/m3]
 
@@ -345,8 +350,8 @@ SUBROUTINE UrbanCLMMAIN ( &
         qinfl      ,&! inflitration (mm h2o/s)
         qdrip      ,&! throughfall (mm h2o/s)
         qcharge    ,&! groundwater recharge [mm/s]
-       
-        rst        ,&! canopy stomatal resistance 
+
+        rst        ,&! canopy stomatal resistance
         assim      ,&! canopy assimilation
         respc      ,&! canopy respiration
 
@@ -391,7 +396,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         endwb      ,&! water mass at the end of time step
         errore     ,&! energy balnce errore (Wm-2)
         errorw     ,&! water balnce errore (mm)
-        fioldr(maxsnl+1:nl_soil), &! fraction of ice relative to the total water
+        fioldr(maxsnl+1:nl_roof), &! fraction of ice relative to the total water
         fioldi(maxsnl+1:nl_soil), &! fraction of ice relative to the total water
         fioldp(maxsnl+1:nl_soil), &! fraction of ice relative to the total water
         fioldl(maxsnl+1:nl_soil), &! fraction of ice relative to the total water
@@ -439,11 +444,10 @@ SUBROUTINE UrbanCLMMAIN ( &
         totwb_roof ,&! water mass at the begining of time step
         totwb_gimp ,&! water mass at the begining of time step
         totwb_gper ,&! water mass at the begining of time step
-        totwb_lake ,&! water mass at the begining of time step
         wt         ,&! fraction of vegetation buried (covered) by snow [-]
         rootr(1:nl_soil),&! root resistance of a layer, all layers add to 1.0
 
-        zi_wall   (       0:nl_wall) ,&! interface level below a "z" level [m] 
+        zi_wall   (       0:nl_wall) ,&! interface level below a "z" level [m]
         z_roofsno (maxsnl+1:nl_roof) ,&! layer depth [m]
         z_gimpsno (maxsnl+1:nl_soil) ,&! layer depth [m]
         z_gpersno (maxsnl+1:nl_soil) ,&! layer depth [m]
@@ -467,14 +471,16 @@ SUBROUTINE UrbanCLMMAIN ( &
         pg_rain    ,&! rainfall onto ground including canopy runoff [kg/(m2 s)]
         pgper_rain ,&! rainfall onto ground including canopy runoff [kg/(m2 s)]
         pg_snow    ,&! snowfall onto ground including canopy runoff [kg/(m2 s)]
-        pgper_snow   ! snowfall onto ground including canopy runoff [kg/(m2 s)]
+        pgper_snow ,&! snowfall onto ground including canopy runoff [kg/(m2 s)]
+        etrgper    ,&! etr for pervious ground
+        fracveg      ! fraction of fveg/fgper
 
    INTEGER :: &
         snlr       ,&! number of snow layers
         snli       ,&! number of snow layers
         snlp       ,&! number of snow layers
         snll       ,&! number of snow layers
-        imeltr(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
+        imeltr(maxsnl+1:nl_roof), &! flag for: melting=1, freezing=2, Nothing happended=0
         imelti(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         imeltp(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         imeltl(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
@@ -484,7 +490,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         lbl        ,&! lower bound of arrays
         j            ! do looping index
 
-      theta = acos(coszen)
+      theta = acos(max(coszen,0.001))
 
 !======================================================================
 !  [1] Solar absorbed by vegetation and ground
@@ -510,8 +516,8 @@ SUBROUTINE UrbanCLMMAIN ( &
       z_roofsno (maxsnl+1:0) = z_sno_roof (maxsnl+1:0)
       z_roofsno (1:nl_roof ) = z_roof (1:nl_roof)
       dz_roofsno(maxsnl+1:0) = dz_sno_roof(maxsnl+1:0)
-      dz_roofsno(1:nl_roof ) = dz_soi(1:nl_roof)
-      
+      dz_roofsno(1:nl_roof ) = dz_roof(1:nl_roof)
+
       z_gimpsno (maxsnl+1:0) = z_sno_gimp (maxsnl+1:0)
       z_gimpsno (1:nl_soil ) = z_soi (1:nl_soil)
       dz_gimpsno(maxsnl+1:0) = dz_sno_gimp(maxsnl+1:0)
@@ -528,6 +534,12 @@ SUBROUTINE UrbanCLMMAIN ( &
       dz_lakesno(1:nl_soil ) = dz_soi(1:nl_soil)
 
       !============================================================
+      zi_wall(0) = 0.
+      DO j = 1, nl_wall
+         zi_wall(j) = zi_wall(j-1) + dz_wall(j)
+      ENDDO
+
+      !============================================================
       scvold_roof = scv_roof        !snow mass at previous time step
 
       snlr = 0
@@ -541,7 +553,7 @@ SUBROUTINE UrbanCLMMAIN ( &
             zi_roofsno(j) = zi_roofsno(j+1) - dz_roofsno(j+1)
          ENDDO
       ENDIF
-      DO j = 1, nl_wall
+      DO j = 1, nl_roof
          zi_roofsno(j) = zi_roofsno(j-1) + dz_roofsno(j)
       ENDDO
 
@@ -551,13 +563,13 @@ SUBROUTINE UrbanCLMMAIN ( &
          fioldr(snlr+1:0) = wice_roofsno(snlr+1:0) / &
             (wliq_roofsno(snlr+1:0)+wice_roofsno(snlr+1:0))
       ENDIF
-       
+
       !============================================================
       scvold_gimp = scv_gimp        !snow mass at previous time step
 
       snli = 0
       DO j = maxsnl+1, 0
-         IF (wliq_gimpsno(j)+wice_gimpsno(j) > 0.) snli = snlr - 1
+         IF (wliq_gimpsno(j)+wice_gimpsno(j) > 0.) snli = snli - 1
       ENDDO
 
       zi_gimpsno(0) = 0.
@@ -566,7 +578,7 @@ SUBROUTINE UrbanCLMMAIN ( &
             zi_gimpsno(j) = zi_gimpsno(j+1) - dz_gimpsno(j+1)
          ENDDO
       ENDIF
-      
+
       zi_gimpsno(1:nl_soil) = zi_soi(1:nl_soil)
 
       totwb_gimp = scv_gimp + wice_gimpsno(1)+wliq_gimpsno(1)
@@ -575,7 +587,7 @@ SUBROUTINE UrbanCLMMAIN ( &
          fioldi(snli+1:0) = wice_gimpsno(snli+1:0) / &
             (wliq_gimpsno(snli+1:0)+wice_gimpsno(snli+1:0))
       ENDIF
- 
+
       !============================================================
       scvold_gper = scv_gper        !snow mass at previous time step
 
@@ -590,7 +602,7 @@ SUBROUTINE UrbanCLMMAIN ( &
             zi_gpersno(j) = zi_gpersno(j+1) - dz_gpersno(j+1)
          ENDDO
       ENDIF
-      
+
       zi_gpersno(1:nl_soil) = zi_soi(1:nl_soil)
 
       totwb_gper = ldew + scv_gper + sum(wice_gpersno(1:)+wliq_gpersno(1:)) + wa
@@ -599,7 +611,7 @@ SUBROUTINE UrbanCLMMAIN ( &
          fioldp(snlp+1:0) = wice_gpersno(snlp+1:0) / &
             (wliq_gpersno(snlp+1:0)+wice_gpersno(snlp+1:0))
       ENDIF
-      
+
       !============================================================
       scvold_lake = scv_lake        !snow mass at previous time step
 
@@ -614,7 +626,7 @@ SUBROUTINE UrbanCLMMAIN ( &
             zi_lakesno(j) = zi_lakesno(j+1) - dz_lakesno(j+1)
          ENDDO
       ENDIF
-      
+
       zi_lakesno(1:nl_soil) = zi_soi(1:nl_soil)
 
       w_old = sum(wliq_lakesno(snll+1:))
@@ -623,7 +635,14 @@ SUBROUTINE UrbanCLMMAIN ( &
          fioldl(snll+1:0) = wice_lakesno(snll+1:0) / &
             (wliq_lakesno(snll+1:0)+wice_lakesno(snll+1:0))
       ENDIF
- 
+
+      !============================================================
+      !print *, "--- before ---"
+      totwb  = sum(wice_soisno(1:)+wliq_soisno(1:))
+      totwb  = totwb + scv + ldew*fveg + wa*(1-froof)*(1-fgimp)
+      !print *, "soil water:", totwb
+      !print *, "scv:", scv, "ldew:", ldew*fveg, "wa:", wa*(1-froof)*(1-fgimp)
+
 !----------------------------------------------------------------------
 ! [2] Canopy interception and precipitation onto ground surface
 !----------------------------------------------------------------------
@@ -633,19 +652,31 @@ SUBROUTINE UrbanCLMMAIN ( &
                               prc_rain,prc_snow,prl_rain,prl_snow,&
                               ldew,pgper_rain,pgper_snow,qintr)
 
+      ! for output, patch scale
       qintr = qintr * fveg * (1-flake)
-
       qdrip_gper = pgper_rain + pgper_snow
       qdrip = forc_rain + forc_snow
       qdrip = qdrip*(1-fveg*(1-flake)) + qdrip_gper*fveg*(1-flake)
-      
+
       ! without vegetation canopy
       pg_rain = prc_rain + prl_rain
       pg_snow = prc_snow + prl_snow
 
+      ! for urban hydrology input, only for pervious ground
+      fracveg = fveg/((1-froof)*(1-fgimp))
+      pgper_rain = pgper_rain*fracveg + pg_rain*(1-fracveg)
+      pgper_snow = pgper_snow*fracveg + pg_snow*(1-fracveg)
+
 !----------------------------------------------------------------------
 ! [3] Initilize new snow nodes for snowfall / sleet
 !----------------------------------------------------------------------
+
+      lbr = snlr + 1           !lower bound of array
+      lbi = snli + 1           !lower bound of array
+      lbp = snlp + 1           !lower bound of array
+      troof = t_roofsno(lbr)
+      tgimp = t_gimpsno(lbi)
+      tgper = t_gpersno(lbp)
 
       CALL newsnow (patchtype,maxsnl,deltim,troof,pg_rain,pg_snow,bifall,&
                     t_precip,zi_roofsno(:0),z_roofsno(:0),dz_roofsno(:0),t_roofsno(:0),&
@@ -676,20 +707,21 @@ SUBROUTINE UrbanCLMMAIN ( &
            snowdp_lake   ,lake_icefrac                                     )
 
 !----------------------------------------------------------------------
-! [4] Energy and Water balance 
+! [4] Energy and Water balance
 !----------------------------------------------------------------------
-      lbr = snlr + 1           !lower bound of array 
-      lbi = snli + 1           !lower bound of array 
-      lbp = snlp + 1           !lower bound of array 
-      lbl = snll + 1           !lower bound of array 
-      
+
+      lbr = snlr + 1           !lower bound of array
+      lbi = snli + 1           !lower bound of array
+      lbp = snlp + 1           !lower bound of array
+      lbl = snll + 1           !lower bound of array
+
       ! Thermal process
       CALL UrbanTHERMAL ( &
          ! 模型运行信息
          ipatch               ,patchtype            ,lbr                  ,lbi                  ,&
          lbp                  ,lbl                  ,deltim               ,patchlatr            ,&
          ! 外强迫
-         forc_hgt_u           ,forc_hgt_t           ,forc_hgt_q           ,forc_us              ,&   
+         forc_hgt_u           ,forc_hgt_t           ,forc_hgt_q           ,forc_us              ,&
          forc_vs              ,forc_t               ,forc_q               ,forc_psrf            ,&
          forc_rhoair          ,forc_frl             ,forc_po2m            ,forc_pco2m           ,&
          forc_sols            ,forc_soll            ,forc_solsd           ,forc_solld           ,&
@@ -704,10 +736,10 @@ SUBROUTINE UrbanCLMMAIN ( &
          porsl                ,psi0                 ,bsw                  ,dkdry                ,&
          dksatu               ,cv_roof              ,cv_wall              ,cv_gimp              ,&
          tk_roof              ,tk_wall              ,tk_gimp              ,dz_roofsno(lbr:)     ,&
-         dz_gimpsno(lbi:)     ,dz_gpersno(lbp:)     ,dz_lakesno(lbl:)     ,dz_wall(:)           ,&
-         z_roofsno(lbr:)      ,z_gimpsno(lbi:)      ,z_gpersno(lbp:)      ,z_lakesno(lbl:)      ,&
+         dz_gimpsno(lbi:)     ,dz_gpersno(lbp:)     ,dz_lakesno(:)        ,dz_wall(:)           ,&
+         z_roofsno(lbr:)      ,z_gimpsno(lbi:)      ,z_gpersno(lbp:)      ,z_lakesno(:)         ,&
          z_wall(:)            ,zi_roofsno(lbr-1:)   ,zi_gimpsno(lbi-1:)   ,zi_gpersno(lbp-1:)   ,&
-         zi_lakesno(lbl-1:)   ,zi_wall(0:)          ,dz_lake(1:)          ,lakedepth            ,&
+         zi_lakesno(:)        ,zi_wall(0:)          ,dz_lake(1:)          ,lakedepth            ,&
          dewmx                ,sqrtdi               ,rootfr(:)            ,effcon               ,&
          vmax25               ,slti                 ,hlti                 ,shti                 ,&
          hhti                 ,trda                 ,trdm                 ,trop                 ,&
@@ -720,11 +752,12 @@ SUBROUTINE UrbanCLMMAIN ( &
          hbot                 ,fveg                 ,sigf                 ,extkd                ,&
          lwsun                ,lwsha                ,lgimp                ,lgper                ,&
          t_grnd               ,t_roofsno(lbr:)      ,t_wallsun(:)         ,t_wallsha(:)         ,&
-         t_gimpsno(lbi:)      ,t_gpersno(lbp:)      ,t_lakesno(lbl:)      ,wliq_roofsno(lbr:)   ,&
-         wliq_gimpsno(lbi:)   ,wliq_gpersno(lbp:)   ,wliq_lakesno(lbl:)   ,wice_roofsno(lbr:)   ,&
-         wice_gimpsno(lbi:)   ,wice_gpersno(lbp:)   ,wice_lakesno(lbl:)   ,t_lake(:)            ,&
-         lake_icefrac(:)      ,lveg                 ,tleaf                ,ldew                 ,&  
-         t_room               ,t_roommax            ,t_roommin                                  ,&
+         t_gimpsno(lbi:)      ,t_gpersno(lbp:)      ,t_lakesno(:)         ,wliq_roofsno(lbr:)   ,&
+         wliq_gimpsno(lbi:)   ,wliq_gpersno(lbp:)   ,wliq_lakesno(:)      ,wice_roofsno(lbr:)   ,&
+         wice_gimpsno(lbi:)   ,wice_gpersno(lbp:)   ,wice_lakesno(:)      ,t_lake(:)            ,&
+         lake_icefrac(:)      ,lveg                 ,tleaf                ,ldew                 ,&
+         t_room               ,troof_inner          ,twsun_inner          ,twsha_inner          ,&
+         t_roommax            ,t_roommin                                                        ,&
          ! 输出变量
          taux                 ,tauy                 ,fsena                ,fevpa                ,&
          lfevpa               ,fsenl                ,fevpl                ,etr                  ,&
@@ -733,7 +766,7 @@ SUBROUTINE UrbanCLMMAIN ( &
          qsdew_roof           ,qsdew_gimp           ,qsdew_gper           ,qsdew_lake           ,&
          qsubl_roof           ,qsubl_gimp           ,qsubl_gper           ,qsubl_lake           ,&
          qfros_roof           ,qfros_gimp           ,qfros_gper           ,qfros_lake           ,&
-         imeltr(:)            ,imelti(:)            ,imeltp(:)            ,imeltl(:)            ,&
+         imeltr(lbr:)         ,imelti(lbi:)         ,imeltp(lbp:)         ,imeltl(:)            ,&
          sm_roof              ,sm_gimp              ,sm_gper              ,sm_lake              ,&
          sabg                 ,rstfac               ,rootr(:)             ,tref                 ,&
          qref                 ,trad                 ,rst                  ,assim                ,&
@@ -741,44 +774,49 @@ SUBROUTINE UrbanCLMMAIN ( &
          rib                  ,ustar                ,qstar                ,tstar                ,&
          fm                   ,fh                   ,fq                                          )
 
-
 !----------------------------------------------------------------------
 ! [4] Urban hydrology
 !----------------------------------------------------------------------
-      CALL UrbanHydrology ( &
-         ! 模型运行信息
-         ipatch               ,patchtype            ,lbr                  ,lbi                  ,&
-         lbp                  ,lbl                  ,snll                 ,deltim               ,&
-         ! 外强迫
-         pg_rain              ,pgper_rain           ,pg_snow                                    ,&
-         ! 地表参数及状态变量
-         froof                ,fgimp                ,flake                ,bsw                  ,&
-         porsl                ,psi0                 ,hksati               ,wtfact               ,&
-         pondmx               ,ssi                  ,wimp                 ,smpmin               ,&
-         rootr                ,etr                  ,fseng                ,fgrnd                ,&
-         t_gpersno(lbp:)      ,t_lakesno(lbl:)      ,t_lake               ,dz_lake              ,&
-         z_gpersno(lbp:)      ,z_lakesno(lbl:)      ,zi_gpersno(lbp-1:)   ,zi_lakesno(lbl-1:)   ,&
-         dz_roofsno(lbr:)     ,dz_gimpsno(lbi:)     ,dz_gpersno(lbp:)     ,dz_lakesno(lbl:)     ,&
-         wliq_roofsno(lbr:)   ,wliq_gimpsno(lbi:)   ,wliq_gpersno(lbp:)   ,wliq_lakesno(lbl:)   ,&
-         wice_roofsno(lbr:)   ,wice_gimpsno(lbi:)   ,wice_gpersno(lbp:)   ,wice_lakesno(lbl:)   ,&
-         qseva_roof           ,qseva_gimp           ,qseva_gper           ,qseva_lake           ,&
-         qsdew_roof           ,qsdew_gimp           ,qsdew_gper           ,qsdew_lake           ,&
-         qsubl_roof           ,qsubl_gimp           ,qsubl_gper           ,qsubl_lake           ,&
-         qfros_roof           ,qfros_gimp           ,qfros_gper           ,qfros_lake           ,&
-         sm_roof              ,sm_gimp              ,sm_gper              ,sm_lake              ,&
-         lake_icefrac         ,scv_lake             ,snowdp_lake          ,imeltl               ,&
-         fioldl                                                                                 ,&
-         ! 输出
-         rsur                 ,rnof                 ,qinfl                ,zwt                  ,&
-         wa                   ,qcharge                                                           )  
-      
-      ! roof 
+      IF (fveg > 0) THEN
+         etrgper = etr/(1-froof)/(1-fgimp)
+      ELSE
+         etrgper = 0.
+      ENDIF
+
+     CALL UrbanHydrology ( &
+        ! 模型运行信息
+        ipatch               ,patchtype            ,lbr                  ,lbi                  ,&
+        lbp                  ,lbl                  ,snll                 ,deltim               ,&
+        ! 外强迫
+        pg_rain              ,pgper_rain           ,pg_snow                                    ,&
+        ! 地表参数及状态变量
+        froof                ,fgimp                ,flake                ,bsw                  ,&
+        porsl                ,psi0                 ,hksati               ,wtfact               ,&
+        pondmx               ,ssi                  ,wimp                 ,smpmin               ,&
+        rootr                ,etrgper              ,fseng                ,fgrnd                ,&
+        t_gpersno(lbp:)      ,t_lakesno(:)         ,t_lake               ,dz_lake              ,&
+        z_gpersno(lbp:)      ,z_lakesno(:)         ,zi_gpersno(lbp-1:)   ,zi_lakesno(:)        ,&
+        dz_roofsno(lbr:)     ,dz_gimpsno(lbi:)     ,dz_gpersno(lbp:)     ,dz_lakesno(:)        ,&
+        wliq_roofsno(lbr:)   ,wliq_gimpsno(lbi:)   ,wliq_gpersno(lbp:)   ,wliq_lakesno(:)      ,&
+        wice_roofsno(lbr:)   ,wice_gimpsno(lbi:)   ,wice_gpersno(lbp:)   ,wice_lakesno(:)      ,&
+        qseva_roof           ,qseva_gimp           ,qseva_gper           ,qseva_lake           ,&
+        qsdew_roof           ,qsdew_gimp           ,qsdew_gper           ,qsdew_lake           ,&
+        qsubl_roof           ,qsubl_gimp           ,qsubl_gper           ,qsubl_lake           ,&
+        qfros_roof           ,qfros_gimp           ,qfros_gper           ,qfros_lake           ,&
+        sm_roof              ,sm_gimp              ,sm_gper              ,sm_lake              ,&
+        lake_icefrac         ,scv_lake             ,snowdp_lake          ,imeltl               ,&
+        fioldl               ,w_old                                                            ,&
+        ! 输出
+        rsur                 ,rnof                 ,qinfl                ,zwt                  ,&
+        wa                   ,qcharge                                                           )
+
+      ! roof
       !============================================================
       IF (snlr < 0) THEN
-         ! Compaction rate for snow 
+         ! Compaction rate for snow
          ! Natural compaction and metamorphosis. The compaction rate
          ! is recalculated for every new timestep
-         lbr  = snlr + 1   ! lower bound of array 
+         lbr  = snlr + 1   ! lower bound of array
          CALL snowcompaction (lbr,deltim,&
                          imeltr(lbr:0),fioldr(lbr:0),t_roofsno(lbr:0),&
                          wliq_roofsno(lbr:0),wice_roofsno(lbr:0),dz_roofsno(lbr:0))
@@ -796,7 +834,7 @@ SUBROUTINE UrbanCLMMAIN ( &
                          z_roofsno(lbr:0),dz_roofsno(lbr:0),zi_roofsno(lbr-1:0),&
                          wliq_roofsno(lbr:0),wice_roofsno(lbr:0),t_roofsno(lbr:0))
       ENDIF
-      
+
       ! Set zero to the empty node
       IF (snlr > maxsnl) THEN
          wice_roofsno(maxsnl+1:snlr) = 0.
@@ -812,10 +850,10 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! impervious ground
       !============================================================
       IF (snli < 0) THEN
-         ! Compaction rate for snow 
+         ! Compaction rate for snow
          ! Natural compaction and metamorphosis. The compaction rate
          ! is recalculated for every new timestep
-         lbi  = snli + 1   ! lower bound of array 
+         lbi  = snli + 1   ! lower bound of array
          CALL snowcompaction (lbi,deltim,&
                          imelti(lbi:0),fioldi(lbi:0),t_gimpsno(lbi:0),&
                          wliq_gimpsno(lbi:0),wice_gimpsno(lbi:0),dz_gimpsno(lbi:0))
@@ -833,7 +871,7 @@ SUBROUTINE UrbanCLMMAIN ( &
                          z_gimpsno(lbi:0),dz_gimpsno(lbi:0),zi_gimpsno(lbi-1:0),&
                          wliq_gimpsno(lbi:0),wice_gimpsno(lbi:0),t_gimpsno(lbi:0))
       ENDIF
-      
+
       ! Set zero to the empty node
       IF (snli > maxsnl) THEN
          wice_gimpsno(maxsnl+1:snli) = 0.
@@ -849,12 +887,12 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! pervious ground
       !============================================================
       IF (snlp < 0) THEN
-         ! Compaction rate for snow 
+         ! Compaction rate for snow
          ! Natural compaction and metamorphosis. The compaction rate
          ! is recalculated for every new timestep
-         lbp  = snlp + 1   ! lower bound of array 
+         lbp  = snlp + 1   ! lower bound of array
          CALL snowcompaction (lbp,deltim,&
-                         imeltr(lbp:0),fioldr(lbp:0),t_gpersno(lbp:0),&
+                         imeltp(lbp:0),fioldp(lbp:0),t_gpersno(lbp:0),&
                          wliq_gpersno(lbp:0),wice_gpersno(lbp:0),dz_gpersno(lbp:0))
 
          ! Combine thin snow elements
@@ -870,7 +908,7 @@ SUBROUTINE UrbanCLMMAIN ( &
                          z_gpersno(lbp:0),dz_gpersno(lbp:0),zi_gpersno(lbp-1:0),&
                          wliq_gpersno(lbp:0),wice_gpersno(lbp:0),t_gpersno(lbp:0))
       ENDIF
-      
+
       ! Set zero to the empty node
       IF (snlp > maxsnl) THEN
          wice_gpersno(maxsnl+1:snlp) = 0.
@@ -882,14 +920,15 @@ SUBROUTINE UrbanCLMMAIN ( &
 
       lbp = snlp + 1
       tgper = t_gpersno(lbp)
+
       !TODO: 暂定方案，设置t_soisno
       t_soisno(:) = t_gpersno(:)
-      
+
       !TODO: 如何计算tlake
       lbl = snll + 1
       IF (lbl < 1) THEN
          tlake = t_lakesno(lbl)
-      ELSE 
+      ELSE
          tlake = t_lake(1)
       ENDIF
 
@@ -906,25 +945,42 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! ----------------------------------------
       ! water balance check
       ! ----------------------------------------
-      
-      wliq_soisno(:nl_wall) = wliq_roofsno(:)*froof
+
+      wliq_soisno(:) = 0.
+      !wliq_soisno(:) = wliq_gimpsno(:)
+      wliq_soisno(:nl_roof) = wliq_roofsno(:)*froof
       wliq_soisno(:) = wliq_soisno(:) + wliq_gpersno(:)*(1-froof)*(1-fgimp)
       wliq_soisno(:) = wliq_soisno(:) + wliq_gimpsno(:)*(1-froof)*fgimp
-      wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake 
+      !wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake
 
-      wice_soisno(:nl_wall) = wice_roofsno(:)*froof
+      wice_soisno(:) = 0.
+      !wice_soisno(:) = wice_gimpsno(:)
+      wice_soisno(:nl_roof) = wice_roofsno(:)*froof
       wice_soisno(:) = wice_soisno(:) + wice_gpersno(:)*(1-froof)*(1-fgimp)
       wice_soisno(:) = wice_soisno(:) + wice_gimpsno(:)*(1-froof)*fgimp
-      wice_soisno(:) = wice_soisno(:)*(1-flake) + wice_lakesno(:)*flake 
+      !wice_soisno(:) = wice_soisno(:)*(1-flake) + wice_lakesno(:)*flake
 
-      endwb  = sum(wice_soisno(1:)+wliq_soisno(1:)) 
-      endwb  = endwb + scv + ldew*(1-flake)*fveg + wa*(1-flake)*(1-froof)*(1-fgimp)
+      scv = scv_roof*froof + scv_gper*(1-froof)*(1-fgimp) + scv_gimp*(1-froof)*fgimp
+      !scv = scv*(1-flake) + scv_lake*flake
+
+      !print *, "--- after ---"
+      endwb  = sum(wice_soisno(1:)+wliq_soisno(1:))
+      endwb  = endwb + scv + ldew*fveg + wa*(1-froof)*(1-fgimp)
+      !endwb  = endwb + scv + ldew*fveg + wa
+      !print *, "soil water:", endwb
+      !print *, "scv:", scv, "ldew:", ldew*fveg, "wa:", wa*(1-froof)*(1-fgimp)
       errorw = (endwb-totwb) - (forc_prc+forc_prl-fevpa-rnof)*deltim
+      !print *, "input:", (forc_prc+forc_prl)*deltim, "out:", (fevpa+rnof)*deltim, "fevpa:", fevpa*deltim, "rnof:", rnof*deltim
       xerr   = errorw/deltim
+      !print *, "qseva:", qseva_roof*froof, qseva_gper*(1-froof)*(1-fgimp), qseva_gimp*(1-froof)*fgimp
+      !print *, "qsdew:", qsdew_roof*froof, qsdew_gper*(1-froof)*(1-fgimp), qsdew_gimp*(1-froof)*fgimp
+      !print *, "qsubl:", qsubl_roof*froof, qsubl_gper*(1-froof)*(1-fgimp), qsubl_gimp*(1-froof)*fgimp
+      !print *, "qfros:", qfros_roof*froof, qfros_gper*(1-froof)*(1-fgimp), qfros_gimp*(1-froof)*fgimp
+      !print *, "error:", xerr, errorw
 
 #if(defined CLMDEBUG)
       IF(abs(errorw)>1.e-3) THEN
-         write(6,*) 'Warning: water balance violation', errorw, patchclass
+         write(6,*) 'Warning: water balance violation', errorw, ipatch, patchclass
          !stop
       ENDIF
 #endif
@@ -932,22 +988,24 @@ SUBROUTINE UrbanCLMMAIN ( &
 !======================================================================
 ! Preparation for the next time step
 ! 1) time-varying parameters for vegatation
-! 2) fraction of snow cover 
+! 2) fraction of snow cover
 ! 3) solar zenith angle and
-! 4) albedos 
+! 4) albedos
 !======================================================================
 
-      ! cosine of solar zenith angle 
+      ! cosine of solar zenith angle
       calday = calendarday(idate, gridlond(1))
       coszen = orb_coszen(calday,patchlonr,patchlatr)
 
       ! fraction of snow cover.
-      CALL snowfraction (fveg,z0m,zlnd,scv_gper,snowdp_gper,wt,sigf,fsno_gper)
-      CALL snowfraction (0.,z0m,zlnd,scv_lake,snowdp_lake,0.,0.,fsno_lake)
-      CALL snowfraction (0.,z0m,zlnd,scv_roof,snowdp_roof,0.,0.,fsno_roof)
-      CALL snowfraction (0.,z0m,zlnd,scv_gimp,snowdp_gimp,0.,0.,fsno_gimp)
+      CALL snowfraction ( 0., 0.,z0m,zlnd,scv_lake,snowdp_lake,wt,sigf,fsno_lake)
+      CALL snowfraction ( 0., 0.,z0m,zlnd,scv_roof,snowdp_roof,wt,sigf,fsno_roof)
+      CALL snowfraction ( 0., 0.,z0m,zlnd,scv_gimp,snowdp_gimp,wt,sigf,fsno_gimp)
+      CALL snowfraction (lai,sai,z0m,zlnd,scv_gper,snowdp_gper,wt,sigf,fsno_gper)
+      lai = tlai(ipatch)
+      sai = tsai(ipatch) * sigf
 
-      ! update the snow age 
+      ! update the snow age
       IF (snlr == 0) sag_roof = 0.
       CALL snowage (deltim,troof,scv_roof,scvold_roof,sag_roof)
       IF (snli == 0) sag_gimp = 0.
@@ -957,8 +1015,8 @@ SUBROUTINE UrbanCLMMAIN ( &
       IF (snll == 0) sag_lake = 0.
       CALL snowage (deltim,tlake,scv_lake,scvold_lake,sag_lake)
 
-      ! albedos 
-      ! we supposed call it every time-step, because 
+      ! albedos
+      ! we supposed call it every time-step, because
       ! other vegeation related parameters are needed to create
 
       CALL alburban (ipatch,froof,fgimp,flake,hwr,btop,&
@@ -967,7 +1025,7 @@ SUBROUTINE UrbanCLMMAIN ( &
                      fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
                      scv_roof,scv_gimp,scv_gper,scv_lake,&
                      sag_roof,sag_gimp,sag_gper,sag_lake,&
-                     dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake) 
+                     dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake)
 
       ! zero-filling set for glacier/ice-sheet/land water bodies/ocean components
       laisun = lai
@@ -975,7 +1033,8 @@ SUBROUTINE UrbanCLMMAIN ( &
       green  = 1.
 
       h2osoi = wliq_soisno(1:)/(dz_soi(1:)*denh2o) + wice_soisno(1:)/(dz_soi(1:)*denice)
-      wat = sum(wice_soisno(1:)+wliq_soisno(1:))+ldew+scv + wa
+      wat = sum(wice_soisno(1:)+wliq_soisno(1:))
+      wat = wat + scv + ldew*fveg + wa*(1-froof)*(1-fgimp)
 
       z_sno_roof (maxsnl+1:0) = z_roofsno (maxsnl+1:0)
       z_sno_gimp (maxsnl+1:0) = z_gimpsno (maxsnl+1:0)

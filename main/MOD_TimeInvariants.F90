@@ -80,6 +80,7 @@ MODULE MOD_TimeInvariants
      USE GlobalVars
      USE MOD_PFTimeInvars
      USE MOD_PCTimeInvars
+     USE MOD_UrbanTimeInvars
      IMPLICIT NONE
 
      INTEGER, intent(in) :: lon_points
@@ -125,6 +126,10 @@ MODULE MOD_TimeInvariants
      CALL allocate_PCTimeInvars
 #endif
 
+#ifdef URBAN_MODEL
+     CALL allocate_UrbanTimeInvars
+#endif
+
   END SUBROUTINE allocate_TimeInvariants
 
 
@@ -136,6 +141,7 @@ MODULE MOD_TimeInvariants
      USE GlobalVars
      USE MOD_PFTimeInvars
      USE MOD_PCTimeInvars
+     USE MOD_UrbanTimeInvars
      IMPLICIT NONE
 
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
@@ -220,6 +226,37 @@ MODULE MOD_TimeInvariants
            hbot_c            ! canopy bottom height [m]   
 #endif
 
+#ifdef URBAN_MODEL
+     read (lhistTimeConst)  &!
+           patch2urb,       &! projection from patch to Urban
+           urb2patch,       &! projection from Urban to patch
+           froof,           &! roof fractional cover [-]
+           fgimp,           &! impervious fraction to ground area [-]
+           flake,           &! lake fraction to ground area [-]
+           btop,            &! average building height [m]
+           hwr,             &! average building height to their distance [-]
+           z_roof,          &! thickness of roof [m]
+           z_wall,          &! thickness of wall [m]
+           dz_roof,         &! thickness of each layer [m]
+           dz_wall,         &! thickness of each layer [m]
+           alb_roof,        &! albedo of roof [-]
+           alb_wall,        &! albedo of walls [-]
+           alb_gimp,        &! albedo of impervious [-]
+           alb_gper,        &! albedo of pervious [-]
+           emroof,          &! emissivity of roof [-]
+           emwall,          &! emissivity of walls [-]
+           emgimp,          &! emissivity of impervious [-]
+           emgper,          &! emissivity of pervious [-]
+           cv_roof,         &! heat capacity of roof [J/(m2 K)]
+           cv_wall,         &! heat capacity of wall [J/(m2 K)]
+           cv_gimp,         &! heat capacity of impervious [J/(m2 K)]
+           tk_roof,         &! thermal conductivity of roof [W/m-K]
+           tk_wall,         &! thermal conductivity of wall [W/m-K]
+           tk_gimp,         &! thermal conductivity of impervious [W/m-K]
+           t_roommax,       &! maximum temperature of inner room [K]
+           t_roommin         ! minimum temperature of inner room [K]
+#endif
+
      close(lhistTimeConst)
 
   END SUBROUTINE READ_TimeInvariants
@@ -233,6 +270,7 @@ MODULE MOD_TimeInvariants
      USE GlobalVars
      USE MOD_PFTimeInvars
      USE MOD_PCTimeInvars
+     USE MOD_UrbanTimeInvars
      IMPLICIT NONE
 
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
@@ -317,7 +355,37 @@ MODULE MOD_TimeInvariants
            htop_c,          &! canopy top height [m]
            hbot_c            ! canopy bottom height [m]   
 #endif
-     
+
+#ifdef URBAN_MODEL
+     write(lhistTimeConst)  &!
+           patch2urb,       &! projection from patch to Urban
+           urb2patch,       &! projection from Urban to patch
+           froof,           &! roof fractional cover [-]
+           fgimp,           &! impervious fraction to ground area [-]
+           flake,           &! lake fraction to ground area [-]
+           btop,            &! average building height [m]
+           hwr,             &! average building height to their distance [-]
+           z_roof,          &! thickness of roof [m]
+           z_wall,          &! thickness of wall [m]
+           dz_roof,         &! thickness of each layer [m]
+           dz_wall,         &! thickness of each layer [m]
+           alb_roof,        &! albedo of roof [-]
+           alb_wall,        &! albedo of walls [-]
+           alb_gimp,        &! albedo of impervious [-]
+           alb_gper,        &! albedo of pervious [-]
+           emroof,          &! emissivity of roof [-]
+           emwall,          &! emissivity of walls [-]
+           emgimp,          &! emissivity of impervious [-]
+           emgper,          &! emissivity of pervious [-]
+           cv_roof,         &! heat capacity of roof [J/(m2 K)]
+           cv_wall,         &! heat capacity of wall [J/(m2 K)]
+           cv_gimp,         &! heat capacity of impervious [J/(m2 K)]
+           tk_roof,         &! thermal conductivity of roof [W/m-K]
+           tk_wall,         &! thermal conductivity of wall [W/m-K]
+           tk_gimp,         &! thermal conductivity of impervious [W/m-K]
+           t_roommax,       &! maximum temperature of inner room [K]
+           t_roommin         ! minimum temperature of inner room [K]
+#endif
      close(lhistTimeConst)
 
   END SUBROUTINE WRITE_TimeInvariants
@@ -329,6 +397,7 @@ MODULE MOD_TimeInvariants
 ! --------------------------------------------------
      USE MOD_PFTimeInvars
      USE MOD_PCTimeInvars
+     USE MOD_UrbanTimeInvars
 
      deallocate (patch2lon    )
      deallocate (patch2lat    )
@@ -368,6 +437,10 @@ MODULE MOD_TimeInvariants
 
 #ifdef PC_CLASSIFICATION
      CALL deallocate_PCTimeInvars
+#endif
+
+#ifdef URBAN_MODEL
+     CALL deallocate_UrbanTimeInvars
 #endif
 
   END SUBROUTINE deallocate_TimeInvariants

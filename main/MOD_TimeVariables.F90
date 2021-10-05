@@ -1,4 +1,4 @@
-#include <define.h> 
+#include <define.h>
 
 MODULE MOD_TimeVariables
 ! -------------------------------
@@ -18,7 +18,7 @@ MODULE MOD_TimeVariables
   REAL(r8), allocatable :: wliq_soisno (:,:) !liquid water in layers [kg/m2]
   REAL(r8), allocatable :: wice_soisno (:,:) !ice lens in layers [kg/m2]
   REAL(r8), allocatable :: h2osoi      (:,:) !volumetric soil water in layers [m3/m3]
-  REAL(r8), allocatable :: rstfac        (:) !factor of soil water stress 
+  REAL(r8), allocatable :: rstfac        (:) !factor of soil water stress
   REAL(r8), allocatable :: t_grnd        (:) !ground surface temperature [K]
 
   REAL(r8), allocatable :: tleaf         (:) !leaf temperature [K]
@@ -80,7 +80,7 @@ MODULE MOD_TimeVariables
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_TimeVariables 
+  SUBROUTINE allocate_TimeVariables
 ! --------------------------------------------------------------------
 ! Allocates memory for CLM 1d [numpatch] variables
 ! ------------------------------------------------------
@@ -89,6 +89,7 @@ MODULE MOD_TimeVariables
      USE GlobalVars
      USE MOD_PFTimeVars
      USE MOD_PCTimeVars
+     USE MOD_UrbanTimeVars
      IMPLICIT NONE
 
      allocate (z_sno             (maxsnl+1:0,numpatch))
@@ -125,7 +126,7 @@ MODULE MOD_TimeVariables
      allocate (wa                           (numpatch))
      allocate (wat                          (numpatch))
 
-     allocate (t_lake               (nl_lake,numpatch)) 
+     allocate (t_lake               (nl_lake,numpatch))
      allocate (lake_icefrac         (nl_lake,numpatch))
 
      allocate (trad                         (numpatch))
@@ -151,7 +152,11 @@ MODULE MOD_TimeVariables
 #ifdef PC_CLASSIFICATION
      CALL allocate_PCTimeVars
 #endif
- 
+
+#ifdef URBAN_MODEL
+     CALL allocate_UrbanTimeVars
+#endif
+
   END SUBROUTINE allocate_TimeVariables
 
 
@@ -163,6 +168,7 @@ MODULE MOD_TimeVariables
      USE precision
      USE MOD_PFTimeVars
      USE MOD_PCTimeVars
+     USE MOD_UrbanTimeVars
      IMPLICIT NONE
 
      CHARACTER(LEN=255), intent(in) :: dir_restart_hist
@@ -213,11 +219,11 @@ MODULE MOD_TimeVariables
            extkd,           &! diffuse and scattered diffuse PAR extinction coefficient
            zwt,             &! the depth to water table [m]
            wa,              &! water storage in aquifer [mm]
- 
+
            t_lake,          &! lake layer teperature [K]
            lake_icefrac,    &! lake mass fraction of lake layer that is frozen
 
-         ! Additional variables required by reginal model (such as WRF & RSM) 
+         ! Additional variables required by reginal model (such as WRF & RSM)
            trad,            &! radiative temperature of surface [K]
            tref,            &! 2 m height air temperature [kelvin]
            qref,            &! 2 m height air specific humidity
@@ -243,7 +249,7 @@ MODULE MOD_TimeVariables
            tlai_p,          &! true leaf area index
            sai_p,           &! stem area index
            tsai_p,          &! true stem area index
-           ssun_p,          &! sunlit canopy absorption for solar radiation (0-1)      
+           ssun_p,          &! sunlit canopy absorption for solar radiation (0-1)
            ssha_p,          &! shaded canopy absorption for solar radiation (0-1)
            thermk_p,        &! canopy gap fraction for tir radiation
            extkb_p,         &! (k, g(mu)/mu) direct solar extinction coefficient
@@ -251,7 +257,7 @@ MODULE MOD_TimeVariables
            tref_p,          &! 2 m height air temperature [kelvin]
            qref_p,          &! 2 m height air specific humidity
            rst_p,           &! canopy stomatal resistance (s/m)
-           z0m_p             ! effective roughness [m]                                 
+           z0m_p             ! effective roughness [m]
 #endif
 
 #ifdef PC_CLASSIFICATION
@@ -270,9 +276,74 @@ MODULE MOD_TimeVariables
            extkb_c,         &! (k, g(mu)/mu) direct solar extinction coefficient
            extkd_c,         &! diffuse and scattered diffuse PAR extinction coefficient
            rst_c,           &! canopy stomatal resistance (s/m)
-           z0m_c             ! effective roughness [m]                                 
+           z0m_c             ! effective roughness [m]
 #endif
-      
+
+#ifdef URBAN_MODEL
+     read (lhistTimeVar)    &!
+           fwsun,           &! sunlit fraction of walls [-]
+           dfwsun,          &! change of sunlit fraction of walls [-]
+           sroof,           &! roof aborption [-]
+           swsun,           &! sunlit wall absorption [-]
+           swsha,           &! shaded wall absorption [-]
+           sgimp,           &! impervious absorptioin [-]
+           sgper,           &! pervious absorptioin [-]
+           slake,           &! urban lake absorptioin [-]
+           lwsun,           &! net longwave of sunlit wall [W/m2]
+           lwsha,           &! net longwave of shaded wall [W/m2]
+           lgimp,           &! net longwave of impervious  [W/m2]
+           lgper,           &! net longwave of pervious [W/m2]
+           lveg,            &! net longwave of vegetation [W/m2]
+           z_sno_roof,      &! node depth of roof [m]
+           z_sno_gimp,      &! node depth of impervious [m]
+           z_sno_gper,      &! node depth pervious [m]
+           z_sno_lake,      &! node depth lake [m]
+           dz_sno_roof,     &! interface depth of roof [m]
+           dz_sno_gimp,     &! interface depth of impervious [m]
+           dz_sno_gper,     &! interface depth pervious [m]
+           dz_sno_lake,     &! interface depth lake [m]
+           troof_inner,     &! temperature of roof [K]
+           twsun_inner,     &! temperature of sunlit wall [K]
+           twsha_inner,     &! temperature of shaded wall [K]
+           !tgimp,           &! temperature of impervious [K]
+           !tgper,           &! temperature of pervious [K]
+           !tlake,           &! temperature of lake [K]
+           t_roofsno,       &! temperature of roof [K]
+           t_wallsun,       &! temperature of sunlit wall [K]
+           t_wallsha,       &! temperature of shaded wall [K]
+           t_gimpsno,       &! temperature of impervious [K]
+           t_gpersno,       &! temperature of pervious [K]
+           t_lakesno,       &! temperature of pervious [K]
+           wliq_roofsno,    &! liquid water in layers [kg/m2]
+           wliq_gimpsno,    &! liquid water in layers [kg/m2]
+           wliq_gpersno,    &! liquid water in layers [kg/m2]
+           wliq_lakesno,    &! liquid water in layers [kg/m2]
+           wice_roofsno,    &! ice lens in layers [kg/m2]
+           wice_gimpsno,    &! ice lens in layers [kg/m2]
+           wice_gpersno,    &! ice lens in layers [kg/m2]
+           wice_lakesno,    &! ice lens in layers [kg/m2]
+           sag_roof,        &! roof snow age [-]
+           sag_gimp,        &! impervious ground snow age [-]
+           sag_gper,        &! pervious ground snow age [-]
+           sag_lake,        &! urban lake snow age [-]
+           scv_roof,        &! roof snow cover [-]
+           scv_gimp,        &! impervious ground snow cover [-]
+           scv_gper,        &! pervious ground snow cover [-]
+           scv_lake,        &! urban lake snow cover [-]
+           fsno_roof,       &! roof snow fraction [-]
+           fsno_gimp,       &! impervious ground snow fraction [-]
+           fsno_gper,       &! pervious ground snow fraction [-]
+           fsno_lake,       &! urban lake snow fraction [-]
+           snowdp_roof,     &! roof snow depth [m]
+           snowdp_gimp,     &! impervious ground snow depth [m]
+           snowdp_gper,     &! pervious ground snow depth [m]
+           snowdp_lake,     &! urban lake snow depth [m]
+           t_room,          &! temperature of inner building [K]
+           Fhac,            &! sensible flux from heat or cool AC [W/m2]
+           Fwst,            &! waste heat flux from heat or cool AC [W/m2]
+           Fach              ! flux from inner and outter air exchange [W/m2]
+#endif
+
            IF (id(1) /= idate(1) .or. id(2) /= idate(2) .or. id(3) /= idate(3)) THEN
               print*, 'id = ', id, 'idate = ', idate
               print*, 'The date of initial data is NOT IDENTICAL TO initial set-up'
@@ -292,8 +363,9 @@ MODULE MOD_TimeVariables
      USE precision
      USE MOD_PFTimeVars
      USE MOD_PCTimeVars
+     USE MOD_UrbanTimeVars
      IMPLICIT NONE
-     
+
      INTEGER, intent(in) :: idate(3)     !calendar (year, julian day, seconds)
      CHARACTER(LEN=255), intent(in) :: dir_restart_hist
      CHARACTER(LEN=256), intent(in) :: casename
@@ -308,7 +380,7 @@ MODULE MOD_TimeVariables
      id(:) = idate(:)
      CALL adj2begin(id)
 
-     ! the model variables for restart run 
+     ! the model variables for restart run
      write(cdate,'(i4.4,"-",i3.3,"-",i5.5)') id(1), id(2), id(3)
 
      lhistTimeVar = 100
@@ -347,11 +419,11 @@ MODULE MOD_TimeVariables
            extkd,           &! diffuse and scattered diffuse PAR extinction coefficient
            zwt,             &! the depth to water table [m]
            wa,              &! water storage in aquifer [mm]
- 
+
            t_lake,          &! lake layer teperature [K]
            lake_icefrac,    &! lake mass fraction of lake layer that is frozen
 
-         ! Additional variables required by reginal model (such as WRF & RSM) 
+         ! Additional variables required by reginal model (such as WRF & RSM)
            trad,            &! radiative temperature of surface [K]
            tref,            &! 2 m height air temperature [kelvin]
            qref,            &! 2 m height air specific humidity
@@ -367,7 +439,7 @@ MODULE MOD_TimeVariables
            fh,              &! integral of profile function for heat
            fq                ! integral of profile function for moisture
 
-      ! PFT/PC time variabls
+     ! PFT/PC time variabls
 #ifdef PFT_CLASSIFICATION
      write(lhistTimeVar)    &!
            tleaf_p,         &! shaded leaf temperature [K]
@@ -377,7 +449,7 @@ MODULE MOD_TimeVariables
            tlai_p,          &! true leaf area index
            sai_p,           &! stem area index
            tsai_p,          &! true stem area index
-           ssun_p,          &! sunlit canopy absorption for solar radiation (0-1)       
+           ssun_p,          &! sunlit canopy absorption for solar radiation (0-1)
            ssha_p,          &! shaded canopy absorption for solar radiation (0-1)
            thermk_p,        &! canopy gap fraction for tir radiation
            extkb_p,         &! (k, g(mu)/mu) direct solar extinction coefficient
@@ -385,11 +457,11 @@ MODULE MOD_TimeVariables
            tref_p,          &! 2 m height air temperature [kelvin]
            qref_p,          &! 2 m height air specific humidity
            rst_p,           &! canopy stomatal resistance (s/m)
-           z0m_p             ! effective roughness [m]                                 
+           z0m_p             ! effective roughness [m]
 #endif
 
 #ifdef PC_CLASSIFICATION
-     WRITE(lhistTimeVar)    &!
+     write(lhistTimeVar)    &!
            tleaf_c,         &! leaf temperature [K]
            ldew_c,          &! depth of water on foliage [mm]
            sigf_c,          &! fraction of veg cover, excluding snow-covered veg [-]
@@ -404,9 +476,74 @@ MODULE MOD_TimeVariables
            extkb_c,         &! (k, g(mu)/mu) direct solar extinction coefficient
            extkd_c,         &! diffuse and scattered diffuse PAR extinction coefficient
            rst_c,           &! canopy stomatal resistance (s/m)
-           z0m_c             ! effective roughness [m]                                 
+           z0m_c             ! effective roughness [m]
 #endif
- 
+
+#ifdef URBAN_MODEL
+     write(lhistTimeVar)    &!
+           fwsun,           &! sunlit fraction of walls [-]
+           dfwsun,          &! change of sunlit fraction of walls [-]
+           sroof,           &! roof aborption [-]
+           swsun,           &! sunlit wall absorption [-]
+           swsha,           &! shaded wall absorption [-]
+           sgimp,           &! impervious absorptioin [-]
+           sgper,           &! pervious absorptioin [-]
+           slake,           &! urban lake absorptioin [-]
+           lwsun,           &! net longwave of sunlit wall [W/m2]
+           lwsha,           &! net longwave of shaded wall [W/m2]
+           lgimp,           &! net longwave of impervious  [W/m2]
+           lgper,           &! net longwave of pervious [W/m2]
+           lveg,            &! net longwave of vegetation [W/m2]
+           z_sno_roof,      &! node depth of roof [m]
+           z_sno_gimp,      &! node depth of impervious [m]
+           z_sno_gper,      &! node depth pervious [m]
+           z_sno_lake,      &! node depth lake [m]
+           dz_sno_roof,     &! interface depth of roof [m]
+           dz_sno_gimp,     &! interface depth of impervious [m]
+           dz_sno_gper,     &! interface depth pervious [m]
+           dz_sno_lake,     &! interface depth lake [m]
+           troof_inner,     &! temperature of roof [K]
+           twsun_inner,     &! temperature of sunlit wall [K]
+           twsha_inner,     &! temperature of shaded wall [K]
+           !tgimp,           &! temperature of impervious [K]
+           !tgper,           &! temperature of pervious [K]
+           !tlake,           &! temperature of lake [K]
+           t_roofsno,       &! temperature of roof [K]
+           t_wallsun,       &! temperature of sunlit wall [K]
+           t_wallsha,       &! temperature of shaded wall [K]
+           t_gimpsno,       &! temperature of impervious [K]
+           t_gpersno,       &! temperature of pervious [K]
+           t_lakesno,       &! temperature of pervious [K]
+           wliq_roofsno,    &! liquid water in layers [kg/m2]
+           wliq_gimpsno,    &! liquid water in layers [kg/m2]
+           wliq_gpersno,    &! liquid water in layers [kg/m2]
+           wliq_lakesno,    &! liquid water in layers [kg/m2]
+           wice_roofsno,    &! ice lens in layers [kg/m2]
+           wice_gimpsno,    &! ice lens in layers [kg/m2]
+           wice_gpersno,    &! ice lens in layers [kg/m2]
+           wice_lakesno,    &! ice lens in layers [kg/m2]
+           sag_roof,        &! roof snow age [-]
+           sag_gimp,        &! impervious ground snow age [-]
+           sag_gper,        &! pervious ground snow age [-]
+           sag_lake,        &! urban lake snow age [-]
+           scv_roof,        &! roof snow cover [-]
+           scv_gimp,        &! impervious ground snow cover [-]
+           scv_gper,        &! pervious ground snow cover [-]
+           scv_lake,        &! urban lake snow cover [-]
+           fsno_roof,       &! roof snow fraction [-]
+           fsno_gimp,       &! impervious ground snow fraction [-]
+           fsno_gper,       &! pervious ground snow fraction [-]
+           fsno_lake,       &! urban lake snow fraction [-]
+           snowdp_roof,     &! roof snow depth [m]
+           snowdp_gimp,     &! impervious ground snow depth [m]
+           snowdp_gper,     &! pervious ground snow depth [m]
+           snowdp_lake,     &! urban lake snow depth [m]
+           t_room,          &! temperature of inner building [K]
+           Fhac,            &! sensible flux from heat or cool AC [W/m2]
+           Fwst,            &! waste heat flux from heat or cool AC [W/m2]
+           Fach              ! flux from inner and outter air exchange [W/m2]
+#endif
+
      close(lhistTimeVar)
 
   END SUBROUTINE WRITE_TimeVariables
@@ -417,6 +554,7 @@ MODULE MOD_TimeVariables
 ! --------------------------------------------------
      USE MOD_PFTimeVars
      USE MOD_PCTimeVars
+     USE MOD_UrbanTimeVars
 
      deallocate (z_sno        )
      deallocate (dz_sno       )
@@ -452,7 +590,7 @@ MODULE MOD_TimeVariables
      deallocate (wa           )
      deallocate (wat          )
 
-     deallocate (t_lake       ) 
+     deallocate (t_lake       )
      deallocate (lake_icefrac )
 
      deallocate (trad         )
@@ -470,7 +608,7 @@ MODULE MOD_TimeVariables
      deallocate (fm           )
      deallocate (fh           )
      deallocate (fq           )
-     
+
 #ifdef PFT_CLASSIFICATION
      CALL deallocate_PFTimeVars
 #endif
@@ -478,7 +616,11 @@ MODULE MOD_TimeVariables
 #ifdef PC_CLASSIFICATION
      CALL deallocate_PCTimeVars
 #endif
-  
+
+#ifdef URBAN_MODEL
+     CALL deallocate_UrbanTimeVars
+#endif
+
   END SUBROUTINE deallocate_TimeVariables
 
 END MODULE MOD_TimeVariables

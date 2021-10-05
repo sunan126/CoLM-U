@@ -24,7 +24,7 @@
 !   method and resulted in a tridiagonal system equation.
 !
 ! Phase change (see meltf.F90)
-! 
+!
 ! Original author : Yongjiu Dai, 09/15/1999; 08/30/2002; 05/2020
 !=======================================================================
 
@@ -94,7 +94,7 @@
   INTEGER i,j
 
 !=======================================================================
-! heat capacity 
+! heat capacity
       CALL hCapacity (patchtype,lb,nl_soil,csol,porsl,wice_gpersno,wliq_gpersno,scv_gper,dz_gpersno,cv)
 
 ! thermal conductivity
@@ -103,9 +103,9 @@
                           t_gpersno,wice_gpersno,wliq_gpersno,tk)
 
 ! net ground heat flux into the surface and its temperature derivative
-      hs = sabgper + lgper - (fsengper+fevpgper*htvp) 
+      hs = sabgper + lgper - (fsengper+fevpgper*htvp)
       dhsdT = - cgper + clgper
-      
+
       t_gpersno_bef(lb:) = t_gpersno(lb:)
 
       j       = lb
@@ -148,10 +148,10 @@
 
 ! solve for t_gpersno
       i = size(at)
-      CALL tridia (i ,at ,bt ,ct ,rt ,t_gpersno) 
+      CALL tridia (i ,at ,bt ,ct ,rt ,t_gpersno)
 
 !=======================================================================
-! melting or freezing 
+! melting or freezing
 !=======================================================================
 
       DO j = lb, nl_soil - 1

@@ -67,6 +67,7 @@ PROGRAM CLMINI
       numpatch = 0
       numpft   = 0
       numpc    = 0
+      numurban = 0
       
       CALL monthday2julian(s_year,s_month,s_day,s_julian)
       idate(1) = s_year; idate(2) = s_julian; idate(3) = s_seconds
@@ -92,6 +93,7 @@ PROGRAM CLMINI
       write(100,*) 'numpatch  = ', numpatch   !1.1
       write(100,*) 'numpft    = ', numpft     !1.2
       write(100,*) 'numpc     = ', numpc      !1.3
+      write(100,*) 'numurban  = ', numurban   !1.4
       IF ( greenwich ) THEN
       write(100,*) 'greenwich =       .true.' !2
       ELSE

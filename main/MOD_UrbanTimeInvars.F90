@@ -1,4 +1,4 @@
-#include <define.h> 
+#include <define.h>
 
 MODULE MOD_UrbanTimeInvars
 
@@ -10,31 +10,32 @@ MODULE MOD_UrbanTimeInvars
    IMPLICIT NONE
    SAVE
 
+   INTEGER , allocatable :: patch2urb (:)  !projection from patch to Urban
+   INTEGER , allocatable :: urb2patch (:)  !projection from Urban to patch
+
    ! 城市形态结构参数
    REAL(r8), allocatable :: froof     (:)  !roof fractional cover [-]
    REAL(r8), allocatable :: fgimp     (:)  !impervious fraction to ground area [-]
    REAL(r8), allocatable :: flake     (:)  !lake fraction to ground area [-]
    REAL(r8), allocatable :: btop      (:)  !average building height [m]
    REAL(r8), allocatable :: hwr       (:)  !average building height to their distance [-]
-   
+
    REAL(r8), allocatable :: z_roof  (:,:)  !thickness of roof [m]
    REAL(r8), allocatable :: z_wall  (:,:)  !thickness of wall [m]
    REAL(r8), allocatable :: dz_roof (:,:)  !thickness of each layer [m]
    REAL(r8), allocatable :: dz_wall (:,:)  !thickness of each layer [m]
-  
+
    ! albedo
-   !TODO: global mapping from input files
-   REAL(r8) :: alb_roof(2,2)               !albedo of roof [-]
-   REAL(r8) :: alb_wall(2,2)               !albedo of walls [-]
-   REAL(r8) :: alb_gimp(2,2)               !albedo of impervious [-]
-   REAL(r8) :: alb_gper(2,2)               !albedo of pervious [-]
-   
+   REAL(r8), allocatable :: alb_roof(:,:,:)!albedo of roof [-]
+   REAL(r8), allocatable :: alb_wall(:,:,:)!albedo of walls [-]
+   REAL(r8), allocatable :: alb_gimp(:,:,:)!albedo of impervious [-]
+   REAL(r8), allocatable :: alb_gper(:,:,:)!albedo of pervious [-]
+
    ! emissivity
-   !TODO: global mapping from input files
-   REAL(r8) :: emroof                      !emissivity of roof [-]
-   REAL(r8) :: emwall                      !emissivity of walls [-]
-   REAL(r8) :: emgimp                      !emissivity of impervious [-]
-   REAL(r8) :: emgper                      !emissivity of pervious [-]
+   REAL(r8), allocatable :: emroof(:)      !emissivity of roof [-]
+   REAL(r8), allocatable :: emwall(:)      !emissivity of walls [-]
+   REAL(r8), allocatable :: emgimp(:)      !emissivity of impervious [-]
+   REAL(r8), allocatable :: emgper(:)      !emissivity of pervious [-]
 
    ! thermal pars of roof, wall, impervious
    REAL(r8), allocatable :: cv_roof (:,:)  !heat capacity of roof [J/(m2 K)]
@@ -60,7 +61,7 @@ MODULE MOD_UrbanTimeInvars
 CONTAINS
 
 !-----------------------------------------------------------------------
-   
+
    SUBROUTINE allocate_UrbanTimeInvars ()
 ! ------------------------------------------------------
 ! Allocates memory for CLM 1d [numurban] variants
@@ -69,11 +70,24 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
+      allocate (patch2urb            (numpatch))
+      allocate (urb2patch            (numurban))
+
       allocate (froof                (numurban))
       allocate (fgimp                (numurban))
       allocate (flake                (numurban))
       allocate (btop                 (numurban))
       allocate (hwr                  (numurban))
+
+      allocate (alb_roof         (2,2,numurban))
+      allocate (alb_wall         (2,2,numurban))
+      allocate (alb_gimp         (2,2,numurban))
+      allocate (alb_gper         (2,2,numurban))
+
+      allocate (emroof               (numurban))
+      allocate (emwall               (numurban))
+      allocate (emgimp               (numurban))
+      allocate (emgper               (numurban))
 
       allocate (z_roof     (1:nl_roof,numurban))
       allocate (z_wall     (1:nl_wall,numurban))
@@ -86,20 +100,33 @@ CONTAINS
       allocate (tk_roof    (1:nl_roof,numurban))
       allocate (tk_wall    (1:nl_wall,numurban))
       allocate (tk_gimp    (1:nl_soil,numurban))
-      
+
       allocate (t_roommax            (numurban))
       allocate (t_roommin            (numurban))
 
    END SUBROUTINE allocate_UrbanTimeInvars
- 
+
    SUBROUTINE deallocate_UrbanTimeInvars
+
+      deallocate (patch2urb )
+      deallocate (urb2patch )
 
       deallocate (froof     )
       deallocate (fgimp     )
       deallocate (flake     )
       deallocate (btop      )
       deallocate (hwr       )
-      
+
+      deallocate (alb_roof  )
+      deallocate (alb_wall  )
+      deallocate (alb_gimp  )
+      deallocate (alb_gper  )
+
+      deallocate (emroof    )
+      deallocate (emwall    )
+      deallocate (emgimp    )
+      deallocate (emgper    )
+
       deallocate (z_roof    )
       deallocate (z_wall    )
       deallocate (dz_roof   )
@@ -111,11 +138,11 @@ CONTAINS
       deallocate (tk_roof   )
       deallocate (tk_wall   )
       deallocate (tk_gimp   )
-      
+
       deallocate (t_roommax )
       deallocate (t_roommin )
 
    END SUBROUTINE deallocate_UrbanTimeInvars
-  
+
 END MODULE MOD_UrbanTimeInvars
 ! ---------- EOP ------------

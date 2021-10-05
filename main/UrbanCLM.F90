@@ -1,27 +1,44 @@
 #include <define.h>
 
   PROGRAM UrbanCLM
-      
+! ======================================================================
+! Reference:
+!     [1] Dai et al., 2003: The Common Land Model (CoLM).
+!         Bull. of Amer. Meter. Soc., 84: 1013-1023
+!     [2] Dai et al., 2004: A two-big-leaf model for canopy temperature,
+!         photosynthesis and stomatal conductance. J. Climate, 17: 2281-2299.
+!     [3] Dai et al., 2014: The Terrestrial Modeling System (TMS).
+!     [4] Dai Yamazaki, 2014: The global river model CaMa-Flood (version 3.6.2)
+!
+!     Created by Yongjiu Dai, Februay 2004
+!     Revised by Yongjiu Dai and Hua Yuan, April 2014
+! ======================================================================
+
       USE precision
-      USE GlobalVars
       USE PhysicalConstants
+      USE GlobalVars
       USE LC_Const
-      USE timemanager
-      USE MOD_1D_Forcing
-      USE MOD_1D_Fluxes
-      USE MOD_1D_UrbanFluxes
-      USE MOD_2D_Forcing
-      USE MOD_2D_Fluxes
+      USE PFT_Const
       USE MOD_TimeInvariants
       USE MOD_TimeVariables
-      USE MOD_UrbanTimeInvars
-      USE MOD_UrbanTimeVars
+      USE MOD_1D_Forcing
+      USE MOD_2D_Forcing
+      USE MOD_1D_Fluxes
+      USE MOD_2D_Fluxes
+      USE timemanager
       USE GETMETMOD
-      USE UrbanShortwave
+
+#if(defined CaMa_Flood)
+      USE parkind1   ,only: jpim, jprm
+      USE mod_input  ,only: lognam, nxin, nyin
+      USE mod_map    ,only: regionall, regionthis
+      USE mod_output ,only: csufbin, csufvec, csufcdf
+#endif
 
       IMPLICIT NONE
 
 ! ----------------local variables ---------------------------------
+
       CHARACTER(LEN=256) :: casename  !casename name
       INTEGER :: lon_points       !number of longitude points on model grids
       INTEGER :: lat_points       !number of latitude points on model grids
@@ -36,7 +53,7 @@
       CHARACTER(len=256) :: dir_forcing
       CHARACTER(len=256) :: dir_output
       CHARACTER(len=256) :: dir_restart_hist
-      
+
       LOGICAL :: doalb            !true => start up the surface albedo calculation
       LOGICAL :: dolai            !true => start up the time-varying vegetation paramter
       LOGICAL :: dosst            !true => update sst/ice/snow
@@ -48,8 +65,8 @@
       INTEGER,  allocatable :: nac_ln(:,:)      !number of accumulation for local noon time virable
       REAL(r8), allocatable :: oro(:)           !ocean(0)/seaice(2)/ flag
       REAL(r8), allocatable :: a_rnof(:,:)      !total runoff [mm/s]
-      INTEGER :: Julian_1day_p, Julian_1day 
-      INTEGER :: Julian_8day_p, Julian_8day 
+      INTEGER :: Julian_1day_p, Julian_1day
+      INTEGER :: Julian_8day_p, Julian_8day
       INTEGER :: s_year, s_julian, s_seconds
       INTEGER :: e_year, e_julian, e_seconds
       INTEGER :: p_year, p_julian, p_seconds
@@ -69,7 +86,7 @@
       INTEGER(kind=jpim) :: ierr, nproc, nid
 #endif
 #endif
-      
+
       namelist /clmexp/ casename,               &!1
                         dir_model_landdata,     &!2
                         dir_forcing,            &!3
@@ -88,20 +105,24 @@
                         p_day,                  &!16
                         p_seconds,              &!17
                         numpatch,               &!18
-                        greenwich,              &!19
-                        s_year,                 &!20
-                        s_month,                &!21
-                        s_day,                  &!22
-                        s_seconds                !23
+                        numpft,                 &!19
+                        numpc,                  &!20
+                        numurban,               &!21
+                        greenwich,              &!22
+                        s_year,                 &!23
+                        s_month,                &!24
+                        s_day,                  &!25
+                        s_seconds                !26
 ! ======================================================================
 !     define the run and open files (for off-line use)
 
-      read(5,clmexp) 
+      read(5,clmexp)
 
       CALL Init_GlovalVars
       CALL Init_LC_Const
+      CALL Init_PFT_Const
       CALL initimetype(greenwich)
-      
+
       idate(1) = s_year; idate(3) = s_seconds
       edate(1) = e_year; edate(3) = e_seconds
       pdate(1) = p_year; pdate(3) = p_seconds
@@ -109,37 +130,64 @@
       CALL monthday2julian(s_year,s_month,s_day,idate(2))
       CALL monthday2julian(e_year,e_month,e_day,edate(2))
       CALL monthday2julian(p_year,p_month,p_day,pdate(2))
-      
+
       s_julian = idate(2); e_julian = edate(2); p_julian = pdate(2)
 
       CALL adj2end(edate)
       CALL adj2end(pdate)
-      
+
       itstamp = idate
       etstamp = edate
       ptstamp = pdate
 
       CALL allocate_TimeInvariants(lon_points,lat_points)
-      CALL allocate_TimeVariables 
-      CALL allocate_UrbanTimeInvars
-      CALL allocate_UrbanTimeVars
+      CALL allocate_TimeVariables
       CALL allocate_1D_Forcing
       CALL allocate_2D_Forcing(lon_points,lat_points)
       CALL allocate_1D_Fluxes
       CALL allocate_2D_Fluxes(lon_points,lat_points)
-      CALL allocate_1D_UrbanFluxes
- 
+
       CALL FLUSH_2D_Fluxes
-      
-      allocate (oro(numpatch)) 
+
+      allocate (oro(numpatch))
       allocate (nac_ln(lon_points,lat_points))
 ! ----------------------------------------------------------------------
-    
     ! Read in the model time invariant constant data
       CALL READ_TimeInvariants(dir_restart_hist,casename)
 
     ! Read in the model time varying data (model state variables)
       CALL READ_TimeVariables (idate,dir_restart_hist,casename)
+
+
+!-----------------------
+#if(defined CaMa_Flood)
+#if(defined usempi)
+      CALL mpi_init(ierr)
+      CALL mpi_comm_size(mpi_comm_world, nproc, ierr)
+      CALL mpi_comm_rank(mpi_comm_world, nid, ierr)
+      regionall =nproc
+      regionthis=nid+1
+#endif
+      !! regional output for mpi run
+      !! change suffix of output file for each calculation node
+      IF (regionall>=2 )THEN
+        write(csufbin,'(a5,i2.2)') '.bin-', regionthis
+        write(csufvec,'(a5,i2.2)') '.vec-', regionthis
+        write(csufcdf,'(a4,i2.2)') '.nc-',  regionthis
+      ENDIF
+
+      iyyyy = s_year
+      eyyyy = e_year
+      CALL julian2monthday(s_year,s_julian,imm,idd)
+      CALL julian2monthday(e_year,e_julian,emm,edd)
+      CALL CaMaINI(iyyyy,imm,idd,eyyyy,emm,edd)
+
+      nxin = lon_points
+      nyin = lat_points
+      allocate (r2roffin(nxin,nyin))  !!input runoff (mm/day)
+#endif
+      allocate (a_rnof(lon_points,lat_points))
+!-----------------------
 
       doalb = .true.
       dolai = .true.
@@ -149,104 +197,6 @@
     ! Initialize meteorological forcing data module
       CALL GETMETINI(dir_forcing, deltim, lat_points, lon_points)
 
-! ----------------------------------------------------------------------
-      !TODO: 如何赋初值? 以后在mkinidata中进行设置
-      extkd(:)          = 0.719       !coefficient of leaf nitrogen allocation
-      htop(:)           = 5.          !canopy crown top height [m]
-      hbot(:)           = 1.          !canopy crown bottom height [m]
- 
-! --- urban specific parameters below ---
-      froof(:)          = 0.454598    !roof fractional cover                      
-      fveg(:)           = 0.10006     !fraction of veg cover
-      flake(:)          = 0.2         !lake fractional cover
-      btop(:)           = 18.8        !average building height                   
-      hwr(:)            = 1.18        !average building height to their distance
-      fgimp(:)          = 0.2         !impervious fraction to ground area        
-      
-      alb_roof(:,:)     = 0.2         !albedo of roof
-      alb_wall(:,:)     = 0.3         !albedo of walls
-      alb_gimp(:,:)     = 0.1         !albedo of impervious
-      alb_gper(:,:)     = 0.08        !albedo of pervious road
-
-      emroof            = 0.9         !emissivity of roof
-      emwall            = 0.85        !emissiviry of wall
-      emgimp            = 0.95        !emissivity of impervious
-      emgper            = 0.95        !emissivity of pervious
-
-      cv_roof(:,:)      = 1.5e6       !heat capacity of roof [J/(m2 K)]
-      cv_wall(:,:)      = 1.54e6      !heat capacity of wall [J/(m2 K)]
-      cv_gimp(:,:)      = 2.0e6       !heat capacity of impervious [J/(m2 K)]
-                                                                             
-      tk_roof(:,:)      = 0.8         !thermal conductivity of roof [W/m-K]
-      tk_wall(:,:)      = 0.88        !thermal conductivity of wall [W/m-K]
-      tk_gimp(:,:)      = 1.2         !thermal conductivity of impervious [W/m-K]
-   
-      t_roommax (:)     = 303.0       !maximum temperature of inner room [K]
-      t_roommin (:)     = 280.0       !minimum temperature of inner room [K]
-      
-      fsno_roof(:)      = fsno(:)     !fraction of ground covered by snow        
-      fsno_gimp(:)      = fsno(:)     !fraction of ground covered by snow        
-      fsno_gper(:)      = fsno(:)     !fraction of ground covered by snow        
-      scv_roof(:)       = scv(:)      !snow cover, water equivalent [mm, kg/m2]  
-      scv_gimp(:)       = scv(:)      !snow cover, water equivalent [mm, kg/m2]  
-      scv_gper(:)       = scv(:)      !snow cover, water equivalent [mm, kg/m2]  
-      snowdp_roof(:)    = snowdp(:)   !snow depth [m]
-      snowdp_gimp(:)    = snowdp(:)   !snow depth [m]
-      snowdp_gper(:)    = snowdp(:)   !snow depth [m]
-
-      z_sno_roof(:,:)   = z_sno(:,:)  !node depth of roof [m]
-      z_sno_gimp(:,:)   = z_sno(:,:)  !node depth of impervious [m]
-      z_sno_gper(:,:)   = z_sno(:,:)  !node depth pervious [m]
-      z_sno_lake(:,:)   = z_sno(:,:)  !node depth lake [m]
-                                                                     
-      dz_sno_roof(:,:)  = dz_sno(:,:) !interface depth of roof [m]
-      dz_sno_gimp(:,:)  = dz_sno(:,:) !interface depth of impervious [m]
-      dz_sno_gper(:,:)  = dz_sno(:,:) !interface depth pervious [m]
-      dz_sno_lake(:,:)  = dz_sno(:,:) !interface depth lake [m]
-
-      fwsun(:)          = 0.5         !Fraction of sunlit wall [-] 
-      dfwsun(:)         = 0.          !change of fwsun
-
-      lwsun(:)          = 0.          !net longwave radiation of sunlit wall
-      lwsha(:)          = 0.          !net longwave radiation of shaded wall
-      lgimp(:)          = 0.          !net longwave radiation of impervious road
-      lgper(:)          = 0.          !net longwave radiation of pervious road
-      lveg(:)           = 0.          !net longwave radiation of vegetation [W/m2]
-      
-      t_roofsno(:,:)    = 283.        !temperatures of roof layers
-      t_wallsun(:,:)    = 283.        !temperatures of sunlit wall layers
-      t_wallsha(:,:)    = 283.        !temperatures of shaded wall layers
-      t_gimpsno(:,:)    = 283.        !temperatures of impervious road layers
-      t_gpersno(:,:)    = 283.        !soil temperature [K]
-
-      wice_roofsno(:,:) = 0.          !ice lens [kg/m2]
-      wice_gimpsno(:,:) = 0.          !ice lens [kg/m2]
-      wice_gpersno(:,:) = 0.          !ice lens [kg/m2]
-      wliq_roofsno(:,:) = 0.          !liqui water [kg/m2]
-      wliq_gimpsno(:,:) = 0.          !liqui water [kg/m2]
-      wliq_gpersno(:,:) = wliq_soisno(:,:) !liqui water [kg/m2]
-
-      !NOTE: test only, 0.3m for both roof and walls
-      ! 5 layers, eqaul depth
-      DO j=1, nl_roof
-         z_roof(1,:) = (j-0.5)*(0.3/nl_roof)
-      ENDDO
-      
-      DO j=1, nl_wall
-         z_wall(1,:) = (j-0.5)*(0.3/nl_wall)
-      ENDDO
-
-      dz_roof(1,:) = 0.5*(z_roof(1,1)+z_roof(2,1)) 
-      DO j = 2,nl_roof-1
-         dz_roof(j,:)= 0.5*(z_roof(j+1,1)-z_roof(j-1,1))
-      ENDDO
-      dz_roof(nl_roof,:) = z_roof(nl_roof,1)-z_roof(nl_roof-1,1)
-
-      dz_wall(1,:) = 0.5*(z_wall(1,1)+z_wall(2,1)) 
-      DO j = 2,nl_wall-1
-         dz_wall(j,:)= 0.5*(z_wall(j+1,1)-z_wall(j-1,1))
-      ENDDO
-      dz_wall(nl_wall,:) = z_wall(nl_wall,1)-z_wall(nl_wall-1,1)
 
 ! ======================================================================
 ! begin time stepping loop
@@ -279,12 +229,12 @@ print*, 'TIMELOOP = ', istep
        ! ----------------------------------------------------------------------
 #if(!defined DYN_PHENOLOGY)
        ! READ in Leaf area index and stem area index
-       ! Update every 8 days (time interval of the MODIS LAI data) 
+       ! Update every 8 days (time interval of the MODIS LAI data)
        ! ----------------------------------------------------------------------
 #ifdef USGS_CLASSIFICATION
        ! READ in Leaf area index and stem area index
          Julian_8day = int(calendarday(idate)-1)/8*8 + 1
-         IF(Julian_8day /= Julian_8day_p)THEN
+         IF (Julian_8day /= Julian_8day_p) THEN
             CALL LAI_readin (lon_points,lat_points,&
                              Julian_8day,numpatch,dir_model_landdata)
          ENDIF
@@ -292,28 +242,28 @@ print*, 'TIMELOOP = ', istep
 #else
 ! 08/03/2019, yuan: read global LAI/SAI data
          CALL julian2monthday (idate(1), idate(2), month, mday)
-         IF (month /= month_p) THEN 
+         IF (month /= month_p) THEN
             CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
-         END IF
+         ENDIF
 #endif
 
 #else
        ! Update once a day
          dolai = .false.
          Julian_1day = int(calendarday(idate)-1)/1*1 + 1
-         IF(Julian_1day /= Julian_1day_p)THEN
+         IF (Julian_1day /= Julian_1day_p) THEN
             dolai = .true.
          ENDIF
 #endif
 
-       ! Mapping subgrid patch [numpatch] vector of subgrid points to 
+       ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average
        ! ----------------------------------------------------------------------
          CALL vec2xy (lon_points,lat_points,nac,nac_ln,a_rnof)
 
          DO j = 1, lat_points
             DO i = 1, lon_points
-               IF(a_rnof(i,j) < 1.e-10) a_rnof(i,j) = 0.
+               IF (a_rnof(i,j) < 1.e-10) a_rnof(i,j) = 0.
             ENDDO
          ENDDO
 
@@ -345,7 +295,7 @@ print*, 'TIMELOOP = ', istep
                CALL flxwrite (idate,nac,nac_ln,lon_points,lat_points,dir_output,casename)
             ENDIF
 
-          ! Setting for next time step 
+          ! Setting for next time step
           ! ----------------------------------------------------------------------
             CALL FLUSH_2D_Fluxes
             nac = 0; nac_ln(:,:) = 0
@@ -364,17 +314,14 @@ print*, 'TIMELOOP = ', istep
 
       CALL deallocate_TimeInvariants
       CALL deallocate_TimeVariables
-      CALL deallocate_UrbanTimeInvars
-      CALL deallocate_UrbanTimeVars
-      CALL deallocate_1D_Forcing  
-      CALL deallocate_2D_Forcing 
+      CALL deallocate_1D_Forcing
+      CALL deallocate_2D_Forcing
       CALL deallocate_1D_Fluxes
-      CALL deallocate_2D_Fluxes     
-      CALL deallocate_1D_UrbanFluxes
- 
+      CALL deallocate_2D_Fluxes
+
       CALL GETMETFINAL
 
-      deallocate (a_rnof) 
+      deallocate (a_rnof)
       deallocate (oro)
       deallocate (nac_ln)
 #if(defined CaMa_Flood)

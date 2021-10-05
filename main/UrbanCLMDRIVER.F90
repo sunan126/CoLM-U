@@ -4,7 +4,7 @@ SUBROUTINE CLMDRIVER (idate,deltim)
 
 !=======================================================================
 !
-! CoLM URBAN MODEL DRIVER 
+! CoLM URBAN MODEL DRIVER
 !
 !=======================================================================
 
@@ -25,114 +25,123 @@ SUBROUTINE CLMDRIVER (idate,deltim)
   INTEGER,  intent(in) :: idate(3) !model calendar for next time step (year, julian day, seconds)
   REAL(r8), intent(in) :: deltim   !seconds in a time-step
 
-  INTEGER :: i, m
+  INTEGER :: i, m, t, u
 
 ! ======================================================================
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
+!$OMP PRIVATE(i, m, t, u) &
 !$OMP SCHEDULE(STATIC, 1)
 #endif
-      DO i = 1, numpatch
+  DO i = 1, numpatch
 
-         print *, i
-         m = patchclass(i)
+     t = patchtype(i)
+     m = patchclass(i)
 
-         CALL UrbanCLMMAIN ( &
-       ! MODEL RUNNING PARAMETERS
-         i               ,idate           ,coszen(i)       ,deltim          ,&
-         patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)    ,& 
+     IF (t == 1) THEN  !Urban case
 
-       ! URBAN PARAMETERS
-         froof(i)        ,flake(i)        ,btop(i)         ,hwr(i)          ,&
-         fgimp(i)        ,emroof          ,emwall          ,emgimp          ,&
-         emgper          ,cv_roof(:,i)    ,cv_wall(:,i)    ,cv_gimp(:,i)    ,&
-         tk_roof(:,i)    ,tk_wall(:,i)    ,tk_gimp(:,i)    ,z_roof(:,i)     ,&
-         z_wall(:,i)     ,dz_roof(:,i)    ,dz_wall(:,i)                     ,&
-         lakedepth(i)    ,dz_lake(1:,i)   ,&
+        u = patch2urb(i)
+        !print *, "patch:", i, "urban:", u
+        !cycle
 
-       ! SOIL INFORMATION AND LAKE DEPTH
-         soil_s_v_alb(i) ,soil_d_v_alb(i) ,soil_s_n_alb(i) ,soil_d_n_alb(i) ,&
-         porsl(1:,i)     ,psi0(1:,i)      ,bsw(1:,i)       ,hksati(1:,i)    ,&
-         csol(1:,i)      ,dksatu(1:,i)    ,dkdry(1:,i)     ,rootfr(1:,m)    ,&
+        CALL UrbanCLMMAIN ( &
+      ! MODEL RUNNING PARAMETERS
+        i               ,idate           ,coszen(i)       ,deltim          ,&
+        patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)    ,&
 
-       ! VEGETATION INFORMATION
-         htop(i)         ,hbot(i)         ,sqrtdi(m)       ,chil(m)         ,&
-         effcon(m)       ,vmax25(m)       ,slti(m)         ,hlti(m)         ,&
-         shti(m)         ,hhti(m)         ,trda(m)         ,trdm(m)         ,&
-         trop(m)         ,gradm(m)        ,binter(m)       ,extkn(m)        ,&
-         rho(1:,1:,m)    ,tau(1:,1:,m)                                      ,&
+      ! URBAN PARAMETERS
+        froof(u)        ,flake(u)        ,btop(u)         ,hwr(u)          ,&
+        fgimp(u)        ,emroof(u)       ,emwall(u)       ,emgimp(u)       ,&
+        emgper(u)       ,cv_roof(:,u)    ,cv_wall(:,u)    ,cv_gimp(:,u)    ,&
+        tk_roof(:,u)    ,tk_wall(:,u)    ,tk_gimp(:,u)    ,z_roof(:,u)     ,&
+        z_wall(:,u)     ,dz_roof(:,u)    ,dz_wall(:,u)                     ,&
+        lakedepth(i)    ,dz_lake(1:,i)                                     ,&
 
-       ! ATMOSPHERIC FORCING
-         forc_pco2m(i)   ,forc_po2m(i)    ,forc_us(i)      ,forc_vs(i)      ,&
-         forc_t(i)       ,forc_q(i)       ,forc_prc(i)     ,forc_prl(i)     ,&
-         forc_rain(i)    ,forc_snow(i)    ,forc_psrf(i)    ,forc_pbot(i)    ,&
-         forc_sols(i)    ,forc_soll(i)    ,forc_solsd(i)   ,forc_solld(i)   ,&
-         forc_frl(i)     ,forc_hgt_u(i)   ,forc_hgt_t(i)   ,forc_hgt_q(i)   ,&
-         forc_rhoair(i)  ,Fhac(i)         ,Fwst(i)         ,Fach(i)         ,& 
+      ! SOIL INFORMATION AND LAKE DEPTH
+        porsl(1:,i)     ,psi0(1:,i)      ,bsw(1:,i)       ,hksati(1:,i)    ,&
+        csol(1:,i)      ,dksatu(1:,i)    ,dkdry(1:,i)     ,rootfr(1:,m)    ,&
+        alb_roof(:,:,u) ,alb_wall(:,:,u) ,alb_gimp(:,:,u) ,alb_gper(:,:,u) ,&
 
-       ! LAND SURFACE VARIABLES REQUIRED FOR RESTART
-         z_sno_roof  (maxsnl+1:,i)        ,z_sno_gimp  (maxsnl+1:,i)        ,&
-         z_sno_gper  (maxsnl+1:,i)        ,z_sno_lake  (maxsnl+1:,i)        ,&
-         dz_sno_roof (maxsnl+1:,i)        ,dz_sno_gimp (maxsnl+1:,i)        ,&
-         dz_sno_gper (maxsnl+1:,i)        ,dz_sno_lake (maxsnl+1:,i)        ,&
-         t_roofsno   (maxsnl+1:,i)        ,t_gimpsno   (maxsnl+1:,i)        ,&
-         t_gpersno   (maxsnl+1:,i)        ,t_lakesno   (maxsnl+1:,i)        ,&
-         wliq_roofsno(maxsnl+1:,i)        ,wliq_gimpsno(maxsnl+1:,i)        ,&
-         wliq_gpersno(maxsnl+1:,i)        ,wliq_lakesno(maxsnl+1:,i)        ,&
-         wice_roofsno(maxsnl+1:,i)        ,wice_gimpsno(maxsnl+1:,i)        ,&
-         wice_gpersno(maxsnl+1:,i)        ,wice_lakesno(maxsnl+1:,i)        ,&
-         z_sno       (maxsnl+1:,i)        ,t_soisno    (maxsnl+1:,i)        ,&
-         wliq_soisno (maxsnl+1:,i)        ,wice_soisno (maxsnl+1:,i)        ,& 
-         t_wallsun   (1:,i)               ,t_wallsha   (1:,i)               ,&
+      ! VEGETATION INFORMATION
+        htop(i)         ,hbot(i)         ,sqrtdi(m)       ,chil(m)         ,&
+        effcon(m)       ,vmax25(m)       ,slti(m)         ,hlti(m)         ,&
+        shti(m)         ,hhti(m)         ,trda(m)         ,trdm(m)         ,&
+        trop(m)         ,gradm(m)        ,binter(m)       ,extkn(m)        ,&
+        rho(1:,1:,m)    ,tau(1:,1:,m)                                      ,&
 
-         lai(i)          ,sai(i)          ,fveg(i)         ,sigf(i)         ,&
-         green(i)        ,tleaf(i)        ,ldew(i)         ,t_grnd(i)       ,&
+      ! ATMOSPHERIC FORCING
+        forc_pco2m(i)   ,forc_po2m(i)    ,forc_us(i)      ,forc_vs(i)      ,&
+        forc_t(i)       ,forc_q(i)       ,forc_prc(i)     ,forc_prl(i)     ,&
+        forc_rain(i)    ,forc_snow(i)    ,forc_psrf(i)    ,forc_pbot(i)    ,&
+        forc_sols(i)    ,forc_soll(i)    ,forc_solsd(i)   ,forc_solld(i)   ,&
+        forc_frl(i)     ,forc_hgt_u(i)   ,forc_hgt_t(i)   ,forc_hgt_q(i)   ,&
+        forc_rhoair(i)  ,Fhac(u)         ,Fwst(u)         ,Fach(u)         ,&
 
-         sag_roof(i)     ,sag_gimp(i)     ,sag_gper(i)     ,sag_lake(i)     ,&
-         scv_roof(i)     ,scv_gimp(i)     ,scv_gper(i)     ,scv_lake(i)     ,&
-         snowdp_roof(i)  ,snowdp_gimp(i)  ,snowdp_gper(i)  ,snowdp_lake(i)  ,&
-         fsno_roof(i)    ,fsno_gimp(i)    ,fsno_gper(i)    ,fsno_lake(i)    ,&
-         sag(i)          ,scv(i)          ,snowdp(i)       ,fsno(i)         ,&
-         alb(1:,1:,i)    ,ssun(1:,1:,i)   ,ssha(1:,1:,i)   ,sroof(1:,1:,i)  ,&
-         swsun(1:,1:,i)  ,swsha(1:,1:,i)  ,sgimp(1:,1:,i)  ,sgper(1:,1:,i)  ,&
-         slake(1:,1:,i)  ,lwsun(i)        ,lwsha(i)        ,lgimp(i)        ,&
-         lgper(i)        ,lveg(i)         ,fwsun(i)        ,dfwsun(i)       ,&
-         t_room(i)       ,t_roommax(i)    ,t_roommin(i)                     ,&
-         
-         zwt(i)          ,wa(i)                                             ,&
-         t_lake(1:,i)    ,lake_icefrac(1:,i)                                ,&
+      ! LAND SURFACE VARIABLES REQUIRED FOR RESTART
+        z_sno_roof  (maxsnl+1:,u)        ,z_sno_gimp  (maxsnl+1:,u)        ,&
+        z_sno_gper  (maxsnl+1:,u)        ,z_sno_lake  (maxsnl+1:,u)        ,&
+        dz_sno_roof (maxsnl+1:,u)        ,dz_sno_gimp (maxsnl+1:,u)        ,&
+        dz_sno_gper (maxsnl+1:,u)        ,dz_sno_lake (maxsnl+1:,u)        ,&
+        t_roofsno   (maxsnl+1:,u)        ,t_gimpsno   (maxsnl+1:,u)        ,&
+        t_gpersno   (maxsnl+1:,u)        ,t_lakesno   (maxsnl+1:,u)        ,&
+        wliq_roofsno(maxsnl+1:,u)        ,wliq_gimpsno(maxsnl+1:,u)        ,&
+        wliq_gpersno(maxsnl+1:,u)        ,wliq_lakesno(maxsnl+1:,u)        ,&
+        wice_roofsno(maxsnl+1:,u)        ,wice_gimpsno(maxsnl+1:,u)        ,&
+        wice_gpersno(maxsnl+1:,u)        ,wice_lakesno(maxsnl+1:,u)        ,&
+        z_sno       (maxsnl+1:,i)        ,dz_sno      (maxsnl+1:,i)        ,&
+        wliq_soisno (maxsnl+1:,i)        ,wice_soisno (maxsnl+1:,i)        ,&
+        t_soisno    (maxsnl+1:,i)        ,t_wallsun   (1:,u)               ,&
+        t_wallsha   (1:,u)                                                 ,&
 
-       ! additional diagnostic variables for output
-         laisun(i)       ,laisha(i)                                         ,&
-         rstfac(i)       ,h2osoi(1:,i)    ,wat(i)                           ,&
+        lai(i)          ,sai(i)          ,fveg(i)         ,sigf(i)         ,&
+        green(i)        ,tleaf(i)        ,ldew(i)         ,t_grnd(i)       ,&
 
-       ! FLUXES
-         taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
-         lfevpa(i)       ,fsenl(i)        ,fevpl(i)        ,etr(i)          ,&
-         fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
-         trad(i)         ,tref(i)         ,qref(i)         ,rsur(i)         ,&
-         rnof(i)         ,qintr(i)        ,qinfl(i)        ,qdrip(i)        ,&
-         rst(i)          ,assim(i)        ,respc(i)        ,sabvsun(i)      ,&
-         sabvsha(i)      ,sabg(i)         ,sr(i)           ,solvd(i)        ,&
-         solvi(i)        ,solnd(i)        ,solni(i)        ,srvd(i)         ,&
-         srvi(i)         ,srnd(i)         ,srni(i)         ,solvdln(i)      ,&
-         solviln(i)      ,solndln(i)      ,solniln(i)      ,srvdln(i)       ,&
-         srviln(i)       ,srndln(i)       ,srniln(i)       ,qcharge(i)      ,&
-         xerr(i)         ,zerr(i)                                           ,&
+        sag_roof(u)     ,sag_gimp(u)     ,sag_gper(u)     ,sag_lake(u)     ,&
+        scv_roof(u)     ,scv_gimp(u)     ,scv_gper(u)     ,scv_lake(u)     ,&
+        snowdp_roof(u)  ,snowdp_gimp(u)  ,snowdp_gper(u)  ,snowdp_lake(u)  ,&
+        fsno_roof(u)    ,fsno_gimp(u)    ,fsno_gper(u)    ,fsno_lake(u)    ,&
+        sag(i)          ,scv(i)          ,snowdp(i)       ,fsno(i)         ,&
+        alb(1:,1:,i)    ,ssun(1:,1:,i)   ,ssha(1:,1:,i)   ,sroof(1:,1:,u)  ,&
+        swsun(1:,1:,u)  ,swsha(1:,1:,u)  ,sgimp(1:,1:,u)  ,sgper(1:,1:,u)  ,&
+        slake(1:,1:,u)  ,lwsun(u)        ,lwsha(u)        ,lgimp(u)        ,&
+        lgper(u)        ,lveg(u)         ,fwsun(u)        ,dfwsun(u)       ,&
+        t_room(u)       ,troof_inner(u)  ,twsun_inner(u)  ,twsha_inner(u)  ,&
+        t_roommax(u)    ,t_roommin(u)                                      ,&
 
-       ! TUNABLE modle constants
-         zlnd            ,zsno            ,csoilc          ,dewmx           ,&
-         wtfact          ,capr            ,cnfac           ,ssi             ,&
-         wimp            ,pondmx          ,smpmax          ,smpmin          ,&
-         trsmx0          ,tcrit                                             ,&
+        zwt(i)          ,wa(i)                                             ,&
+        t_lake(1:,i)    ,lake_icefrac(1:,i)                                ,&
 
-       ! additional variables required by coupling with WRF model
-         emis(i)         ,z0m(i)          ,zol(i)          ,rib(i)          ,&
-         ustar(i)        ,qstar(i)        ,tstar(i)                         ,&
-         fm(i)           ,fh(i)           ,fq(i)                             )
+      ! additional diagnostic variables for output
+        laisun(i)       ,laisha(i)                                         ,&
+        rstfac(i)       ,h2osoi(1:,i)    ,wat(i)                           ,&
 
-      ENDDO
+      ! FLUXES
+        taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
+        lfevpa(i)       ,fsenl(i)        ,fevpl(i)        ,etr(i)          ,&
+        fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
+        trad(i)         ,tref(i)         ,qref(i)         ,rsur(i)         ,&
+        rnof(i)         ,qintr(i)        ,qinfl(i)        ,qdrip(i)        ,&
+        rst(i)          ,assim(i)        ,respc(i)        ,sabvsun(i)      ,&
+        sabvsha(i)      ,sabg(i)         ,sr(i)           ,solvd(i)        ,&
+        solvi(i)        ,solnd(i)        ,solni(i)        ,srvd(i)         ,&
+        srvi(i)         ,srnd(i)         ,srni(i)         ,solvdln(i)      ,&
+        solviln(i)      ,solndln(i)      ,solniln(i)      ,srvdln(i)       ,&
+        srviln(i)       ,srndln(i)       ,srniln(i)       ,qcharge(i)      ,&
+        xerr(i)         ,zerr(i)                                           ,&
+
+      ! TUNABLE modle constants
+        zlnd            ,zsno            ,csoilc          ,dewmx           ,&
+        wtfact          ,capr            ,cnfac           ,ssi             ,&
+        wimp            ,pondmx          ,smpmax          ,smpmin          ,&
+        trsmx0          ,tcrit                                             ,&
+
+      ! additional variables required by coupling with WRF model
+        emis(i)         ,z0m(i)          ,zol(i)          ,rib(i)          ,&
+        ustar(i)        ,qstar(i)        ,tstar(i)        ,fm(i)           ,&
+        fh(i)           ,fq(i)                                              )
+      ENDIF
+   ENDDO
 
 #ifdef OPENMP
 !$OMP END PARALLEL DO

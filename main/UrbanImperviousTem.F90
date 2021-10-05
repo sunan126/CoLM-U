@@ -1,8 +1,7 @@
 
  SUBROUTINE UrbanImperviousTem (patchtype,lb,deltim, &
                                 capr,cnfac,csol,porsl,dkdry,dksatu,&
-                                dz_gimpsno,z_gimpsno,zi_gimpsno,&
-                                cv_gimp,tk_gimp,&
+                                cv_gimp,tk_gimp,dz_gimpsno,z_gimpsno,zi_gimpsno,&
                                 t_gimpsno,wice_gimpsno,wliq_gimpsno,scv_gimp,snowdp_gimp,&
                                 lgimp,clgimp,sabgimp,fsengimp,fevpgimp,cgimp,htvp,&
                                 imelt,sm,xmf,fact)
@@ -25,7 +24,7 @@
 !   method and resulted in a tridiagonal system equation.
 !
 ! Phase change (see meltf.F90)
-! 
+!
 ! Original author : Yongjiu Dai, 09/15/1999; 08/30/2002; 05/2020
 !=======================================================================
 
@@ -37,7 +36,6 @@
   IMPLICIT NONE
 
   INTEGER, intent(in) :: lb        !lower bound of array
-  !INTEGER, intent(in) :: nl_soil   !upper bound of array
   INTEGER, intent(in) :: patchtype !land water TYPE (0=soil,1=urban or built-up,2=wetland,
                                    !3=land ice, 4=deep lake, 5=shallow lake)
   REAL(r8), intent(in) :: deltim   !seconds in a time step [second]
@@ -50,12 +48,12 @@
   REAL(r8), intent(in) :: dkdry (1:nl_soil) !thermal conductivity of dry soil [W/m-K]
   REAL(r8), intent(in) :: dksatu(1:nl_soil) !thermal conductivity of saturated soil [W/m-K]
 
+  REAL(r8), intent(in) :: cv_gimp(1:nl_soil)       !heat capacity of urban impervious [J/m3/K]
+  REAL(r8), intent(in) :: tk_gimp(1:nl_soil)       !thermal conductivity of urban impervious [W/m/K]
+
   REAL(r8), intent(in) :: dz_gimpsno(lb:nl_soil)   !layer thickiness [m]
   REAL(r8), intent(in) :: z_gimpsno (lb:nl_soil)   !node depth [m]
   REAL(r8), intent(in) :: zi_gimpsno(lb-1:nl_soil) !interface depth [m]
-
-  REAL(r8), intent(in) :: cv_gimp(1:nl_soil)       !heat capacity of urban impervious [J/m3/K]
-  REAL(r8), intent(in) :: tk_gimp(1:nl_soil)       !thermal conductivity of urban impervious [W/m/K]
 
   REAL(r8), intent(in) :: sabgimp  !solar radiation absorbed by ground [W/m2]
   REAL(r8), intent(in) :: lgimp    !atmospheric infrared (longwave) radiation [W/m2]
@@ -101,7 +99,7 @@
       wliq_gimpsno(2:) = 0.0 !liquid water [kg/m2]
 
 !=======================================================================
-! heat capacity 
+! heat capacity
       CALL hCapacity (patchtype,lb,nl_soil,csol,porsl,wice_gimpsno,wliq_gimpsno,scv_gimp,dz_gimpsno,cv)
 
 ! thermal conductivity
@@ -111,7 +109,7 @@
 
       WHERE (tk_gimp > 0.) tk(1:) = tk_gimp(1:)
       WHERE (cv_gimp > 0.) cv(1:) = cv_gimp(1:)*dz_gimpsno(1:)
-         
+
       IF (lb == 1 .and. scv_gimp > 0.0) THEN
          cv(1) = cv(1) + cpice*scv_gimp
       ELSE
@@ -120,9 +118,9 @@
       ENDIF
 
 ! net ground heat flux into the surface and its temperature derivative
-      hs = sabgimp + lgimp - (fsengimp+fevpgimp*htvp) 
+      hs = sabgimp + lgimp - (fsengimp+fevpgimp*htvp)
       dhsdT = - cgimp + clgimp
-      
+
       t_gimpsno_bef(lb:) = t_gimpsno(lb:)
 
       j       = lb
@@ -165,10 +163,10 @@
 
 ! solve for t_gimpsno
       i = size(at)
-      CALL tridia (i ,at ,bt ,ct ,rt ,t_gimpsno) 
+      CALL tridia (i ,at ,bt ,ct ,rt ,t_gimpsno)
 
 !=======================================================================
-! melting or freezing 
+! melting or freezing
 !=======================================================================
 
       DO j = lb, nl_soil - 1
@@ -183,9 +181,9 @@
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       ENDDO
 
-      CALL meltf (lb,0,deltim, &
-                  fact(lb:0),brr(lb:0),hs,dhsdT, &
-                  t_gimpsno_bef(lb:0),t_gimpsno(lb:0),wliq_gimpsno(lb:0),wice_gimpsno(lb:0),imelt(lb:0), &
+      CALL meltf (lb,1,deltim, &
+                  fact(lb:1),brr(lb:1),hs,dhsdT, &
+                  t_gimpsno_bef(lb:1),t_gimpsno(lb:1),wliq_gimpsno(lb:1),wice_gimpsno(lb:1),imelt(lb:1), &
                   scv_gimp,snowdp_gimp,sm,xmf)
 
  END SUBROUTINE UrbanImperviousTem

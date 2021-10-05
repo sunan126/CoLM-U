@@ -22,12 +22,12 @@ MODULE UrbanALBEDO
                        fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
                        scv_roof,scv_gimp,scv_gper,scv_lake,&
                        sag_roof,sag_gimp,sag_gper,sag_lake,&
-                       dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake) 
+                       dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake)
 
 !=======================================================================
 ! Calculates fragmented albedos (direct and diffuse) in
 ! wavelength regions split at 0.7um.
-! 
+!
 ! (1) snow albedos: as in BATS formulations, which are inferred from
 !     the calculations of Wiscombe and Warren (1980) and the snow model
 !     and data of Anderson(1976), and the function of snow age, grain size,
@@ -43,7 +43,7 @@ MODULE UrbanALBEDO
   USE precision
   USE PhysicalConstants, only: tfrz
   USE UrbanShortwave
-  
+
   IMPLICIT NONE
 
 !------------------------- Dummy Arguments -----------------------------
@@ -51,20 +51,20 @@ MODULE UrbanALBEDO
  INTEGER, intent(in) :: &
       ipatch          ! patch index
 
- REAL(r8), intent(in) :: & 
+ REAL(r8), intent(in) :: &
       froof,         &! roof fraction
       fgimp,         &! impervious ground weight fraction
       flake,         &! lake fraction
       hwr,           &! average building height to their distance
       btop            ! average building height
 
- REAL(r8), intent(in) :: & 
+ REAL(r8), intent(in) :: &
       alb_roof(2,2), &! roof albedo (iband,direct/diffuse)
       alb_wall(2,2), &! wall albedo (iband,direct/diffuse)
       alb_gimp(2,2), &! impervious albedo (iband,direct/diffuse)
       alb_gper(2,2)   ! pervious albedo (iband,direct/diffuse)
- 
- REAL(r8), intent(in) :: & 
+
+ REAL(r8), intent(in) :: &
       rho(2,2),  &! leaf reflectance (iw=iband, il=life and dead)
       tau(2,2),  &! leaf transmittance (iw=iband, il=life and dead)
       fveg,      &! fractional vegetation cover [-]
@@ -111,7 +111,7 @@ MODULE UrbanALBEDO
       conn,      &! constant (=0.5) for visible snow alb calculation [-]
       cons,      &! constant (=0.2) for nir snow albedo calculation [-]
       czen,      &! cosine of solar zenith angle > 0 [-]
-      theta,     &! solar zenith angle 
+      theta,     &! solar zenith angle
       fwsun_,    &! sunlit wall fraction
       czf,       &! solar zenith correction for new snow albedo [-]
       dfalbl,    &! snow albedo for diffuse nir radiation [-]
@@ -130,7 +130,7 @@ MODULE UrbanALBEDO
       albgimp(2,2), &! albedo, ground
       albgper(2,2), &! albedo, ground
       alblake(2,2)   ! albedo, ground
- 
+
 ! ----------------------------------------------------------------------
 ! 1. Initial set
 ! ----------------------------------------------------------------------
@@ -141,24 +141,35 @@ MODULE UrbanALBEDO
 
 ! ----------------------------------------------------------------------
 ! set default soil and vegetation albedos and solar absorption
-      alb (:,:) = 0. ! averaged
-      ssun(:,:) = 0.
-      ssha(:,:) = 0.
+      alb (:,:)  = 0. ! averaged
+      ssun(:,:)  = 0.
+      ssha(:,:)  = 0.
+      sroof(:,:) = 0.
+      swsun(:,:) = 0.
+      swsha(:,:) = 0.
+      sgimp(:,:) = 0.
+      sgper(:,:) = 0.
+      slake(:,:) = 0.
+
+      dfwsun = 0.
 
       IF(coszen<=0.) THEN
          !print *, "coszen < 0, ipatch and coszen: ", ipatch, coszen
          RETURN  !only do albedo when coszen > 0
       ENDIF
 
-      czen=max(coszen,0.001) 
+      czen=max(coszen,0.001)
       albsno(:,:)=0.      !set initial snow albedo
       cons = 0.2          !parameter for snow albedo
       conn = 0.5          !parameter for snow albedo
       sl  = 2.0           !sl helps control albedo zenith dependence
 
-      erho(:) = rho(:,1)*lai/(lai+sai) + rho(:,2)*sai/(lai+sai)
-      etau(:) = tau(:,1)*lai/(lai+sai) + tau(:,2)*sai/(lai+sai)
-      
+      ! effective leaf optical properties: rho and tau.
+      IF (lai+sai>1.e-6 .and. fveg>0.) THEN
+         erho(:) = rho(:,1)*lai/(lai+sai) + rho(:,2)*sai/(lai+sai)
+         etau(:) = tau(:,1)*lai/(lai+sai) + tau(:,2)*sai/(lai+sai)
+      ENDIF
+
 ! ----------------------------------------------------------------------
 ! 2. get albedo over water, roof, ground
 ! ----------------------------------------------------------------------
@@ -172,7 +183,7 @@ MODULE UrbanALBEDO
          alblake(1,:) = 0.6
          alblake(2,:) = 0.4
       ENDIF
-      
+
       IF (scv_lake > 0.) THEN
 
          ! correction for snow age
@@ -187,7 +198,7 @@ MODULE UrbanALBEDO
          dfalbl = snal1*(1.-conn*age)
          czf    = 0.4*cff*(1.-dfalbl)
          dralbl = dfalbl+czf
-   
+
          albsno(1,1) = dralbs
          albsno(2,1) = dralbl
          albsno(1,2) = dfalbs
@@ -213,7 +224,7 @@ MODULE UrbanALBEDO
          dfalbl = snal1*(1.-conn*age)
          czf    = 0.4*cff*(1.-dfalbl)
          dralbl = dfalbl+czf
-   
+
          albsno(1,1) = dralbs
          albsno(2,1) = dralbl
          albsno(1,2) = dfalbs
@@ -238,7 +249,7 @@ MODULE UrbanALBEDO
          dfalbl = snal1*(1.-conn*age)
          czf    = 0.4*cff*(1.-dfalbl)
          dralbl = dfalbl+czf
-   
+
          albsno(1,1) = dralbs
          albsno(2,1) = dralbl
          albsno(1,2) = dfalbs
@@ -263,7 +274,7 @@ MODULE UrbanALBEDO
          dfalbl = snal1*(1.-conn*age)
          czf    = 0.4*cff*(1.-dfalbl)
          dralbl = dfalbl+czf
-   
+
          albsno(1,1) = dralbs
          albsno(2,1) = dralbl
          albsno(1,2) = dfalbs
@@ -271,16 +282,16 @@ MODULE UrbanALBEDO
 
       ENDIF
 
-      albgimp(:,:) = (1.-fsno_gper)*alb_gper(:,:) + fsno_gper*albsno(:,:)
+      albgper(:,:) = (1.-fsno_gper)*alb_gper(:,:) + fsno_gper*albsno(:,:)
 
 ! ----------------------------------------------------------------------
 ! 3. Urban albedo
 ! ----------------------------------------------------------------------
 
-      theta = acos(coszen)
-      
+      theta = acos(czen)
+
       ! 区分无植被和包含植被情况
-      IF ( lai+sai>1.e-6 .and. fveg>0. ) THEN 
+      IF (lai+sai>1.e-6 .and. fveg>0.) THEN
 
          CALL UrbanVegShortwave ( &
             theta, hwr, froof, fgimp, btop, &
@@ -295,7 +306,7 @@ MODULE UrbanALBEDO
             lai, sai, fveg, hveg, erho(2), etau(2), &
             fwsun_, sroof(2,:), swsun(2,:), swsha(2,:), sgimp(2,:), &
             sgper(2,:), ssun(2,:), alb(2,:))
-      ELSE 
+      ELSE
 
          CALL UrbanOnlyShortwave ( &
             theta, hwr, froof, fgimp, btop, &
@@ -310,7 +321,7 @@ MODULE UrbanALBEDO
             sgper(2,:), alb(2,:))
 
          ssun(:,:) = 0.
-      ENDIF 
+      ENDIF
 
       dfwsun = fwsun_ - fwsun
 

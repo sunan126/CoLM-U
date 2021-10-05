@@ -55,14 +55,14 @@ MODULE UrbanFlux
      USE PhysicalConstants, only: cpair,vonkar,grav
      USE FRICTION_VELOCITY
      IMPLICIT NONE
- 
+
 !----------------------- Dummy argument --------------------------------
      INTEGER, intent(in) :: &
         ipatch     ! patch index [-]
-     
+
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
-  
+
      ! atmospherical variables and observational height
      REAL(r8), intent(in) :: &
         hu,       &! observational height of wind [m]
@@ -76,7 +76,7 @@ MODULE UrbanFlux
         qm,       &! specific humidity at agcm reference height [kg/kg]
         psrf,     &! atmosphere pressure at the surface [pa] [not used]
         rhoair     ! density air [kg/m3]
-     
+
      REAL(r8), intent(in) :: &
         Fhac,     &!
         Fwst,     &!
@@ -91,7 +91,7 @@ MODULE UrbanFlux
         hlr,      &! average building height to length of side [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:4)! coverage of aboveground urban components [-]
-        
+
      ! 地面状态
      REAL(r8), intent(in) :: &
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
@@ -105,13 +105,13 @@ MODULE UrbanFlux
         htvp_roof,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gimp,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gper,&! latent heat of vapor of water (or sublimation) [j/kg]
-        
+
         troof,    &! temperature of roof [K]
         twsun,    &! temperature of sunlit wall [K]
         twsha,    &! temperature of shaded wall [K]
         tgimp,    &! temperature of impervious road [K]
         tgper,    &! pervious ground temperature [K]
-        
+
         qroof,    &! roof specific humidity [kg/kg]
         qgimp,    &! imperivous road specific humidity [kg/kg]
         qgper,    &! pervious ground specific humidity [kg/kg]
@@ -131,7 +131,7 @@ MODULE UrbanFlux
         fevproof, &! evaperation heat flux from roof [W/m2]
         fevpgimp, &! evaperation heat flux from impervious road [W/m2]
         fevpgper, &! evaporation heat flux from pervious ground [mm/s]
-        
+
         croofs,   &! deriv of roof sensible heat flux wrt soil temp [w/m**2/k]
         cwalls,   &! deriv of wall sensible heat flux wrt soil temp [w/m**2/k]
         cgrnds,   &! deriv of soil sensible heat flux wrt soil temp [w/m**2/k]
@@ -141,7 +141,7 @@ MODULE UrbanFlux
         croof,    &! deriv of roof total heat flux wrt soil temp [w/m**2/k]
         cgimp,    &! deriv of gimp total heat flux wrt soil temp [w/m**2/k]
         cgper,    &! deriv of soil total heat flux wrt soil temp [w/m**2/k]
-        
+
         tref,     &! 2 m height air temperature [kelvin]
         qref,     &! 2 m height air humidity [kg/kg]
 
@@ -157,7 +157,7 @@ MODULE UrbanFlux
         tafu       !
 
 !------------------------ LOCAL VARIABLES ------------------------------
-     INTEGER ::   &  
+     INTEGER ::   &
         niters,   &! maximum number of iterations for surface temperature
         iter,     &! iteration index
         nmozsgn    ! number of times moz changes sign
@@ -202,7 +202,7 @@ MODULE UrbanFlux
         numlay     ! available layer number
 
      REAL(r8) ::  &
-        ktop,     &! K value at a specific height 
+        ktop,     &! K value at a specific height
         utop,     &! u value at a specific height
         fht,      &! integral of profile function for heat at the top layer
         fqt,      &! integral of profile function for moisture at the top layer
@@ -210,7 +210,7 @@ MODULE UrbanFlux
         phih,     &! phi(h), similarity function for sensible heat
         displa,   &! displacement height for urban
         displau,  &! displacement height for urban building
-        z0mu,     &! roughless length 
+        z0mu,     &! roughless length
         z0hu,     &! roughless length for sensible heat
         z0qu,     &! roughless length for latent heat
         tg,       &! ground temperature
@@ -224,7 +224,7 @@ MODULE UrbanFlux
         fai,      &! frontal area index
         fwet,     &! fractional wet area
         delta,    &! 0 or 1
-        alpha      ! exponential extinction factor for u/k decline within canopy 
+        alpha      ! exponential extinction factor for u/k decline within canopy
 
      REAL(r8), dimension(0:nurb) :: &
         tu,       &! termperature array
@@ -242,7 +242,7 @@ MODULE UrbanFlux
         qsatldT    ! derivative of "qsatl" on "tlef"
 
      REAL(r8), dimension(nlay) :: &
-        fah,      &! weight for thermal resistance to upper layer 
+        fah,      &! weight for thermal resistance to upper layer
         faw,      &! weight for moisture resistance to upper layer
         fgh,      &! weight for thermal resistance to lower layer
         fgw,      &! weight for moisture resistance to lower layer
@@ -262,12 +262,12 @@ MODULE UrbanFlux
         wtg0,     &! normalized heat conductance for ground [-]
         wtaq0,    &! normalized latent heat conductance for air [-]
         wtgq0,    &! normalized heat conductance for ground [-]
-        wtll,     &! sum of normalized heat conductance for air and leaf 
-        wtlql      ! sum of normalized heat conductance for air and leaf 
-  
+        wtll,     &! sum of normalized heat conductance for air and leaf
+        wtlql      ! sum of normalized heat conductance for air and leaf
+
      ! temporal
      INTEGER i
-     REAL(r8) bee, tmpw1, tmpw2, fact, facq 
+     REAL(r8) bee, tmpw1, tmpw2, fact, facq
 
 !-----------------------End Variable List-------------------------------
 
@@ -290,7 +290,7 @@ MODULE UrbanFlux
         z0mg = zsno
      ELSE
         z0mg = zlnd
-     ENDIF 
+     ENDIF
      z0hg = z0mg
      z0qg = z0mg
 
@@ -352,8 +352,8 @@ MODULE UrbanFlux
      ! 比较地面和城市的z0m和displa大小，取大者
      ! maximum assumption
      IF (z0mu < z0mg) z0mu = z0mg
-      
-     ! roughness length and displacement height for sensible 
+
+     ! roughness length and displacement height for sensible
      ! and latent heat transfer
      z0m = z0mu
 
@@ -375,7 +375,7 @@ MODULE UrbanFlux
 ! a large differece from previous schemes
 !-----------------------------------------------------------------------
 
-     IF (numlay .eq. 2) THEN 
+     IF (numlay .eq. 2) THEN
         taf(3) = (tg + 2.*thm)/3.
         qaf(3) = (qg + 2.*qm )/3.
         taf(2) = (2.*tg + thm)/3.
@@ -397,11 +397,11 @@ MODULE UrbanFlux
      ENDIF
 
      CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mu,um,obu)
-     
+
      niters=6
 
 ! ======================================================================
-!    BEGIN stability iteration 
+!    BEGIN stability iteration
 ! ======================================================================
 
      ITERATION : DO iter = 1, niters         !begin stability iteration
@@ -419,17 +419,17 @@ MODULE UrbanFlux
 ! Aerodynamic resistance
         ! 09/16/2017:
         ! note that for ram, it is the resistance from Href to z0mv+displa
-        ! however, for rah and raw is only from Href to canopy effective 
+        ! however, for rah and raw is only from Href to canopy effective
         ! exchange height.
         ! for Urban: from Href to roof height
         ! so rah/raw is not comparable with that of 1D case
         ram = 1./(ustar*ustar/um)
 
-        ! 05/02/2016: calculate resistance from the top layer (effective exchange 
+        ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for Urban: from roof height to reference height
-        rah = 1./(vonkar/(fh-fht)*ustar) 
-        raw = 1./(vonkar/(fq-fqt)*ustar) 
+        rah = 1./(vonkar/(fh-fht)*ustar)
+        raw = 1./(vonkar/(fq-fqt)*ustar)
 
         ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -439,7 +439,7 @@ MODULE UrbanFlux
         z0qu = max(z0qg, z0qu)
 
 !-----------------------------------------------------------------------
-! new method to calculate rd and ueff
+! new method to calculate rd and ueffect
 ! the kernel part of 3d model
 !-----------------------------------------------------------------------
 
@@ -454,37 +454,34 @@ MODULE UrbanFlux
         utop = ustar/vonkar * fmtop
         ktop = vonkar * (btop-displa) * ustar / phih
 
-        ueff_lay(3)  = utop 
-        ueff_lay_(3) = utop
+        !ueff_lay(3)  = utop
+        ueff_lay(3) = utop
 
         !REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
-           btop, 0., obug, ustarg, btop, displa+z0m)
-         
+        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
+        !   btop, 0., obug, ustarg, btop, displa+z0m)
+
         !REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd_(3) = frd(ktop, btop, 0., btop, displa+z0m, 0., z0h_g, &
+        rd(3) = frd(ktop, btop, 0., btop, displa+z0m, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
-        !REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, &
-        !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, &
-           displa/z0m, btop, 0., obug, ustarg, btop, z0mg)
+        !REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
 
-        !REAL(r8) FUNCTION ueff(utop, htop, hbot, &
-        !      ztop, zbot, z0mg, alpha, bee, fc)
-        ueff_lay_(2) = ueff(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
+        !REAL(r8) FUNCTION ueffect(utop, htop, hbot, ztop, zbot, z0mg, alpha, bee, fc)
+        ueff_lay(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
 
-        rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
-           btop, 0., obug, ustarg, displa+z0m, z0qg)
-        rd_(2) = frd(ktop, btop, 0., displa+z0m, z0qg, 0., z0h_g, &
+        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
+        !   btop, 0., obug, ustarg, displa+z0m, z0qg)
+        rd(2) = frd(ktop, btop, 0., displa+z0m, z0qg, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
-        print *, "------------------------"
-        print *, "rd :", rd
-        print *, "rd_:", rd_
+        !print *, "------------------------"
+        !print *, "rd :", rd
+        !print *, "rd_:", rd_
 
 !-----------------------------------------------------------------------
 ! Bulk boundary layer resistance of leaves
@@ -502,11 +499,11 @@ MODULE UrbanFlux
 ! for canopy and soil flux calculations.
 !-----------------------------------------------------------------------
 
-        !NOTE: 0: roof, 1: sunlit wall, 2: shaded wall, 
+        !NOTE: 0: roof, 1: sunlit wall, 2: shaded wall,
         !      3: impervious road, 4: pervious road, 5: veg
         cfh(:) = 0.
         cfw(:) = 0.
-         
+
         DO i = 0, nurb
            cfh(i) = 1 / rb(i)
            cfw(i) = 1 / rb(i)
@@ -528,7 +525,7 @@ MODULE UrbanFlux
               caw(i) = 1. / raw
            ELSE
               cah(i) = 1. / rd(i+1)
-              caw(i) = 1. / rd(i+1) 
+              caw(i) = 1. / rd(i+1)
            ENDIF
 
            cgh(i) = 1. / rd(i)
@@ -570,16 +567,17 @@ MODULE UrbanFlux
            wtlql(clev) = wtlql(clev) + wtlq0(i)*qsatl(i)
         ENDDO
 
-        IF (numlay .eq. 2) THEN 
+        IF (numlay .eq. 2) THEN
 
            ! 06/20/2021, yuan: 考虑人为热
            !tmpw1  = wtg0(2)*tg + wtll(2)
-           tmpw1  = wtg0(2)*tg + wtll(2) + wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)
+           tmpw1  = wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(2/3.*(Fhac+Fwst)-Fach)/rhoair/cpair
            fact   = 1. - wtg0(3)*wta0(2)
            ! 06/20/2021, yuan: 考虑人为热
            !taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
            taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) + &
-                      wtshi(3)*1/3.*(Fhac+Fwst) ) / fact
+                      wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair ) / fact
 
            tmpw1  = wtgq0(2)*qg + wtlql(2)
            facq   = 1. - wtgq0(3)*wtaq0(2)
@@ -589,7 +587,7 @@ MODULE UrbanFlux
            qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg + wtlql(2)
            !taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
            taf(2) = wta0 (2)*taf(3) + wtg0 (2)*tg + wtll (2)
-           taf(2) = taf(2)+ wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)
+           taf(2) = taf(2)+ wtshi(2)*(2/3.*(Fhac+Fwst)-Fach)/rhoair/cpair
 
         ENDIF
 
@@ -630,21 +628,21 @@ MODULE UrbanFlux
      ENDDO ITERATION                         !end stability iteration
 
 ! ======================================================================
-!    END stability iteration 
+!    END stability iteration
 ! ======================================================================
 
      z0m = z0mu
      zol = zeta
      rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
-     ! sensible heat fluxes 
+     ! sensible heat fluxes
      fsenroof = rhoair * cpair * cfh(0) * (troof - taf(3))
      fsenwsun = rhoair * cpair * cfh(1) * (twsun - taf(2))
      fsenwsha = rhoair * cpair * cfh(2) * (twsha - taf(2))
-     
+
      ! latent heat fluxes
      fevproof = rhoair * cfw(0) * ( qsatl(0) - qaf(3) )
-     
+
      !taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
      !taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
      croofs = rhoair * cpair * cfh(0) * ( 1 - wtl0(0)/fact )
@@ -652,7 +650,7 @@ MODULE UrbanFlux
 
      ! qaf(3) = ( wtaq0(3)*qm + wtgq0(3)*tmpw1 + wtlql(3) ) / facq
      croofl = rhoair * cfw(0) * ( 1 - wtlq0(0)/facq ) * qsatldT(0)
-     
+
      croof = croofs + croofl*htvp_roof
 
 #if(defined CLMDEBUG)
@@ -661,7 +659,7 @@ MODULE UrbanFlux
      tafu = taf(2)
 
 !-----------------------------------------------------------------------
-! wind stresses 
+! wind stresses
 !-----------------------------------------------------------------------
 
      taux = - rhoair*us/ram
@@ -697,12 +695,12 @@ MODULE UrbanFlux
 ! 2 m height air temperature
 !-----------------------------------------------------------------------
 
-     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar) 
+     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
 
   END SUBROUTINE UrbanOnlyFlux
 
-  
+
   SUBROUTINE  UrbanVegFlux ( &
         ! 模型运行信息
         ipatch      ,deltim                                ,&
@@ -755,7 +753,7 @@ MODULE UrbanFlux
 !-----------------------Arguments---------------------------------------
      INTEGER,  intent(in) :: &
         ipatch     ! patch index
-     
+
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
 
@@ -794,7 +792,7 @@ MODULE UrbanFlux
         hlr,      &! average building height to length of side [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:5)! coverage of aboveground urban components [-]
-     
+
      REAL(r8), intent(in) :: &
         ewall,    &! emissivity of walls
         egimp,    &! emissivity of impervious road
@@ -838,13 +836,13 @@ MODULE UrbanFlux
         htvp_roof,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gimp,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gper,&! latent heat of vapor of water (or sublimation) [j/kg]
-        
+
         troof,    &! temperature of roof [K]
         twsun,    &! temperature of sunlit wall [K]
         twsha,    &! temperature of shaded wall [K]
         tgimp,    &! temperature of impervious road [K]
         tgper,    &! pervious ground temperature [K]
-        
+
         qroof,    &! roof specific humidity [kg/kg]
         qgimp,    &! imperivous road specific humidity [kg/kg]
         qgper,    &! pervious ground specific humidity [kg/kg]
@@ -852,7 +850,7 @@ MODULE UrbanFlux
         dqgimpdT, &! d(qgimp)/dT
         dqgperdT, &! d(qgper)/dT
         sigf       !
-        
+
      REAL(r8), intent(inout) :: &
         tl,       &! leaf temperature [K]
         ldew       ! depth of water on foliage [mm]
@@ -939,7 +937,7 @@ MODULE UrbanFlux
         beta,     &! coefficient of conective velocity [-]
         wc,       &! convective velocity [m/s]
         wc2,      &! wc**2
-        dth,      &! diff of virtual temp. between ref. height and surface 
+        dth,      &! diff of virtual temp. between ref. height and surface
         dthv,     &! diff of vir. poten. temp. between ref. height and surface
         dqh,      &! diff of humidity between ref. height and surface
         obu,      &! monin-obukhov length (m)
@@ -975,10 +973,10 @@ MODULE UrbanFlux
         gdh2o,    &! conductance between canopy and ground
         tprcor     ! tf*psur*100./1.013e5
 
-     INTEGER it, nmozsgn 
+     INTEGER it, nmozsgn
 
      REAL(r8) evplwet, evplwet_dtl, etr_dtl, elwmax, elwdif
-     REAL(r8) irab, dirab_dtl, fsenl_dtl, fevpl_dtl  
+     REAL(r8) irab, dirab_dtl, fsenl_dtl, fevpl_dtl
      REAL(r8) z0mg, z0hg, z0qg, cint(3)
      REAL(r8) fevpl_bef, fevpl_noadj, dtl_noadj, erre
 
@@ -991,9 +989,9 @@ MODULE UrbanFlux
         toplay,   &! top layer index
         botlay,   &! botom layer index
         numlay     ! available layer number
-     
+
      REAL(r8) ::  &
-        ktop,     &! K value at a specific height 
+        ktop,     &! K value at a specific height
         utop,     &! u value at a specific height
         fht,      &! integral of profile function for heat at the top layer
         fqt,      &! integral of profile function for moisture at the top layer
@@ -1018,8 +1016,8 @@ MODULE UrbanFlux
         lsai,     &! lai+sai
         fwet,     &! fractional wet area
         delta,    &! 0 or 1
-        alpha      ! exponential extinction factor for u/k decline within canopy 
-     
+        alpha      ! exponential extinction factor for u/k decline within canopy
+
      REAL(r8) ::  &
         lwsun_bef,&! change of lw for the last time
         lwsha_bef,&! change of lw for the last time
@@ -1041,9 +1039,9 @@ MODULE UrbanFlux
         deidT,    &! derivative of "ei" on "tl" [pa/K]
         qsatl,    &! leaf specific humidity [kg/kg]
         qsatldT    ! derivative of "qsatl" on "tlef"
-     
+
      REAL(r8), dimension(nlay) :: &
-        fah,      &! weight for thermal resistance to upper layer 
+        fah,      &! weight for thermal resistance to upper layer
         faw,      &! weight for moisture resistance to upper layer
         fgh,      &! weight for thermal resistance to lower layer
         fgw,      &! weight for moisture resistance to lower layer
@@ -1063,9 +1061,9 @@ MODULE UrbanFlux
         wtg0,     &! normalized heat conductance for ground [-]
         wtaq0,    &! normalized latent heat conductance for air [-]
         wtgq0,    &! normalized heat conductance for ground [-]
-        wtll,     &! sum of normalized heat conductance for air and leaf 
-        wtlql      ! sum of normalized heat conductance for air and leaf 
-     
+        wtll,     &! sum of normalized heat conductance for air and leaf
+        wtlql      ! sum of normalized heat conductance for air and leaf
+
      ! temporal
      INTEGER i
      REAL(r8) bee, cf, tmpw1, tmpw2, fact, facq
@@ -1089,7 +1087,7 @@ MODULE UrbanFlux
         z0mg = zsno
      ELSE
         z0mg = zlnd
-     ENDIF 
+     ENDIF
      z0hg = z0mg
      z0qg = z0mg
 
@@ -1135,6 +1133,12 @@ MODULE UrbanFlux
         CALL qsadv(tu(i),psrf,ei(i),deiDT(i),qsatl(i),qsatldT(i))
      ENDDO
 
+     ! 保留上次长波辐射
+     lwsun_bef = lwsun
+     lwsha_bef = lwsha
+     lgimp_bef = lgimp
+     lgper_bef = lgper
+     lveg_bef  = lveg
 !-----------------------------------------------------------------------
 ! 计算加权平均的qg, tg
 !-----------------------------------------------------------------------
@@ -1144,7 +1148,7 @@ MODULE UrbanFlux
      faw(1) =  1; faw(2) = fg; faw(3) = fg
      fgh(1) = fg; fgh(2) = fg; fgh(3) = fg
      fgw(1) = fg; fgw(2) = fg; fgw(3) = fg
-      
+
      ! 加权后的qg, tg
      tg = ( tgimp*fcover(3) + tgper*fcover(4) ) / fgh(3)
      qg = ( qgimp*fcover(3) + qgper*fcover(4) ) / fgw(3)
@@ -1191,7 +1195,7 @@ MODULE UrbanFlux
      ! 层次设定
      IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
-     ELSE 
+     ELSE
         numlay = 3; botlay = 1
      ENDIF
 
@@ -1204,7 +1208,7 @@ MODULE UrbanFlux
 
      ! Kondo, 1971
      alpha = btop/(btop-displa)/(vonkar/sqrtdragc)
-    
+
      displau = max(btop/2., displau)
 
 !-----------------------------------------------------------------------
@@ -1214,14 +1218,14 @@ MODULE UrbanFlux
      taf(:) = 0.
      qaf(:) = 0.
 
-     IF (numlay .eq. 2) THEN 
+     IF (numlay .eq. 2) THEN
         taf(botlay) = (2.*tg + thm)/3.
         qaf(botlay) = (2.*qg + qm )/3.
         taf(toplay) = (tg + 2.*thm)/3.
         qaf(toplay) = (qg + 2.*qm )/3.
      ENDIF
 
-     IF (numlay .eq. 3) THEN 
+     IF (numlay .eq. 3) THEN
         taf(1) = (3.*tg + thm)/4.
         qaf(1) = (3.*qg + qm )/4.
         taf(2) = (tg + thm )/2.
@@ -1259,12 +1263,11 @@ MODULE UrbanFlux
      CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mu,um,obu)
 
 ! ======================================================================
-!    BEGIN stability iteration 
+!    BEGIN stability iteration
 ! ======================================================================
 
-     DO WHILE (it .le. itmax) 
+     DO WHILE (it .le. itmax)
 
-        !print *,"iteration index:", it
         tlbef = tl
 
         del2  = del
@@ -1281,16 +1284,16 @@ MODULE UrbanFlux
 ! Aerodynamic resistance
         ! 09/16/2017:
         ! note that for ram, it is the resistance from Href to z0mu+displa
-        ! however, for rah and raw is only from Href to canopy effective 
+        ! however, for rah and raw is only from Href to canopy effective
         ! exchange height.
         ! so rah/raw is not comparable with that of 1D case
         ram = 1./(ustar*ustar/um)
 
-        ! 05/02/2016: calculate resistance from the top layer (effective exchange 
+        ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for urban, from roof height to reference height
-        rah = 1./(vonkar/(fh-fht)*ustar) 
-        raw = 1./(vonkar/(fq-fqt)*ustar) 
+        rah = 1./(vonkar/(fh-fht)*ustar)
+        raw = 1./(vonkar/(fq-fqt)*ustar)
 
 ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -1300,7 +1303,7 @@ MODULE UrbanFlux
         z0qu = max(z0qg, z0qu)
 
 !-----------------------------------------------------------------------
-! new method to calculate rd and ueff
+! new method to calculate rd and ueffect
 ! the kernel part of 3d model
 !-----------------------------------------------------------------------
 
@@ -1315,59 +1318,56 @@ MODULE UrbanFlux
         utop = ustar/vonkar * fmtop
         ktop = vonkar * (btop-displa) * ustar / phih
 
-        ueff_lay(3)  = utop 
-        ueff_lay_(3) = utop 
+        ueff_lay(3)  = utop
+        ueff_lay_(3) = utop
 
         ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-           btop, 0., obug, ustarg, btop, displau+z0mu)
+        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
+        !   btop, 0., obug, ustarg, btop, displau+z0mu)
 
         ! REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd_(3) = frd(ktop, btop, 0., btop, displau+z0mu, 0., z0h_g, &
+        rd(3) = frd(ktop, btop, 0., btop, displau+z0mu, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
-        ! REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, &
-        !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, &
-           displau/btop, btop, 0., obug, ustarg, btop, z0mg)
+        ! REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
 
-        ! REAL(r8) FUNCTION ueff(utop, htop, hbot, &
+        ! REAL(r8) FUNCTION ueffect(utop, htop, hbot, &
         !      ztop, zbot, z0mg, alpha, bee, fc)
-        ueff_lay_(2) = ueff(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
+        ueff_lay(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
 
         IF (numlay == 3) THEN
            ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
            !      displah, htop, hbot, obu, ustar, ztop, zbot)
-           rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-              btop, 0., obug, ustarg, displau+z0mu, displav+z0mv)
-           rd_(2) = frd(ktop, btop, 0., displau+z0mu, displav+z0mv,0., z0h_g, &
+           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
+           !   btop, 0., obug, ustarg, displau+z0mu, displav+z0mv)
+           rd(2) = frd(ktop, btop, 0., displau+z0mu, displav+z0mv,0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-              btop, 0., obug, ustarg, displav+z0mv, z0qg)
-           rd_(1) = frd(ktop, btop, 0., displav+z0mv, z0qg, 0., z0h_g, &
+           !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
+           !   btop, 0., obug, ustarg, displav+z0mv, z0qg)
+           rd(1) = frd(ktop, btop, 0., displav+z0mv, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ELSE
-           rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-              btop, 0., obug, ustarg, displau+z0mu, z0qg)
-           rd_(2) = frd(ktop, btop, 0., displau+z0mu, z0qg, 0., z0h_g, &
+           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
+           !   btop, 0., obug, ustarg, displau+z0mu, z0qg)
+           rd(2) = frd(ktop, btop, 0., displau+z0mu, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ENDIF
 
-        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, &
-        !   displau/btop, btop, 0., obug, ustarg, btop, z0mg)
-        ueff_veg  = uintegral(utop, 1., bee, alpha, z0mg, &
-           displau/btop, btop, 0., obug, ustarg, htop, hbot)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
+        !print *, "htop/hbot:", htop, hbot  !fordebug
+        !ueff_veg  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., htop, hbot)
 
-        !ueff_lay_(2) = ueff(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
-        ueff_veg_ = ueff(utop, btop, 0., htop, hbot, z0mg, alpha, bee, 1.)
+        !ueff_lay_(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
+        ueff_veg = ueffect(utop, btop, 0., htop, hbot, z0mg, alpha, bee, 1.)
 
-        print *, "ueff_lay :", ueff_lay
-        print *, "ueff_lay_:", ueff_lay_
-        print *, "------------------------"
+        !print *, "ueff_lay :", ueff_lay
+        !print *, "ueff_lay_:", ueff_lay_
+        !print *, "------------------------"
         !print *, "rd :", rd
         !print *, "rd_:", rd_
 
@@ -1377,18 +1377,17 @@ MODULE UrbanFlux
         rb(:) = 0.
 
         DO i = 0, nurb
-           IF (i == 3) THEN 
+           IF (i == 3) THEN
               cf = 0.01*sqrtdi*sqrt(ueff_veg)
               rb(i) = 1./cf
-              cycle 
+              cycle
            ENDIF
            clev = canlev(i)
            rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
         ENDDO
-        !print *,"rb", rb
 
 !-----------------------------------------------------------------------
-! stomatal resistances 
+! stomatal resistances
 !-----------------------------------------------------------------------
 
         IF (lai > 0.) THEN
@@ -1411,7 +1410,7 @@ MODULE UrbanFlux
            rs = 2.e4; assim = 0.; respc = 0.
         ENDIF
 
-! above stomatal resistances are for the canopy, the stomatal rsistances 
+! above stomatal resistances are for the canopy, the stomatal rsistances
 ! and the "rb" in the following calculations are the average for single leaf. thus,
         rs = rs * lai
 
@@ -1425,7 +1424,7 @@ MODULE UrbanFlux
 
         DO i = 0, nurb
 
-           IF (i == 3) THEN 
+           IF (i == 3) THEN
 
               clev = canlev(i)
               delta = 0.0
@@ -1439,7 +1438,7 @@ MODULE UrbanFlux
               ! 计算潜热阻抗
               cfw(i) = (1.-delta*(1.-fwet))*lsai/rb(i) + &
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
-           ELSE 
+           ELSE
               cfh(i) = 1 / rb(i)
               cfw(i) = 1 / rb(i)
            ENDIF
@@ -1461,7 +1460,7 @@ MODULE UrbanFlux
               caw(i) = 1. / raw
            ELSE
               cah(i) = 1. / rd(i+1)
-              caw(i) = 1. / rd(i+1) 
+              caw(i) = 1. / rd(i+1)
            ENDIF
 
            cgh(i) = 1. / rd(i)
@@ -1506,44 +1505,47 @@ MODULE UrbanFlux
         ! 根据层数来计算空气温度、湿度
         ! to solve taf(:) and qaf(:)
 
-        IF (numlay .eq. 2) THEN 
+        IF (numlay .eq. 2) THEN
 
            ! 06/20/2021, yuan: 考虑人为热
            !tmpw1 = wtg0(botlay)*tg + wtll(botlay)
-           tmpw1 = wtg0(botlay)*tg + wtll(botlay) + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)
+           tmpw1 = wtg0(botlay)*tg + wtll(botlay) &
+                 + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair
            fact  = 1. - wtg0(toplay)*wta0(botlay)
            ! 06/20/2021, yuan: 考虑人为热
            !taf(toplay) = ( wta0(toplay)*thm + wtg0(toplay)*tmpw1 + wtll(toplay) ) /  fact
            taf(toplay) = ( wta0(toplay)*thm + wtg0(toplay)*tmpw1 + wtll(toplay) + &
-                           wtshi(3)*1/3.*(Fhac+Fwst) ) /  fact
+                           wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair ) / fact
 
            tmpw1 = wtgq0(botlay)*qg + wtlql(botlay)
            facq  = 1. - wtgq0(toplay)*wtaq0(botlay)
            qaf(toplay) = ( wtaq0(toplay)*qm + wtgq0(toplay)*tmpw1 + wtlql(toplay) ) / facq
 
            qaf(botlay) = wtaq0(botlay)*qaf(toplay) + wtgq0(botlay)*qg + wtlql(botlay)
-           taf(botlay) = wta0 (botlay)*taf(toplay) + wtg0 (botlay)*tg + wtll (botlay) 
-           taf(botlay) = taf(botlay) + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)
+           taf(botlay) = wta0 (botlay)*taf(toplay) + wtg0 (botlay)*tg + wtll (botlay)
+           taf(botlay) = taf(botlay) + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair
 
         ENDIF
 
-        IF (numlay .eq. 3) THEN 
+        IF (numlay .eq. 3) THEN
 
-           tmpw1  = wta0(3)*thm + wtll(3) + wtshi(3)*1/3.*(Fhac+Fwst)
-           tmpw2  = wtg0(1)*tg  + wtll(1) + wtshi(1)*1/3.*(Fhac+Fwst)
-           fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1) 
+           tmpw1  = wta0(3)*thm + wtll(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1) + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
            taf(2) = ( wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
-                      wtshi(2)*(1/3.*(Fhac+Fwst)+Fach) ) / fact
+                      wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair ) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            tmpw2  = wtgq0(1)*qg + wtlql(1)
            facq   = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
            qaf(2) = ( wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2) ) / facq
 
-           taf(1) = wta0 (1)*taf(2) + wtg0 (1)*tg + wtll (1) + wtshi(1)*1/3.*(Fhac+Fwst)
+           taf(1) = wta0 (1)*taf(2) + wtg0 (1)*tg + wtll (1) &
+                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
            qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
 
-           taf(3) = wta0 (3)*thm + wtg0(3)*taf(2) + wtll (3) + wtshi(3)*1/3.*(Fhac+Fwst)
+           taf(3) = wta0 (3)*thm + wtg0(3)*taf(2) + wtll (3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
 
         ENDIF
@@ -1551,7 +1553,7 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 ! IR radiation, sensible and latent heat fluxes and their derivatives
 !-----------------------------------------------------------------------
-! the partial derivatives of areodynamical resistance are ignored 
+! the partial derivatives of areodynamical resistance are ignored
 ! which cannot be determined analtically
 
         !NOTE: ONLY for vegetation
@@ -1562,13 +1564,13 @@ MODULE UrbanFlux
         fsenl = rhoair * cpair * cfh(i) * (tl - taf(clev))
 
         ! 09/24/2017: why fact/facq here? bugs? YES
-        ! 09/25/2017: re-written, check it clearfully 
+        ! 09/25/2017: re-written, check it clearfully
         IF (numlay == 3) THEN
            fsenl_dtl = rhoair * cpair * cfh(i) * &
               (1 - (1-wtg0(2)*wta0(1))*wtl0(i)/fact)
-        ELSE 
+        ELSE
            fsenl_dtl = rhoair * cpair * cfh(i) * (1 - wtl0(i)/fact)
-        ENDIF 
+        ENDIF
 
 ! latent heat fluxes and their derivatives
         etr = rhoair * (1.-fwet) * delta &
@@ -1576,11 +1578,11 @@ MODULE UrbanFlux
 
         IF (numlay == 3) THEN
            etr_dtl = rhoair * (1.-fwet) * delta * lai/(rb(i)+rs) &
-              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i) 
-        ELSE 
+              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i)
+        ELSE
            etr_dtl = rhoair * (1.-fwet) * delta * lai/(rb(i)+rs) &
-              * (1 - wtlq0(i)/facq)*qsatldT(i) 
-        ENDIF 
+              * (1 - wtlq0(i)/facq)*qsatldT(i)
+        ENDIF
 
         IF (etr.ge.etrc) THEN
            etr = etrc
@@ -1592,10 +1594,10 @@ MODULE UrbanFlux
 
         IF (numlay == 3) THEN
            evplwet_dtl = rhoair * (1.-delta*(1.-fwet)) * lsai/rb(i) &
-              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i) 
+              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i)
         ELSE
            evplwet_dtl = rhoair * (1.-delta*(1.-fwet)) * lsai/rb(i) &
-              * (1 - wtlq0(i)/facq)*qsatldT(i) 
+              * (1 - wtlq0(i)/facq)*qsatldT(i)
         ENDIF
 
         IF (evplwet.ge.ldew/deltim) THEN
@@ -1608,7 +1610,7 @@ MODULE UrbanFlux
 
         erre = 0.
         fevpl_noadj = fevpl
-        IF ( fevpl*fevpl_bef < 0. ) THEN 
+        IF ( fevpl*fevpl_bef < 0. ) THEN
            erre  = -0.9*fevpl
            fevpl =  0.1*fevpl
         ENDIF
@@ -1618,8 +1620,8 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
         ! 计算irab, dirab_dtl
-        B(5)    = B_5*tl**4    
-        B1(5)   = B1_5*tl**4   
+        B(5)    = B_5*tl**4
+        B1(5)   = B1_5*tl**4
         dBdT(5) = dBdT_5*tl**3
         X  = matmul(Ainv, B)
         ! dBdT前5项为0, dBdT*(0,0,0,0,0,1)
@@ -1658,7 +1660,7 @@ MODULE UrbanFlux
 
         del  = sqrt( dtl(it)*dtl(it) )
         dele = dtl(it) * dtl(it) * &
-           ( dirab_dtl**2 + fsenl_dtl**2 + hvap*fevpl_dtl**2 ) 
+           ( dirab_dtl**2 + fsenl_dtl**2 + hvap*fevpl_dtl**2 )
         dele = sqrt(dele)
 
 !-----------------------------------------------------------------------
@@ -1668,7 +1670,7 @@ MODULE UrbanFlux
 ! and adjust specific humidity (qsatl_) proportionately
         CALL qsadv(tu(i),psrf,ei(i),deiDT(i),qsatl(i),qsatldT(i))
 
-! update vegetation/ground surface temperature, canopy air temperature, 
+! update vegetation/ground surface temperature, canopy air temperature,
 ! canopy air humidity
 
         ! calculate wtll, wtlql
@@ -1681,7 +1683,7 @@ MODULE UrbanFlux
            wtlql(clev) = wtlql(clev) + wtlq0(i)*qsatl(i)
         ENDDO
 
-        IF (numlay .eq. 2) THEN 
+        IF (numlay .eq. 2) THEN
 
            tmpw1 = wtg0(botlay)*tg + wtll(botlay)
            fact  = 1. - wtg0(toplay)*wta0(botlay)
@@ -1696,11 +1698,11 @@ MODULE UrbanFlux
 
         ENDIF
 
-        IF (numlay .eq. 3) THEN 
+        IF (numlay .eq. 3) THEN
 
            tmpw1 = wta0(3)*thm + wtll(3)
            tmpw2 = wtg0(1)*tg + wtll(1)
-           fact  = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1) 
+           fact  = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
            taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2)) / fact
 
            tmpw1 = wtaq0(3)*qm + wtlql(3)
@@ -1719,7 +1721,7 @@ MODULE UrbanFlux
 ! update co2 partial pressure within canopy air
         ! 05/02/2016: may have some problem with gdh2o, however,
         ! this variable seems never used here. Different height
-        ! level vegetation should have different gdh2o, i.e., 
+        ! level vegetation should have different gdh2o, i.e.,
         ! different rd(layer) values.
         gah2o = 1.0/raw * tprcor/thm                     !mol m-2 s-1
         gdh2o = 1.0/rd(botlay) * tprcor/thm              !mol m-2 s-1
@@ -1770,13 +1772,13 @@ MODULE UrbanFlux
            fevpl_bef = fevpl
            det = max(del,del2)
            dee = max(dele,dele2)
-           IF (det .lt. dtmin .and. dee .lt. dlemin) EXIT 
+           IF (det .lt. dtmin .and. dee .lt. dlemin) EXIT
         ENDIF
 
-     ENDDO 
+     ENDDO
 
 ! ======================================================================
-!     END stability iteration 
+!     END stability iteration
 ! ======================================================================
 
      z0m = z0mu
@@ -1788,8 +1790,8 @@ MODULE UrbanFlux
      IF (lai .gt. 0.001) THEN
         rst = rs/lai
      ELSE
-        rs    = 2.0e4 
-        assim = 0. 
+        rs    = 2.0e4
+        assim = 0.
         respc = 0.
         rst   = 2.0e4
      ENDIF
@@ -1842,10 +1844,10 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! 各组分长波辐射吸收值
-     lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall) 
-     lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall) 
-     lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp) 
-     lgper = ( egper*X(4) - B1(4) ) / (1-egper) 
+     lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall)
+     lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall)
+     lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp)
+     lgper = ( egper*X(4) - B1(4) ) / (1-egper)
      lveg  = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5) )
      lout  = sum( X * SkyVF )
 
@@ -1862,7 +1864,7 @@ MODULE UrbanFlux
 
      IF (abs(err-frl) > 1e-6) THEN
         print *, "Longwave - Energy Balance Check error!", err-frl
-     ENDIF 
+     ENDIF
 
      ! 计算单位面积
      IF (fcover(1) > 0.) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
@@ -1881,7 +1883,7 @@ MODULE UrbanFlux
      tafu = taf(2)
 
 !-----------------------------------------------------------------------
-! wind stresses 
+! wind stresses
 !-----------------------------------------------------------------------
 
      taux = - rhoair*us/ram
@@ -1891,16 +1893,14 @@ MODULE UrbanFlux
 ! fluxes from roof, walls to canopy space
 !-----------------------------------------------------------------------
 
-     ! sensible heat fluxes 
+     ! sensible heat fluxes
      fsenroof = rhoair * cpair * cfh(0) * (troof - taf(3))
      fsenwsun = rhoair * cpair * cfh(1) * (twsun - taf(2))
      fsenwsha = rhoair * cpair * cfh(2) * (twsha - taf(2))
-     print *, fsenroof
-     print *, cpair, cfh, troof, taf
 
      ! latent heat fluxes
-     evplwet = rhoair * cfw(0) * ( qsatl(0) - qaf(3) )
-     
+     fevproof = rhoair * cfw(0) * ( qsatl(0) - qaf(3) )
+
      ! taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
      ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
      croofs = rhoair * cpair * cfh(0) * ( 1 - wtl0(0)/fact )
@@ -1936,11 +1936,11 @@ MODULE UrbanFlux
 ! 2 m height air temperature
 !-----------------------------------------------------------------------
 
-     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar) 
+     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
 
   END SUBROUTINE UrbanVegFlux
-!----------------------------------------------------------------------         
+!----------------------------------------------------------------------
 
 
   SUBROUTINE dewfraction (sigf,lai,sai,dewmx,ldew,fwet)
@@ -1969,7 +1969,7 @@ MODULE UrbanFlux
      REAL(r8) vegt                  ! sigf*lsai
 !
 !-----------------------------------------------------------------------
-! Fwet is the fraction of all vegetation surfaces which are wet 
+! Fwet is the fraction of all vegetation surfaces which are wet
 ! including stem area which contribute to evaporation
      lsai = lai + sai
      dewmxi = 1.0/dewmx
@@ -1990,10 +1990,9 @@ MODULE UrbanFlux
      ENDIF
 
   END SUBROUTINE dewfraction
-!----------------------------------------------------------------------         
+!----------------------------------------------------------------------
 
-  REAL(r8) FUNCTION uprofile(utop, fc, bee, alpha, z0mg, &
-        displah, htop, hbot, obu, ustar, z)
+  REAL(r8) FUNCTION uprofile(utop, fc, bee, alpha, z0mg, htop, hbot, z)
 
      USE precision
      USE FRICTION_VELOCITY
@@ -2001,52 +2000,39 @@ MODULE UrbanFlux
 
      REAL(r8), intent(in) :: utop
      REAL(r8), intent(in) :: fc
-     REAL(r8), intent(in) :: bee 
+     REAL(r8), intent(in) :: bee
      REAL(r8), intent(in) :: alpha
      REAL(r8), intent(in) :: z0mg
-     REAL(r8), intent(in) :: displah
      REAL(r8), intent(in) :: htop
      REAL(r8), intent(in) :: hbot
-     REAL(r8), intent(in) :: obu
-     REAL(r8), intent(in) :: ustar
      REAL(r8), intent(in) :: z
 
-     REAL(r8) :: uexp
-     REAL(r8) :: ulog, ulogs
-     REAL(r8) :: ucob
-     REAL(r8) :: fac
+     REAL(r8) :: ulog,uexp
 
-     ! NOTE: z0s should be different for ulog and umon calculation
-     ! for multiple layers
-     ! potential errors!!!
-
+     ! when canopy LAI->0, z0->zs, fac->1, u->umoninobuk
+     ! canopy LAI->large, fac->0 or=0, u->log profile
      ulog = utop*log(z/z0mg)/log(htop/z0mg)
+     uexp = utop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
 
-     ! 12/18/2017: test for neutral condition
-     ! now set to ulog, the effects to rb calculation is small
-     ucob = ulog
-     uexp = utop*exp(-alpha*(htop-z)/(htop-hbot))
-     uprofile = bee*fc*min(uexp,ucob) + (1-bee*fc)*ucob
+     uprofile = bee*fc*min(uexp,ulog) + (1-bee*fc)*ulog
 
      RETURN
-
   END FUNCTION uprofile
 
-  REAL(r8) FUNCTION kprofile(ktop, fc, bee, alpha, z0mg, &
-        displah, htop, hbot, obu, ustar, z)
+  REAL(r8) FUNCTION kprofile(ktop, fc, bee, alpha, &
+                    displah, htop, hbot, obu, ustar, z)
 
      USE precision
      USE FRICTION_VELOCITY
      IMPLICIT NONE
 
-     REAL(r8), parameter :: com1   = 0.4
-     REAL(r8), parameter :: com2   = 0.08
+     REAL(r8), parameter :: com1 = 0.4
+     REAL(r8), parameter :: com2 = 0.08
 
      REAL(r8), intent(in) :: ktop
      REAL(r8), intent(in) :: fc
      REAL(r8), intent(in) :: bee
      REAL(r8), intent(in) :: alpha
-     REAL(r8), intent(in) :: z0mg
      REAL(r8), intent(in) :: displah
      REAL(r8), intent(in) :: htop
      REAL(r8), intent(in) :: hbot
@@ -2075,9 +2061,8 @@ MODULE UrbanFlux
 
   END FUNCTION kprofile
 
-! 03/08/2020, yuan: TODO-done, change it to analytical solution
   REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, &
-        displah, htop, hbot, obu, ustar, ztop, zbot)
+                    htop, hbot, ztop, zbot)
 
      USE precision
      IMPLICIT NONE
@@ -2087,11 +2072,8 @@ MODULE UrbanFlux
      REAL(r8), intent(in) :: bee
      REAL(r8), intent(in) :: alpha
      REAL(r8), intent(in) :: z0mg
-     REAL(r8), intent(in) :: displah
      REAL(r8), intent(in) :: htop
      REAL(r8), intent(in) :: hbot
-     REAL(r8), intent(in) :: obu
-     REAL(r8), intent(in) :: ustar
      REAL(r8), intent(in) :: ztop
      REAL(r8), intent(in) :: zbot
 
@@ -2112,8 +2094,7 @@ MODULE UrbanFlux
            z  = zbot + 0.5*dz
         ENDIF
 
-        u = uprofile(utop, fc, bee, alpha, z0mg, &
-           displah, htop, hbot, obu, ustar, z)
+        u = uprofile(utop, fc, bee, alpha, z0mg, htop, hbot, z)
 
         u = max(0._r8, u)
         !uintegral = uintegral + sqrt(u)*dz / (htop-hbot)
@@ -2131,7 +2112,7 @@ MODULE UrbanFlux
 
 
   !TODO: 计算ztop到zbot之间的effective wind speed
-  REAL(r8) FUNCTION ueff(utop, htop, hbot, &
+  REAL(r8) FUNCTION ueffect(utop, htop, hbot, &
         ztop, zbot, z0mg, alpha, bee, fc)
      USE precision
      IMPLICIT NONE
@@ -2176,13 +2157,13 @@ MODULE UrbanFlux
            htop, hbot, z0mg, alpha, bee, fc)
         uint = uint + fuint(utop, roots(2), zbot,     &
            htop, hbot, z0mg, alpha, bee, fc)
-     ENDIF 
+     ENDIF
 
-     ueff = uint / (ztop-zbot)
+     ueffect = uint / (ztop-zbot)
 
      RETURN
 
-  END FUNCTION ueff
+  END FUNCTION ueffect
 
 
   REAL(r8) FUNCTION fuint(utop, ztop, zbot, &
@@ -2228,7 +2209,7 @@ MODULE UrbanFlux
      utop, htop, hbot, z0mg, alpha, roots, rootn)
 
      USE precision
-     IMPLICIT NONE 
+     IMPLICIT NONE
 
      REAL(r8), intent(in) :: ztop, zbot, zmid
      REAL(r8), intent(in) :: utop, htop, hbot
@@ -2244,9 +2225,9 @@ MODULE UrbanFlux
      udif_lb = udif(zmid,utop,htop,hbot,z0mg,alpha)
 
      IF (udif_ub*udif_lb == 0) THEN
-        IF (udif_lb == 0) THEN ! root found
+        IF (udif_lb == 0) THEN !root found
            rootn = rootn + 1
-           IF (rootn > 2) THEN 
+           IF (rootn > 2) THEN
               print *, "U root number > 2, abort!"
               CALL abort
            ENDIF
@@ -2254,8 +2235,8 @@ MODULE UrbanFlux
         ENDIF
      ELSE IF (udif_ub*udif_lb < 0) THEN
         IF (ztop-zmid < 0.01) THEN
-           rootn = rootn + 1 ! root found
-           IF (rootn > 2) THEN 
+           rootn = rootn + 1 !root found
+           IF (rootn > 2) THEN
               print *, "U root number > 2, abort!"
               CALL abort
            ENDIF
@@ -2270,9 +2251,9 @@ MODULE UrbanFlux
      udif_lb = udif(zbot,utop,htop,hbot,z0mg,alpha)
 
      IF (udif_ub*udif_lb == 0) THEN
-        IF (udif_ub == 0) THEN ! root found
+        IF (udif_ub == 0) THEN !root found
            rootn = rootn + 1
-           IF (rootn > 2) THEN 
+           IF (rootn > 2) THEN
               print *, "U root number > 2, abort!"
               CALL abort
            ENDIF
@@ -2280,8 +2261,8 @@ MODULE UrbanFlux
         ENDIF
      ELSE IF (udif_ub*udif_lb < 0) THEN
         IF (zmid-zbot < 0.01) THEN
-           rootn = rootn + 1 ! root found
-           IF (rootn > 2) THEN 
+           rootn = rootn + 1 !root found
+           IF (rootn > 2) THEN
               print *, "U root number > 2, abort!"
               CALL abort
            ENDIF
@@ -2292,347 +2273,347 @@ MODULE UrbanFlux
         ENDIF
      ENDIF
 
-   END SUBROUTINE ufindroots
+  END SUBROUTINE ufindroots
 
 
-   REAL(r8) FUNCTION udif(z, utop, htop, hbot, z0mg, alpha)
+  REAL(r8) FUNCTION udif(z, utop, htop, hbot, z0mg, alpha)
 
-      USE precision
-      IMPLICIT NONE
+     USE precision
+     IMPLICIT NONE
 
-      REAL(r8), intent(in) :: z, utop, htop, hbot
-      REAL(r8), intent(in) :: z0mg, alpha
+     REAL(r8), intent(in) :: z, utop, htop, hbot
+     REAL(r8), intent(in) :: z0mg, alpha
 
-      REAL(r8) :: uexp, ulog
+     REAL(r8) :: uexp, ulog
 
-      ! yuan, 12/28/2020:
-      !uexp = utop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
-      uexp = utop*exp(-alpha*(htop-z)/(htop-hbot))
-      ulog = utop*log(z/z0mg)/log(htop/z0mg)
+     ! yuan, 12/28/2020:
+     !uexp = utop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
+     uexp = utop*exp(-alpha*(htop-z)/(htop-hbot))
+     ulog = utop*log(z/z0mg)/log(htop/z0mg)
 
-      udif = uexp - ulog
+     udif = uexp - ulog
 
-      RETURN
+     RETURN
 
-   END FUNCTION udif
-
-
-   ! 03/08/2020, yuan: TODO-done, change it to analytical solution
-   REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
-         displah, htop, hbot, obu, ustar, ztop, zbot)
-      USE precision
-      IMPLICIT NONE            
-
-      REAL(r8), intent(in) :: ktop
-      REAL(r8), intent(in) :: fc
-      REAL(r8), intent(in) :: bee
-      REAL(r8), intent(in) :: alpha
-      REAL(r8), intent(in) :: z0mg
-      REAL(r8), intent(in) :: displah
-      REAL(r8), intent(in) :: htop
-      REAL(r8), intent(in) :: hbot
-      REAL(r8), intent(in) :: obu
-      REAL(r8), intent(in) :: ustar
-      REAL(r8), intent(in) :: ztop
-      REAL(r8), intent(in) :: zbot
-
-      INTEGER  :: i, n
-      REAL(r8) :: dz, z, k
-
-      kintegral = 0.
-
-      IF (ztop <= zbot) THEN
-         RETURN
-      ENDIF
-
-      ! 09/26/2017: change fixed n -> fixed dz
-      ! 10/05/2017: need to improve
-      dz = 0.001 ! fordebug
-      n  = int( (ztop-zbot) / dz ) + 1
-
-      DO i = 1, n
-         IF (i < n) THEN
-            z  = ztop - (i-0.5)*dz
-         ELSE
-            dz = ztop - zbot - (n-1)*dz
-            z  = zbot + 0.5*dz
-         ENDIF
-
-         k = kprofile(ktop, fc, bee, alpha, z0mg, &
-            displah, htop, hbot, obu, ustar, z) 
-
-         kintegral = kintegral + 1./k * dz
-
-      ENDDO
-
-      RETURN
-
-   END FUNCTION kintegral
+  END FUNCTION udif
 
 
-   REAL(r8) FUNCTION frd(ktop, htop, hbot, &
-         ztop, zbot, displah, z0h, obu, ustar, &
-         z0mg, alpha, bee, fc)
+  ! 03/08/2020, yuan: TODO-done, change it to analytical solution
+  REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
+        displah, htop, hbot, obu, ustar, ztop, zbot)
+     USE precision
+     IMPLICIT NONE
 
-      USE precision
-      IMPLICIT NONE
+     REAL(r8), intent(in) :: ktop
+     REAL(r8), intent(in) :: fc
+     REAL(r8), intent(in) :: bee
+     REAL(r8), intent(in) :: alpha
+     REAL(r8), intent(in) :: z0mg
+     REAL(r8), intent(in) :: displah
+     REAL(r8), intent(in) :: htop
+     REAL(r8), intent(in) :: hbot
+     REAL(r8), intent(in) :: obu
+     REAL(r8), intent(in) :: ustar
+     REAL(r8), intent(in) :: ztop
+     REAL(r8), intent(in) :: zbot
 
-      REAL(r8), intent(in) :: ktop, htop, hbot
-      REAL(r8), intent(in) :: ztop, zbot
-      REAL(r8), intent(in) :: displah, z0h, obu, ustar
-      REAL(r8), intent(in) :: z0mg, alpha, bee, fc
+     INTEGER  :: i, n
+     REAL(r8) :: dz, z, k
 
-      ! local parameters
-      REAL(r8), parameter :: com1   = 0.4
-      REAL(r8), parameter :: com2   = 0.08
+     kintegral = 0.
 
-      REAL(r8) :: roots(2), fac, kint
-      INTEGER  :: rootn
+     IF (ztop <= zbot) THEN
+        RETURN
+     ENDIF
 
-      rootn = 0
-      kint  = 0.
+     ! 09/26/2017: change fixed n -> fixed dz
+     ! 10/05/2017: need to improve
+     dz = 0.001 ! fordebug
+     n  = int( (ztop-zbot) / dz ) + 1
 
-      ! calculate fac
-      ! yuan, 12/28/2020:
-      !fac = 1. / (1.+exp(-(displah-com1)/com2))
+     DO i = 1, n
+        IF (i < n) THEN
+           z  = ztop - (i-0.5)*dz
+        ELSE
+           dz = ztop - zbot - (n-1)*dz
+           z  = zbot + 0.5*dz
+        ENDIF
+
+        k = kprofile(ktop, fc, bee, alpha, &
+           displah, htop, hbot, obu, ustar, z)
+
+        kintegral = kintegral + 1./k * dz
+
+     ENDDO
+
+     RETURN
+
+  END FUNCTION kintegral
+
+
+  REAL(r8) FUNCTION frd(ktop, htop, hbot, &
+        ztop, zbot, displah, z0h, obu, ustar, &
+        z0mg, alpha, bee, fc)
+
+     USE precision
+     IMPLICIT NONE
+
+     REAL(r8), intent(in) :: ktop, htop, hbot
+     REAL(r8), intent(in) :: ztop, zbot
+     REAL(r8), intent(in) :: displah, z0h, obu, ustar
+     REAL(r8), intent(in) :: z0mg, alpha, bee, fc
+
+     ! local parameters
+     REAL(r8), parameter :: com1 = 0.4
+     REAL(r8), parameter :: com2 = 0.08
+
+     REAL(r8) :: roots(2), fac, kint
+     INTEGER  :: rootn
+
+     rootn = 0
+     kint  = 0.
+
+     ! calculate fac
+     ! yuan, 12/28/2020:
+     !fac = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
-      !TODO: 检查fac的设定，为什么设定为0
-      fac = 0.
-      roots(:) = 0.
+     !TODO: 检查fac的设定，为什么设定为0
+     fac = 0.
+     roots(:) = 0.
 
-      CALL kfindroots(ztop,zbot,(ztop+zbot)/2., &
-         ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
+     CALL kfindroots(ztop,zbot,(ztop+zbot)/2., &
+        ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
 
-      print *, roots, rootn
-      IF (rootn == 0) THEN ! no root
-         kint = kint + fkint(ktop, ztop, zbot, htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-      ENDIF
+     !print *, roots, rootn
+     IF (rootn == 0) THEN !no root
+        kint = kint + fkint(ktop, ztop, zbot, htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+     ENDIF
 
-      IF (rootn == 1) THEN
-         kint = kint + fkint(ktop, ztop, roots(1), htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-         kint = kint + fkint(ktop, roots(1), zbot, htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-      ENDIF
+     IF (rootn == 1) THEN
+        kint = kint + fkint(ktop, ztop, roots(1), htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+        kint = kint + fkint(ktop, roots(1), zbot, htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+     ENDIF
 
-      IF (rootn == 2) THEN
-         kint = kint + fkint(ktop, ztop, roots(1), htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-         kint = kint + fkint(ktop, roots(1), roots(2), htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-         kint = kint + fkint(ktop, roots(2), zbot, htop, hbot, &
-            z0h, obu, ustar, fac, alpha, bee, fc)
-      ENDIF 
+     IF (rootn == 2) THEN
+        kint = kint + fkint(ktop, ztop, roots(1), htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+        kint = kint + fkint(ktop, roots(1), roots(2), htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+        kint = kint + fkint(ktop, roots(2), zbot, htop, hbot, &
+           z0h, obu, ustar, fac, alpha, bee, fc)
+     ENDIF
 
-      frd = kint
+     frd = kint
 
-      RETURN
+     RETURN
 
-   END FUNCTION frd
-
-
-   REAL(r8) FUNCTION fkint(ktop, ztop, zbot, htop, hbot, &
-         z0h, obu, ustar, fac, alpha, bee, fc)
-
-      USE precision
-      USE FRICTION_VELOCITY
-      IMPLICIT NONE
-
-      REAL(r8), intent(in) :: ktop, ztop, zbot
-      REAL(r8), intent(in) :: htop, hbot
-      REAL(r8), intent(in) :: z0h, obu, ustar, fac, alpha
-      REAL(r8), intent(in) :: bee, fc
-
-      ! local variables
-      REAL(r8) :: fkexpint, fkcobint
-
-      !klin = ktop*z/htop
-      !kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
-      fkcobint = fac*htop/ktop*(log(ztop)-log(zbot)) +&
-         (1.-fac)*kintmoninobuk(0.,z0h,obu,ustar,ztop,zbot)
-
-      IF (kdif((ztop+zbot)/2.,ktop,htop,hbot,obu,ustar,fac,alpha) <= 0) THEN
-         ! kexp is smaller
-         IF (alpha > 0) THEN
-            fkexpint = -(htop-hbot)/alpha/ktop*( &
-               exp(alpha*(htop-ztop)/(htop-hbot))-&
-               exp(alpha*(htop-zbot)/(htop-hbot)) )
-         ELSE
-            fkexpint = (ztop-zbot)/ktop
-         ENDIF 
-
-         fkint = bee*fc*fkexpint + (1.-bee*fc)*fkcobint
-      ELSE
-         ! kcob is smaller
-         fkint = fkcobint
-      ENDIF
-
-      RETURN
-   END FUNCTION fkint
+  END FUNCTION frd
 
 
-   RECURSIVE SUBROUTINE kfindroots(ztop,zbot,zmid, &
-      ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
+  REAL(r8) FUNCTION fkint(ktop, ztop, zbot, htop, hbot, &
+        z0h, obu, ustar, fac, alpha, bee, fc)
 
-      USE precision
-      IMPLICIT NONE 
+     USE precision
+     USE FRICTION_VELOCITY
+     IMPLICIT NONE
 
-      REAL(r8), intent(in) :: ztop, zbot, zmid
-      REAL(r8), intent(in) :: ktop, htop, hbot
-      REAL(r8), intent(in) :: obu, ustar, fac, alpha
+     REAL(r8), intent(in) :: ktop, ztop, zbot
+     REAL(r8), intent(in) :: htop, hbot
+     REAL(r8), intent(in) :: z0h, obu, ustar, fac, alpha
+     REAL(r8), intent(in) :: bee, fc
 
-      REAL(r8), intent(inout) :: roots(2)
-      INTEGER,  intent(inout) :: rootn
+     ! local variables
+     REAL(r8) :: fkexpint, fkcobint
 
-      ! local variables
-      REAL(r8) :: kdif_ub, kdif_lb
+     !klin = ktop*z/htop
+     !kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
+     fkcobint = fac*htop/ktop*(log(ztop)-log(zbot)) +&
+        (1.-fac)*kintmoninobuk(0.,z0h,obu,ustar,ztop,zbot)
 
-      !print *, "*** CALL recursive SUBROUTINE kfindroots!!"
-      kdif_ub = kdif(ztop,ktop,htop,hbot,obu,ustar,fac,alpha)
-      kdif_lb = kdif(zmid,ktop,htop,hbot,obu,ustar,fac,alpha)
+     IF (kdif((ztop+zbot)/2.,ktop,htop,hbot,obu,ustar,fac,alpha) <= 0) THEN
+        ! kexp is smaller
+        IF (alpha > 0) THEN
+           fkexpint = -(htop-hbot)/alpha/ktop*( &
+              exp(alpha*(htop-ztop)/(htop-hbot))-&
+              exp(alpha*(htop-zbot)/(htop-hbot)) )
+        ELSE
+           fkexpint = (ztop-zbot)/ktop
+        ENDIF
 
-      IF (kdif_ub*kdif_lb == 0) THEN
-         IF (kdif_lb == 0) THEN ! root found
-            rootn = rootn + 1
-            IF (rootn > 2) THEN 
-               print *, "K root number > 2, abort!"
-               CALL abort
-            ENDIF
-            roots(rootn) = zmid
-         ENDIF
-      ELSE IF (kdif_ub*kdif_lb < 0) THEN
-         IF (ztop-zmid < 0.01) THEN
-            rootn = rootn + 1 ! root found
-            IF (rootn > 2) THEN 
-               print *, "K root number > 2, abort!"
-               CALL abort
-            ENDIF
-            roots(rootn) = (ztop+zmid)/2.
-         ELSE
-            CALL kfindroots(ztop,zmid,(ztop+zmid)/2., &
-               ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
-         ENDIF
-      ENDIF
+        fkint = bee*fc*fkexpint + (1.-bee*fc)*fkcobint
+     ELSE
+        ! kcob is smaller
+        fkint = fkcobint
+     ENDIF
 
-      kdif_ub = kdif(zmid,ktop,htop,hbot,obu,ustar,fac,alpha)
-      kdif_lb = kdif(zbot,ktop,htop,hbot,obu,ustar,fac,alpha)
-
-      IF (kdif_ub*kdif_lb == 0) THEN
-         IF (kdif_ub == 0) THEN ! root found
-            rootn = rootn + 1
-            IF (rootn > 2) THEN 
-               print *, "K root number > 2, abort!"
-               CALL abort
-            ENDIF
-            roots(rootn) = zmid
-         ENDIF
-      ELSE IF (kdif_ub*kdif_lb < 0) THEN
-         IF (zmid-zbot < 0.01) THEN
-            rootn = rootn + 1 ! root found
-            IF (rootn > 2) THEN 
-               print *, "K root number > 2, abort!"
-               CALL abort
-            ENDIF
-            roots(rootn) = (zmid+zbot)/2.
-         ELSE
-            CALL kfindroots(zmid,zbot,(zmid+zbot)/2., &
-               ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
-         ENDIF
-      ENDIF
-
-   END SUBROUTINE kfindroots
+     RETURN
+  END FUNCTION fkint
 
 
-   REAL(r8) FUNCTION kdif(z, ktop, htop, hbot, &
-         obu, ustar, fac, alpha)
+  RECURSIVE SUBROUTINE kfindroots(ztop,zbot,zmid, &
+     ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
 
-      USE precision
-      USE FRICTION_VELOCITY
-      IMPLICIT NONE
+     USE precision
+     IMPLICIT NONE
 
-      REAL(r8), intent(in) :: z, ktop, htop, hbot
-      REAL(r8), intent(in) :: obu, ustar, fac, alpha 
+     REAL(r8), intent(in) :: ztop, zbot, zmid
+     REAL(r8), intent(in) :: ktop, htop, hbot
+     REAL(r8), intent(in) :: obu, ustar, fac, alpha
 
-      REAL(r8) :: kexp, klin, kcob
+     REAL(r8), intent(inout) :: roots(2)
+     INTEGER,  intent(inout) :: rootn
 
-      ! yuan, 12/28/2020:
-      !kexp = ktop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
-      kexp = ktop*exp(-alpha*(htop-z)/(htop-hbot))
+     ! local variables
+     REAL(r8) :: kdif_ub, kdif_lb
 
-      klin = ktop*z/htop
-      kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
+     !print *, "*** CALL recursive SUBROUTINE kfindroots!!"
+     kdif_ub = kdif(ztop,ktop,htop,hbot,obu,ustar,fac,alpha)
+     kdif_lb = kdif(zmid,ktop,htop,hbot,obu,ustar,fac,alpha)
 
-      kdif = kexp - kcob
+     IF (kdif_ub*kdif_lb == 0) THEN
+        IF (kdif_lb == 0) THEN !root found
+           rootn = rootn + 1
+           IF (rootn > 2) THEN
+              print *, "K root number > 2, abort!"
+              CALL abort
+           ENDIF
+           roots(rootn) = zmid
+        ENDIF
+     ELSE IF (kdif_ub*kdif_lb < 0) THEN
+        IF (ztop-zmid < 0.01) THEN
+           rootn = rootn + 1 !root found
+           IF (rootn > 2) THEN
+              print *, "K root number > 2, abort!"
+              CALL abort
+           ENDIF
+           roots(rootn) = (ztop+zmid)/2.
+        ELSE
+           CALL kfindroots(ztop,zmid,(ztop+zmid)/2., &
+              ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
+        ENDIF
+     ENDIF
 
-      RETURN
+     kdif_ub = kdif(zmid,ktop,htop,hbot,obu,ustar,fac,alpha)
+     kdif_lb = kdif(zbot,ktop,htop,hbot,obu,ustar,fac,alpha)
 
-   END FUNCTION kdif
+     IF (kdif_ub*kdif_lb == 0) THEN
+        IF (kdif_ub == 0) THEN !root found
+           rootn = rootn + 1
+           IF (rootn > 2) THEN
+              print *, "K root number > 2, abort!"
+              CALL abort
+           ENDIF
+           roots(rootn) = zmid
+        ENDIF
+     ELSE IF (kdif_ub*kdif_lb < 0) THEN
+        IF (zmid-zbot < 0.01) THEN
+           rootn = rootn + 1 !root found
+           IF (rootn > 2) THEN
+              print *, "K root number > 2, abort!"
+              CALL abort
+           ENDIF
+           roots(rootn) = (zmid+zbot)/2.
+        ELSE
+           CALL kfindroots(zmid,zbot,(zmid+zbot)/2., &
+              ktop, htop, hbot, obu, ustar, fac, alpha, roots, rootn)
+        ENDIF
+     ENDIF
+
+  END SUBROUTINE kfindroots
 
 
-   SUBROUTINE cal_z0_displa (lai, h, fc, z0, displa)
+  REAL(r8) FUNCTION kdif(z, ktop, htop, hbot, &
+        obu, ustar, fac, alpha)
 
-      USE PhysicalConstants, only : vonkar
-      IMPLICIT NONE
+     USE precision
+     USE FRICTION_VELOCITY
+     IMPLICIT NONE
 
-      REAL(r8) , intent(in)  :: lai
-      REAL(r8) , intent(in)  :: h
-      REAL(r8) , intent(in)  :: fc
-      REAL(r8) , intent(out) :: z0
-      REAL(r8) , intent(out) :: displa
+     REAL(r8), intent(in) :: z, ktop, htop, hbot
+     REAL(r8), intent(in) :: obu, ustar, fac, alpha
 
-      REAL(r8), parameter :: Cd   = 0.2   ! leaf drag coefficient
-      REAL(r8), parameter :: cd1  = 7.5   ! a free parameter for d/h calculation, Raupach 1992, 1994
-      REAL(r8), parameter :: psih = 0.193 ! psih = ln(cw) - 1 + cw^-1, cw = 2, Raupach 1994
+     REAL(r8) :: kexp, klin, kcob
 
-      ! local variables
-      REAL(r8) :: fai, sqrtdragc, temp1, delta , lai0
+     ! yuan, 12/28/2020:
+     !kexp = ktop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
+     kexp = ktop*exp(-alpha*(htop-z)/(htop-hbot))
 
-      ! when assume z0=0.01, displa=0
-      ! to calculate lai0, delta displa
-      !----------------------------------------------------
-      sqrtdragc = -vonkar/(log(0.01/h) - psih)
-      sqrtdragc = max(sqrtdragc, 0.0031**0.5)
-      IF (sqrtdragc .le. 0.3) THEN
-         fai = (sqrtdragc**2-0.003) / 0.3
-         fai = min(fai, fc*(1-exp(-20.)))
-      ELSE
-         fai = 0.29
-         print *, "z0m, displa error!"
-      ENDIF
+     klin = ktop*z/htop
+     kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
 
-      ! calculate delta displa when z0 = 0.01
-      lai0  = -log(1.-fai/fc)/0.5
-      temp1 = (2.*cd1*fai)**0.5
-      delta = -h * ( fc*1.1*log(1. + (Cd*lai0*fc)**0.25) + &
-         (1.-fc)*(1.-(1.-exp(-temp1))/temp1) )
+     kdif = kexp - kcob
 
-      ! calculate z0m, displa
-      !----------------------------------------------------
-      ! NOTE: potential bug below, ONLY apply for spheric
-      ! crowns. For other cases, fc*(...) ==> a*fc*(...)
-      fai   = fc*(1. - exp(-0.5*lai))
-      sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
-      temp1 = (2.*cd1*fai)**0.5
+     RETURN
 
-      IF (lai > lai0) THEN
-         displa = delta + h*( &
-            (  fc)*1.1*log(1. + (Cd*lai*fc)**0.25) + &
-            (1-fc)*(1.-(1.-exp(-temp1))/temp1) )
-      ELSE 
-         displa = h*( &
-            (  fc)*1.1*log(1. + (Cd*lai*fc)**0.25) + &
-            (1-fc)*(1.-(1.-exp(-temp1))/temp1) )
-      ENDIF
+  END FUNCTION kdif
 
-      displa = max(displa, 0.)
-      z0 = (h-displa) * exp(-vonkar/sqrtdragc + psih)
 
-      IF (z0 < 0.01) THEN
-         z0 = 0.01
-         displa = 0
-      ENDIF
+  SUBROUTINE cal_z0_displa (lai, h, fc, z0, displa)
 
-   END SUBROUTINE cal_z0_displa
+     USE PhysicalConstants, only: vonkar
+     IMPLICIT NONE
+
+     REAL(r8), intent(in)  :: lai
+     REAL(r8), intent(in)  :: h
+     REAL(r8), intent(in)  :: fc
+     REAL(r8), intent(out) :: z0
+     REAL(r8), intent(out) :: displa
+
+     REAL(r8), parameter :: Cd   = 0.2   !leaf drag coefficient
+     REAL(r8), parameter :: cd1  = 7.5   !a free parameter for d/h calculation, Raupach 1992, 1994
+     REAL(r8), parameter :: psih = 0.193 !psih = ln(cw) - 1 + cw^-1, cw = 2, Raupach 1994
+
+     ! local variables
+     REAL(r8) :: fai, sqrtdragc, temp1, delta , lai0
+
+     ! when assume z0=0.01, displa=0
+     ! to calculate lai0, delta displa
+     !----------------------------------------------------
+     sqrtdragc = -vonkar/(log(0.01/h) - psih)
+     sqrtdragc = max(sqrtdragc, 0.0031**0.5)
+     IF (sqrtdragc .le. 0.3) THEN
+        fai = (sqrtdragc**2-0.003) / 0.3
+        fai = min(fai, fc*(1-exp(-20.)))
+     ELSE
+        fai = 0.29
+        print *, "z0m, displa error!"
+     ENDIF
+
+     ! calculate delta displa when z0 = 0.01
+     lai0  = -log(1.-fai/fc)/0.5
+     temp1 = (2.*cd1*fai)**0.5
+     delta = -h * ( fc*1.1*log(1. + (Cd*lai0*fc)**0.25) + &
+        (1.-fc)*(1.-(1.-exp(-temp1))/temp1) )
+
+     ! calculate z0m, displa
+     !----------------------------------------------------
+     ! NOTE: potential bug below, ONLY apply for spheric
+     ! crowns. For other cases, fc*(...) ==> a*fc*(...)
+     fai   = fc*(1. - exp(-0.5*lai))
+     sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
+     temp1 = (2.*cd1*fai)**0.5
+
+     IF (lai > lai0) THEN
+        displa = delta + h*( &
+           (  fc)*1.1*log(1. + (Cd*lai*fc)**0.25) + &
+           (1-fc)*(1.-(1.-exp(-temp1))/temp1) )
+     ELSE
+        displa = h*( &
+           (  fc)*1.1*log(1. + (Cd*lai*fc)**0.25) + &
+           (1-fc)*(1.-(1.-exp(-temp1))/temp1) )
+     ENDIF
+
+     displa = max(displa, 0.)
+     z0 = (h-displa) * exp(-vonkar/sqrtdragc + psih)
+
+     IF (z0 < 0.01) THEN
+        z0 = 0.01
+        displa = 0.
+     ENDIF
+
+  END SUBROUTINE cal_z0_displa
 
 END MODULE UrbanFlux

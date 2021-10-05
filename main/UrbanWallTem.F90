@@ -1,7 +1,7 @@
 
  SUBROUTINE UrbanWallTem (deltim,capr,cnfac,&
                           cv_wall,tk_wall,t_wall,dz_wall,z_wall,zi_wall,&
-                          troom,lwall,clwall,sabwall,fsenwall,cwalls,fn_wall)
+                          twall_inner,lwall,clwall,sabwall,fsenwall,cwalls,tkdz_wall)
 
 !=======================================================================
 ! Wall temperatures
@@ -39,9 +39,9 @@
 
   REAL(r8), intent(in) :: dz_wall(1:nl_wall)   !layer thickiness [m]
   REAL(r8), intent(in) :: z_wall (1:nl_wall)   !node depth [m]
-  REAL(r8), intent(in) :: zi_wall(1:nl_wall)   !interface depth [m]
+  REAL(r8), intent(in) :: zi_wall(0:nl_wall)   !interface depth [m]
 
-  REAL(r8), intent(in) :: troom    !temperature at the wall inner surface [K]
+  REAL(r8), intent(in) :: twall_inner !temperature at the wall inner surface [K]
   REAL(r8), intent(in) :: lwall    !atmospheric infrared (longwave) radiation [W/m2]
   REAL(r8), intent(in) :: clwall   !atmospheric infrared (longwave) radiation [W/m2]
   REAL(r8), intent(in) :: sabwall  !solar radiation absorbed by wall [W/m2]
@@ -49,7 +49,7 @@
   REAL(r8), intent(in) :: cwalls   !deriv. of wall energy flux wrt to wall temp [w/m2/k]
 
   REAL(r8), intent(inout) :: t_wall(1:nl_wall) !wall layers' temperature [K]
-  REAL(r8), intent(inout) :: fn_wall           !inner wall heat flux [w/m2/k]
+  REAL(r8), intent(inout) :: tkdz_wall           !inner wall heat flux [w/m2/k]
 
 !------------------------ local variables ------------------------------
   REAL(r8) wice_wall(1:nl_wall) !ice lens [kg/m2]
@@ -103,7 +103,9 @@
       ENDDO
 
       j     =  nl_wall
-      fn(j) = tk(j)*(troom - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
+      fn(j) = tk(j)*(twall_inner - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
+      !fn_wall= cnfac*tk(j)*(twall_inner-t_wall(j))/(zi_wall(j)-z_wall(j))
+      tkdz_wall= tk(j)/(zi_wall(j)-z_wall(j))
 
 ! set up vector r and vectors a, b, c that define tridiagonal matrix
       j     = 1
@@ -135,8 +137,8 @@
       CALL tridia (i ,at ,bt ,ct ,rt ,t_wall) 
 
       j = nl_wall
-      fn1(j) = tk(j)*(troom - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
-      fn_wall = cnfac*fn(j) + (1.-cnfac)*fn1(j)
+      fn1(j) = tk(j)*(twall_inner - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))
+      !fn_wall= fn_wall + (1.-cnfac)*tk(j)*(twall_inner-t_wall(j))/(zi_wall(j)-z_wall(j))
 
  END SUBROUTINE UrbanWallTem
 ! ---------- EOP ------------

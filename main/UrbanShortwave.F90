@@ -22,7 +22,7 @@ CONTAINS
 
   !-------------------------------------------------
   SUBROUTINE UrbanOnlyShortwave ( theta, HW, fb, fgimp, H, &
-        fwsun, aroof, awall, agimp, agper, sroof, swsun, swsha, sgimp, sgper, albu)
+        aroof, awall, agimp, agper, fwsun, sroof, swsun, swsha, sgimp, sgper, albu)
 
      IMPLICIT NONE
      
@@ -342,8 +342,8 @@ CONTAINS
      
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------
-     Td = tee(DD1*3/8.*lai)
-     CALL phi(.true., 3/8.*lai, tau+rho, tau, rho, phi_tot, phi_dif, pa2)
+     Td = tee(DD1*3/8.*(lai+sai))
+     CALL phi(.true., 3/8.*(lai+sai), tau+rho, tau, rho, phi_tot, phi_dif, pa2)
      av = phi_tot
 
      ! Calculate view factors

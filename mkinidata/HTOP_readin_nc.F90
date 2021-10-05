@@ -55,7 +55,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          hbot(npatch) = hbot0(m)
          
          ! trees or woody savannas
-         IF ( m<6 .or. m==8) THEN
+         IF ( m<6 .or. m==8 .or. m==URBAN) THEN
 ! yuan, 01/06/2020: adjust htop reading
             IF (htoplc(i,j,m) > 2.) THEN
                htop(npatch) = htoplc(i,j,m)
@@ -76,6 +76,10 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
       allocate ( htoppft(1:lon_points,1:lat_points,0:N_PFT-1) )
       CALL nccheck( nf90_inq_varid(ncid, "HTOP_PFT", htoppft_vid ) )
       CALL nccheck( nf90_get_var(ncid, htoppft_vid, htoppft ) )
+
+      allocate ( htoplc(1:lon_points,1:lat_points,1:N_land_classification) )
+      CALL nccheck( nf90_inq_varid(ncid, "HTOP_LC", htoplc_vid ) )
+      CALL nccheck( nf90_get_var(ncid, htoplc_vid, htoplc ) )
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
@@ -109,6 +113,10 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             htop(npatch) = sum(htop_p(ps:pe)*pftfrac(ps:pe))
             hbot(npatch) = sum(hbot_p(ps:pe)*pftfrac(ps:pe))
 
+         ELSEIF (t == 1) THEN
+            htop(npatch) = htoplc(i,j,m)
+            hbot(npatch) = htoplc(i,j,m)*hbot0(m)/htop0(m)
+            hbot(npatch) = max(1., hbot(npatch))
          ELSE 
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
@@ -119,6 +127,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 !$OMP END PARALLEL DO
 #endif
       deallocate ( htoppft  )
+      deallocate ( htoplc   )
 #endif
 
 #ifdef PC_CLASSIFICATION
@@ -148,7 +157,11 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             ENDDO
             htop(npatch) = sum(htop_c(:,p)*pcfrac(:,p))
             hbot(npatch) = sum(hbot_c(:,p)*pcfrac(:,p))
-         ELSE
+         ELSEIF (t == 1) THEN
+            htop(npatch) = htoplc(i,j,m)
+            hbot(npatch) = htoplc(i,j,m)*hbot0(m)/htop0(m)
+            hbot(npatch) = max(1., hbot(npatch))
+         ELSE 
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
          ENDIF

@@ -22,10 +22,10 @@
         qfros_roof     ,qfros_gimp     ,qfros_gper     ,qfros_lake     ,&
         sm_roof        ,sm_gimp        ,sm_gper        ,sm_lake        ,&
         lake_icefrac   ,scv_lake       ,snowdp_lake    ,imelt_lake     ,&
-        fioldl         ,&
+        fioldl         ,w_old                                          ,&
         ! 输出
         rsur           ,rnof           ,qinfl          ,zwt            ,&
-        wa             ,qcharge                                         )  
+        wa             ,qcharge                                         )
 
 !=======================================================================
 ! this is the main SUBROUTINE to execute the calculation of URBAN
@@ -40,11 +40,11 @@
   USE LAKE
 
   IMPLICIT NONE
-    
+
 !-----------------------Argument----------------------------------------
   INTEGER, intent(in) :: &
         ipatch           ,&! patch index
-        patchtype        ,&! land water TYPE (0=soil, 1=urban or built-up, 2=wetland, 
+        patchtype        ,&! land water TYPE (0=soil, 1=urban or built-up, 2=wetland,
                            ! 3=land ice, 4=land water bodies, 99=ocean
         lbr              ,&! lower bound of array
         lbi              ,&! lower bound of array
@@ -53,7 +53,7 @@
 
   INTEGER, intent(inout) :: &
         snll               ! number of snow layers
-     
+
   REAL(r8), intent(in) :: &
         deltim           ,&! time step (s)
         pg_rain          ,&! rainfall after removal of interception (mm h2o/s)
@@ -93,34 +93,37 @@
         qfros_lake       ,&! surface dew added to snow pack (mm h2o /s) [+]
         sm_roof          ,&! snow melt (mm h2o/s)
         sm_gimp          ,&! snow melt (mm h2o/s)
-        sm_gper            ! snow melt (mm h2o/s)
-        
-  INTEGER, intent(in) :: & 
-        imelt_lake  (  1:nl_lake)   ! lake flag for melting or freezing snow and soil layer [-]
+        sm_gper          ,&! snow melt (mm h2o/s)
+        w_old              ! liquid water mass of the column at the previous time step (mm)
+
+  INTEGER, intent(in) :: &
+        imelt_lake(maxsnl+1:nl_soil)! lake flag for melting or freezing snow and soil layer [-]
 
   REAL(r8), intent(inout) :: &
         lake_icefrac(  1:nl_lake) ,&! lake ice fraction
-        fioldl      (  1:nl_lake) ,&! fraction of ice relative to the total water content [-]
+        fioldl (maxsnl+1:nl_soil) ,&! fraction of ice relative to the total water content [-]
         dz_lake     (  1:nl_lake) ,&! lake layer depth [m]
         z_gpersno   (lbp:nl_soil) ,&! layer depth (m)
         dz_roofsno  (lbr:nl_roof) ,&! layer thickness (m)
         dz_gimpsno  (lbi:nl_soil) ,&! layer thickness (m)
         dz_gpersno  (lbp:nl_soil) ,&! layer thickness (m)
         zi_gpersno(lbp-1:nl_soil) ,&! interface level below a "z" level (m)
-        zi_lakesno(lbl-1:nl_soil) ,&! interface level below a "z" level (m)
         t_lake      (  1:nl_lake) ,&! lake temperature [K]
         t_gpersno   (lbp:nl_soil) ,&! soil/snow skin temperature (K)
-        t_lakesno   (lbl:nl_soil) ,&! soil/snow skin temperature (K)
-        z_lakesno   (lbl:nl_soil) ,&! layer depth (m)
-        dz_lakesno  (lbl:nl_soil) ,&! layer thickness (m)
         wliq_roofsno(lbr:nl_roof) ,&! liquid water (kg/m2)
         wliq_gimpsno(lbi:nl_soil) ,&! liquid water (kg/m2)
         wliq_gpersno(lbp:nl_soil) ,&! liquid water (kg/m2)
-        wliq_lakesno(lbl:nl_soil) ,&! liquid water (kg/m2)
         wice_roofsno(lbr:nl_roof) ,&! ice lens (kg/m2)
         wice_gimpsno(lbi:nl_soil) ,&! ice lens (kg/m2)
         wice_gpersno(lbp:nl_soil) ,&! ice lens (kg/m2)
-        wice_lakesno(lbl:nl_soil) ,&! ice lens (kg/m2)
+
+        zi_lakesno  (maxsnl  :nl_soil) ,&! interface level below a "z" level (m)
+        t_lakesno   (maxsnl+1:nl_soil) ,&! soil/snow skin temperature (K)
+        z_lakesno   (maxsnl+1:nl_soil) ,&! layer depth (m)
+        dz_lakesno  (maxsnl+1:nl_soil) ,&! layer thickness (m)
+        wliq_lakesno(maxsnl+1:nl_soil) ,&! liquid water (kg/m2)
+        wice_lakesno(maxsnl+1:nl_soil) ,&! ice lens (kg/m2)
+
         sm_lake          ,&! snow melt (mm h2o/s)
         scv_lake         ,&! lake snow mass (kg/m2)
         snowdp_lake      ,&! lake snow depth
@@ -134,10 +137,10 @@
         rnof             ,&! total runoff (mm h2o/s)
         qinfl            ,&! infiltration rate (mm h2o/s)
         qcharge            ! groundwater recharge (positive to aquifer) [mm/s]
-!                    
+!
 !-----------------------Local Variables------------------------------
-!                   
-  REAL(r8) :: & 
+!
+  REAL(r8) :: &
        fg                ,&! ground fractional cover [-]
        gwat              ,&! net water input from top (mm/s)
        rnof_roof         ,&! total runoff (mm h2o/s)
@@ -149,17 +152,9 @@
        rsur_gper         ,&! surface runoff (mm h2o/s)
        rsur_lake         ,&! surface runoff (mm h2o/s)
        dfseng            ,&! change of lake sensible heat [W/m2]
-       dfgrnd            ,&! change of lake ground heat flux [W/m2]
-  eff_porosity(1:nl_soil),&! effective porosity = porosity - vol_ice
-       dwat   (1:nl_soil),&! change in soil water
-       vol_liq(1:nl_soil),&! partitial volume of liquid water in layer
-       vol_ice(1:nl_soil),&! partitial volume of ice lens in layer
-       icefrac(1:nl_soil),&! ice fraction (-)
-       zmm    (1:nl_soil),&! layer depth (mm)
-       dzmm   (1:nl_soil),&! layer thickness (mm)
-       zimm   (0:nl_soil)  ! interface level below a "z" level (mm)
+       dfgrnd              ! change of lake ground heat flux [W/m2]
 
-  REAL(r8) :: a, aa, xs1, w_old
+  REAL(r8) :: a, aa, xs1, tot
 
       fg = 1 - froof
       dfseng = 0.
@@ -168,7 +163,17 @@
 !=======================================================================
 ! [1] for pervious road, the same as soil
 !=======================================================================
-      
+
+      !print *, " --- WATER ----"
+      tot =  sum(wice_gpersno(1:)+wliq_gpersno(1:))
+      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
+      tot = tot + (-etr - qseva_gper + qsdew_gper - qsubl_gper + qfros_gper)*deltim
+      !print *, etr*deltim, qseva_gper*deltim, qsdew_gper,qsubl_gper,qfros_gper
+      tot = tot + pgper_rain*deltim + sm_gper*deltim
+      !print *, pgper_rain*deltim,sm_gper*deltim
+      tot = tot + wa
+      !print *, "tot water before water:", tot
+      !print *, wliq_gpersno
       CALL WATER ( ipatch,patchtype   ,lbp         ,nl_soil   ,deltim    ,&
              z_gpersno   ,dz_gpersno  ,zi_gpersno  ,&
              bsw         ,porsl       ,psi0        ,hksati    ,rootr     ,&
@@ -176,20 +181,41 @@
              etr         ,qseva_gper  ,qsdew_gper  ,qsubl_gper,qfros_gper,&
              rsur_gper   ,rnof_gper   ,qinfl       ,wtfact    ,pondmx    ,&
              ssi         ,wimp        ,smpmin      ,zwt       ,wa        ,&
-             qcharge                                                      )  
+             qcharge                                                      )
+      !print *, " AFTER --- WATER ----"
+      !print *, wliq_gpersno
+      tot = sum(wice_gpersno(1:)+wliq_gpersno(1:))
+      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
+      tot = tot + rnof_gper*deltim
+      tot = tot + wa
+      !print *, rnof_gper*deltim
+      !print *, "tot water after water: ", tot
 
 !=======================================================================
 ! [2] for roof and impervious road
 !=======================================================================
-      
+
+      tot = sum(wice_roofsno(1:)+wliq_roofsno(1:))
+
       IF (lbr >= 1) THEN
          gwat = pg_rain + sm_roof - qseva_roof
+         tot = tot - qseva_roof*deltim
+         tot = tot + pg_rain*deltim + sm_roof*deltim
       ELSE
          CALL snowwater (lbr,deltim,ssi,wimp,&
                          pg_rain,qseva_roof,qsdew_roof,qsubl_roof,qfros_roof,&
                          dz_roofsno(lbr:0),wice_roofsno(lbr:0),wliq_roofsno(lbr:0),gwat)
+         tot = tot + gwat
       ENDIF
 
+      wliq_roofsno(1) = wliq_roofsno(1) + gwat*deltim
+
+      ! Renew the ice and liquid mass due to condensation
+      if(lbr >= 1)then
+         ! make consistent with how evap_grnd removed in infiltration
+         wliq_roofsno(1) = max(0., wliq_roofsno(1) + qsdew_roof * deltim)
+         wice_roofsno(1) = max(0., wice_roofsno(1) + (qfros_roof-qsubl_roof) * deltim)
+      end if
 
       ! only consider ponding and surface runoff
       xs1 = wliq_roofsno(1) - (pondmx-wice_roofsno(1))
@@ -202,15 +228,31 @@
       rsur_roof = xs1 / deltim
       rnof_roof = rsur_roof
 
+      tot =  sum(wice_roofsno(1:)+wliq_roofsno(1:)) + rsur_roof*deltim
+
       ! ================================================
+
+      tot = sum(wice_gimpsno(1:)+wliq_gimpsno(1:))
 
       IF (lbi >= 1) THEN
          gwat = pg_rain + sm_gimp - qseva_gimp
+         tot = tot - qseva_gimp*deltim
+         tot = tot + pg_rain*deltim + sm_gimp*deltim
       ELSE
          CALL snowwater (lbi,deltim,ssi,wimp,&
                          pg_rain,qseva_gimp,qsdew_gimp,qsubl_gimp,qfros_gimp,&
                          dz_gimpsno(lbi:0),wice_gimpsno(lbi:0),wliq_gimpsno(lbi:0),gwat)
+         tot = tot + gwat
       ENDIF
+
+      wliq_gimpsno(1) = wliq_gimpsno(1) + gwat*deltim
+
+      ! Renew the ice and liquid mass due to condensation
+      if(lbi >= 1)then
+         ! make consistent with how evap_grnd removed in infiltration
+         wliq_gimpsno(1) = max(0., wliq_gimpsno(1) + qsdew_gimp * deltim)
+         wice_gimpsno(1) = max(0., wice_gimpsno(1) + (qfros_gimp-qsubl_gimp) * deltim)
+      end if
 
       ! only consider ponding and surface runoff
       xs1 = wliq_gimpsno(1) - (pondmx-wice_gimpsno(1))
@@ -223,16 +265,18 @@
       rsur_gimp = xs1 / deltim
       rnof_gimp = rsur_gimp
 
+      tot =  sum(wice_gimpsno(1:)+wliq_gimpsno(1:)) + rsur_gimp*deltim
+
 !=======================================================================
 ! [3] 湖泊水文过程
 !=======================================================================
-      
+
       CALL snowwater_lake ( &
            ! "in" snowater_lake arguments
            ! ---------------------------
            maxsnl       ,nl_soil      ,nl_lake         ,deltim          ,&
            ssi          ,wimp         ,porsl           ,pg_rain         ,&
-           pg_snow      ,dz_lake      ,imelt_lake      ,fioldl          ,&
+           pg_snow      ,dz_lake      ,imelt_lake(:0)  ,fioldl(:0)      ,&
            qseva_lake   ,qsubl_lake   ,qsdew_lake      ,qfros_lake      ,&
 
            ! "inout" snowater_lake arguments
@@ -242,7 +286,7 @@
            dfseng       ,dfgrnd       ,snll            ,scv_lake        ,&
            snowdp_lake  ,sm_lake                                         )
 
-      ! We assume the land water bodies have zero extra liquid water capacity 
+      ! We assume the land water bodies have zero extra liquid water capacity
       ! (i.e.,constant capacity), all excess liquid water are put into the runoff,
       ! this unreasonable assumption should be updated in the future version
       a  = (sum(wliq_lakesno(snll+1:))-w_old)/deltim
@@ -266,10 +310,11 @@
 ! [4] surface and total runoff weighted by fractional coverages
 !=======================================================================
 
+      ! 10/01/2021, yuan: exclude lake part
       rsur = rsur_roof*froof + rsur_gimp*fg*fgimp + rsur_gper*fg*(1.-fgimp)
-      rsur = rsur*(1.-flake) + rsur_lake*flake
+      !rsur = rsur*(1.-flake) + rsur_lake*flake
       rnof = rnof_roof*froof + rnof_gimp*fg*fgimp + rnof_gper*fg*(1.-fgimp)
-      rnof = rnof*(1.-flake) + rnof_lake*flake
+      !rnof = rnof*(1.-flake) + rnof_lake*flake
 
  END SUBROUTINE UrbanHydrology
 ! ---------- EOP ------------

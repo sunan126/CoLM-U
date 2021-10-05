@@ -240,6 +240,10 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
+! 10/05/2021, yuan: only for urban output
+#ifdef URBAN_MODEL
+               IF (patchclass(np) .ne. URBAN) cycle
+#endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
 ! Fluxes
                a_taux   (i,j) = a_taux   (i,j) + patchfrac(np)*taux   (np)
@@ -509,6 +513,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
+
+! 10/05/2021, yuan: only for urban output
+#ifdef URBAN_MODEL
+               IF (patchclass(np) .ne. URBAN) cycle
+#endif
                if(patchtype(np) <= 3)then  ! excluded the land water bodies and ocean patches
                   sumwt(i,j) = sumwt(i,j) + patchfrac(np)
                   a_t_soisno   (maxsnl+1:nl_soil,i,j) = a_t_soisno   (maxsnl+1:nl_soil,i,j) &
@@ -571,6 +580,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
+
+! 10/05/2021, yuan: only for urban output
+#ifdef URBAN_MODEL
+               IF (patchclass(np) .ne. URBAN) cycle
+#endif
                if(patchtype(np) <= 2)then  ! excluded the land water bodies and ocean patches
                   sumwt(i,j) = sumwt(i,j) + patchfrac(np)
                   a_h2osoi(1:nl_soil,i,j) = a_h2osoi(1:nl_soil,i,j) &
@@ -631,6 +645,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
+
+! 10/05/2021, yuan: only for urban output
+#ifdef URBAN_MODEL
+               IF (patchclass(np) .ne. URBAN) cycle
+#endif
                if(patchtype(np) == 4)then  ! land water bodies only
                   sumwt(i,j) = sumwt(i,j) + patchfrac(np)
                   a_t_lake(1:nl_lake,i,j) = a_t_lake(1:nl_lake,i,j) + patchfrac(np)*t_lake(1:nl_lake,np)
@@ -682,6 +701,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             if (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
+
+! 10/05/2021, yuan: only for urban output
+#ifdef URBAN_MODEL
+               IF (patchclass(np) .ne. URBAN) cycle
+#endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
             ENDDO
 
@@ -753,16 +777,16 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                obu = zldis/a_zol(i,j)
 
 !NOTE: for single point debug [注释下面]
-!               call moninobuk(hgt_u,hgt_t,hgt_q,displa_av,z0m_av,z0h_av,z0q_av,& ! fordebug
-!                    obu,um,a_ustar(i,j),fh2m,fq2m,&
-!                    a_fm10m(i,j),a_fm(i,j),a_fh(i,j),a_fq(i,j))
-!
-!! bug found by chen qiying 2013/07/01
-!               a_rib(i,j) = a_zol(i,j)/vonkar*a_ustar(i,j)**2/(vonkar/a_fh(i,j)*um**2)
-!               a_rib(i,j) = min(5.,a_rib(i,j))
-!
-!               a_us10m(i,j) = us/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
-!               a_vs10m(i,j) = vs/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
+               call moninobuk(hgt_u,hgt_t,hgt_q,displa_av,z0m_av,z0h_av,z0q_av,& ! fordebug
+                    obu,um,a_ustar(i,j),fh2m,fq2m,&
+                    a_fm10m(i,j),a_fm(i,j),a_fh(i,j),a_fq(i,j))
+
+! bug found by chen qiying 2013/07/01
+               a_rib(i,j) = a_zol(i,j)/vonkar*a_ustar(i,j)**2/(vonkar/a_fh(i,j)*um**2)
+               a_rib(i,j) = min(5.,a_rib(i,j))
+
+               a_us10m(i,j) = us/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
+               a_vs10m(i,j) = vs/um * a_ustar(i,j)/vonkar * a_fm10m(i,j)
 
             else
 

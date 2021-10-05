@@ -19,7 +19,7 @@ CONTAINS
   !-------------------------------------------------
   SUBROUTINE SimpleBEM ( deltim, rhoair, fcover, H, troom_max, troom_min, &
                          troof_nl, twsun_nl, twsha_nl, &
-                         tkdz_roof, tkdz_wsun, tkdz_wsha, taf,
+                         tkdz_roof, tkdz_wsun, tkdz_wsha, taf, &
                          troom, troof_inner, twsun_inner, twsha_inner, &
                          Fhac, Fwst, Fach )
 

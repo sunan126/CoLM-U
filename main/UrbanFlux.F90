@@ -1003,7 +1003,6 @@ MODULE UrbanFlux
         displav_lay,&!displacement height for urban vegetation layer
         z0mv_lay, &! roughless length for vegetation
         ueff_veg, &! effective wind speed within canopy layer [m/s]
-        ueff_veg_,&! effective wind speed within canopy layer [m/s]
         tg,       &! ground temperature
         qg         ! ground specific humidity
 
@@ -1107,7 +1106,7 @@ MODULE UrbanFlux
      clai = 0.0
      lsai = lai + sai
 
-     ! 0:roof, 1:sunlit wall, 2:shaded wall, 3: vegetation
+     ! index 0:roof, 1:sunlit wall, 2:shaded wall, 3: vegetation
      tu(0) = troof; tu(1) = twsun; tu(2) = twsha; tu(3) = tl
 
      fc(:)  = fcover(0:nurb)

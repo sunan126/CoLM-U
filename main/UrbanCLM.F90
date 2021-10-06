@@ -136,7 +136,6 @@
       CALL adj2end(edate)
       CALL adj2end(pdate)
 
-      itstamp = idate
       etstamp = edate
       ptstamp = pdate
 
@@ -204,6 +203,8 @@
 
       nac = 0; nac_ln(:,:) = 0
       istep = 1
+      CALL adj2end(idate)
+      itstamp = idate
 
       TIMELOOP : DO while (itstamp < etstamp)
 print*, 'TIMELOOP = ', istep
@@ -244,6 +245,7 @@ print*, 'TIMELOOP = ', istep
          CALL julian2monthday (idate(1), idate(2), month, mday)
          IF (month /= month_p) THEN
             CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
+            fveg(:) = 0.10006 !fraction of veg cover (fordebug)
          ENDIF
 #endif
 

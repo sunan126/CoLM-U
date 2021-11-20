@@ -25,12 +25,15 @@ MODULE GlobalVars
    ! number of plant functional types
    INTEGER, parameter :: N_PFT    = 16 
    
+   ! number of urban types, 1: TB, 2: HD, 3: MD
+   INTEGER, parameter :: N_URB    = 3
+
    ! vertical layer number
    INTEGER, parameter :: maxsnl   = -5
    INTEGER, parameter :: nl_soil  = 10
    INTEGER, parameter :: nl_lake  = 10
-   INTEGER, parameter :: nl_roof  = 5
-   INTEGER, parameter :: nl_wall  = 5
+   INTEGER, parameter :: nl_roof  = 10
+   INTEGER, parameter :: nl_wall  = 10
    
    INTEGER :: numpatch                 !total number of patches of grids
    INTEGER :: numpft                   !total number of PFT patches of grids

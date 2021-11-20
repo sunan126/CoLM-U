@@ -55,14 +55,14 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          hbot(npatch) = hbot0(m)
          
          ! trees or woody savannas
-         IF ( m<6 .or. m==8 .or. m==URBAN) THEN
-! yuan, 01/06/2020: adjust htop reading
-            IF (htoplc(i,j,m) > 2.) THEN
-               htop(npatch) = htoplc(i,j,m)
-               hbot(npatch) = htoplc(i,j,m)*hbot0(m)/htop0(m)
-               hbot(npatch) = max(1., hbot(npatch))
-               !htop(npatch) = max(htop(npatch), hbot0(m)*1.2)
-            ENDIF
+! 11/19/2021, yuan: remove URBAN, read separately
+         !IF ( m<6 .or. m==8 .or. m==URBAN) THEN
+         IF ( m<6 .or. m==8 ) THEN
+! 01/06/2020, yuan: adjust htop reading
+! 11/15/2021, yuan: adjust htop setting
+            htop(npatch) = max(2., htoplc(i,j,m))
+            hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
+            hbot(npatch) = max(1., hbot(npatch))
          ENDIF
          
       end do
@@ -103,9 +103,10 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
                
                ! trees
 ! yuan, 01/06/2020: adjust htop reading
-               IF ( n>0 .and. n<9 .and. htoppft(i,j,n)>2.) THEN
-                  htop_p(p) = htoppft(i,j,n)
-                  hbot_p(p) = htoppft(i,j,n)*hbot0_p(n)/htop0_p(n)
+! yuan, 11/15/2021: adjust htop setting
+               IF ( n>0 .and. n<9 ) THEN
+                  htop_p(p) = max(2., htoppft(i,j,n))
+                  hbot_p(p) = htop_p(p)*hbot0_p(n)/htop0_p(n)
                   hbot_p(p) = max(1., hbot_p(n))
                ENDIF
             ENDDO
@@ -113,10 +114,11 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             htop(npatch) = sum(htop_p(ps:pe)*pftfrac(ps:pe))
             hbot(npatch) = sum(hbot_p(ps:pe)*pftfrac(ps:pe))
 
-         ELSEIF (t == 1) THEN
-            htop(npatch) = htoplc(i,j,m)
-            hbot(npatch) = htoplc(i,j,m)*hbot0(m)/htop0(m)
-            hbot(npatch) = max(1., hbot(npatch))
+! 11/19/2021, yuan: remove URBAN, read separately
+         !ELSEIF (t == 1) THEN !For urban
+         !   htop(npatch) = max(2., htoplc(i,j,m))
+         !   hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
+         !   hbot(npatch) = max(1., hbot(npatch))
          ELSE 
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
@@ -151,16 +153,22 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 
             DO n = 1, N_PFT-1
 ! yuan, 01/06/2020: adjust htop reading
-               IF (n < 9 .and. htoplc(i,j,m)>2.) THEN
-                  htop_c(n,p) = htoplc(i,j,m)
+! yuan, 11/15/2021: adjust htop setting
+               IF (n < 9) THEN
+                  htop_c(n,p) = max(2., htoplc(i,j,m))
+                  hbot_c(n,p) = htop_c(n,p)*hbot0_p(n)/htop0_p(n)
+                  hbot_c(n,p) = max(1., hbot_p(n))
                ENDIF
             ENDDO
+
             htop(npatch) = sum(htop_c(:,p)*pcfrac(:,p))
             hbot(npatch) = sum(hbot_c(:,p)*pcfrac(:,p))
-         ELSEIF (t == 1) THEN
-            htop(npatch) = htoplc(i,j,m)
-            hbot(npatch) = htoplc(i,j,m)*hbot0(m)/htop0(m)
-            hbot(npatch) = max(1., hbot(npatch))
+            
+! 11/19/2021, yuan: remove URBAN, read separately
+         !ELSEIF (t == 1) THEN !For urban
+         !   htop(npatch) = max(2., htoplc(i,j,m))
+         !   hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
+         !   hbot(npatch) = max(1., hbot(npatch))
          ELSE 
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)

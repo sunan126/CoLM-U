@@ -1,13 +1,13 @@
 #include <define.h>
 
-SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgimp,flake,hwr,btop,&
+SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgper,flake,hwr,hroof,&
                     alb_roof,alb_wall,alb_gimp,alb_gper,&
                     rho,tau,fveg,htop,hbot,lai,sai,coszen,&
                     fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
                     scv_roof,scv_gimp,scv_gper,scv_lake,&
                     sag_roof,sag_gimp,sag_gper,sag_lake,tlake,fwsun,dfwsun,&
-                    alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake) 
-     
+                    alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake)
+
 !=======================================================================
 ! Created by Hua Yuan, 09/16/2021
 !
@@ -16,18 +16,18 @@ SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgimp,flake,hwr,btop,&
   USE GlobalVars
   USE UrbanALBEDO
 
-  IMPLICIT NONE 
+  IMPLICIT NONE
 
-  INTEGER, intent(in) :: & 
+  INTEGER, intent(in) :: &
         ipatch          ! patch index
 
   REAL(r8), intent(in) :: &
-        froof,         &! roof fraction                             
-        fgimp,         &! impervious ground weight fraction
+        froof,         &! roof fraction
+        fgper,         &! impervious ground weight fraction
         flake,         &! lake fraction
         hwr,           &! average building height to their distance
-        btop            ! average building height
-  
+        hroof           ! average building height
+
   REAL(r8), intent(in) :: &
         alb_roof(2,2), &! roof albedo (iband,direct/diffuse)
         alb_wall(2,2), &! wall albedo (iband,direct/diffuse)
@@ -74,30 +74,30 @@ SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgimp,flake,hwr,btop,&
 
 !-----------------------------------------------------------------------
 
-     fsno_roof      = 0.   !fraction of ground covered by snow        
-     fsno_gimp      = 0.   !fraction of ground covered by snow        
-     fsno_gper      = 0.   !fraction of ground covered by snow        
-     fsno_lake      = 0.   !fraction of soil covered by snow [-]
-     scv_roof       = 0.   !snow cover, water equivalent [mm, kg/m2]  
-     scv_gimp       = 0.   !snow cover, water equivalent [mm, kg/m2]  
-     scv_gper       = 0.   !snow cover, water equivalent [mm, kg/m2]  
-     scv_lake       = 0.   !snow cover, water equivalent [mm]
-     sag_roof       = 0.   !roof snow age [-]
-     sag_gimp       = 0.   !impervious ground snow age [-]
-     sag_gper       = 0.   !pervious ground snow age [-]
-     sag_lake       = 0.   !urban lake snow age [-]
+     fsno_roof   = 0.   !fraction of ground covered by snow
+     fsno_gimp   = 0.   !fraction of ground covered by snow
+     fsno_gper   = 0.   !fraction of ground covered by snow
+     fsno_lake   = 0.   !fraction of soil covered by snow [-]
+     scv_roof    = 0.   !snow cover, water equivalent [mm, kg/m2]
+     scv_gimp    = 0.   !snow cover, water equivalent [mm, kg/m2]
+     scv_gper    = 0.   !snow cover, water equivalent [mm, kg/m2]
+     scv_lake    = 0.   !snow cover, water equivalent [mm]
+     sag_roof    = 0.   !roof snow age [-]
+     sag_gimp    = 0.   !impervious ground snow age [-]
+     sag_gper    = 0.   !pervious ground snow age [-]
+     sag_lake    = 0.   !urban lake snow age [-]
 
-     fwsun          = 0.5  !Fraction of sunlit wall [-] 
-     dfwsun         = 0.   !change of fwsun
+     fwsun       = 0.5  !Fraction of sunlit wall [-]
+     dfwsun      = 0.   !change of fwsun
 
 ! urban surface albedo
-     CALL alburban (ipatch,froof,fgimp,flake,hwr,btop,&
+     CALL alburban (ipatch,froof,fgper,flake,hwr,hroof,&
                     alb_roof,alb_wall,alb_gimp,alb_gper,&
                     rho,tau,fveg,(htop+hbot)/2.,lai,sai,coszen,fwsun,tlake,&
                     fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
                     scv_roof,scv_gimp,scv_gper,scv_lake,&
                     sag_roof,sag_gimp,sag_gper,sag_lake,&
-                    dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake) 
+                    dfwsun,alb,ssun,ssha,sroof,swsun,swsha,sgimp,sgper,slake)
 
 END SUBROUTINE UrbanIniTimeVar
 !-----------------------------------------------------------------------

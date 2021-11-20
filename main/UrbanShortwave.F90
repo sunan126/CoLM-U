@@ -21,7 +21,7 @@ MODULE UrbanShortwave
 CONTAINS
 
   !-------------------------------------------------
-  SUBROUTINE UrbanOnlyShortwave ( theta, HW, fb, fgimp, H, &
+  SUBROUTINE UrbanOnlyShortwave ( theta, HW, fb, fgper, H, &
         aroof, awall, agimp, agper, fwsun, sroof, swsun, swsha, sgimp, sgper, albu)
 
      IMPLICIT NONE
@@ -30,7 +30,7 @@ CONTAINS
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
         fb,         &! Fraction of building area [-]
-        fgimp,      &! Fraction of impervious ground [-]
+        fgper,      &! Fraction of impervious ground [-]
         H            ! Building average height [m]
 
      REAL(r8), intent(in) :: &
@@ -55,7 +55,7 @@ CONTAINS
         L,          &! Urban building average length [m]
         HL,         &! Ratio of H to L, H/L [-]
         fg,         &! Fraction of ground [-]
-        fgper,      &! Weight of pervious ground [-]
+        fgimp,      &! Weight of pervious ground [-]
 
         Fsw,        &! View factor from sky to wall [-]
         Fsg,        &! View factor from sky to ground [-]
@@ -88,7 +88,7 @@ CONTAINS
      HL = H/L !NOTE: Same as: HL = HW*(1-sqrt(fb))/sqrt(fb)
      fg = 1. - fb
 
-     fgper = 1. - fgimp
+     fgimp = 1. - fgper
      
      ! Calculate view factors
      !-------------------------------------------------
@@ -223,7 +223,7 @@ CONTAINS
   END SUBROUTINE UrbanOnlyShortwave
 
   !-------------------------------------------------
-  SUBROUTINE UrbanVegShortwave ( theta, HW, fb, fgimp, H, &
+  SUBROUTINE UrbanVegShortwave ( theta, HW, fb, fgper, H, &
         aroof, awall, agimp, agper, lai, sai, fv, hv, rho, tau, &
         fwsun, sroof, swsun, swsha, sgimp, sgper, sveg, albu )
 
@@ -233,7 +233,7 @@ CONTAINS
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
         fb,         &! Fraction of building area [-]
-        fgimp,      &! Fraction of impervious ground [-]
+        fgper,      &! Fraction of impervious ground [-]
         H            ! Building average height [m]
 
      REAL(r8), intent(in) :: &
@@ -269,7 +269,7 @@ CONTAINS
         L,          &! Urban building average length
         HL,         &! Ratio of H to L, H/L [-]
         fg,         &! Fraction of ground [-]
-        fgper,      &! Weight of pervious ground [-]
+        fgimp,      &! Weight of pervious ground [-]
 
         Fsw,        &! View factor from sky to wall [-]
         Fsg,        &! View factor from sky to ground [-]
@@ -338,7 +338,7 @@ CONTAINS
      HL = H/L !NOTE: Same as: HL = HW*(1-sqrt(fb))/sqrt(fb)
      fg = 1. - fb
 
-     fgper = 1. - fgimp
+     fgimp = 1. - fgper
      
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------

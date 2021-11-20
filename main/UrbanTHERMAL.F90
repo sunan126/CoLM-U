@@ -16,8 +16,8 @@
         par            ,Fhac           ,Fwst           ,Fach           ,&
 
         ! 地面参数
-        froof          ,flake          ,btop           ,hwr            ,&
-        fgimp          ,pondmx         ,eroof          ,ewall          ,&
+        froof          ,flake          ,hroof          ,hwr            ,&
+        fgper          ,pondmx         ,eroof          ,ewall          ,&
         egimp          ,egper          ,trsmx0         ,zlnd           ,&
         zsno           ,capr           ,cnfac          ,csol           ,&
         porsl          ,psi0           ,bsw            ,dkdry          ,&
@@ -126,9 +126,9 @@
   REAL(r8), intent(in) :: &
         froof      ,&! roof fractional cover [-]
         flake      ,&! urban lake fractional cover [-]
-        btop       ,&! average building height [m]
+        hroof      ,&! average building height [m]
         hwr        ,&! average building height to their distance [-]
-        fgimp      ,&! impervious road fractional cover [-]
+        fgper      ,&! impervious road fractional cover [-]
         pondmx     ,&! maximum ponding of roof/impervious [mm]
         eroof      ,&! emissivity of roof
         ewall      ,&! emissivity of walls
@@ -590,7 +590,7 @@
 
          !调用长波辐射计算程序
          CALL UrbanVegLongwave ( &
-                                theta, hwr, froof, fgimp, btop, forc_frl, &
+                                theta, hwr, froof, fgper, hroof, forc_frl, &
                                 twsun, twsha, tgimp, tgper, ewall, egimp, &
                                 egper, lai, sai, fveg, (htop+hbot)/2., &
                                 ev, Ainv, B, B1, dBdT, SkyVF, VegVF, fcover)
@@ -608,7 +608,7 @@
 
          !调用长波辐射计算程序，计算Ainv, B, B1, dBdT
          CALL UrbanOnlyLongwave ( &
-                                 theta, hwr, froof, fgimp, btop, forc_frl, &
+                                 theta, hwr, froof, fgper, hroof, forc_frl, &
                                  twsun, twsha, tgimp, tgper, ewall, egimp, egper, &
                                  Ainv, B, B1, dBdT, SkyVF, fcover)
 
@@ -691,7 +691,7 @@
             forc_po2m   ,forc_pco2m  ,par         ,sabv        ,&
             rstfac      ,Fhac        ,Fwst        ,Fach        ,&
             ! 城市和植被参数
-            btop        ,hlr         ,nurb        ,pondmx      ,&
+            hroof       ,hlr         ,nurb        ,pondmx      ,&
             fcover      ,ewall       ,egimp       ,egper       ,&
             ev          ,htop        ,hbot        ,lai         ,&
             sai         ,sqrtdi      ,effcon      ,vmax25      ,&
@@ -735,7 +735,7 @@
             forc_q      ,forc_psrf   ,forc_rhoair ,Fhac        ,&
             Fwst        ,Fach                                  ,&
             ! 地面参数
-            btop        ,hlr         ,nurb        ,pondmx      ,&
+            hroof       ,hlr         ,nurb        ,pondmx      ,&
             fcover                                             ,&
             ! 地面状态变量
             z0h_g       ,obu_g       ,ustar_g     ,zlnd        ,&
@@ -1138,7 +1138,7 @@
 !=======================================================================
 
       ! Building energy model
-      CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), btop, troommax, troommin, &
+      CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), hroof, troommax, troommin, &
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &

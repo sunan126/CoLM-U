@@ -10,45 +10,46 @@ MODULE MOD_UrbanTimeInvars
    IMPLICIT NONE
    SAVE
 
-   INTEGER , allocatable :: patch2urb (:)  !projection from patch to Urban
-   INTEGER , allocatable :: urb2patch (:)  !projection from Urban to patch
+   INTEGER , allocatable :: urbclass    (:)  !urban TYPE
+   INTEGER , allocatable :: patch2urb   (:)  !projection from patch to Urban
+   INTEGER , allocatable :: urb2patch   (:)  !projection from Urban to patch
 
    ! 城市形态结构参数
-   REAL(r8), allocatable :: froof     (:)  !roof fractional cover [-]
-   REAL(r8), allocatable :: fgimp     (:)  !impervious fraction to ground area [-]
-   REAL(r8), allocatable :: flake     (:)  !lake fraction to ground area [-]
-   REAL(r8), allocatable :: btop      (:)  !average building height [m]
-   REAL(r8), allocatable :: hwr       (:)  !average building height to their distance [-]
+   REAL(r8), allocatable :: froof       (:)  !roof fractional cover [-]
+   REAL(r8), allocatable :: fgper       (:)  !impervious fraction to ground area [-]
+   REAL(r8), allocatable :: flake       (:)  !lake fraction to ground area [-]
+   REAL(r8), allocatable :: hroof       (:)  !average building height [m]
+   REAL(r8), allocatable :: hwr         (:)  !average building height to their distance [-]
 
-   REAL(r8), allocatable :: z_roof  (:,:)  !thickness of roof [m]
-   REAL(r8), allocatable :: z_wall  (:,:)  !thickness of wall [m]
-   REAL(r8), allocatable :: dz_roof (:,:)  !thickness of each layer [m]
-   REAL(r8), allocatable :: dz_wall (:,:)  !thickness of each layer [m]
+   REAL(r8), allocatable :: z_roof    (:,:)  !thickness of roof [m]
+   REAL(r8), allocatable :: z_wall    (:,:)  !thickness of wall [m]
+   REAL(r8), allocatable :: dz_roof   (:,:)  !thickness of each layer [m]
+   REAL(r8), allocatable :: dz_wall   (:,:)  !thickness of each layer [m]
 
    ! albedo
-   REAL(r8), allocatable :: alb_roof(:,:,:)!albedo of roof [-]
-   REAL(r8), allocatable :: alb_wall(:,:,:)!albedo of walls [-]
-   REAL(r8), allocatable :: alb_gimp(:,:,:)!albedo of impervious [-]
-   REAL(r8), allocatable :: alb_gper(:,:,:)!albedo of pervious [-]
+   REAL(r8), allocatable :: alb_roof(:,:,:)  !albedo of roof [-]
+   REAL(r8), allocatable :: alb_wall(:,:,:)  !albedo of walls [-]
+   REAL(r8), allocatable :: alb_gimp(:,:,:)  !albedo of impervious [-]
+   REAL(r8), allocatable :: alb_gper(:,:,:)  !albedo of pervious [-]
 
    ! emissivity
-   REAL(r8), allocatable :: emroof(:)      !emissivity of roof [-]
-   REAL(r8), allocatable :: emwall(:)      !emissivity of walls [-]
-   REAL(r8), allocatable :: emgimp(:)      !emissivity of impervious [-]
-   REAL(r8), allocatable :: emgper(:)      !emissivity of pervious [-]
+   REAL(r8), allocatable :: em_roof     (:)  !emissivity of roof [-]
+   REAL(r8), allocatable :: em_wall     (:)  !emissivity of walls [-]
+   REAL(r8), allocatable :: em_gimp     (:)  !emissivity of impervious [-]
+   REAL(r8), allocatable :: em_gper     (:)  !emissivity of pervious [-]
 
    ! thermal pars of roof, wall, impervious
-   REAL(r8), allocatable :: cv_roof (:,:)  !heat capacity of roof [J/(m2 K)]
-   REAL(r8), allocatable :: cv_wall (:,:)  !heat capacity of wall [J/(m2 K)]
-   REAL(r8), allocatable :: cv_gimp (:,:)  !heat capacity of impervious [J/(m2 K)]
+   REAL(r8), allocatable :: cv_roof   (:,:)  !heat capacity of roof [J/(m2 K)]
+   REAL(r8), allocatable :: cv_wall   (:,:)  !heat capacity of wall [J/(m2 K)]
+   REAL(r8), allocatable :: cv_gimp   (:,:)  !heat capacity of impervious [J/(m2 K)]
 
-   REAL(r8), allocatable :: tk_roof (:,:)  !thermal conductivity of roof [W/m-K]
-   REAL(r8), allocatable :: tk_wall (:,:)  !thermal conductivity of wall [W/m-K]
-   REAL(r8), allocatable :: tk_gimp (:,:)  !thermal conductivity of impervious [W/m-K]
+   REAL(r8), allocatable :: tk_roof   (:,:)  !thermal conductivity of roof [W/m-K]
+   REAL(r8), allocatable :: tk_wall   (:,:)  !thermal conductivity of wall [W/m-K]
+   REAL(r8), allocatable :: tk_gimp   (:,:)  !thermal conductivity of impervious [W/m-K]
 
    ! room maximum and minimum temperature
-   REAL(r8), allocatable :: t_roommax (:)  !maximum temperature of inner room [K]
-   REAL(r8), allocatable :: t_roommin (:)  !minimum temperature of inner room [K]
+   REAL(r8), allocatable :: t_roommax   (:)  !maximum temperature of inner room [K]
+   REAL(r8), allocatable :: t_roommin   (:)  !minimum temperature of inner room [K]
 
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_UrbanTimeInvars
@@ -70,13 +71,14 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
+      allocate (urbclass             (numpatch))
       allocate (patch2urb            (numpatch))
       allocate (urb2patch            (numurban))
 
       allocate (froof                (numurban))
-      allocate (fgimp                (numurban))
+      allocate (fgper                (numurban))
       allocate (flake                (numurban))
-      allocate (btop                 (numurban))
+      allocate (hroof                (numurban))
       allocate (hwr                  (numurban))
 
       allocate (alb_roof         (2,2,numurban))
@@ -84,10 +86,10 @@ CONTAINS
       allocate (alb_gimp         (2,2,numurban))
       allocate (alb_gper         (2,2,numurban))
 
-      allocate (emroof               (numurban))
-      allocate (emwall               (numurban))
-      allocate (emgimp               (numurban))
-      allocate (emgper               (numurban))
+      allocate (em_roof              (numurban))
+      allocate (em_wall              (numurban))
+      allocate (em_gimp              (numurban))
+      allocate (em_gper              (numurban))
 
       allocate (z_roof     (1:nl_roof,numurban))
       allocate (z_wall     (1:nl_wall,numurban))
@@ -108,13 +110,14 @@ CONTAINS
 
    SUBROUTINE deallocate_UrbanTimeInvars
 
+      deallocate (urbclass  )
       deallocate (patch2urb )
       deallocate (urb2patch )
 
       deallocate (froof     )
-      deallocate (fgimp     )
+      deallocate (fgper     )
       deallocate (flake     )
-      deallocate (btop      )
+      deallocate (hroof     )
       deallocate (hwr       )
 
       deallocate (alb_roof  )
@@ -122,10 +125,10 @@ CONTAINS
       deallocate (alb_gimp  )
       deallocate (alb_gper  )
 
-      deallocate (emroof    )
-      deallocate (emwall    )
-      deallocate (emgimp    )
-      deallocate (emgper    )
+      deallocate (em_roof   )
+      deallocate (em_wall   )
+      deallocate (em_gimp   )
+      deallocate (em_gper   )
 
       deallocate (z_roof    )
       deallocate (z_wall    )

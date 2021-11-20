@@ -21,7 +21,7 @@ MODULE UrbanLongwave
 CONTAINS
 
   !-------------------------------------------------
-  SUBROUTINE UrbanOnlyLongwave (theta, HW, fb, fgimp, H, LW, &
+  SUBROUTINE UrbanOnlyLongwave (theta, HW, fb, fgper, H, LW, &
         twsun, twsha, tgimp, tgper, ewall, egimp, egper, &
         Ainv, B, B1, dBdT, SkyVF, fcover)
 
@@ -31,7 +31,7 @@ CONTAINS
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
         fb,         &! Fraction of building area [-]
-        fgimp,      &! Fraction of impervious ground [-]
+        fgper,      &! Fraction of impervious ground [-]
         H,          &! Building average height [m]
         LW,         &! Downward longwave radiation [W/m2]
 
@@ -59,7 +59,7 @@ CONTAINS
         L,          &! Urban building average length [m]
         HL,         &! Ratio of H to L, H/L [-]
         fg,         &! Fraction of ground [-]
-        fgper,      &! Fraction of snow ground [-]
+        fgimp,      &! Fraction of snow ground [-]
 
         Fsw,        &! View factor from sky to wall [-]
         Fsg,        &! View factor from sky to ground [-]
@@ -89,7 +89,7 @@ CONTAINS
      L  = W*sqrt(fb)/(1-sqrt(fb))
      HL = H/L !NOTE: Same as HL = HW*(1-sqrt(fb))/sqrt(fb)
      fg = 1. - fb
-     fgper = 1. - fgimp
+     fgimp = 1. - fgper
      
      ! Calculate view factors
      !-------------------------------------------------
@@ -211,7 +211,7 @@ CONTAINS
   END SUBROUTINE UrbanOnlyLongwave
 
   !-------------------------------------------------
-  SUBROUTINE UrbanVegLongwave (theta, HW, fb, fgimp, H, LW, &
+  SUBROUTINE UrbanVegLongwave (theta, HW, fb, fgper, H, LW, &
         twsun, twsha, tgimp, tgper, ewall, egimp, egper, lai, sai, fv, hv, &
         ev, Ainv, B, B1, dBdT, SkyVF, VegVF, fcover)
 
@@ -221,7 +221,7 @@ CONTAINS
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
         fb,         &! Fraction of building area [-]
-        fgimp,      &! Fraction of impervious ground [-]
+        fgper,      &! Fraction of impervious ground [-]
         H,          &! Building average height [m]
         LW,         &! Downward longwave radiation [W/m2]
 
@@ -257,7 +257,7 @@ CONTAINS
         L,          &! Urban building average length [m]
         HL,         &! Ratio of H to L, H/L [-]
         fg,         &! Fraction of ground [-]
-        fgper,      &! Fraction of pervious ground [-]
+        fgimp,      &! Fraction of pervious ground [-]
 
         Fsw,        &! View factor from sky to wall [-]
         Fsg,        &! View factor from sky to ground [-]
@@ -319,7 +319,7 @@ CONTAINS
      HL = H/L !NOTE: Same as HL = HW*(1-sqrt(fb))/sqrt(fb)
      fg = 1. - fb
 
-     fgper = 1. - fgimp
+     fgimp = 1. - fgper
      
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------

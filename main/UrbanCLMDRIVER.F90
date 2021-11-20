@@ -50,9 +50,9 @@ SUBROUTINE CLMDRIVER (idate,deltim)
         patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)    ,&
 
       ! URBAN PARAMETERS
-        froof(u)        ,flake(u)        ,btop(u)         ,hwr(u)          ,&
-        fgimp(u)        ,emroof(u)       ,emwall(u)       ,emgimp(u)       ,&
-        emgper(u)       ,cv_roof(:,u)    ,cv_wall(:,u)    ,cv_gimp(:,u)    ,&
+        froof(u)        ,flake(u)        ,hroof(u)        ,hwr(u)          ,&
+        fgper(u)        ,em_roof(u)      ,em_wall(u)      ,em_gimp(u)      ,&
+        em_gper(u)      ,cv_roof(:,u)    ,cv_wall(:,u)    ,cv_gimp(:,u)    ,&
         tk_roof(:,u)    ,tk_wall(:,u)    ,tk_gimp(:,u)    ,z_roof(:,u)     ,&
         z_wall(:,u)     ,dz_roof(:,u)    ,dz_wall(:,u)                     ,&
         lakedepth(i)    ,dz_lake(1:,i)                                     ,&

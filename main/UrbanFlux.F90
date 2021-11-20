@@ -31,7 +31,7 @@ MODULE UrbanFlux
         qm          ,psrf        ,rhoair      ,Fhac        ,&
         Fwst        ,Fach                                  ,&
         ! 城市参数
-        btop        ,hlr         ,nurb        ,pondmx      ,&
+        hroof       ,hlr         ,nurb        ,pondmx      ,&
         fcover                                             ,&
         ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
@@ -87,7 +87,7 @@ MODULE UrbanFlux
         nurb       ! number of aboveground urban components [-]
 
      REAL(r8), intent(in) :: &
-        btop,     &! average building height [m]
+        hroof,    &! average building height [m]
         hlr,      &! average building height to length of side [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:4)! coverage of aboveground urban components [-]
@@ -344,10 +344,10 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
-     displau = btop * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
      fai  = 4/PI*hlr*fcover(0)
-     z0mu = (btop - displau) * &
-          exp( -(0.5*1.2/vonkar/vonkar*(1-displau/btop)*fcover(0))**(-0.5) )
+     z0mu = (hroof - displau) * &
+          exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fcover(0))**(-0.5) )
 
      ! 比较地面和城市的z0m和displa大小，取大者
      ! maximum assumption
@@ -358,7 +358,7 @@ MODULE UrbanFlux
      z0m = z0mu
 
      displa  = displau
-     displau = max(btop/2., displa)
+     displau = max(hroof/2., displa)
 
 !-----------------------------------------------------------------------
 ! calculate layer decay coefficient
@@ -368,7 +368,7 @@ MODULE UrbanFlux
      sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
      ! Kondo, 1971
-     alpha = btop/(btop-displa)/(vonkar/sqrtdragc)
+     alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -411,10 +411,10 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 ! Evaluate stability-dependent variables using moz from prior iteration
 
-        !NOTE: displat=btop, z0mt=0, are set for roof
+        !NOTE: displat=hroof, z0mt=0, are set for roof
         ! fmtop is calculated at the same height of fht, fqt
         CALL moninobukm(hu,ht,hq,displa,z0mu,z0hu,z0qu,obu,um, &
-           btop,0.,ustar,fh2m,fq2m,btop,fmtop,fm,fh,fq,fht,fqt,phih)
+           hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
         ! 09/16/2017:
@@ -452,31 +452,31 @@ MODULE UrbanFlux
         ! calculate canopy top wind speed (utop) and exchange coefficient (ktop)
         ! need to update each time as obu changed after each iteration
         utop = ustar/vonkar * fmtop
-        ktop = vonkar * (btop-displa) * ustar / phih
+        ktop = vonkar * (hroof-displa) * ustar / phih
 
         !ueff_lay(3)  = utop
         ueff_lay(3) = utop
 
         !REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
-        !   btop, 0., obug, ustarg, btop, displa+z0m)
+        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
+        !   hroof, 0., obug, ustarg, hroof, displa+z0m)
 
         !REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd(3) = frd(ktop, btop, 0., btop, displa+z0m, 0., z0h_g, &
+        rd(3) = frd(ktop, hroof, 0., hroof, displa+z0m, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
-        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, hroof, 0., hroof, z0mg)
 
         !REAL(r8) FUNCTION ueffect(utop, htop, hbot, ztop, zbot, z0mg, alpha, bee, fc)
-        ueff_lay(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
+        ueff_lay(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
 
-        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/btop, &
-        !   btop, 0., obug, ustarg, displa+z0m, z0qg)
-        rd(2) = frd(ktop, btop, 0., displa+z0m, z0qg, 0., z0h_g, &
+        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
+        !   hroof, 0., obug, ustarg, displa+z0m, z0qg)
+        rd(2) = frd(ktop, hroof, 0., displa+z0m, z0qg, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !print *, "------------------------"
@@ -711,7 +711,7 @@ MODULE UrbanFlux
         po2m        ,pco2m       ,par         ,sabv        ,&
         rstfac      ,Fhac        ,Fwst        ,Fach        ,&
         ! 城市和植被参数
-        btop        ,hlr         ,nurb        ,pondmx      ,&
+        hroof       ,hlr         ,nurb        ,pondmx      ,&
         fcover      ,ewall       ,egimp       ,egper       ,&
         ev          ,htop        ,hbot        ,lai         ,&
         sai         ,sqrtdi      ,effcon      ,vmax25      ,&
@@ -788,7 +788,7 @@ MODULE UrbanFlux
         nurb       ! number of aboveground urban components [-]
 
      REAL(r8), intent(in) :: &
-        btop,     &! average building height [m]
+        hroof,    &! average building height [m]
         hlr,      &! average building height to length of side [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:5)! coverage of aboveground urban components [-]
@@ -1177,10 +1177,10 @@ MODULE UrbanFlux
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
-     displau = btop * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
      fai  = 4/PI*hlr*fcover(0)
-     z0mu = (btop - displau) * &
-        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/btop)*fcover(0))**(-0.5) )
+     z0mu = (hroof - displau) * &
+        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fcover(0))**(-0.5) )
 
      ! 比较植被、裸地和建筑物的z0m和displa大小，取大者
      ! maximum assumption
@@ -1206,9 +1206,9 @@ MODULE UrbanFlux
      sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
      ! Kondo, 1971
-     alpha = btop/(btop-displa)/(vonkar/sqrtdragc)
+     alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
 
-     displau = max(btop/2., displau)
+     displau = max(hroof/2., displau)
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -1278,7 +1278,7 @@ MODULE UrbanFlux
 ! Evaluate stability-dependent variables using moz from prior iteration
 
         CALL moninobukm(hu,ht,hq,displa,z0mu,z0hu,z0qu,obu,um, &
-           btop,0.,ustar,fh2m,fq2m,btop,fmtop,fm,fh,fq,fht,fqt,phih)
+           hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
         ! 09/16/2017:
@@ -1315,54 +1315,54 @@ MODULE UrbanFlux
         ! calculate canopy top wind speed (utop) and exchange coefficient (ktop)
         ! need to update each time as obu changed after each iteration
         utop = ustar/vonkar * fmtop
-        ktop = vonkar * (btop-displa) * ustar / phih
+        ktop = vonkar * (hroof-displa) * ustar / phih
 
         ueff_lay(3)  = utop
         ueff_lay_(3) = utop
 
         ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-        !   btop, 0., obug, ustarg, btop, displau+z0mu)
+        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+        !   hroof, 0., obug, ustarg, hroof, displau+z0mu)
 
         ! REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd(3) = frd(ktop, btop, 0., btop, displau+z0mu, 0., z0h_g, &
+        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         ! REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
-        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, hroof, 0., hroof, z0mg)
 
         ! REAL(r8) FUNCTION ueffect(utop, htop, hbot, &
         !      ztop, zbot, z0mg, alpha, bee, fc)
-        ueff_lay(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
+        ueff_lay(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
 
         IF (numlay == 3) THEN
            ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
            !      displah, htop, hbot, obu, ustar, ztop, zbot)
-           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-           !   btop, 0., obug, ustarg, displau+z0mu, displav+z0mv)
-           rd(2) = frd(ktop, btop, 0., displau+z0mu, displav+z0mv,0., z0h_g, &
+           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !   hroof, 0., obug, ustarg, displau+z0mu, displav+z0mv)
+           rd(2) = frd(ktop, hroof, 0., displau+z0mu, displav+z0mv,0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-           !   btop, 0., obug, ustarg, displav+z0mv, z0qg)
-           rd(1) = frd(ktop, btop, 0., displav+z0mv, z0qg, 0., z0h_g, &
+           !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !   hroof, 0., obug, ustarg, displav+z0mv, z0qg)
+           rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ELSE
-           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/btop, &
-           !   btop, 0., obug, ustarg, displau+z0mu, z0qg)
-           rd(2) = frd(ktop, btop, 0., displau+z0mu, z0qg, 0., z0h_g, &
+           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
+           rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ENDIF
 
-        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., btop, z0mg)
+        !ueff_lay(2)  = uintegral(utop, 1., bee, alpha, z0mg, hroof, 0., hroof, z0mg)
         !print *, "htop/hbot:", htop, hbot  !fordebug
-        !ueff_veg  = uintegral(utop, 1., bee, alpha, z0mg, btop, 0., htop, hbot)
+        !ueff_veg  = uintegral(utop, 1., bee, alpha, z0mg, hroof, 0., htop, hbot)
 
-        !ueff_lay_(2) = ueffect(utop, btop, 0., btop, z0mg, z0mg, alpha, bee, 1.)
-        ueff_veg = ueffect(utop, btop, 0., htop, hbot, z0mg, alpha, bee, 1.)
+        !ueff_lay_(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
+        ueff_veg = ueffect(utop, hroof, 0., htop, hbot, z0mg, alpha, bee, 1.)
 
         !print *, "ueff_lay :", ueff_lay
         !print *, "ueff_lay_:", ueff_lay_

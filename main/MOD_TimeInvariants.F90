@@ -228,12 +228,13 @@ MODULE MOD_TimeInvariants
 
 #ifdef URBAN_MODEL
      read (lhistTimeConst)  &!
+           urbclass,        &! urban class/density TYPE
            patch2urb,       &! projection from patch to Urban
            urb2patch,       &! projection from Urban to patch
            froof,           &! roof fractional cover [-]
-           fgimp,           &! impervious fraction to ground area [-]
+           fgper,           &! impervious fraction to ground area [-]
            flake,           &! lake fraction to ground area [-]
-           btop,            &! average building height [m]
+           hroof,           &! average building height [m]
            hwr,             &! average building height to their distance [-]
            z_roof,          &! thickness of roof [m]
            z_wall,          &! thickness of wall [m]
@@ -243,10 +244,10 @@ MODULE MOD_TimeInvariants
            alb_wall,        &! albedo of walls [-]
            alb_gimp,        &! albedo of impervious [-]
            alb_gper,        &! albedo of pervious [-]
-           emroof,          &! emissivity of roof [-]
-           emwall,          &! emissivity of walls [-]
-           emgimp,          &! emissivity of impervious [-]
-           emgper,          &! emissivity of pervious [-]
+           em_roof,         &! emissivity of roof [-]
+           em_wall,         &! emissivity of walls [-]
+           em_gimp,         &! emissivity of impervious [-]
+           em_gper,         &! emissivity of pervious [-]
            cv_roof,         &! heat capacity of roof [J/(m2 K)]
            cv_wall,         &! heat capacity of wall [J/(m2 K)]
            cv_gimp,         &! heat capacity of impervious [J/(m2 K)]
@@ -358,12 +359,13 @@ MODULE MOD_TimeInvariants
 
 #ifdef URBAN_MODEL
      write(lhistTimeConst)  &!
+           urbclass,        &! urban class/density TYPE
            patch2urb,       &! projection from patch to Urban
            urb2patch,       &! projection from Urban to patch
            froof,           &! roof fractional cover [-]
-           fgimp,           &! impervious fraction to ground area [-]
+           fgper,           &! impervious fraction to ground area [-]
            flake,           &! lake fraction to ground area [-]
-           btop,            &! average building height [m]
+           hroof,           &! average building height [m]
            hwr,             &! average building height to their distance [-]
            z_roof,          &! thickness of roof [m]
            z_wall,          &! thickness of wall [m]
@@ -373,10 +375,10 @@ MODULE MOD_TimeInvariants
            alb_wall,        &! albedo of walls [-]
            alb_gimp,        &! albedo of impervious [-]
            alb_gper,        &! albedo of pervious [-]
-           emroof,          &! emissivity of roof [-]
-           emwall,          &! emissivity of walls [-]
-           emgimp,          &! emissivity of impervious [-]
-           emgper,          &! emissivity of pervious [-]
+           em_roof,         &! emissivity of roof [-]
+           em_wall,         &! emissivity of walls [-]
+           em_gimp,         &! emissivity of impervious [-]
+           em_gper,         &! emissivity of pervious [-]
            cv_roof,         &! heat capacity of roof [J/(m2 K)]
            cv_wall,         &! heat capacity of wall [J/(m2 K)]
            cv_gimp,         &! heat capacity of impervious [J/(m2 K)]

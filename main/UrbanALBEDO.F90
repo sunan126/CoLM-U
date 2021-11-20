@@ -16,7 +16,7 @@ MODULE UrbanALBEDO
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE alburban (ipatch,froof,fgimp,flake,hwr,btop,&
+  SUBROUTINE alburban (ipatch,froof,fgper,flake,hwr,hroof,&
                        alb_roof,alb_wall,alb_gimp,alb_gper,&
                        rho,tau,fveg,hveg,lai,sai,coszen,fwsun,tlake,&
                        fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
@@ -53,10 +53,10 @@ MODULE UrbanALBEDO
 
  REAL(r8), intent(in) :: &
       froof,         &! roof fraction
-      fgimp,         &! impervious ground weight fraction
+      fgper,         &! impervious ground weight fraction
       flake,         &! lake fraction
       hwr,           &! average building height to their distance
-      btop            ! average building height
+      hroof           ! average building height
 
  REAL(r8), intent(in) :: &
       alb_roof(2,2), &! roof albedo (iband,direct/diffuse)
@@ -294,14 +294,14 @@ MODULE UrbanALBEDO
       IF (lai+sai>1.e-6 .and. fveg>0.) THEN
 
          CALL UrbanVegShortwave ( &
-            theta, hwr, froof, fgimp, btop, &
+            theta, hwr, froof, fgper, hroof, &
             albroof(1,1), alb_wall(1,1), albgimp(1,1), albgper(1,1), &
             lai, sai, fveg, hveg, erho(1), etau(1), &
             fwsun_, sroof(1,:), swsun(1,:), swsha(1,:), sgimp(1,:), &
             sgper(1,:), ssun(1,:), alb(1,:))
 
          CALL UrbanVegShortwave ( &
-            theta, hwr, froof, fgimp, btop, &
+            theta, hwr, froof, fgper, hroof, &
             albroof(2,1), alb_wall(2,1), albgimp(2,1), albgper(2,1), &
             lai, sai, fveg, hveg, erho(2), etau(2), &
             fwsun_, sroof(2,:), swsun(2,:), swsha(2,:), sgimp(2,:), &
@@ -309,13 +309,13 @@ MODULE UrbanALBEDO
       ELSE
 
          CALL UrbanOnlyShortwave ( &
-            theta, hwr, froof, fgimp, btop, &
+            theta, hwr, froof, fgper, hroof, &
             albroof(1,1), alb_wall(1,1), albgimp(1,1), albgper(1,1), &
             fwsun_, sroof(1,:), swsun(1,:), swsha(1,:), sgimp(1,:), &
             sgper(1,:), alb(1,:))
 
          CALL UrbanOnlyShortwave ( &
-            theta, hwr, froof, fgimp, btop, &
+            theta, hwr, froof, fgper, hroof, &
             albroof(2,1), alb_wall(2,1), albgimp(2,1), albgper(2,1), &
             fwsun_, sroof(2,:), swsun(2,:), swsha(2,:), sgimp(2,:), &
             sgper(2,:), alb(2,:))

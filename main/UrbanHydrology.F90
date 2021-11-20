@@ -7,7 +7,7 @@
         ! 外强迫
         pg_rain        ,pgper_rain     ,pg_snow                        ,&
         ! 地表参数及状态变量
-        froof          ,fgimp          ,flake          ,bsw            ,&
+        froof          ,fgper          ,flake          ,bsw            ,&
         porsl          ,psi0           ,hksati         ,wtfact         ,&
         pondmx         ,ssi            ,wimp           ,smpmin         ,&
         rootr          ,etr            ,fseng          ,fgrnd          ,&
@@ -60,7 +60,7 @@
         pg_snow          ,&! rainfall after removal of interception (mm h2o/s)
         pgper_rain       ,&! rainfall after removal of interception (mm h2o/s)
         froof            ,&! roof fractional cover [-]
-        fgimp            ,&! weith of impervious ground [-]
+        fgper            ,&! weith of impervious ground [-]
         flake            ,&! lake fractional cover [-]
         wtfact           ,&! fraction of model area with high water table
         pondmx           ,&! ponding depth (mm)
@@ -279,9 +279,9 @@
 !=======================================================================
 
       ! 10/01/2021, yuan: exclude lake part
-      rsur = rsur_roof*froof + rsur_gimp*fg*fgimp + rsur_gper*fg*(1.-fgimp)
+      rsur = rsur_roof*froof + rsur_gimp*fg*(1-fgper) + rsur_gper*fg*fgper
       !rsur = rsur*(1.-flake) + rsur_lake*flake
-      rnof = rnof_roof*froof + rnof_gimp*fg*fgimp + rnof_gper*fg*(1.-fgimp)
+      rnof = rnof_roof*froof + rnof_gimp*fg*(1-fgper) + rnof_gper*fg*fgper
       !rnof = rnof*(1.-flake) + rnof_lake*flake
 
  END SUBROUTINE UrbanHydrology

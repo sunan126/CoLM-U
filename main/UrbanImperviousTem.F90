@@ -114,7 +114,7 @@
          cv(1) = cv(1) + cpice*scv_gimp
       ELSE
          !ponding water
-         cv(1) = cv_gimp(1) + cpliq*wliq_gimpsno(1) + cpice*wice_gimpsno(1)
+         cv(1) = cv(1) + cpliq*wliq_gimpsno(1) + cpice*wice_gimpsno(1)
       ENDIF
 
 ! net ground heat flux into the surface and its temperature derivative

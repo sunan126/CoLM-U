@@ -9,6 +9,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       USE precision
       USE GlobalVars
       USE LC_Const
+      USE MOD_TimeVariables
       USE MOD_TimeInvariants
       USE MOD_UrbanTimeInvars
       USE ncio
@@ -24,7 +25,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
 
       INTEGER :: ncid
       INTEGER :: wtlunitroof_vid, htroof_vid, canyonhwr_vid, wtroadperv_vid
-      INTEGER :: urbanwaterpct_vid, urbantreetop_vid
+      INTEGER :: urbanwaterpct_vid, urbantreepct_vid, urbantreetop_vid
       INTEGER :: albroof_vid, albwall_vid, albimproad_vid, albperroad_vid
       INTEGER :: emroof_vid, emwall_vid, emimproad_vid, emperroad_vid
       INTEGER :: cvroof_vid, cvwall_vid, cvimproad_vid
@@ -44,6 +45,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       REAL(r8), allocatable :: canyonhwr     (:,:,:)
       REAL(r8), allocatable :: wtroadperv    (:,:,:)
       REAL(r8), allocatable :: urbanwaterpct (:,:,:)
+      REAL(r8), allocatable :: urbantreepct  (:,:,:)
       REAL(r8), allocatable :: urbantreetop  (:,:,:)
 
       ! albedo
@@ -77,7 +79,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       REAL(r8), allocatable :: thickwall     (:,:,:)
 
 ! READ in urban data
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V1.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V2.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
@@ -86,6 +88,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       allocate ( canyonhwr     (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( wtroadperv    (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( urbanwaterpct (1:lon_points,1:lat_points,1:N_URB) )
+      allocate ( urbantreepct  (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( urbantreetop  (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( albroof       (1:lon_points,1:lat_points,1:N_URB,2,2) )
       allocate ( albwall       (1:lon_points,1:lat_points,1:N_URB,2,2) )
@@ -96,10 +99,10 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       allocate ( emimproad     (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( emperroad     (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( cvroof        (1:lon_points,1:lat_points,1:N_URB,nl_roof) )
-      allocate ( cvwall        (1:lon_points,1:lat_points,1:N_URB,nl_roof) )
+      allocate ( cvwall        (1:lon_points,1:lat_points,1:N_URB,nl_wall) )
       allocate ( cvimproad     (1:lon_points,1:lat_points,1:N_URB,nl_soil) )
       allocate ( tkroof        (1:lon_points,1:lat_points,1:N_URB,nl_roof) )
-      allocate ( tkwall        (1:lon_points,1:lat_points,1:N_URB,nl_roof) )
+      allocate ( tkwall        (1:lon_points,1:lat_points,1:N_URB,nl_wall) )
       allocate ( tkimproad     (1:lon_points,1:lat_points,1:N_URB,nl_soil) )
       allocate ( tbuildingmax  (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( tbuildingmin  (1:lon_points,1:lat_points,1:N_URB) )
@@ -111,6 +114,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       CALL nccheck( nf90_inq_varid(ncid, "CANYON_HWR",      canyonhwr_vid    ) )
       CALL nccheck( nf90_inq_varid(ncid, "WTROAD_PERV",     wtroadperv_vid   ) )
       CALL nccheck( nf90_inq_varid(ncid, "URBAN_WATER_PCT", urbanwaterpct_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_PCT",  urbantreepct_vid ) )
       CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_TOP",  urbantreetop_vid ) )
       CALL nccheck( nf90_inq_varid(ncid, "ALB_ROOF",        albroof_vid      ) )
       CALL nccheck( nf90_inq_varid(ncid, "ALB_WALL",        albwall_vid      ) )
@@ -136,6 +140,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       CALL nccheck( nf90_get_var(ncid, canyonhwr_vid,     canyonhwr    ) )
       CALL nccheck( nf90_get_var(ncid, wtroadperv_vid,    wtroadperv   ) )
       CALL nccheck( nf90_get_var(ncid, urbanwaterpct_vid, urbanwaterpct) )
+      CALL nccheck( nf90_get_var(ncid, urbantreepct_vid,  urbantreepct ) )
       CALL nccheck( nf90_get_var(ncid, urbantreetop_vid,  urbantreetop ) )
       CALL nccheck( nf90_get_var(ncid, albroof_vid,       albroof      ) )
       CALL nccheck( nf90_get_var(ncid, albwall_vid,       albwall      ) )
@@ -161,7 +166,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
 !$OMP PRIVATE(i, j, u, t, l, m, npatch) &
 !$OMP PRIVATE(thick_roof, thick_wall)
 #endif
-      DO u = 83, numurban
+      DO u = 1, numurban
 
          npatch = urb2patch(u)
          i = patch2lon(npatch)
@@ -198,8 +203,20 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          thick_roof      = thickroof     (i,j,t) !thickness of roof [m]
          thick_wall      = thickwall     (i,j,t) !thickness of wall [m]
 
+         ! set tree fractional cover (<= 1.-froof)
+         ! 植被覆盖占非水体面积部分的比例
+         fveg(npatch)    = urbantreepct(i,j,t)
+         IF (flake(u) < 1.) THEN
+            fveg(npatch) = fveg(npatch)/(1.-flake(u))
+         ELSE
+            fveg(npatch) = 0.
+         ENDIF
+         ! 假设树的覆盖比例小于等于地面比例(屋顶没有树)
+         fveg(npatch) = min(fveg(npatch), 1.-froof(u))
+
          ! set urban tree crown top and bottom [m]
-         htop(npatch)    = max(2., urbantreetop(i,j,t))
+         htop(npatch)    = min(hroof(u), urbantreetop(i,j,t))
+         htop(npatch)    = max(2., htop(npatch))
          hbot(npatch)    = htop(npatch)*hbot0(m)/htop0(m)
          hbot(npatch)    = max(1., hbot(npatch))
 

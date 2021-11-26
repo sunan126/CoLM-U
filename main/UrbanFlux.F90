@@ -64,10 +64,12 @@ MODULE UrbanFlux
         deltim     ! seconds in a time step [second]
 
      ! atmospherical variables and observational height
-     REAL(r8), intent(in) :: &
+     REAL(r8), intent(inout) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
-        hq,       &! observational height of humidity [m]
+        hq         ! observational height of humidity [m]
+
+     REAL(r8), intent(in) :: &
         us,       &! wind component in eastward direction [m/s]
         vs,       &! wind component in northward direction [m/s]
         thm,      &! intermediate variable (tm+0.0098*ht) [K]
@@ -78,9 +80,9 @@ MODULE UrbanFlux
         rhoair     ! density air [kg/m3]
 
      REAL(r8), intent(in) :: &
-        Fhac,     &!
-        Fwst,     &!
-        Fach       !
+        Fhac,     &! flux from heat or cool AC
+        Fwst,     &! waste heat from cool or heat
+        Fach       ! flux from air exchange
 
      ! 城市参数
      INTEGER, intent(in) :: &
@@ -154,7 +156,7 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu       !
+        tafu       ! effective urban air temperature (2nd layer, walls)
 
 !------------------------ LOCAL VARIABLES ------------------------------
      INTEGER ::   &
@@ -197,8 +199,6 @@ MODULE UrbanFlux
 
      INTEGER ::   &
         clev,     &! current layer index
-        toplay,   &! top layer index
-        botlay,   &! botom layer index
         numlay     ! available layer number
 
      REAL(r8) ::  &
@@ -218,7 +218,6 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
-        !fwetg,    &! wet fraction of ground
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
         fai,      &! frontal area index
@@ -277,7 +276,7 @@ MODULE UrbanFlux
      fc(:)  = fcover(0:nurb)
      fg     = 1 - fcover(0)
      canlev = (/3, 2, 2/)
-     toplay = 3; botlay = 2; numlay = 2
+     numlay = 2
 
 !-----------------------------------------------------------------------
 ! initial roughness length for z0mg, z0hg, z0qg
@@ -298,11 +297,6 @@ MODULE UrbanFlux
 ! initial saturated vapor pressure and humidity and their derivation
 !    0: roof, 1: sunlit wall, 2: shaded wall
 !-----------------------------------------------------------------------
-
-     !TODO-done: no wet fraction needed
-     !fwet(1:2) = 0.
-     !CALL dewfraction (1.,1.,0.,pondmx,rpond,fwet(0))
-     !CALL dewfraction (1.,1.,0.,pondmx,gpond,fwetg)
 
      qsatl(0) = qroof
      qsatldT(0) = dqroofdT
@@ -347,7 +341,7 @@ MODULE UrbanFlux
      displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
-          exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fcover(0))**(-0.5) )
+          exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
 
      ! 比较地面和城市的z0m和displa大小，取大者
      ! maximum assumption
@@ -387,8 +381,14 @@ MODULE UrbanFlux
      z0hu = z0m; z0qu = z0m
      ur   = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
      dth  = thm - taf(3)
-     dqh  = qm - qaf(3)
+     dqh  =  qm - qaf(3)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
+
+     ! 确保观测高度 >= hroof+10.
+     hu = max(hroof+10., hu)
+     ht = max(hroof+10., ht)
+     hq = max(hroof+10., hq)
+
      zldis = hu - displa
 
      IF (zldis <= 0.0) THEN
@@ -454,7 +454,6 @@ MODULE UrbanFlux
         utop = ustar/vonkar * fmtop
         ktop = vonkar * (hroof-displa) * ustar / phih
 
-        !ueff_lay(3)  = utop
         ueff_lay(3) = utop
 
         !REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
@@ -500,7 +499,7 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
         !NOTE: 0: roof, 1: sunlit wall, 2: shaded wall,
-        !      3: impervious road, 4: pervious road, 5: veg
+        !      3: impervious road, 4: pervious road, 5: vegetation
         cfh(:) = 0.
         cfw(:) = 0.
 
@@ -519,8 +518,8 @@ MODULE UrbanFlux
         cgw(:) = 0.
 
         ! 计算每层的阻抗
-        DO i = toplay, botlay, -1
-           IF (i == toplay) THEN
+        DO i = 3, 2, -1
+           IF (i == 3) THEN
               cah(i) = 1. / rah
               caw(i) = 1. / raw
            ELSE
@@ -569,25 +568,28 @@ MODULE UrbanFlux
 
         IF (numlay .eq. 2) THEN
 
-           ! 06/20/2021, yuan: 考虑人为热
-           !tmpw1  = wtg0(2)*tg + wtll(2)
-           tmpw1  = wtg0(2)*tg + wtll(2) &
-                  + wtshi(2)*(2/3.*(Fhac+Fwst)-Fach)/rhoair/cpair
-           fact   = 1. - wtg0(3)*wta0(2)
-           ! 06/20/2021, yuan: 考虑人为热
-           !taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
-           taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) + &
-                      wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair ) / fact
-
-           tmpw1  = wtgq0(2)*qg + wtlql(2)
-           facq   = 1. - wtgq0(3)*wtaq0(2)
-           qaf(3) = ( wtaq0(3)*qm + wtgq0(3)*tmpw1 + wtlql(3) ) / facq
+           ! - Equations:
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
            ! 06/20/2021, yuan: 考虑人为热
-           qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg + wtlql(2)
-           !taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
-           taf(2) = wta0 (2)*taf(3) + wtg0 (2)*tg + wtll (2)
-           taf(2) = taf(2)+ wtshi(2)*(2/3.*(Fhac+Fwst)-Fach)/rhoair/cpair
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           ! 06/20/2021, yuan: 考虑人为热
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
+                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
+
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3)
+           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -636,20 +638,20 @@ MODULE UrbanFlux
      rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
      ! sensible heat fluxes
-     fsenroof = rhoair * cpair * cfh(0) * (troof - taf(3))
-     fsenwsun = rhoair * cpair * cfh(1) * (twsun - taf(2))
-     fsenwsha = rhoair * cpair * cfh(2) * (twsha - taf(2))
+     fsenroof = rhoair*cpair*cfh(0)*(troof-taf(3))
+     fsenwsun = rhoair*cpair*cfh(1)*(twsun-taf(2))
+     fsenwsha = rhoair*cpair*cfh(2)*(twsha-taf(2))
 
      ! latent heat fluxes
-     fevproof = rhoair * cfw(0) * ( qsatl(0) - qaf(3) )
+     fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
 
-     !taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
-     !taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
-     croofs = rhoair * cpair * cfh(0) * ( 1 - wtl0(0)/fact )
-     cwalls = rhoair * cpair * cfh(1) * ( 1 - wtl0(1) )
-
-     ! qaf(3) = ( wtaq0(3)*qm + wtgq0(3)*tmpw1 + wtlql(3) ) / facq
-     croofl = rhoair * cfw(0) * ( 1 - wtlq0(0)/facq ) * qsatldT(0)
+     ! fact   = 1. - wta0(2)*wtg0(3)
+     ! facq   = 1. - wtaq0(2)*wtgq0(3)
+     ! deduce: croofs = rhoair*cpair*cfh(0)*(1.-wtg0(3)*wta0(2)*wtl0(0)/fact-wtl0(0))
+     croofs = rhoair*cpair*cfh(0)*(1.-wtl0(0)/fact)
+     cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
+     ! deduce: croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
+     croofl = rhoair*cfw(0)*(1.-wtlq0(0)/facq)*qsatldT(0)
 
      croof = croofs + croofl*htvp_roof
 
@@ -673,20 +675,19 @@ MODULE UrbanFlux
 ! 计算城市地面各组分的感热、潜热
 !-----------------------------------------------------------------------
 
-     fsengimp = cpair*rhoair*cgh(botlay)*(tgimp-taf(botlay))
-     fsengper = cpair*rhoair*cgh(botlay)*(tgper-taf(botlay))
+     fsengimp = cpair*rhoair*cgh(2)*(tgimp-taf(2))
+     fsengper = cpair*rhoair*cgh(2)*(tgper-taf(2))
 
-     fevpgimp = rhoair*cgw(botlay)*(qgimp-qaf(botlay))
-     fevpgper = rhoair*cgw(botlay)*(qgper-qaf(botlay))
+     fevpgimp = rhoair*cgw(2)*(qgimp-qaf(2))
+     fevpgper = rhoair*cgw(2)*(qgper-qaf(2))
 
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature (cgrnd)
 !-----------------------------------------------------------------------
 
-     !wtg0(:) = cgh(:) * wtshi(:) * fwt(:)
-     cgrnds = cpair*rhoair*cgh(botlay)*(1.-wtg0(botlay))
-     cgimpl = rhoair*cgw(botlay)*(1.-wtgq0(botlay))*dqgimpdT
-     cgperl = rhoair*cgw(botlay)*(1.-wtgq0(botlay))*dqgperdT
+     cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
+     cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+     cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
 
      cgimp  = cgrnds + cgimpl*htvp_gimp
      cgper  = cgrnds + cgperl*htvp_gper
@@ -758,10 +759,12 @@ MODULE UrbanFlux
         deltim     ! seconds in a time step [second]
 
      ! 外强迫
-     REAL(r8), intent(in) :: &
+     REAL(r8), intent(inout) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
-        hq,       &! observational height of humidity [m]
+        hq         ! observational height of humidity [m]
+
+     REAL(r8), intent(in) :: &
         us,       &! wind component in eastward direction [m/s]
         vs,       &! wind component in northward direction [m/s]
         thm,      &! intermediate variable (tm+0.0098*ht)
@@ -779,9 +782,9 @@ MODULE UrbanFlux
         po2m,     &! atmospheric partial pressure  o2 (pa)
         pco2m,    &! atmospheric partial pressure co2 (pa)
 
-        Fhac,     &!
-        Fwst,     &!
-        Fach       !
+        Fhac,     &! flux from heat or cool AC
+        Fwst,     &! waste heat from cool or heat
+        Fach       ! flux from air exchange
 
      ! 城市和植被参数
      INTEGER,  intent(in) :: &
@@ -913,8 +916,7 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu       !
-
+        tafu       ! effective urban air temperature (2nd layer, walls)
 
 !-----------------------Local Variables---------------------------------
 ! assign iteration parameters
@@ -986,7 +988,6 @@ MODULE UrbanFlux
 
      INTEGER ::   &
         clev,     &! current layer index
-        toplay,   &! top layer index
         botlay,   &! botom layer index
         numlay     ! available layer number
 
@@ -1008,7 +1009,6 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
-        !fwetg,    &! wet fraction of ground
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
         fai,      &! frontal area index
@@ -1113,17 +1113,11 @@ MODULE UrbanFlux
      fc(3)  = fcover(5)
      fg     = 1 - fcover(0)
      canlev = (/3, 2, 2, 1/)
-     toplay = 3
 
      B_5    = B(5)
      B1_5   = B1(5)
      dBdT_5 = dBdT(5)
 
-     ! 需要计算叶片、屋顶和不透水面
-     !TODO: no wet for roof and ground
-     !fwet(1:2) = 0.
-     !CALL dewfraction (1.,1.,0.,pondmx,rpond,fwet(0))
-     !CALL dewfraction (1.,1.,0.,pondmx,gpond,fwetg)
      CALL dewfraction (sigf,lai,sai,dewmx,ldew,fwet)
 
      qsatl(0) = qroof
@@ -1167,7 +1161,6 @@ MODULE UrbanFlux
 !NOTE: bee value, the default is 1
      bee = 1.
 
-
 !-----------------------------------------------------------------------
 ! calculate z0m and displa for layers
 !-----------------------------------------------------------------------
@@ -1180,11 +1173,12 @@ MODULE UrbanFlux
      displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
-        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fcover(0))**(-0.5) )
+        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
 
      ! 比较植被、裸地和建筑物的z0m和displa大小，取大者
      ! maximum assumption
-     IF (z0mu < z0mv_lay) z0mu = z0mv_lay
+     ! 11/26/2021, yuan: remove the below
+     !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
      IF (z0mu < z0mg) z0mu = z0mg
      IF (displau < displav_lay) displau = displav_lay
 
@@ -1218,19 +1212,19 @@ MODULE UrbanFlux
      qaf(:) = 0.
 
      IF (numlay .eq. 2) THEN
-        taf(botlay) = (2.*tg + thm)/3.
-        qaf(botlay) = (2.*qg + qm )/3.
-        taf(toplay) = (tg + 2.*thm)/3.
-        qaf(toplay) = (qg + 2.*qm )/3.
+        taf(3) = (tg + 2.*thm)/3.
+        qaf(3) = (qg + 2.*qm )/3.
+        taf(2) = (2.*tg + thm)/3.
+        qaf(2) = (2.*qg + qm )/3.
      ENDIF
 
      IF (numlay .eq. 3) THEN
-        taf(1) = (3.*tg + thm)/4.
-        qaf(1) = (3.*qg + qm )/4.
-        taf(2) = (tg + thm )/2.
-        qaf(2) = (qg + qm  )/2.
         taf(3) = (tg + 3.*thm)/4.
         qaf(3) = (qg + 3.*qm )/4.
+        taf(2) = (tg + thm)/2.
+        qaf(2) = (qg + qm )/2.
+        taf(1) = (3.*tg + thm)/4.
+        qaf(1) = (3.*qg + qm )/4.
      ENDIF
 
 !-----------------------------------------------------------------------
@@ -1249,9 +1243,15 @@ MODULE UrbanFlux
      ! have been set before
      z0hu = z0m; z0qu = z0m
      ur = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
-     dth = thm - taf(toplay)
-     dqh = qm - qaf(toplay)
+     dth = thm - taf(3)
+     dqh =  qm - qaf(3)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
+
+     ! 确保观测高度 >= hroof+10.
+     hu = max(hroof+10., hu)
+     ht = max(hroof+10., ht)
+     hq = max(hroof+10., hq)
+
      zldis = hu - displa
 
      IF (zldis <= 0.0) THEN
@@ -1453,8 +1453,8 @@ MODULE UrbanFlux
         cgw(:) = 0.
 
         ! 计算每层的阻抗
-        DO i = toplay, botlay, -1
-           IF (i == toplay) THEN
+        DO i = 3, botlay, -1
+           IF (i == 3) THEN
               cah(i) = 1. / rah
               caw(i) = 1. / raw
            ELSE
@@ -1506,46 +1506,62 @@ MODULE UrbanFlux
 
         IF (numlay .eq. 2) THEN
 
-           ! 06/20/2021, yuan: 考虑人为热
-           !tmpw1 = wtg0(botlay)*tg + wtll(botlay)
-           tmpw1 = wtg0(botlay)*tg + wtll(botlay) &
-                 + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair
-           fact  = 1. - wtg0(toplay)*wta0(botlay)
-           ! 06/20/2021, yuan: 考虑人为热
-           !taf(toplay) = ( wta0(toplay)*thm + wtg0(toplay)*tmpw1 + wtll(toplay) ) /  fact
-           taf(toplay) = ( wta0(toplay)*thm + wtg0(toplay)*tmpw1 + wtll(toplay) + &
-                           wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair ) / fact
+           ! - Equations:
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
-           tmpw1 = wtgq0(botlay)*qg + wtlql(botlay)
-           facq  = 1. - wtgq0(toplay)*wtaq0(botlay)
-           qaf(toplay) = ( wtaq0(toplay)*qm + wtgq0(toplay)*tmpw1 + wtlql(toplay) ) / facq
+           ! 06/20/2021, yuan: 考虑人为热
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           ! 06/20/2021, yuan: 考虑人为热
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
+                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           qaf(botlay) = wtaq0(botlay)*qaf(toplay) + wtgq0(botlay)*qg + wtlql(botlay)
-           taf(botlay) = wta0 (botlay)*taf(toplay) + wtg0 (botlay)*tg + wtll (botlay)
-           taf(botlay) = taf(botlay) + wtshi(botlay)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
+
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3)
+           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
         IF (numlay .eq. 3) THEN
 
-           tmpw1  = wta0(3)*thm + wtll(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
-           tmpw2  = wtg0(1)*tg  + wtll(1) + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           ! - Equations:
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*taf(1) + wtll(2)
+           ! taf(1) = wta0(1)*taf(2) + wtg0(1)*tg     + wtll(1)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtaq0(2)*qaf(1) + wtlql(2)
+           ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
+
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1) &
+                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
            fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
-           taf(2) = ( wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
-                      wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair ) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
+                     wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            tmpw2  = wtgq0(1)*qg + wtlql(1)
            facq   = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
-           qaf(2) = ( wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2) ) / facq
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
-           taf(1) = wta0 (1)*taf(2) + wtg0 (1)*tg + wtll (1) &
-                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
            qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
+           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1) &
+                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
-           taf(3) = wta0 (3)*thm + wtg0(3)*taf(2) + wtll (3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -1557,30 +1573,30 @@ MODULE UrbanFlux
 
         !NOTE: ONLY for vegetation
         i = 3
-        clev = canlev(i)
 
 ! sensible heat fluxes and their derivatives
-        fsenl = rhoair * cpair * cfh(i) * (tl - taf(clev))
+        fsenl = rhoair * cpair * cfh(i) * (tl - taf(botlay))
 
         ! 09/24/2017: why fact/facq here? bugs? YES
         ! 09/25/2017: re-written, check it clearfully
-        IF (numlay == 3) THEN
-           fsenl_dtl = rhoair * cpair * cfh(i) * &
-              (1 - (1-wtg0(2)*wta0(1))*wtl0(i)/fact)
+        ! 11/25/2021: re-written, double check
+        IF (botlay == 2) THEN
+           fsenl_dtl = rhoair * cpair * cfh(i) * (1.-wtl0(i)/fact)
         ELSE
-           fsenl_dtl = rhoair * cpair * cfh(i) * (1 - wtl0(i)/fact)
+           fsenl_dtl = rhoair * cpair * cfh(i) * (1.-wta0(1)*wtg0(2)*wtl0(i)/fact-wtl0(i))
         ENDIF
 
-! latent heat fluxes and their derivatives
-        etr = rhoair * (1.-fwet) * delta &
-            * lai/(rb(i)+rs) * ( qsatl(i) - qaf(clev) )
 
-        IF (numlay == 3) THEN
+! latent heat fluxes and their derivatives
+        etr = rhoair * (1.-fwet) * delta * lai/(rb(i)+rs) &
+            * (qsatl(i) - qaf(botlay))
+
+        IF (botlay == 2) THEN
            etr_dtl = rhoair * (1.-fwet) * delta * lai/(rb(i)+rs) &
-              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i)
+                   * (1.-wtlq0(i)/facq)*qsatldT(i)
         ELSE
            etr_dtl = rhoair * (1.-fwet) * delta * lai/(rb(i)+rs) &
-              * (1 - wtlq0(i)/facq)*qsatldT(i)
+                   * (1.-wtaq0(1)*wtgq0(2)*wtlq0(i)/facq-wtlq0(i))*qsatldT(i)
         ENDIF
 
         IF (etr.ge.etrc) THEN
@@ -1589,14 +1605,14 @@ MODULE UrbanFlux
         ENDIF
 
         evplwet = rhoair * (1.-delta*(1.-fwet)) * lsai/rb(i) &
-           * ( qsatl(i) - qaf(clev) )
+                * (qsatl(i) - qaf(botlay))
 
-        IF (numlay == 3) THEN
+        IF (botlay == 2) THEN
            evplwet_dtl = rhoair * (1.-delta*(1.-fwet)) * lsai/rb(i) &
-              * (1 - (1-wtgq0(2)*wtaq0(1))*wtlq0(i)/facq)*qsatldT(i)
+                       * (1.-wtlq0(i)/facq)*qsatldT(i)
         ELSE
            evplwet_dtl = rhoair * (1.-delta*(1.-fwet)) * lsai/rb(i) &
-              * (1 - wtlq0(i)/facq)*qsatldT(i)
+                       * (1.-wtaq0(1)*wtgq0(2)*wtlq0(i)/facq-wtlq0(i))*qsatldT(i)
         ENDIF
 
         IF (evplwet.ge.ldew/deltim) THEN
@@ -1684,36 +1700,60 @@ MODULE UrbanFlux
 
         IF (numlay .eq. 2) THEN
 
-           tmpw1 = wtg0(botlay)*tg + wtll(botlay)
-           fact  = 1. - wtg0(toplay)*wta0(botlay)
-           taf(toplay) = (wta0(toplay)*thm + wtg0(toplay)*tmpw1 + wtll(toplay)) / fact
+           ! - Equations:
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
-           tmpw1 = wtgq0(botlay)*qg + wtlql(botlay)
-           facq  = 1. - wtgq0(toplay)*wtaq0(botlay)
-           qaf(toplay) = (wtaq0(toplay)*qm + wtgq0(toplay)*tmpw1 + wtlql(toplay)) / facq
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
+                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           taf(botlay) = wta0(botlay)*taf(toplay) + wtg0(botlay)*tg + wtll(botlay)
-           qaf(botlay) = wtaq0(botlay)*qaf(toplay) + wtgq0(botlay)*qg + wtlql(botlay)
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
+
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm + wtg0 (3)*taf(2) + wtll (3)
+           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
         IF (numlay .eq. 3) THEN
 
-           tmpw1 = wta0(3)*thm + wtll(3)
-           tmpw2 = wtg0(1)*tg + wtll(1)
-           fact  = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2)) / fact
+           ! - Equations:
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*taf(1) + wtll(2)
+           ! taf(1) = wta0(1)*taf(2) + wtg0(1)*tg     + wtll(1)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtaq0(2)*qaf(1) + wtlql(2)
+           ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
 
-           tmpw1 = wtaq0(3)*qm + wtlql(3)
-           tmpw2 = wtgq0(1)*qg + wtlql(1)
-           facq  = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1) &
+                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
+                     wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           tmpw2  = wtgq0(1)*qg + wtlql(1)
+           facq   = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
-           taf(1) = wta0(1)*taf(2) + wtg0(1)*tg + wtll(1)
            qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
+           taf(1) = wta0 (1)*taf(2) + wtg0 (1)*tg + wtll (1) &
+                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
-           taf(3) = wta0(3)*thm + wtg0(3)*taf(2) + wtll(3)
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0 (3)*thm + wtg0(3)*taf(2) + wtll (3) &
+                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -1734,8 +1774,8 @@ MODULE UrbanFlux
 
         ! 这里使用的是最高层的taf和qaf
         ! 如何进行限制?是不是梯度太大的问题?运行单点模型测试
-        dth = thm - taf(toplay)
-        dqh =  qm - qaf(toplay)
+        dth = thm - taf(3)
+        dqh =  qm - qaf(3)
 
         tstar = vonkar/(fh-fht)*dth
         qstar = vonkar/(fq-fqt)*dqh
@@ -1893,20 +1933,16 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! sensible heat fluxes
-     fsenroof = rhoair * cpair * cfh(0) * (troof - taf(3))
-     fsenwsun = rhoair * cpair * cfh(1) * (twsun - taf(2))
-     fsenwsha = rhoair * cpair * cfh(2) * (twsha - taf(2))
+     fsenroof = rhoair*cpair*cfh(0)*(troof-taf(3))
+     fsenwsun = rhoair*cpair*cfh(1)*(twsun-taf(2))
+     fsenwsha = rhoair*cpair*cfh(2)*(twsha-taf(2))
 
      ! latent heat fluxes
-     fevproof = rhoair * cfw(0) * ( qsatl(0) - qaf(3) )
+     fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
 
-     ! taf(3) = ( wta0(3)*thm + wtg0(3)*tmpw1 + wtll(3) ) / fact
-     ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg + wtll(2)
-     croofs = rhoair * cpair * cfh(0) * ( 1 - wtl0(0)/fact )
-     cwalls = rhoair * cpair * cfh(1) * ( 1 - wtl0(1) )
-
-     ! qaf(3) = ( wtaq0(3)*qm + wtgq0(3)*tmpw1 + wtlql(3) ) / facq
-     croofl = rhoair * cfw(0) * ( 1 - wtlq0(0)/facq ) * qsatldT(0)
+     croofs = rhoair*cpair*cfh(0)*(1.-wtg0(3)*wta0(2)*wtl0(0)/fact-wtl0(0))
+     cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
+     croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
 
      croof = croofs + croofl*htvp_roof
 
@@ -1924,12 +1960,18 @@ MODULE UrbanFlux
 ! Derivative of soil energy flux with respect to soil temperature
 !-----------------------------------------------------------------------
 
-     cgrnds = cpair*rhoair*cgh(botlay)*(1.-wtg0(botlay))
-     cgimpl = rhoair*cgw(botlay)*(1.-wtgq0(botlay))*dqgimpdT
-     cgperl = rhoair*cgw(botlay)*(1.-wtgq0(botlay))*dqgperdT
+     IF (botlay == 2) THEN
+        cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
+        cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+        cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
+     ELSE !botlay == 1
+        cgrnds = cpair*rhoair*cgh(1)*(1.-wta0(1)*wtg0(2)*wtg0(1)/fact-wtg0(1))
+        cgimpl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
+        cgperl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgperdT
+     ENDIF
 
-     cgimp  = cgrnds + cgimpl*htvp_gimp
-     cgper  = cgrnds + cgperl*htvp_gper
+     cgimp = cgrnds + cgimpl*htvp_gimp
+     cgper = cgrnds + cgperl*htvp_gper
 
 !-----------------------------------------------------------------------
 ! 2 m height air temperature

@@ -207,7 +207,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
 !TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V1.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V2.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -917,15 +917,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
 !TODO: 单点模式，读取htop
 
-! ...............................................................
-! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
-! CALL Urban_readin_nc() !包含htop
-! ...............................................................
-
-#ifdef URBAN_MODEL
-      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata)
-#endif
-
 ! ................................
 ! 3.4 Initialize TUNABLE constants
 ! ................................
@@ -943,15 +934,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       smpmin = -1.e8   !Restriction for min of soil poten. (mm)
       trsmx0 = 2.e-4   !Max transpiration for moist soil+100% veg. [mm/s]
       tcrit  = 2.5     !critical temp. to determine rain or snow
-
-! ...............................................
-! 3.5 Write out as a restart file [histTimeConst]
-! ...............................................
-
-      CALL WRITE_TimeInvariants (dir_restart_hist,casename)
-
-      write (6,*)
-      write (6,*) ('Successfully to Initialize the Land Time-Invariants')
 
 ! ----------------------------------------------------------------------
 ! [4] INITIALIZE TIME-VARYING VARIABLES
@@ -1084,17 +1066,32 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       lake_icefrac(:,:) = 0.
     ! ------------------------------------------
 
+! ...............................................................
+! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
+! CALL Urban_readin_nc() !包含htop
+! put it here to rewrite fveg values set by LAI_readin_nc()
+! ...............................................................
+
+#ifdef URBAN_MODEL
+      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata)
+#endif
+
+! ...............................................
+! 3.5 Write out as a restart file [histTimeConst]
+! ...............................................
+
+      CALL WRITE_TimeInvariants (dir_restart_hist,casename)
+
+      write (6,*)
+      write (6,*) ('Successfully to Initialize the Land Time-Invariants')
+
 #ifdef OPENMP
 print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE (i, m, u) &
 !$OMP SCHEDULE(STATIC, 1)
 #endif
-      !DO i = 1, numpatch
-      !DO i = 26864, numpatch    !wliq_gpersno为0
-      !DO i = 58162, numpatch    !参数传递错误
-      !DO i = 153995, numpatch   !no sai in UrbanShortwave.F90
-      DO i = 226095, numpatch   !no sai in UrbanShortwave.F90
+      DO i = 1, numpatch
          m = patchclass(i)
       CALL iniTimeVar (i, patchtype(i)&
           ,porsl(1:,i)&
@@ -1119,7 +1116,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
       IF (m == URBAN) THEN
 
          u = patch2urb(i)
-         print *, "patch:", i, "urban:", u, "coszen:", coszen(i)
+         !print *, "patch:", i, "urban:", u, "coszen:", coszen(i)
          lwsun         (u) = 0.   !net longwave radiation of sunlit wall
          lwsha         (u) = 0.   !net longwave radiation of shaded wall
          lgimp         (u) = 0.   !net longwave radiation of impervious road

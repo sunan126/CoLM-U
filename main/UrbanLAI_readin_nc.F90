@@ -25,28 +25,23 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
 
       CHARACTER(LEN=256) :: lndname
       INTEGER :: ncid
-      INTEGER :: urbantreepct_vid, urbantreelai_vid, urbantreesai_vid
+      INTEGER :: urbantreelai_vid, urbantreesai_vid
       INTEGER :: i, j, m, n, t, u, npatch
 
-      REAL(r8), allocatable :: urbantreepct(:,:,:)
       REAL(r8), allocatable :: urbantreelai(:,:,:)
       REAL(r8), allocatable :: urbantreesai(:,:,:)
 
 ! READ in Leaf area index and stem area index
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V1.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V2.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
-      allocate ( urbantreepct(1:lon_points,1:lat_points,1:N_URB) )
       allocate ( urbantreelai(1:lon_points,1:lat_points,1:N_URB) )
       allocate ( urbantreesai(1:lon_points,1:lat_points,1:N_URB) )
 
-      CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_PCT", urbantreepct_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_LAI", urbantreelai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_SAI", urbantreesai_vid) )
 
-      CALL nccheck( nf90_get_var(ncid, urbantreepct_vid, urbantreepct, &
-           start=(/1,1,1,month/), count=(/lon_points,lat_points,N_URB,1/)) )
       CALL nccheck( nf90_get_var(ncid, urbantreelai_vid, urbantreelai, &
            start=(/1,1,1,month/), count=(/lon_points,lat_points,N_URB,1/)) )
       CALL nccheck( nf90_get_var(ncid, urbantreesai_vid, urbantreesai, &
@@ -64,7 +59,6 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
          m = patchclass(npatch)
          t = urbclass(u)
 
-         fveg(npatch)  = urbantreepct(i,j,t) !fractional tree cover
          tlai(npatch)  = urbantreelai(i,j,t) !leaf area index
          tsai(npatch)  = urbantreesai(i,j,t) !stem are index
          green(npatch) = 1.                  !fraction of green leaf
@@ -74,7 +68,6 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
 !$OMP END PARALLEL DO
 #endif
 
-      deallocate ( urbantreepct )
       deallocate ( urbantreelai )
       deallocate ( urbantreesai )
 

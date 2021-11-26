@@ -73,6 +73,7 @@ SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgper,flake,hwr,hroof,&
         slake(2,2)      ! lake absorption for solar radiation,
 
 !-----------------------------------------------------------------------
+     REAL(r8) :: hveg    !height of crown central hight
 
      fsno_roof   = 0.   !fraction of ground covered by snow
      fsno_gimp   = 0.   !fraction of ground covered by snow
@@ -90,10 +91,12 @@ SUBROUTINE UrbanIniTimeVar(ipatch,froof,fgper,flake,hwr,hroof,&
      fwsun       = 0.5  !Fraction of sunlit wall [-]
      dfwsun      = 0.   !change of fwsun
 
+     hveg        = min(hroof, (htop+hbot)/2.)
+
 ! urban surface albedo
      CALL alburban (ipatch,froof,fgper,flake,hwr,hroof,&
                     alb_roof,alb_wall,alb_gimp,alb_gper,&
-                    rho,tau,fveg,(htop+hbot)/2.,lai,sai,coszen,fwsun,tlake,&
+                    rho,tau,fveg,hveg,lai,sai,coszen,fwsun,tlake,&
                     fsno_roof,fsno_gimp,fsno_gper,fsno_lake,&
                     scv_roof,scv_gimp,scv_gper,scv_lake,&
                     sag_roof,sag_gimp,sag_gper,sag_lake,&

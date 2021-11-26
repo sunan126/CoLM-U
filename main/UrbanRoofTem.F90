@@ -109,7 +109,7 @@
          cv(1) = cv(1) + cpice*scv_roof
       ELSE
          !ponding water
-         cv(1) = cv_roof(1) + cpliq*wliq_roofsno(1) + cpice*wice_roofsno(1)
+         cv(1) = cv(1) + cpliq*wliq_roofsno(1) + cpice*wice_roofsno(1)
       ENDIF
 
 ! thermal conductivity
@@ -158,7 +158,7 @@
         fn(j) = tk(j)*(t_roofsno(j+1)-t_roofsno(j))/(z_roofsno(j+1)-z_roofsno(j))
       ENDDO
 
-      j     =  nl_roof
+      j     = nl_roof
       fn(j) = tk(j)*(troof_inner - cnfac*t_roofsno(j))/(zi_roofsno(j)-z_roofsno(j))
       tkdz_roof = tk(j)/(zi_roofsno(j)-z_roofsno(j))
 

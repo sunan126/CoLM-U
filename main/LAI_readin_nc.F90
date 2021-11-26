@@ -52,8 +52,8 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 #ifdef IGBP_CLASSIFICATION
       allocate ( lclai(1:lon_points,1:lat_points,1:N_land_classification) )
       allocate ( lcsai(1:lon_points,1:lat_points,1:N_land_classification) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_LAI", lclai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_SAI", lcsai_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_LAI", lclai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_SAI", lcsai_vid) )
       CALL nccheck( nf90_get_var(ncid, lclai_vid, lclai, &
            start=(/1,1,1,month/), &
            count=(/lon_points,lat_points,N_land_classification,1/)) )
@@ -164,11 +164,11 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 !$OMP END PARALLEL DO
 #endif
 
-      deallocate ( pftlai  )
-      deallocate ( pftsai  )
-      deallocate ( pclai   )
-      deallocate ( pcsai   )
-      deallocate ( pctpc   )
+      deallocate ( pftlai )
+      deallocate ( pftsai )
+      deallocate ( pclai  )
+      deallocate ( pcsai  )
+      deallocate ( pctpc  )
 
 #endif
 
@@ -179,9 +179,9 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
                           0:N_PFT-1,1:N_land_classification) )
       allocate ( pctpc(1:lon_points,1:lat_points, &
                           0:N_PFT-1,1:N_land_classification) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_LAI", pclai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_SAI", pcsai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT",         pctpc_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_LAI", pclai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_SAI", pcsai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT",         pctpc_vid) )
       
       CALL nccheck( nf90_get_var(ncid, pclai_vid, pclai, &
                     start=(/1,1,1,1,month/), &

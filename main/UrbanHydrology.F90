@@ -195,9 +195,9 @@
       end if
 
       ! only consider ponding and surface runoff
-      xs1 = wliq_roofsno(1) - (pondmx-wice_roofsno(1))
+      xs1 = wliq_roofsno(1) - pondmx
       IF (xs1 > 0.) THEN
-         wliq_roofsno(1) = pondmx-wice_roofsno(1)
+         wliq_roofsno(1) = pondmx
       ELSE
          xs1 = 0.
       ENDIF
@@ -225,9 +225,9 @@
       end if
 
       ! only consider ponding and surface runoff
-      xs1 = wliq_gimpsno(1) - (pondmx-wice_gimpsno(1))
+      xs1 = wliq_gimpsno(1) - pondmx
       IF (xs1 > 0.) THEN
-         wliq_gimpsno(1) = pondmx-wice_gimpsno(1)
+         wliq_gimpsno(1) = pondmx
       ELSE
          xs1 = 0.
       ENDIF

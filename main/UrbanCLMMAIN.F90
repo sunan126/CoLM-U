@@ -511,6 +511,9 @@ SUBROUTINE UrbanCLMMAIN ( &
       forc_rain = prc_rain + prl_rain
       forc_snow = prc_snow + prl_snow
 
+      sabvsun = sabv
+      sabvsha = 0.
+
 !======================================================================
 
       z_roofsno (maxsnl+1:0) = z_sno_roof (maxsnl+1:0)
@@ -767,14 +770,15 @@ SUBROUTINE UrbanCLMMAIN ( &
          sm_roof              ,sm_gimp              ,sm_gper              ,sm_lake              ,&
          sabg                 ,rstfac               ,rootr(:)             ,tref                 ,&
          qref                 ,trad                 ,rst                  ,assim                ,&
-         respc                ,emis                 ,z0m                  ,zol                  ,&
-         rib                  ,ustar                ,qstar                ,tstar                ,&
-         fm                   ,fh                   ,fq                                          )
+         respc                ,errore               ,emis                 ,z0m                  ,&
+         zol                  ,rib                  ,ustar                ,qstar                ,&
+         tstar                ,fm                   ,fh                   ,fq                    )
 
 !----------------------------------------------------------------------
 ! [4] Urban hydrology
 !----------------------------------------------------------------------
       IF (fveg > 0) THEN
+         ! covert to unit area
          etrgper = etr/(1-froof)/fgper
       ELSE
          etrgper = 0.
@@ -999,6 +1003,11 @@ SUBROUTINE UrbanCLMMAIN ( &
       CALL snowage (deltim,tgper,scv_gper,scvold_gper,sag_gper)
       IF (snll == 0) sag_lake = 0.
       CALL snowage (deltim,tlake,scv_lake,scvold_lake,sag_lake)
+
+      ! update snow depth, snow cover and snow age
+      snowdp = snowdp_roof*froof + snowdp_gper*(1-froof)*fgper + snowdp_gimp*(1-froof)*(1-fgper)
+      fsno   =   fsno_roof*froof +   fsno_gper*(1-froof)*fgper +   fsno_gimp*(1-froof)*(1-fgper)
+      sag    =    sag_roof*froof +    sag_gper*(1-froof)*fgper +    sag_gimp*(1-froof)*(1-fgper)
 
       ! albedos
       ! we supposed call it every time-step, because

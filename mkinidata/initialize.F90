@@ -953,6 +953,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       IF (.not. greenwich) THEN
          print *, ".........greenwich false", longxy(1,1)
       ENDIF
+      
+      CALL adj2begin(idate)
 
       year = idate(1)
       jday = idate(2)

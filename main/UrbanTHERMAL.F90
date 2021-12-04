@@ -59,9 +59,9 @@
         sm_roof        ,sm_gimp        ,sm_gper        ,sm_lake        ,&
         sabg           ,rstfac         ,rootr          ,tref           ,&
         qref           ,trad           ,rst            ,assim          ,&
-        respc          ,emis           ,z0m            ,zol            ,&
-        rib            ,ustar          ,qstar          ,tstar          ,&
-        fm             ,fh             ,fq                              )
+        respc          ,errore         ,emis           ,z0m            ,&
+        zol            ,rib            ,ustar          ,qstar          ,&
+        tstar          ,fm             ,fh             ,fq              )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -294,14 +294,13 @@
         sabg       ,&! overall ground solar radiation absorption (+wall)
         rstfac     ,&! factor of soil water stress
         rootr(1:nl_soil) ,&! root resistance of a layer, all layers add to 1
-
         tref       ,&! 2 m height air temperature [kelvin]
         qref       ,&! 2 m height air specific humidity
         trad       ,&! radiative temperature [K]
-
         rst        ,&! stomatal resistance (s m-1)
         assim      ,&! assimilation
         respc      ,&! respiration
+        errore     ,&! energy balnce error [w/m2]
 
         ! additionalvariables required by coupling with WRF or RSM model
         emis       ,&! averaged bulk surface emissivity
@@ -322,7 +321,6 @@
   LOGICAL :: doveg   ! run model with vegetation
 
   REAL(r8) :: &
-        hlr        ,&! average building height to length of side [-]
         fg         ,&! ground fraction ( impervious + soil + snow )
         fsenroof   ,&! sensible heat flux from roof [W/m2]
         fsenwsun   ,&! sensible heat flux from sunlit wall [W/m2]
@@ -353,7 +351,6 @@
         egidif     ,&! the excess of evaporation over "egsmax"
         emg        ,&! ground emissivity (0.97 for snow,
                      ! glaciers and water surface; 0.96 for soil and wetland)
-        errore     ,&! energy balnce error [w/m2]
         etrc       ,&! maximum possible transpiration rate [mm/s]
         fac        ,&! soil wetness of surface layer
         factr(lbr:nl_roof) ,&! used in computing tridiagonal matrix
@@ -488,11 +485,13 @@
 
       IF (dfwsun > 0) THEN
          t_wallsun = (fwsun*t_wallsun + dfwsun*t_wallsha) / (fwsun+dfwsun)
+         twsun_inner = (fwsun*twsun_inner + dfwsun*twsun_inner) / (fwsun+dfwsun)
          lwsun = (fwsun*lwsun + dfwsun*lwsha ) / (fwsun+dfwsun)
       ENDIF
 
       IF (dfwsun < 0) THEN
          t_wallsha = (fwsha*t_wallsha - dfwsun*t_wallsun) / (fwsha-dfwsun)
+         twsha_inner = (fwsha*twsha_inner - dfwsun*twsun_inner) / (fwsha-dfwsun)
          lwsha = (fwsha*lwsha - dfwsun*lwsun ) / (fwsha-dfwsun)
       ENDIF
 
@@ -526,7 +525,6 @@
       lgper_bef = lgper
 
       fg  = 1. - froof
-      hlr = hwr*(1-sqrt(froof))/sqrt(froof)
 
       IF (lai+sai>1.e-6 .and. fveg>0.) THEN
          doveg = .true.
@@ -675,9 +673,6 @@
          CALL eroot (nl_soil,trsmx0,porsl,bsw,psi0,rootfr, &
                      dz_gpersno,t_gpersno,wliq_gpersno,rootr,etrc,rstfac)
 
-         !NOTE: test only, no water stress
-         rstfac = 1.
-
          nurb = 3
 
          CALL UrbanVegFlux ( &
@@ -691,7 +686,7 @@
             forc_po2m   ,forc_pco2m  ,par         ,sabv        ,&
             rstfac      ,Fhac        ,Fwst        ,Fach        ,&
             ! 城市和植被参数
-            hroof       ,hlr         ,nurb        ,pondmx      ,&
+            hroof       ,hwr         ,nurb        ,pondmx      ,&
             fcover      ,ewall       ,egimp       ,egper       ,&
             ev          ,htop        ,hbot        ,lai         ,&
             sai         ,sqrtdi      ,effcon      ,vmax25      ,&
@@ -735,7 +730,7 @@
             forc_q      ,forc_psrf   ,forc_rhoair ,Fhac        ,&
             Fwst        ,Fach                                  ,&
             ! 地面参数
-            hroof       ,hlr         ,nurb        ,pondmx      ,&
+            hroof       ,hwr         ,nurb        ,pondmx      ,&
             fcover                                             ,&
             ! 地面状态变量
             z0h_g       ,obu_g       ,ustar_g     ,zlnd        ,&
@@ -948,6 +943,8 @@
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
+         assim  = assim*fcover(5)
+         respc  = respc*fcover(5)
       ELSE
          fsena  = fseng
          fevpa  = fevpg
@@ -985,9 +982,9 @@
       ENDIF
 
       ! effective ground temperature, simple average
-      t_grnd = troof*fcover(0) + twsun*fcover(1) + twsha*fcover(2) + &
-               tgimp*fcover(3) + tgper*fcover(4)
-      t_grnd = t_grnd*(1-flake) + tlake*flake
+      ! 12/01/2021, yuan: TODO Bugs. 温度不能这样加权
+      !t_grnd = troof*fcover(0) + twsun*fcover(1) + twsha*fcover(2) + &
+      t_grnd = tgper*fgper + tgimp*(1-fgper)
 
       !==============================================
       qseva_roof = 0.

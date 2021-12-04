@@ -37,7 +37,7 @@ MODULE MOD_TimeInvariants
   REAL(r8), allocatable :: hksati       (:,:)  !hydraulic conductivity at saturation [mm h2o/s]
   REAL(r8), allocatable :: csol         (:,:)  !heat capacity of soil solids [J/(m3 K)]
   REAL(r8), allocatable :: dksatu       (:,:)  !thermal conductivity of saturated soil [W/m-K]
-  REAL(r8), allocatable :: dkdry        (:,:)  !thermal conductivity for dry soil  [W/(m-K)]
+  REAL(r8), allocatable :: dkdry        (:,:)  !thermal conductivity for dry soil [W/(m-K)]
 
   REAL(r8), allocatable :: htop           (:)  !canopy top height [m]
   REAL(r8), allocatable :: hbot           (:)  !canopy bottom height [m]
@@ -54,7 +54,7 @@ MODULE MOD_TimeInvariants
   REAL(r8) :: pondmx       !ponding depth (mm)
   REAL(r8) :: smpmax       !wilting point potential in mm
   REAL(r8) :: smpmin       !restriction for min of soil poten. (mm)
-  REAL(r8) :: trsmx0       !max transpiration for moist soil+100% veg.  [mm/s]
+  REAL(r8) :: trsmx0       !max transpiration for moist soil+100% veg. [mm/s]
   REAL(r8) :: tcrit        !critical temp. to determine rain or snow
 
 ! PUBLIC MEMBER FUNCTIONS:

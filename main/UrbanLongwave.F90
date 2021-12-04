@@ -111,7 +111,6 @@ CONTAINS
      Fwg = Fsw*fg/fb/(4*HL)
      Fww = 1 - Fws - Fwg
 
-
      ! Calculate sunlit wall fraction
      !-------------------------------------------------
  
@@ -354,10 +353,15 @@ CONTAINS
      !NOTE: fg*(fv/fg - fv/fg * Sw_)
      fv_ = fv - fv*Sw_
      Sv  = ShadowTree(fv_, PI/3)
-     Sv  = Sv/fg
 
      ! Overlapped shadow between tree and building
-     Swv = (Sw-Sw_) * Sv * fg
+     ! (to groud only)
+     Swv = (Sw-Sw_) * Sv
+
+     ! convert Sv to ground ratio
+     Sv  = min(1., Sv/fg)
+
+     ! robust check
      IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
      ENDIF 
@@ -370,10 +374,15 @@ CONTAINS
      Sw_ = ShadowWall_dif(fb/fg, hv/L)
      fv_ = fv - fv*Sw_
      Sv  = ShadowTree(fv_, PI/3)
-     Sv  = Sv/fg
 
      ! Overlapped shadow between tree and building
-     Swv = (Sw-Sw_) * Sv * fg
+     ! (to groud only)
+     Swv = (Sw-Sw_) * Sv
+
+     ! convert Sv to ground ratio
+     Sv  = min(1., Sv/fg)
+
+     ! robust check
      IF (Sw+Sv-Swv > 1) THEN 
         Swv = Sw+Sv-1
      ENDIF 
@@ -413,17 +422,20 @@ CONTAINS
 
      Sw_ = Sw; fv_ = fv;
 
-     IF (H > hv .and. theta > 0) THEN
-        Sw_ = ShadowWall_dir(fb/fg, (H-hv)/L, theta)
-        fv_ = fv - fv*Sw_
-     ENDIF 
+     Sw_ = ShadowWall_dir(fb/fg, (H-hv)/L, theta)
+     fv_ = fv - fv*Sw_
 
-     ! Tree shadow
+     ! Tree shadow (to all area)
      Sv = ShadowTree(fv_, theta)
-     Sv = Sv/fg
 
      ! Overlapped shadow between tree and building
-     Swv = (Sw-Sw_) * Sv * fg
+     ! (to groud only)
+     Swv = (Sw-Sw_) * Sv
+
+     ! convert Sv to ground ratio
+     Sv = min(1., Sv/fg)
+
+     ! robust check
      IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
      ENDIF

@@ -17,6 +17,7 @@ use MOD_1D_Forcing
 use MOD_2D_Forcing
 use MOD_1D_Fluxes
 use MOD_2D_Fluxes
+USE MOD_UrbanTimeInvars
 use FRICTION_VELOCITY
 use omp_lib
 
@@ -138,7 +139,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 !---------------------------------------------------------------------
 ! local variables
 
-      integer  i,j,np,l
+      integer  i,j,np,u,l
       real(r8) sumwt(lon_points,lat_points)
       real(r8) rhoair,thm,th,thv,ur,displa_av,zldis,hgt_u,hgt_t,hgt_q
       real(r8) z0m_av,z0h_av,z0q_av,us,vs,tm,qm,psrf
@@ -638,7 +639,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_lake_icefrac(:,:,:) = 0.
 
 #ifdef OPENMP
-!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,np)
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,np,u)
 #endif
       DO j = 1, lat_points
          do i = 1, lon_points
@@ -648,7 +649,14 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
 ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_MODEL
-               IF (patchclass(np) .ne. URBAN) cycle
+               IF (patchclass(np) .ne. URBAN) THEN
+                  cycle
+               ELSE
+                  u = patch2urb(np)
+                  sumwt(i,j) = sumwt(i,j) + patchfrac(np)*flake(u)
+                  a_t_lake(1:nl_lake,i,j) = a_t_lake(1:nl_lake,i,j) + patchfrac(np)*flake(u)*t_lake(1:nl_lake,np)
+                  a_lake_icefrac(1:nl_lake,i,j) = a_lake_icefrac(1:nl_lake,i,j) + patchfrac(np)*flake(u)*lake_icefrac(1:nl_lake,np)
+               ENDIF
 #endif
                if(patchtype(np) == 4)then  ! land water bodies only
                   sumwt(i,j) = sumwt(i,j) + patchfrac(np)

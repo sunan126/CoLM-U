@@ -31,7 +31,7 @@ MODULE UrbanFlux
         qm          ,psrf        ,rhoair      ,Fhac        ,&
         Fwst        ,Fach                                  ,&
         ! 城市参数
-        hroof       ,hlr         ,nurb        ,pondmx      ,&
+        hroof       ,hwr         ,nurb        ,pondmx      ,&
         fcover                                             ,&
         ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
@@ -64,12 +64,10 @@ MODULE UrbanFlux
         deltim     ! seconds in a time step [second]
 
      ! atmospherical variables and observational height
-     REAL(r8), intent(inout) :: &
+     REAL(r8), intent(in) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
-        hq         ! observational height of humidity [m]
-
-     REAL(r8), intent(in) :: &
+        hq,       &! observational height of humidity [m]
         us,       &! wind component in eastward direction [m/s]
         vs,       &! wind component in northward direction [m/s]
         thm,      &! intermediate variable (tm+0.0098*ht) [K]
@@ -90,7 +88,7 @@ MODULE UrbanFlux
 
      REAL(r8), intent(in) :: &
         hroof,    &! average building height [m]
-        hlr,      &! average building height to length of side [-]
+        hwr,      &! average building height to their distance [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:4)! coverage of aboveground urban components [-]
 
@@ -202,6 +200,9 @@ MODULE UrbanFlux
         numlay     ! available layer number
 
      REAL(r8) ::  &
+        huu,      &! observational height of wind [m]
+        htu,      &! observational height of temperature [m]
+        hqu,      &! observational height of humidity [m]
         ktop,     &! K value at a specific height
         utop,     &! u value at a specific height
         fht,      &! integral of profile function for heat at the top layer
@@ -218,6 +219,7 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
+        hlr,      &! average building height to their length of edge [-]
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
         fai,      &! frontal area index
@@ -275,6 +277,7 @@ MODULE UrbanFlux
 
      fc(:)  = fcover(0:nurb)
      fg     = 1 - fcover(0)
+     hlr    = hwr*(1-sqrt(fcover(0)))/sqrt(fcover(0))
      canlev = (/3, 2, 2/)
      numlay = 2
 
@@ -358,11 +361,15 @@ MODULE UrbanFlux
 ! calculate layer decay coefficient
 !-----------------------------------------------------------------------
 
+     !NOTE: 引文研究对象为植被，对城市计算结果偏大
      ! Raupach, 1992
-     sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
+     !sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
      ! Kondo, 1971
-     alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
+     !alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
+
+     ! Masson 2000; Oleson et al., 2008
+     alpha = 0.5*hwr
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -385,11 +392,11 @@ MODULE UrbanFlux
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
      ! 确保观测高度 >= hroof+10.
-     hu = max(hroof+10., hu)
-     ht = max(hroof+10., ht)
-     hq = max(hroof+10., hq)
+     huu = max(hroof+10., hu)
+     htu = max(hroof+10., ht)
+     hqu = max(hroof+10., hq)
 
-     zldis = hu - displa
+     zldis = huu - displa
 
      IF (zldis <= 0.0) THEN
         write(6,*) 'the obs height of u less than the zero displacement heght'
@@ -413,7 +420,7 @@ MODULE UrbanFlux
 
         !NOTE: displat=hroof, z0mt=0, are set for roof
         ! fmtop is calculated at the same height of fht, fqt
-        CALL moninobukm(hu,ht,hq,displa,z0mu,z0hu,z0qu,obu,um, &
+        CALL moninobukm(huu,htu,hqu,displa,z0mu,z0hu,z0qu,obu,um, &
            hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
@@ -577,19 +584,19 @@ MODULE UrbanFlux
 
            ! 06/20/2021, yuan: 考虑人为热
            tmpw1  = wta0(3)*thm + wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
            fact   = 1. - wta0(2)*wtg0(3)
            ! 06/20/2021, yuan: 考虑人为热
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
-                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            facq   = 1. - wtaq0(2)*wtgq0(3)
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
-           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3)
-           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -712,7 +719,7 @@ MODULE UrbanFlux
         po2m        ,pco2m       ,par         ,sabv        ,&
         rstfac      ,Fhac        ,Fwst        ,Fach        ,&
         ! 城市和植被参数
-        hroof       ,hlr         ,nurb        ,pondmx      ,&
+        hroof       ,hwr         ,nurb        ,pondmx      ,&
         fcover      ,ewall       ,egimp       ,egper       ,&
         ev          ,htop        ,hbot        ,lai         ,&
         sai         ,sqrtdi      ,effcon      ,vmax25      ,&
@@ -759,12 +766,10 @@ MODULE UrbanFlux
         deltim     ! seconds in a time step [second]
 
      ! 外强迫
-     REAL(r8), intent(inout) :: &
+     REAL(r8), intent(in) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
-        hq         ! observational height of humidity [m]
-
-     REAL(r8), intent(in) :: &
+        hq,       &! observational height of humidity [m]
         us,       &! wind component in eastward direction [m/s]
         vs,       &! wind component in northward direction [m/s]
         thm,      &! intermediate variable (tm+0.0098*ht)
@@ -792,7 +797,7 @@ MODULE UrbanFlux
 
      REAL(r8), intent(in) :: &
         hroof,    &! average building height [m]
-        hlr,      &! average building height to length of side [-]
+        hwr,      &! average building height to their distance [-]
         pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:5)! coverage of aboveground urban components [-]
 
@@ -992,6 +997,9 @@ MODULE UrbanFlux
         numlay     ! available layer number
 
      REAL(r8) ::  &
+        huu,      &! observational height of wind [m]
+        htu,      &! observational height of temperature [m]
+        hqu,      &! observational height of humidity [m]
         ktop,     &! K value at a specific height
         utop,     &! u value at a specific height
         fht,      &! integral of profile function for heat at the top layer
@@ -1009,6 +1017,7 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
+        hlr,      &! average building height to their length of edge [-]
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
         fai,      &! frontal area index
@@ -1112,6 +1121,7 @@ MODULE UrbanFlux
      fc(:)  = fcover(0:nurb)
      fc(3)  = fcover(5)
      fg     = 1 - fcover(0)
+     hlr    = hwr*(1-sqrt(fcover(0)))/sqrt(fcover(0))
      canlev = (/3, 2, 2, 1/)
 
      B_5    = B(5)
@@ -1185,24 +1195,28 @@ MODULE UrbanFlux
      displa = displau
      z0m    = z0mu
 
+     displau = max(hroof/2., displau)
+
      ! 层次设定
-     IF (z0mv+displav > z0mu+displau) THEN
+     !IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
-     ELSE
-        numlay = 3; botlay = 1
-     ENDIF
+     !ELSE
+     !   numlay = 3; botlay = 1
+     !ENDIF
 
 !-----------------------------------------------------------------------
 ! calculate layer decay coefficient
 !-----------------------------------------------------------------------
 
-     ! initialization
-     sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
+     !NOTE: 引文研究对象为植被，对城市计算结果偏大
+     ! Raupach, 1992
+     !sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
      ! Kondo, 1971
-     alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
+     !alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
 
-     displau = max(hroof/2., displau)
+     ! Masson 2000; Oleson et al., 2008
+     alpha = 0.5*hwr
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -1248,11 +1262,11 @@ MODULE UrbanFlux
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
      ! 确保观测高度 >= hroof+10.
-     hu = max(hroof+10., hu)
-     ht = max(hroof+10., ht)
-     hq = max(hroof+10., hq)
+     huu = max(hroof+10., hu)
+     htu = max(hroof+10., ht)
+     hqu = max(hroof+10., hq)
 
-     zldis = hu - displa
+     zldis = huu - displa
 
      IF (zldis <= 0.0) THEN
         write(6,*) 'the obs height of u less than the zero displacement heght'
@@ -1277,7 +1291,7 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 ! Evaluate stability-dependent variables using moz from prior iteration
 
-        CALL moninobukm(hu,ht,hq,displa,z0mu,z0hu,z0qu,obu,um, &
+        CALL moninobukm(huu,htu,hqu,displa,z0mu,z0hu,z0qu,obu,um, &
            hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
@@ -1322,7 +1336,7 @@ MODULE UrbanFlux
 
         ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        !rd(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+        !rd_(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
         !   hroof, 0., obug, ustarg, hroof, displau+z0mu)
 
         ! REAL(r8) FUNCTION frd(ktop, htop, hbot, &
@@ -1351,7 +1365,7 @@ MODULE UrbanFlux
            rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ELSE
-           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !rd_(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
            !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
            rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
@@ -1391,7 +1405,8 @@ MODULE UrbanFlux
 
         IF (lai > 0.) THEN
 
-           rb = rb / lai
+           ! only for vegetation
+           rb(3) = rb(3) / lai
 
            clev = canlev(3)
            eah = qaf(clev) * psrf / ( 0.622 + 0.378 * qaf(clev) )    !pa
@@ -1515,19 +1530,19 @@ MODULE UrbanFlux
 
            ! 06/20/2021, yuan: 考虑人为热
            tmpw1  = wta0(3)*thm + wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
            fact   = 1. - wta0(2)*wtg0(3)
            ! 06/20/2021, yuan: 考虑人为热
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
-                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            facq   = 1. - wtaq0(2)*wtgq0(3)
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
-           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3)
-           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -1543,12 +1558,11 @@ MODULE UrbanFlux
            ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
 
            tmpw1  = wta0(3)*thm + wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
-           tmpw2  = wtg0(1)*tg  + wtll(1) &
-                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1)
            fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
-                     wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            tmpw2  = wtgq0(1)*qg + wtlql(1)
@@ -1556,12 +1570,11 @@ MODULE UrbanFlux
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
            qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
-           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1) &
-                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1)
 
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
            taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -1708,18 +1721,18 @@ MODULE UrbanFlux
            ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
            tmpw1  = wta0(3)*thm + wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
            fact   = 1. - wta0(2)*wtg0(3)
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) + &
-                     wtshi(2)*(2/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            facq   = 1. - wtaq0(2)*wtgq0(3)
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
-           taf(3) = wta0(3)*thm + wtg0 (3)*taf(2) + wtll (3)
-           taf(3) = taf(3) + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(3) = wta0(3)*thm + wtg0 (3)*taf(2) + wtll (3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -1735,12 +1748,11 @@ MODULE UrbanFlux
            ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
 
            tmpw1  = wta0(3)*thm + wtll(3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
-           tmpw2  = wtg0(1)*tg  + wtll(1) &
-                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1)
            fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
-           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) + &
-                     wtshi(2)*(1/3.*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
            tmpw1  = wtaq0(3)*qm + wtlql(3)
            tmpw2  = wtgq0(1)*qg + wtlql(1)
@@ -1748,12 +1760,11 @@ MODULE UrbanFlux
            qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
            qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
-           taf(1) = wta0 (1)*taf(2) + wtg0 (1)*tg + wtll (1) &
-                  + wtshi(1)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1)
 
            qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
-           taf(3) = wta0 (3)*thm + wtg0(3)*taf(2) + wtll (3) &
-                  + wtshi(3)*1/3.*(Fhac+Fwst)/rhoair/cpair
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 

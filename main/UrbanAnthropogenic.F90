@@ -82,37 +82,43 @@ CONTAINS
   !    H*rhoair*cpair*-------------- =
   !                         dt
   !     ACH
-  !    -----*H*rhoair*cpair*(Taf-Troom') - Fn_roof - Fn_wsun - Fn_wsha
+  !    -----*H*rhoair*cpair*(Taf-Troom') + Hc_roof + Hc_wsun + Hc_wsha
   !    3600? dt?
   !                             .................................(4)
   !=================================================================
 
-     ACH = 0.3
-     hcv_roof   = 4.040
-     hcv_wall   = 3.076
-     waste_cool = 0.6
-     waste_heat = 0.2
-     f_wsun = fcover(1)/fcover(0)
-     f_wsha = fcover(2)/fcover(0)
+     ACH = 0.3          !air exchange coefficience
+     hcv_roof   = 4.040 !convective exchange ceofficience for roof<->room
+     hcv_wall   = 3.076 !convective exchange ceofficience for wall<->room
+     waste_cool = 0.6   !waste heat for AC cooling
+     waste_heat = 0.2   !waste heat for AC heating
+
+     f_wsun = fcover(1)/fcover(0) !weight factor for sunlit wall
+     f_wsha = fcover(2)/fcover(0) !weight factor for shaded wall
+
+     ! initialization
+     Fhac = 0.; Fwst = 0.; Fach = 0.;
 
      ! Ax = B
      ! set values for heat transfer matrix
+     ! 1: roof, 2: sunlit wall, 3: shaded wall, 4: room
      A(:,:) = 0.
-     A(1,:) = (/-0.5*hcv_roof-0.5*tkdz_roof, 0., 0., 0.5*hcv_roof/)
-     A(2,:) = (/0., -0.5*hcv_wall-0.5*tkdz_wsun, 0., 0.5*hcv_wall/)
-     A(3,:) = (/0., 0., -0.5*hcv_wall-0.5*tkdz_wsha, 0.5*hcv_wall/)
+     A(1,:) = (/0.5*hcv_roof+0.5*tkdz_roof, 0., 0., -0.5*hcv_roof/)
+     A(2,:) = (/0., 0.5*hcv_wall+0.5*tkdz_wsun, 0., -0.5*hcv_wall/)
+     A(3,:) = (/0., 0., 0.5*hcv_wall+0.5*tkdz_wsha, -0.5*hcv_wall/)
 
      A(4,:) = (/-0.5*hcv_roof, -0.5*hcv_wall*f_wsun, -0.5*hcv_wall*f_wsha, &
-                H*rhoair*cpair/deltim + (ACH/3600.)*H*rhoair*cpair + &
-                0.5*hcv_roof + 0.5*hcv_wall*f_wsun + 0.5*hcv_wall*f_wsha/)
+                 0.5*hcv_roof + 0.5*hcv_wall*f_wsun + 0.5*hcv_wall*f_wsha +&
+                 H*rhoair*cpair/deltim + (ACH/3600.)*H*rhoair*cpair /)
 
-     B(1) = -0.5*hcv_roof + 0.5*tkdz_roof*(troof_inner-troof_nl) - 0.5*tkdz_roof*troof_nl
-     B(2) = -0.5*hcv_wall + 0.5*tkdz_wsun*(twsun_inner-twsun_nl) - 0.5*tkdz_wsun*twsun_nl
-     B(3) = -0.5*hcv_wall + 0.5*tkdz_wsha*(twsha_inner-twsha_nl) - 0.5*tkdz_wsha*twsha_nl
+     B(1) = -0.5*hcv_roof*(troof_inner-troom) + 0.5*tkdz_roof*(troof_nl-troof_inner) + 0.5*tkdz_roof*troof_nl
+     B(2) = -0.5*hcv_wall*(twsun_inner-troom) + 0.5*tkdz_wsun*(twsun_nl-twsun_inner) + 0.5*tkdz_wsun*twsun_nl
+     B(3) = -0.5*hcv_wall*(twsha_inner-troom) + 0.5*tkdz_wsha*(twsha_nl-twsha_inner) + 0.5*tkdz_wsha*twsha_nl
 
      B(4) = H*rhoair*cpair*troom/deltim + (ACH/3600.)*H*rhoair*cpair*taf &
-          - 0.5*hcv_roof*(troom-troof_inner) - 0.5*hcv_wall*(troom-twsun_inner)*f_wsun &
-          - 0.5*hcv_wall*(troom-twsha_inner)*f_wsha
+          + 0.5*hcv_roof*(troof_inner-troom) &
+          + 0.5*hcv_wall*(twsun_inner-troom)*f_wsun &
+          + 0.5*hcv_wall*(twsha_inner-troom)*f_wsha
 
      ! Inverse of matrix A
      Ainv = MatrixInverse(A)
@@ -125,7 +131,7 @@ CONTAINS
      twsha_inner = X(3)
      troom       = X(4)
 
-     Fach = (ACH/3600.)*H*rhoair*cpair*(taf - troom)
+     Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
 
      IF (troom > troom_max) THEN !cooling case
         Fhac  = H*rhoair*cpair*(troom-troom_max)/deltim

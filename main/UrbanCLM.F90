@@ -45,6 +45,7 @@
       INTEGER :: idate(3)         !calendar (year, julian day, seconds)
       INTEGER :: edate(3)         !calendar (year, julian day, seconds)
       INTEGER :: pdate(3)         !calendar (year, julian day, seconds)
+      INTEGER :: ldate(3)         !calendar (year, julian day, seconds)
       REAL(r8):: deltim           !time step (senconds)
       LOGICAL :: solarin_all_band !downward solar in broad band
       LOGICAL :: greenwich        !greenwich time
@@ -136,6 +137,7 @@
       CALL adj2end(edate)
       CALL adj2end(pdate)
 
+      itstamp = idate
       etstamp = edate
       ptstamp = pdate
 
@@ -203,15 +205,17 @@
 
       nac = 0; nac_ln(:,:) = 0
       istep = 1
-      CALL adj2end(idate)
-      itstamp = idate
+
+      ! for lai date record
+      ldate = idate
+      CALL adj2begin(ldate)
 
       TIMELOOP : DO while (itstamp < etstamp)
 print*, 'TIMELOOP = ', istep
 
-         Julian_1day_p = int(calendarday(idate)-1)/1*1 + 1
-         Julian_8day_p = int(calendarday(idate)-1)/8*8 + 1
-         CALL julian2monthday (idate(1), idate(2), month_p, mday_p)
+         Julian_1day_p = int(calendarday(ldate)-1)/1*1 + 1
+         Julian_8day_p = int(calendarday(ldate)-1)/8*8 + 1
+         CALL julian2monthday (ldate(1), ldate(2), month_p, mday_p)
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
@@ -221,6 +225,8 @@ print*, 'TIMELOOP = ', istep
        ! ----------------------------------------------------------------------
          CALL TICKTIME (deltim,idate)
          itstamp = itstamp + int(deltim)
+         ldate = idate
+         CALL adj2begin(ldate)
 
        ! Call clm driver
        ! ----------------------------------------------------------------------
@@ -234,7 +240,7 @@ print*, 'TIMELOOP = ', istep
        ! ----------------------------------------------------------------------
 #ifdef USGS_CLASSIFICATION
        ! READ in Leaf area index and stem area index
-         Julian_8day = int(calendarday(idate)-1)/8*8 + 1
+         Julian_8day = int(calendarday(ldate)-1)/8*8 + 1
          IF (Julian_8day /= Julian_8day_p) THEN
             CALL LAI_readin (lon_points,lat_points,&
                              Julian_8day,numpatch,dir_model_landdata)
@@ -242,17 +248,17 @@ print*, 'TIMELOOP = ', istep
 
 #else
 ! 08/03/2019, yuan: read global LAI/SAI data
-         CALL julian2monthday (idate(1), idate(2), month, mday)
+         CALL julian2monthday (ldate(1), ldate(2), month, mday)
          IF (month /= month_p) THEN
-            CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
-            fveg(:) = 0.10006 !fraction of veg cover (fordebug)
+            !TODO: 需要读取非城市地表LAI，需要注意不要覆盖城市fveg
+            CALL UrbanLAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
          ENDIF
 #endif
 
 #else
        ! Update once a day
          dolai = .false.
-         Julian_1day = int(calendarday(idate)-1)/1*1 + 1
+         Julian_1day = int(calendarday(ldate)-1)/1*1 + 1
          IF (Julian_1day /= Julian_1day_p) THEN
             dolai = .true.
          ENDIF

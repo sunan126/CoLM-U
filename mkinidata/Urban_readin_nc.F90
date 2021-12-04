@@ -178,7 +178,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          hroof(u)        = htroof        (i,j,t) !average building height
          hwr(u)          = canyonhwr     (i,j,t) !average building height to their distance
          fgper(u)        = wtroadperv    (i,j,t) !pervious fraction to ground area
-         flake(u)        = urbanwaterpct (i,j,t) / 100. !lake fractional cover
+         flake(u)        = urbanwaterpct (i,j,t)/100. !lake fractional cover
 
          alb_roof(:,:,u) = albroof   (i,j,t,:,:) !albedo of roof
          alb_wall(:,:,u) = albwall   (i,j,t,:,:) !albedo of walls
@@ -205,7 +205,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
 
          ! set tree fractional cover (<= 1.-froof)
          ! 植被覆盖占非水体面积部分的比例
-         fveg(npatch)    = urbantreepct(i,j,t)
+         fveg(npatch) = urbantreepct(i,j,t)/100. !urban tree percent
          IF (flake(u) < 1.) THEN
             fveg(npatch) = fveg(npatch)/(1.-flake(u))
          ELSE
@@ -215,10 +215,10 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          fveg(npatch) = min(fveg(npatch), 1.-froof(u))
 
          ! set urban tree crown top and bottom [m]
-         htop(npatch)    = min(hroof(u), urbantreetop(i,j,t))
-         htop(npatch)    = max(2., htop(npatch))
-         hbot(npatch)    = htop(npatch)*hbot0(m)/htop0(m)
-         hbot(npatch)    = max(1., hbot(npatch))
+         htop(npatch) = min(hroof(u), urbantreetop(i,j,t))
+         htop(npatch) = max(2., htop(npatch))
+         hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
+         hbot(npatch) = max(1., hbot(npatch))
 
          DO l=1, nl_roof
             z_roof(l,u) = (l-0.5)*(thick_roof/nl_roof)

@@ -66,9 +66,15 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 !$OMP PRIVATE(i,j,m)
 #endif
       DO npatch = 1, numpatch
+
          i = patch2lon(npatch)
          j = patch2lat(npatch)
          m = patchclass(npatch)
+
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          IF( m == 0 )THEN
              fveg(npatch)  = 0.
              tlai(npatch)  = 0.
@@ -131,11 +137,16 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 !$OMP PRIVATE(i,j,m,n,t,p,ps,pe)
 #endif
       DO npatch = 1, numpatch
+
          i = patch2lon(npatch)
          j = patch2lat(npatch)
          t = patchtype(npatch)
          m = patchclass(npatch)
          
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          IF (t == 0) THEN
             ps = patch_pft_s(npatch)
             pe = patch_pft_e(npatch)
@@ -196,10 +207,16 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 !$OMP PRIVATE(i,j,t,m,pc)
 #endif
       DO npatch = 1, numpatch
+
          i = patch2lon(npatch)
          j = patch2lat(npatch)
          t = patchtype(npatch)
          m = patchclass(npatch)
+
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          IF (t == 0) THEN
             pc = patch2pc(npatch)
             tlai_c(:,pc) = pclai(i,j,:,m)

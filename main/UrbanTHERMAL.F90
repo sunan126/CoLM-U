@@ -937,14 +937,14 @@
                htvp_gper*fevpgper*fcover(4)
 
       IF ( doveg ) THEN
-         fsenl  = fsenl*fcover(5)
-         fevpl  = fevpl*fcover(5)
-         etr    =   etr*fcover(5)
+         assim  = assim * fveg
+         respc  = respc * fveg
+         fsenl  = fsenl * fveg
+         fevpl  = fevpl * fveg
+         etr    = etr   * fveg
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
-         assim  = assim*fcover(5)
-         respc  = respc*fcover(5)
       ELSE
          fsena  = fseng
          fevpa  = fevpg
@@ -958,8 +958,6 @@
       fseng  = fseng *(1-flake) + fseng_lake *flake
       fsena  = fsena *(1-flake) + fsena_lake *flake
       fevpg  = fevpg *(1-flake) + fevpg_lake *flake
-      ! 10/01/2021, yuan: exclude lake fevpa
-      !fevpa  = fevpa *(1-flake) + fevpa_lake *flake
       lfevpa = lfevpa*(1-flake) + lfevpa_lake*flake
       tref   = tref  *(1-flake) + tref_lake  *flake
       qref   = qref  *(1-flake) + qref_lake  *flake
@@ -972,11 +970,20 @@
       fm     = fm    *(1-flake) + fm_lake    *flake
       fh     = fh    *(1-flake) + fh_lake    *flake
       fq     = fq    *(1-flake) + fq_lake    *flake
+      ! 10/01/2021, yuan: exclude lake fevpa
+      ! 因为湖泊的水不平衡
+      !fevpa  = fevpa *(1-flake) + fevpa_lake *flake
+
+      fsenl  = fsenl *(1-flake)
+      fevpl  = fevpl *(1-flake)
+      etr    = etr   *(1-flake)
+      assim  = assim *(1-flake)
+      respc  = respc *(1-flake)
 
       ! ground heat flux
       IF ( doveg ) THEN
-         lnet  = lveg*fcover(5)*(1-flake) + lnet
-         fgrnd = sabv*fcover(5)*(1-flake) + sabg + lnet - (fsena+lfevpa)
+         lnet  = lveg*fveg*(1-flake) + lnet
+         fgrnd = sabv*fveg*(1-flake) + sabg + lnet - (fsena+lfevpa)
       ELSE
          fgrnd = sabg + lnet - (fsena+lfevpa)
       ENDIF
@@ -1102,7 +1109,7 @@
 !=======================================================================
 
       IF ( doveg ) THEN
-         errore = sabv*fcover(5)*(1-flake) + sabg + lnet - fsena - lfevpa - fgrnd
+         errore = sabv*fveg*(1-flake) + sabg + lnet - fsena - lfevpa - fgrnd
       ELSE
          errore = sabg + lnet - fsena - lfevpa - fgrnd
       ENDIF

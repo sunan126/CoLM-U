@@ -51,12 +51,14 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          j = patch2lat(npatch)
          m = patchclass(npatch)
 
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          htop(npatch) = htop0(m)
          hbot(npatch) = hbot0(m)
          
          ! trees or woody savannas
-! 11/19/2021, yuan: remove URBAN, read separately
-         !IF ( m<6 .or. m==8 .or. m==URBAN) THEN
          IF ( m<6 .or. m==8 ) THEN
 ! 01/06/2020, yuan: adjust htop reading
 ! 11/15/2021, yuan: adjust htop setting
@@ -77,10 +79,6 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
       CALL nccheck( nf90_inq_varid(ncid, "HTOP_PFT", htoppft_vid ) )
       CALL nccheck( nf90_get_var(ncid, htoppft_vid, htoppft ) )
 
-      allocate ( htoplc(1:lon_points,1:lat_points,1:N_land_classification) )
-      CALL nccheck( nf90_inq_varid(ncid, "HTOP_LC", htoplc_vid ) )
-      CALL nccheck( nf90_get_var(ncid, htoplc_vid, htoplc ) )
-
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE(i,j,t,p,ps,pe,m,n)
@@ -91,6 +89,10 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          t = patchtype(npatch)
          m = patchclass(npatch)
          
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          IF (t == 0) THEN
             ps = patch_pft_s(npatch)
             pe = patch_pft_e(npatch)
@@ -114,11 +116,6 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             htop(npatch) = sum(htop_p(ps:pe)*pftfrac(ps:pe))
             hbot(npatch) = sum(hbot_p(ps:pe)*pftfrac(ps:pe))
 
-! 11/19/2021, yuan: remove URBAN, read separately
-         !ELSEIF (t == 1) THEN !For urban
-         !   htop(npatch) = max(2., htoplc(i,j,m))
-         !   hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
-         !   hbot(npatch) = max(1., hbot(npatch))
          ELSE 
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
@@ -129,7 +126,6 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 !$OMP END PARALLEL DO
 #endif
       deallocate ( htoppft  )
-      deallocate ( htoplc   )
 #endif
 
 #ifdef PC_CLASSIFICATION
@@ -146,6 +142,11 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          j = patch2lat(npatch)
          t = patchtype(npatch)
          m = patchclass(npatch)
+
+! 12/07/2021, yuan: Urban filter
+#ifdef URBAN_MODEL
+         IF (m == URBAN) cycle
+#endif
          IF (t == 0) THEN
             p = patch2pc(npatch)
             htop_c(:,p) = htop0_p(:)
@@ -163,13 +164,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 
             htop(npatch) = sum(htop_c(:,p)*pcfrac(:,p))
             hbot(npatch) = sum(hbot_c(:,p)*pcfrac(:,p))
-            
-! 11/19/2021, yuan: remove URBAN, read separately
-         !ELSEIF (t == 1) THEN !For urban
-         !   htop(npatch) = max(2., htoplc(i,j,m))
-         !   hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
-         !   hbot(npatch) = max(1., hbot(npatch))
-         ELSE 
+         ELSE
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
          ENDIF

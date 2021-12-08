@@ -26,7 +26,7 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
       CHARACTER(LEN=256) :: lndname
       INTEGER :: ncid
       INTEGER :: urbantreelai_vid, urbantreesai_vid
-      INTEGER :: i, j, m, n, t, u, npatch
+      INTEGER :: i, j, n, t, u, npatch
 
       REAL(r8), allocatable :: urbantreelai(:,:,:)
       REAL(r8), allocatable :: urbantreesai(:,:,:)
@@ -49,14 +49,13 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
-!$OMP PRIVATE(i,j,m,t,u,npatch)
+!$OMP PRIVATE(i,j,t,u,npatch)
 #endif
       DO u = 1, numurban
 
          npatch = urb2patch(u)
          i = patch2lon(npatch)
          j = patch2lat(npatch)
-         m = patchclass(npatch)
          t = urbclass(u)
 
          tlai(npatch)  = urbantreelai(i,j,t) !leaf area index

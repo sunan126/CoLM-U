@@ -220,6 +220,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
          hbot(npatch) = max(1., hbot(npatch))
 
+         ! roof and wall layer depth
          DO l=1, nl_roof
             z_roof(l,u) = (l-0.5)*(thick_roof/nl_roof)
          ENDDO
@@ -239,6 +240,10 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
             dz_wall(l,u) = 0.5*(z_wall(l+1,u)-z_wall(l-1,u))
          ENDDO
          dz_wall(nl_wall,u) = z_wall(nl_wall,u)-z_wall(nl_wall-1,u)
+
+         ! lake depth and layer depth
+         !lakedepth(npatch) = 1.
+         !dz_lake(:,npatch) = lakedepth(npatch) / nl_lake
 
       ENDDO
 #ifdef OPENMP

@@ -915,6 +915,15 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       CALL HTOP_readin_nc (lon_points, lat_points, dir_model_landdata)
 #endif
 
+! ...............................................................
+! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
+! CALL Urban_readin_nc() !包含htop, fveg. TODO: 设置lakedepth为常数1m?
+! ...............................................................
+
+#ifdef URBAN_MODEL
+      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata)
+#endif
+
 !TODO: 单点模式，读取htop
 
 ! ................................
@@ -934,6 +943,16 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       smpmin = -1.e8   !Restriction for min of soil poten. (mm)
       trsmx0 = 2.e-4   !Max transpiration for moist soil+100% veg. [mm/s]
       tcrit  = 2.5     !critical temp. to determine rain or snow
+
+! ...............................................
+! 3.5 Write out as a restart file [histTimeConst]
+! ...............................................
+
+      CALL WRITE_TimeInvariants (dir_restart_hist,casename)
+
+      write (6,*)
+      write (6,*) ('Successfully to Initialize the Land Time-Invariants')
+
 
 ! ----------------------------------------------------------------------
 ! [4] INITIALIZE TIME-VARYING VARIABLES
@@ -1046,12 +1065,13 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       CALL julian2monthday (year, jday, month, mday)
       CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
 #ifdef URBAN_MODEL
-      ! 读取城市LAI/SAI和fveg数据
+      ! 读取城市LAI/SAI数据
       CALL UrbanLAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
 #endif
 
 #endif
 #endif
+
 ! ..............................................................................
 ! 4.5 initialize time-varying variables, as subgrid vectors of length [numpatch]
 ! ..............................................................................
@@ -1067,25 +1087,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       t_lake      (:,:) = 285.
       lake_icefrac(:,:) = 0.
     ! ------------------------------------------
-
-! ...............................................................
-! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
-! CALL Urban_readin_nc() !包含htop
-! put it here to rewrite fveg values set by LAI_readin_nc()
-! ...............................................................
-
-#ifdef URBAN_MODEL
-      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata)
-#endif
-
-! ...............................................
-! 3.5 Write out as a restart file [histTimeConst]
-! ...............................................
-
-      CALL WRITE_TimeInvariants (dir_restart_hist,casename)
-
-      write (6,*)
-      write (6,*) ('Successfully to Initialize the Land Time-Invariants')
 
 #ifdef OPENMP
 print *, 'OPENMP enabled, threads num = ', OPENMP

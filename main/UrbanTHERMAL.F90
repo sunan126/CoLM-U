@@ -1141,12 +1141,14 @@
 ! [11] a simple building energy model
 !=======================================================================
 
+#ifdef URBAN_BEM
       ! Building energy model
       CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), hroof, troommax, troommin, &
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &
                        Fhac, Fwst, Fach )
+#endif
       deallocate ( fcover )
 
  END SUBROUTINE UrbanTHERMAL

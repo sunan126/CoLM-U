@@ -374,14 +374,14 @@ CONTAINS
    
  ! prefix of forcing data file
    character(len=256), parameter :: fprefix(NVAR) = [character(len=256) :: &
-      'TPHWL6Hrly/clmforc.cruncep.V4.c2011.0.5d.TPQWL.', &
-      'TPHWL6Hrly/clmforc.cruncep.V4.c2011.0.5d.TPQWL.', &
-      'TPHWL6Hrly/clmforc.cruncep.V4.c2011.0.5d.TPQWL.', &
-      'Precip6Hrly/clmforc.cruncep.V4.c2011.0.5d.Prec.', &
+      'TPHWL6Hrly/clmforc.cruncep.V7.c2016.0.5d.TPQWL.', &
+      'TPHWL6Hrly/clmforc.cruncep.V7.c2016.0.5d.TPQWL.', &
+      'TPHWL6Hrly/clmforc.cruncep.V7.c2016.0.5d.TPQWL.', &
+      'Precip6Hrly/clmforc.cruncep.V7.c2016.0.5d.Prec.', &
       'NULL', &
-      'TPHWL6Hrly/clmforc.cruncep.V4.c2011.0.5d.TPQWL.', &
-      'Solar6Hrly/clmforc.cruncep.V4.c2011.0.5d.Solr.', &
-      'TPHWL6Hrly/clmforc.cruncep.V4.c2011.0.5d.TPQWL.']
+      'TPHWL6Hrly/clmforc.cruncep.V7.c2016.0.5d.TPQWL.', &
+      'Solar6Hrly/clmforc.cruncep.V7.c2016.0.5d.Solr.', &
+      'TPHWL6Hrly/clmforc.cruncep.V7.c2016.0.5d.TPQWL.']
 
  ! variable name of forcing data file
    character(len=256), parameter :: vname(NVAR) = [character(len=256) :: &

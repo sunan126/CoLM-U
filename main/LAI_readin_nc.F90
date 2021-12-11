@@ -86,11 +86,11 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
                 tlai(npatch)  = lclai(i,j,m)/fveg0(m) !leaf area index
                 tsai(npatch)  = lcsai(i,j,m)/fveg0(m) !stem are index
                 green(npatch) = 1.                    !fraction of green leaf
-             ELSE 
+             ELSE
                 tlai(npatch)  = 0.       !leaf area index
                 tsai(npatch)  = 0.       !stem are index
                 green(npatch) = 0.       !fraction of green leaf
-             ENDIF 
+             ENDIF
          ENDIF
       ENDDO
 #ifdef OPENMP
@@ -122,7 +122,7 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
                     start=(/1,1,1,month/), &
                     count=(/lon_points,lat_points,N_PFT,1/)) )
       CALL nccheck( nf90_get_var(ncid, pftsai_vid, pftsai, &
-                    start=(/1,1,1,month/), & 
+                    start=(/1,1,1,month/), &
                     count=(/lon_points,lat_points,N_PFT,1/)) )
       CALL nccheck( nf90_get_var(ncid, pclai_vid, pclai, &
                     start=(/1,1,1,1,month/), &
@@ -142,7 +142,7 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
          j = patch2lat(npatch)
          t = patchtype(npatch)
          m = patchclass(npatch)
-         
+
 ! 12/07/2021, yuan: Urban filter
 #ifdef URBAN_MODEL
          IF (m == URBAN) cycle
@@ -163,11 +163,11 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
          ELSE
 ! 12/28/2019, yuan: Bug
             ! pctpc from 1-100% -> 0-1
-            tlai(npatch)  = sum(pclai(i,j,:,m) * pctpc(i,j,:,m)/100.) 
-            tsai(npatch)  = sum(pcsai(i,j,:,m) * pctpc(i,j,:,m)/100.) 
+            tlai(npatch)  = sum(pclai(i,j,:,m) * pctpc(i,j,:,m)/100.)
+            tsai(npatch)  = sum(pcsai(i,j,:,m) * pctpc(i,j,:,m)/100.)
          ENDIF
-         
-         green(npatch) = 1.                
+
+         green(npatch) = 1.
          fveg(npatch)  = fveg0(m)
 
       ENDDO
@@ -193,7 +193,7 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_LAI", pclai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_SAI", pcsai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT",         pctpc_vid) )
-      
+
       CALL nccheck( nf90_get_var(ncid, pclai_vid, pclai, &
                     start=(/1,1,1,1,month/), &
                     count=(/lon_points,lat_points,N_PFT,N_land_classification,1/)) )
@@ -221,14 +221,14 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
             pc = patch2pc(npatch)
             tlai_c(:,pc) = pclai(i,j,:,m)
             tsai_c(:,pc) = pcsai(i,j,:,m)
-         ENDIF 
+         ENDIF
 
 ! 12/28/2019, yuan: Bug
          ! pctpc from 1-100% -> 0-1
-         tlai(npatch)  = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.) 
-         tsai(npatch)  = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.) 
+         tlai(npatch)  = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.)
+         tsai(npatch)  = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.)
          fveg(npatch)  = fveg0(m)
-         green(npatch) = 1.                 
+         green(npatch) = 1.
 
       ENDDO
 #ifdef OPENMP
@@ -240,7 +240,7 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
       deallocate ( pctpc )
 
 #endif
-      
+
       CALL nccheck( nf90_close(ncid) )
 
 END SUBROUTINE LAI_readin_nc

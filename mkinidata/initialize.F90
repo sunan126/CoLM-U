@@ -207,7 +207,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
 !TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V2.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V3.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )

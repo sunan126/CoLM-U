@@ -79,7 +79,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
       REAL(r8), allocatable :: thickwall     (:,:,:)
 
 ! READ in urban data
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V2.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V3.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
@@ -178,7 +178,6 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          hroof(u)        = htroof        (i,j,t) !average building height
          hwr(u)          = canyonhwr     (i,j,t) !average building height to their distance
          fgper(u)        = wtroadperv    (i,j,t) !pervious fraction to ground area
-         flake(u)        = urbanwaterpct (i,j,t)/100. !lake fractional cover
 
          alb_roof(:,:,u) = albroof   (i,j,t,:,:) !albedo of roof
          alb_wall(:,:,u) = albwall   (i,j,t,:,:) !albedo of walls
@@ -203,6 +202,13 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          thick_roof      = thickroof     (i,j,t) !thickness of roof [m]
          thick_wall      = thickwall     (i,j,t) !thickness of wall [m]
 
+#ifdef URBAN_WATER
+         flake(u) = urbanwaterpct(i,j,t)/100. !urban water fractional cover
+#else
+         flake(u) = 0.
+#endif
+
+#ifdef URBAN_TREE
          ! set tree fractional cover (<= 1.-froof)
          ! 植被覆盖占非水体面积部分的比例
          fveg(npatch) = urbantreepct(i,j,t)/100. !urban tree percent
@@ -213,6 +219,9 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          ENDIF
          ! 假设树的覆盖比例小于等于地面比例(屋顶没有树)
          fveg(npatch) = min(fveg(npatch), 1.-froof(u))
+#else
+         fveg(npatch) = 0.
+#endif
 
          ! set urban tree crown top and bottom [m]
          htop(npatch) = min(hroof(u), urbantreetop(i,j,t))

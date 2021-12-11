@@ -242,7 +242,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#ifdef URBAN_MODEL
+#if (defined URBAN_MODEL || defined URBAN_SLAB)
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
@@ -516,7 +516,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#ifdef URBAN_MODEL
+#if (defined URBAN_MODEL || defined URBAN_SLAB)
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                if(patchtype(np) <= 3)then  ! excluded the land water bodies and ocean patches
@@ -583,7 +583,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#ifdef URBAN_MODEL
+#if (defined URBAN_MODEL || defined URBAN_SLAB)
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                if(patchtype(np) <= 2)then  ! excluded the land water bodies and ocean patches
@@ -711,7 +711,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#ifdef URBAN_MODEL
+#if (defined URBAN_MODEL || defined URBAN_SLAB)
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)

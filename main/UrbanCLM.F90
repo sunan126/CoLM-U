@@ -27,6 +27,7 @@
       USE MOD_2D_Fluxes
       USE timemanager
       USE GETMETMOD
+      USE omp_lib
 
 #if(defined CaMa_Flood)
       USE parkind1   ,only: jpim, jprm
@@ -230,7 +231,7 @@ print*, 'TIMELOOP = ', istep
 
        ! Call clm driver
        ! ----------------------------------------------------------------------
-         CALL CLMDRIVER (idate,deltim)
+         CALL CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
        ! Get leaf area index
        ! ----------------------------------------------------------------------
@@ -250,7 +251,7 @@ print*, 'TIMELOOP = ', istep
 ! 08/03/2019, yuan: read global LAI/SAI data
          CALL julian2monthday (ldate(1), ldate(2), month, mday)
          IF (month /= month_p) THEN
-            !TODO: 需要读取非城市地表LAI，需要注意不要覆盖城市fveg
+            CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
             CALL UrbanLAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
          ENDIF
 #endif

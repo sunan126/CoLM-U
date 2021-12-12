@@ -17,6 +17,7 @@ use MOD_1D_Forcing
 use MOD_2D_Forcing
 use MOD_1D_Fluxes
 use MOD_2D_Fluxes
+USE MOD_UrbanTimeVars
 USE MOD_UrbanTimeInvars
 use FRICTION_VELOCITY
 use omp_lib
@@ -89,6 +90,12 @@ real(r8) a_z0m    (lon_points,lat_points)  ! effective roughness [m]
 real(r8) a_trad   (lon_points,lat_points)  ! radiative temperature of surface [K]
 real(r8) a_tref   (lon_points,lat_points)  ! 2 m height air temperature [kelvin]
 real(r8) a_qref   (lon_points,lat_points)  ! 2 m height air specific humidity [kg/kg]
+
+!---------------------------------------------------------------------
+real(r8) a_t_room (lon_points,lat_points)  ! temperature of inner building [K]
+real(r8) a_fhac   (lon_points,lat_points)  ! sensible flux from heat or cool AC [W/m2]
+real(r8) a_fwst   (lon_points,lat_points)  ! waste heat flux from heat or cool AC [W/m2]
+real(r8) a_fach   (lon_points,lat_points)  ! flux from inner and outter air exchange [W/m2]
 
 !---------------------------------------------------------------------
 real(r8) a_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points)  ! soil temperature [K]
@@ -214,6 +221,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_xy_rain(:,:) = 0.
       a_xy_snow(:,:) = 0.
 
+      a_t_room (:,:) = 0.
+      a_fhac   (:,:) = 0.
+      a_fwst   (:,:) = 0.
+      a_fach   (:,:) = 0.
+
       a_sr     (:,:) = spval
       a_solvd  (:,:) = spval
       a_solvi  (:,:) = spval
@@ -233,7 +245,7 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_srniln (:,:) = spval
 
 #ifdef OPENMP
-!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,np)
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,np,u)
 #endif
       DO j = 1, lat_points
          do i = 1, lon_points
@@ -300,6 +312,13 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_xy_rain(i,j) = a_xy_rain(i,j) + patchfrac(np)*forc_rain(np)
                a_xy_snow(i,j) = a_xy_snow(i,j) + patchfrac(np)*forc_snow(np)
 
+#ifdef URBAN_MODEL
+               u = patch2urb(np)
+               a_t_room (i,j) = a_t_room (i,j) + patchfrac(np)*t_room(u)
+               a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac  (u)
+               a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst  (u)
+               a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach  (u)
+#endif
                ! radiation fluxes
                call acc(sr     (np), patchfrac(np), a_sr     (i,j))
                call acc(solvd  (np), patchfrac(np), a_solvd  (i,j))
@@ -391,6 +410,12 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_xy_rain(i,j) = a_xy_rain(i,j) / sumwt(i,j)
                a_xy_snow(i,j) = a_xy_snow(i,j) / sumwt(i,j)
 
+#ifdef URBAN_MODEL
+               a_t_room (i,j) = a_t_room (i,j) / sumwt(i,j)
+               a_fhac   (i,j) = a_fhac   (i,j) / sumwt(i,j)
+               a_fwst   (i,j) = a_fwst   (i,j) / sumwt(i,j)
+               a_fach   (i,j) = a_fach   (i,j) / sumwt(i,j)
+#endif
                if (a_sr     (i,j) /= spval) a_sr     (i,j) = a_sr     (i,j) / sumwt(i,j)
                if (a_solvd  (i,j) /= spval) a_solvd  (i,j) = a_solvd  (i,j) / sumwt(i,j)
                if (a_solvi  (i,j) /= spval) a_solvi  (i,j) = a_solvi  (i,j) / sumwt(i,j)
@@ -466,6 +491,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_qref   (i,j) = spval
                a_xy_rain(i,j) = spval
                a_xy_snow(i,j) = spval
+
+               a_t_room (i,j) = spval
+               a_fhac   (i,j) = spval
+               a_fwst   (i,j) = spval
+               a_fach   (i,j) = spval
 
                a_sr     (i,j) = spval
                a_solvd  (i,j) = spval
@@ -894,6 +924,11 @@ real(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             call acc(a_qref   (i,j), 1., f_qref   (i,j))
             call acc(a_xy_rain(i,j), 1., f_xy_rain(i,j))
             call acc(a_xy_snow(i,j), 1., f_xy_snow(i,j))
+
+            call acc(a_t_room (i,j), 1., f_t_room (i,j))
+            call acc(a_fhac   (i,j), 1., f_fhac   (i,j))
+            call acc(a_fwst   (i,j), 1., f_fwst   (i,j))
+            call acc(a_fach   (i,j), 1., f_fach   (i,j))
 
             do l = maxsnl+1, nl_soil
                call acc(a_t_soisno   (l,i,j), 1., f_t_soisno   (l,i,j))

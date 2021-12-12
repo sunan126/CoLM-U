@@ -13,12 +13,12 @@ MODULE MOD_1D_UrbanFluxes
 ! -----------------------------------------------------------------
 ! Fluxes
 ! -----------------------------------------------------------------
-  !REAL(r8), allocatable :: sabroof   (:) !solar absorption of roof [W/m2] 
-  !REAL(r8), allocatable :: sabwsun   (:) !solar absorption of sunlit wall [W/m2] 
+  !REAL(r8), allocatable :: sabroof   (:) !solar absorption of roof [W/m2]
+  !REAL(r8), allocatable :: sabwsun   (:) !solar absorption of sunlit wall [W/m2]
   !REAL(r8), allocatable :: sabwsha   (:) !solar absorption of shaded wall [W/m2]
   !REAL(r8), allocatable :: sabgimp   (:) !solar absorption of impervious [W/m2]
   !REAL(r8), allocatable :: sabsoil   (:) !solar absorption of soil [W/m2]
-  !REAL(r8), allocatable :: sabsnow   (:) !solar absorption of snow [W/m2] 
+  !REAL(r8), allocatable :: sabsnow   (:) !solar absorption of snow [W/m2]
 
 ! PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: allocate_1D_UrbanFluxes

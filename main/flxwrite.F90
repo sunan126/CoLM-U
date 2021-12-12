@@ -10,7 +10,7 @@
   use precision
   USE GlobalVars
   use MOD_2D_Fluxes
-  use MOD_TimeInvariants, only: gridlond, gridlatd 
+  use MOD_TimeInvariants, only: gridlond, gridlatd
   use timemanager
   IMPLICIT NONE
 
@@ -19,10 +19,10 @@
   integer, INTENT(in) :: nac_ln(lon_points,lat_points)
   integer, INTENT(in) :: lon_points
   integer, INTENT(in) :: lat_points
-  
+
   character(LEN=256) :: dir_output
   character(LEN=256) :: casename
- 
+
   integer luout, month, day, i, j, l
   character(LEN=256) fout
   character(LEN=256) cdate
@@ -50,7 +50,7 @@
 #endif
      do j = 1, lat_points
         do i = 1, lon_points
-           
+
            if (f_taux   (i,j) /= spval) f_taux   (i,j) = f_taux   (i,j) / a  ! wind stress: E-W [kg/m/s2]
            if (f_tauy   (i,j) /= spval) f_tauy   (i,j) = f_tauy   (i,j) / a  ! wind stress: N-S [kg/m/s2]
            if (f_fsena  (i,j) /= spval) f_fsena  (i,j) = f_fsena  (i,j) / a  ! sensible heat from canopy height to atmosphere [W/m2]
@@ -74,13 +74,13 @@
            if (f_qintr  (i,j) /= spval) f_qintr  (i,j) = f_qintr  (i,j) / a  ! interception [mm/s]
            if (f_qinfl  (i,j) /= spval) f_qinfl  (i,j) = f_qinfl  (i,j) / a  ! inflitraton [mm/s]
            if (f_qdrip  (i,j) /= spval) f_qdrip  (i,j) = f_qdrip  (i,j) / a  ! throughfall [mm/s]
-           if (f_rstfac (i,j) /= spval) f_rstfac (i,j) = f_rstfac (i,j) / a  ! factor of soil water stress 
+           if (f_rstfac (i,j) /= spval) f_rstfac (i,j) = f_rstfac (i,j) / a  ! factor of soil water stress
            if (f_zwt    (i,j) /= spval) f_zwt    (i,j) = f_zwt    (i,j) / a  ! water depth [m]
            if (f_wa     (i,j) /= spval) f_wa     (i,j) = f_wa     (i,j) / a  ! water storage in aquifer [mm]
            if (f_wat    (i,j) /= spval) f_wat    (i,j) = f_wat    (i,j) / a  ! total water storage [mm]
            if (f_assim  (i,j) /= spval) f_assim  (i,j) = f_assim  (i,j) / a  ! canopy assimilation rate [mol m-2 s-1]
            if (f_respc  (i,j) /= spval) f_respc  (i,j) = f_respc  (i,j) / a  ! respiration (plant+soil) [mol m-2 s-1]
-           if (f_qcharge(i,j) /= spval) f_qcharge(i,j) = f_qcharge(i,j) / a  ! groundwater recharge rate [mm/s] 
+           if (f_qcharge(i,j) /= spval) f_qcharge(i,j) = f_qcharge(i,j) / a  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
            if (f_t_grnd (i,j) /= spval) f_t_grnd (i,j) = f_t_grnd (i,j) / a  ! ground surface temperature [K]
@@ -104,6 +104,10 @@
            if (f_trad   (i,j) /= spval) f_trad   (i,j) = f_trad   (i,j) / a  ! radiative temperature of surface [K]
            if (f_tref   (i,j) /= spval) f_tref   (i,j) = f_tref   (i,j) / a  ! 2 m height air temperature [kelvin]
            if (f_qref   (i,j) /= spval) f_qref   (i,j) = f_qref   (i,j) / a  ! 2 m height air specific humidity [kg/kg]
+           if (f_t_room (i,j) /= spval) f_t_room (i,j) = f_t_room (i,j) / a  ! temperature of inner building [K]
+           if (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
+           if (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
+           if (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
            if (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
            if (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
 
@@ -200,7 +204,7 @@
      write(luout) f_qdrip  (:,:)  ! throughfall [mm/s]
      write(luout) f_assim  (:,:)  ! canopy assimilation rate [mol m-2 s-1]
      write(luout) f_respc  (:,:)  ! respiration (plant+soil) [mol m-2 s-1]
-     write(luout) f_qcharge(:,:)  ! groundwater recharge rate [mm/s] 
+     write(luout) f_qcharge(:,:)  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
      write(luout) f_t_grnd (:,:)  ! ground surface temperature [K]
@@ -223,17 +227,21 @@
      write(luout) f_qref   (:,:)  ! 2 m height air specific humidity [kg/kg]
      write(luout) f_xy_rain(:,:)  ! rain [mm/s]
      write(luout) f_xy_snow(:,:)  ! snow [mm/s]
- 
+     write(luout) f_t_room (:,:)  ! temperature of inner building [K]
+     write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
+     write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
+     write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+
 !---------------------------------------------------------------------
      write(luout) f_t_soisno   (:,:,:)  ! soil temperature [K]
      write(luout) f_wliq_soisno(:,:,:)  ! liquid water in soil layers [kg/m2]
      write(luout) f_wice_soisno(:,:,:)  ! ice lens in soil layers [kg/m2]
      write(luout) f_h2osoi     (:,:,:)  ! volumetric soil water in layers [m3/m3]
-     write(luout) f_rstfac     (:,:)    ! factor of soil water stress 
+     write(luout) f_rstfac     (:,:)    ! factor of soil water stress
      write(luout) f_zwt        (:,:)    ! the depth to water table [m]
      write(luout) f_wa         (:,:)    ! water storage in aquifer [mm]
      write(luout) f_wat        (:,:)    ! total water storage [mm]
- 
+
      write(luout) f_t_lake      (:,:,:) ! lake temperature [K]
      write(luout) f_lake_icefrac(:,:,:) ! lake ice fraction cover [0-1]
 

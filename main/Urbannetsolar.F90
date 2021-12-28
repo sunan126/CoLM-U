@@ -19,10 +19,10 @@
 ! Dummy argument
   INTEGER,  intent(in) :: ipatch   ! patch index
   INTEGER,  intent(in) :: idate(3) ! model time
-  
+
   REAL(r8), intent(in) :: dlon     ! logitude in radians
   REAL(r8), intent(in) :: deltim   ! seconds in a time step [second]
- 
+
   REAL(r8), intent(in) :: &
         forc_sols,   &! atm vis direct beam solar rad onto srf [W/m2]
         forc_soll,   &! atm nir direct beam solar rad onto srf [W/m2]
@@ -45,7 +45,7 @@
         sgimp,    &! impervious ground absorption for solar radiation
         sgper,    &! pervious ground absorption for solar radiation
         slake      ! lake absorption for solar radiation
-         
+
 
   REAL(r8), intent(out) :: &
         sr,       &! total reflected solar radiation (W/m2)
@@ -94,13 +94,13 @@
 
            sabwsun = forc_sols *swsun(1,1) + forc_soll *swsun(2,1) &
                    + forc_solsd*swsun(1,2) + forc_solld*swsun(2,2)
-           
+
            sabwsha = forc_sols *swsha(1,1) + forc_soll *swsha(2,1) &
                    + forc_solsd*swsha(1,2) + forc_solld*swsha(2,2)
-           
+
            sabgimp = forc_sols *sgimp(1,1) + forc_soll *sgimp(2,1) &
                    + forc_solsd*sgimp(1,2) + forc_solld*sgimp(2,2)
-           
+
            sabgper = forc_sols *sgper(1,1) + forc_soll *sgper(2,1) &
                    + forc_solsd*sgper(1,2) + forc_solld*sgper(2,2)
 
@@ -136,10 +136,10 @@
         IF ( isgreenwich ) THEN
            local_secs = idate(3) + nint((dlon/radpsec)/deltim)*deltim
            local_secs = mod(local_secs,86400)
-        ELSE 
+        ELSE
            local_secs = idate(3)
         ENDIF
-        
+
         IF (local_secs == 86400/2) THEN
            solvdln = forc_sols
            solviln = forc_solsd

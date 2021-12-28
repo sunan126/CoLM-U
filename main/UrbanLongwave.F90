@@ -15,7 +15,7 @@ MODULE UrbanLongwave
 
   PUBLIC :: UrbanOnlyLongwave       !Urban Longwave radiation transfer
   PUBLIC :: UrbanVegLongwave        !Urban Longwave radiation transfer with trees
-  
+
   REAL(r8), external :: tee         !Direct transmittance of vegetation for spheric crowns
 
 CONTAINS
@@ -25,8 +25,8 @@ CONTAINS
         twsun, twsha, tgimp, tgper, ewall, egimp, egper, &
         Ainv, B, B1, dBdT, SkyVF, fcover)
 
-     IMPLICIT NONE 
-     
+     IMPLICIT NONE
+
      REAL(r8), intent(in) :: &
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
@@ -70,7 +70,7 @@ CONTAINS
         Fws,        &! View factor from wall to sky [-]
 
         Sw,         &! Shadow of wall [-]
-        fwsun,      &! Fraction of sunlit wall [-] 
+        fwsun,      &! Fraction of sunlit wall [-]
         fwsha,      &! Fraction of shaded wall [-]
         Iwsun,      &! Incident radiation on sunlit wall [W/m2]
         Iwsha,      &! Incident radiation on shaded wall [W/m2]
@@ -78,10 +78,10 @@ CONTAINS
         Igimp,      &! Incident radiation on impervious ground [W/m2]
         Igper        ! Incident radiation on pervious ground [W/m2]
 
-     REAL(r8) :: A(4,4)     !Radiation transfer matrix    
+     REAL(r8) :: A(4,4)     !Radiation transfer matrix
 
      ! Temporal
-     REAL(r8) :: tmp, eb         
+     REAL(r8) :: tmp, eb
 
      ! Claculate urban structure parameters
      !-------------------------------------------------
@@ -90,7 +90,7 @@ CONTAINS
      HL = H/L !NOTE: Same as HL = HW*(1-sqrt(fb))/sqrt(fb)
      fg = 1. - fb
      fgimp = 1. - fgper
-     
+
      ! Calculate view factors
      !-------------------------------------------------
 
@@ -113,7 +113,7 @@ CONTAINS
 
      ! Calculate sunlit wall fraction
      !-------------------------------------------------
- 
+
      ! Building shadow on the ground
      Sw = ShadowWall_dir(fb/fg, HL, theta)
 
@@ -134,8 +134,8 @@ CONTAINS
 
      ! Inverse of matrix A
      Ainv = MatrixInverse(A)
- 
-     ! Incident LW radiation on sunlit/shaded wall and 
+
+     ! Incident LW radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Iwsun = LW*Fsw*fwsun
      Iwsha = LW*Fsw*fwsha
@@ -159,7 +159,7 @@ CONTAINS
      !B1(2) = 2*fwsha*HW*stefnc*ewall*twsha**4
      B1(3) = fgimp*stefnc*egimp*tgimp**4
      B1(4) = fgper*stefnc*egper*tgper**4
-     
+
      dBdT(1) = 16*fwsun*HL*fb/fg*stefnc*ewall*twsun**3
      dBdT(2) = 16*fwsha*HL*fb/fg*stefnc*ewall*twsha**3
      !dBdT(1) = 2*fwsun*HW*stefnc*ewall*twsun**3
@@ -175,7 +175,7 @@ CONTAINS
      fcover(2) = 4*fwsha*HL*fb
      fcover(3) = fg*fgimp
      fcover(4) = fg*fgper
-     
+
      !NOTE: 下面代码放在THERMAL.F90中
      ! Equation solve
      ! X = matmul(Ainv, B)
@@ -195,8 +195,8 @@ CONTAINS
 
      !IF (abs(eb-LW) > 1e-6) THEN
      !  print *, "Longwave - Energy Balance Check error!", eb-LW
-     !ENDIF 
- 
+     !ENDIF
+
      !NOTE: put it outside, 在屋顶、墙面、地面温度变化后
      ! 计算温度变化带来的辐射吸收变化，作为restart变量保留
      !dX = matmul(Ainv, dBdT*dT)
@@ -214,8 +214,8 @@ CONTAINS
         twsun, twsha, tgimp, tgper, ewall, egimp, egper, lai, sai, fv, hv, &
         ev, Ainv, B, B1, dBdT, SkyVF, VegVF, fcover)
 
-     IMPLICIT NONE 
- 
+     IMPLICIT NONE
+
      REAL(r8), intent(in) :: &
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
@@ -250,7 +250,7 @@ CONTAINS
      ! Local variables
      !-------------------------------------------------
      REAL(r16),parameter:: DD1=1.0_r16 !quad accuracy REAL number
-     
+
      REAL(r8) ::    &
         W,          &! Urban ground average width [m]
         L,          &! Urban building average length [m]
@@ -271,7 +271,7 @@ CONTAINS
         Fvw,        &! View factor from tree to walls (sunlit+shaded) [-]
         Fwv,        &! View factor from wall to tree [-]
         Fgv,        &! View factor from ground to tree [-]
-        Fsv,        &! View factor from sky to tree [-] 
+        Fsv,        &! View factor from sky to tree [-]
 
         Fgvs,       &! View factor from ground->|tree|-> to sky [-]
         Fgvw,       &! View factor from ground->|tree|-> to walls [-]
@@ -281,13 +281,13 @@ CONTAINS
         Fwvs,       &! View factor from walls->|tree|-> to sky [-]
         Fwvg,       &! View factor from walls->|tree|-> to ground [-]
 
-        Fsw_,       &! Fsw - Fsvw + Fsvw*Td [-] 
-        Fsg_,       &! Fsg - Fsvg + Fsvg*Td [-] 
-        Fgw_,       &! Fgw - Fgvw + Fgvw*Td [-] 
-        Fgs_,       &! Fgs - Fgvs + Fgvs*Td [-] 
-        Fwg_,       &! Fwg - Fwvg + Fwvg*Td [-] 
-        Fww_,       &! Fww - Fwvw + Fwvw*Td [-] 
-        Fws_,       &! Fws - Fwvs + Fwvs*Td [-] 
+        Fsw_,       &! Fsw - Fsvw + Fsvw*Td [-]
+        Fsg_,       &! Fsg - Fsvg + Fsvg*Td [-]
+        Fgw_,       &! Fgw - Fgvw + Fgvw*Td [-]
+        Fgs_,       &! Fgs - Fgvs + Fgvs*Td [-]
+        Fwg_,       &! Fwg - Fwvg + Fwvg*Td [-]
+        Fww_,       &! Fww - Fwvw + Fwvw*Td [-]
+        Fws_,       &! Fws - Fwvs + Fwvs*Td [-]
 
         Sw,         &! Shadow of wall [-]
         Sw_,        &! Shadow of wall [-]
@@ -295,7 +295,7 @@ CONTAINS
         Swv,        &! Overlapped shadow between wall and trees [-]
         fv_,        &! Fraction of trees [-]
         Td,         &! Transmission of tree [-]
-        fwsun,      &! Fraction of sunlit wall [-] 
+        fwsun,      &! Fraction of sunlit wall [-]
         fwsha,      &! Fraction of shaded wall [-]
         Iwsun,      &! Incident radiation on sunlit wall [W/m2]
         Iwsha,      &! Incident radiation on shaded wall [W/m2]
@@ -306,10 +306,10 @@ CONTAINS
 
      ! Radiation transfer matrix and vectors
      !-------------------------------------------------
-     REAL(r8) :: A(5,5)     !Radiation transfer matrix    
-     
+     REAL(r8) :: A(5,5)     !Radiation transfer matrix
+
      ! Temporal
-     REAL(r8) :: tmp, eb, fac1, fac2         
+     REAL(r8) :: tmp, eb, fac1, fac2
 
      ! Claculate urban structure parameters
      !-------------------------------------------------
@@ -319,7 +319,7 @@ CONTAINS
      fg = 1. - fb
 
      fgimp = 1. - fgper
-     
+
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------
      Td = tee(DD1*3/8.*(lai+sai))
@@ -343,7 +343,7 @@ CONTAINS
      Fws = Fsw*fg/fb/(4*HL)
      Fwg = Fsw*fg/fb/(4*HL)
      Fww = 1 - Fws - Fwg
-  
+
      ! View factor from tree to walls, ground and sky
      !-------------------------------------------------
 
@@ -364,7 +364,7 @@ CONTAINS
      ! robust check
      IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
-     ENDIF 
+     ENDIF
 
      ! Calibrated building ground shadow
      Fsv  = Sv
@@ -383,9 +383,9 @@ CONTAINS
      Sv  = min(1., Sv/fg)
 
      ! robust check
-     IF (Sw+Sv-Swv > 1) THEN 
+     IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
-     ENDIF 
+     ENDIF
 
      ! Calibrated building ground shadow
      Fgv  = Sv
@@ -444,7 +444,7 @@ CONTAINS
      Sw = Sw - Swv
 
      ! Sunlit/shaded wall fraction
-     fwsun = 0.5 * (Sw*fg+fb) / (4/PI*fb*HL*tan(theta) + fb) 
+     fwsun = 0.5 * (Sw*fg+fb) / (4/PI*fb*HL*tan(theta) + fb)
      fwsha = 1. - fwsun
 
      ! Calculate radiation transfer matrix
@@ -464,7 +464,7 @@ CONTAINS
      ! Inverse of matrix A
      Ainv = MatrixInverse(A)
 
-     ! Incident LW radiation on sunlit/shaded wall and 
+     ! Incident LW radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Iwsun = LW*Fsw_*fwsun
      Iwsha = LW*Fsw_*fwsha
@@ -482,17 +482,17 @@ CONTAINS
      B(4) = Igper*(1.-egper) + fgper*stefnc*egper*tgper**4
      ! 植被温度在湍流计算中迭代计算
      ! B(5) = 4*fv/fg*stefnc*ev*tl**4 !NOTE: 4*fv/fg or 2*fv/fg
-                                      !4*fv/fg. equivalent to 2fc 
-     B(5) = 4*fv/fg*stefnc*ev 
+                                      !4*fv/fg. equivalent to 2fc
+     B(5) = 4*fv/fg*stefnc*ev
 
      B1(1) = 4*fwsun*HL*fb/fg*stefnc*ewall*twsun**4
      B1(2) = 4*fwsha*HL*fb/fg*stefnc*ewall*twsha**4
      B1(3) = fgimp*stefnc*egimp*tgimp**4
      B1(4) = fgper*stefnc*egper*tgper**4
      ! 植被温度在湍流计算中迭代计算
-     ! B1(5) = 4*fv/fg*stefnc*ev*tl**4 
+     ! B1(5) = 4*fv/fg*stefnc*ev*tl**4
      B1(5) = 4*fv/fg*stefnc*ev
-     
+
      dBdT(1) = 16*fwsun*HL*fb/fg*stefnc*ewall*twsun**3
      dBdT(2) = 16*fwsha*HL*fb/fg*stefnc*ewall*twsha**3
      dBdT(3) = 4*fgimp*stefnc*egimp*tgimp**3
@@ -506,7 +506,7 @@ CONTAINS
      SkyVF(5)   = Fvs
 
      VegVF(1:2) = Fwv
-     VegVF(3:4) = Fgv 
+     VegVF(3:4) = Fgv
      VegVF(5)   = Fsv
 
      fcover(0) = fb
@@ -515,11 +515,11 @@ CONTAINS
      fcover(3) = fg*fgimp
      fcover(4) = fg*fgper
      fcover(5) = fv
-     
+
      !NOTE: 以下的代码放到叶片温度迭代计算中
      ! 每迭代一次，更新下面三项
-     !B(5)    = 4*fv/fg*stefnc*ev*tl**4 
-     !B1(5)   = 4*fv/fg*stefnc*ev*tl**4 
+     !B(5)    = 4*fv/fg*stefnc*ev*tl**4
+     !B1(5)   = 4*fv/fg*stefnc*ev*tl**4
      !dBdT(5) = 16*fv/fg*stefnc*ev*tl**3
      ! Equation solve
      !X = matmul(Ainv, B)
@@ -529,7 +529,7 @@ CONTAINS
      !lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall) !/ (4*fwsha*HL*fb/fg)
      !lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp) !/ fgimp
      !lgper = ( egper*X(4) - B1(4) ) / (1-egper) !/ fgper
-     
+
      !NOTE: 在进行温度迭代前进行计算
      !lv    = ((X(1)*Fwv + X(2)*Fwv + X(3)*Fgv + X(4)*Fgv + LW*Fsv)*ev - B1(5))!/(fv/fg)
 
@@ -543,7 +543,7 @@ CONTAINS
 
      !IF (abs(eb-LW) > 1e-6) THEN
      !  print *, "Longwave tree - Energy Balance Check error!", eb-LW
-     !ENDIF 
+     !ENDIF
 
      ! 叶片最后一次温度变化带来的辐射差异
      ! dBdT前4项为0
@@ -553,7 +553,7 @@ CONTAINS
      !lwsha = lwsha + ( ewall*dX(2) ) / (1-ewall) * dtl!/ (4*fwsha*HL*fb/fg)
      !lgimp = lwimp + ( egimp*dX(3) ) / (1-egimp) * dtl!/ fgimp
      !lgper = lgper + ( egper*dX(4) ) / (1-egper) * dtl!/ fgper
-     
+
      ! 每步温度迭代进行计算, 最后一次应为tlbef
      !lv    = lv + ((dX(1)*Fwv + dX(2)*Fwv + dX(3)*Fgv + dX(4)*Fgv)*ev - dBdT(5))*dtl!/(fv/fg)
      !dlvdt = (dX(1)*Fwv + dX(2)*Fwv + dX(3)*Fgv + dX(4)*Fgv)*ev - dBdT(5)
@@ -563,7 +563,7 @@ CONTAINS
 
      ! put it outside
      ! 计算温度变化带来的辐射吸收变化，作为restart变量保留
-     ! 此时叶片温度已不改变, dBdT最后一项为0 
+     ! 此时叶片温度已不改变, dBdT最后一项为0
      !dX = matmul(Ainv, dBdT*dT)
 
      !lwsun = ( ewall*dX(1) - dBdT(1)*dT(1) ) / (1-ewall) !/ (4*fwsun*HL*fb/fg)

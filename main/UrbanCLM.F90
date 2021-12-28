@@ -65,6 +65,8 @@
       INTEGER :: istep            !looping step
       INTEGER :: nac              !number of accumulation
       INTEGER,  allocatable :: nac_ln(:,:)      !number of accumulation for local noon time virable
+      INTEGER,  allocatable :: nac_dt(:,:)      !number of accumulation for daytime virable
+      INTEGER,  allocatable :: nac_nt(:,:)      !number of accumulation for night-time virable
       REAL(r8), allocatable :: oro(:)           !ocean(0)/seaice(2)/ flag
       REAL(r8), allocatable :: a_rnof(:,:)      !total runoff [mm/s]
       INTEGER :: Julian_1day_p, Julian_1day
@@ -153,6 +155,8 @@
 
       allocate (oro(numpatch))
       allocate (nac_ln(lon_points,lat_points))
+      allocate (nac_dt(lon_points,lat_points))
+      allocate (nac_nt(lon_points,lat_points))
 ! ----------------------------------------------------------------------
     ! Read in the model time invariant constant data
       CALL READ_TimeInvariants(dir_restart_hist,casename)
@@ -205,6 +209,7 @@
 ! ======================================================================
 
       nac = 0; nac_ln(:,:) = 0
+      nac_dt(:,:) = 0; nac_nt(:,:) = 0
       istep = 1
 
       ! for lai date record
@@ -268,7 +273,7 @@ print*, 'TIMELOOP = ', istep
        ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average
        ! ----------------------------------------------------------------------
-         CALL vec2xy (lon_points,lat_points,nac,nac_ln,a_rnof)
+         CALL vec2xy (lon_points,lat_points,nac,nac_ln,nac_dt,nac_nt,a_rnof)
 
          DO j = 1, lat_points
             DO i = 1, lon_points
@@ -301,13 +306,15 @@ print*, 'TIMELOOP = ', istep
          IF ( lwrite ) THEN
 
             IF ( .not. (itstamp<=ptstamp) ) THEN
-               CALL flxwrite (idate,nac,nac_ln,lon_points,lat_points,dir_output,casename)
+               CALL flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,&
+                              lon_points,lat_points,dir_output,casename)
             ENDIF
 
           ! Setting for next time step
           ! ----------------------------------------------------------------------
             CALL FLUSH_2D_Fluxes
             nac = 0; nac_ln(:,:) = 0
+            nac_dt(:,:) = 0; nac_nt(:,:) = 0
          ENDIF
 
          IF ( rwrite ) THEN
@@ -333,6 +340,8 @@ print*, 'TIMELOOP = ', istep
       deallocate (a_rnof)
       deallocate (oro)
       deallocate (nac_ln)
+      deallocate (nac_dt)
+      deallocate (nac_nt)
 #if(defined CaMa_Flood)
       deallocate (r2roffin)
       IF (regionall>=2 )THEN

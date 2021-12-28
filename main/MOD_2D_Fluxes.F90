@@ -31,7 +31,7 @@ real(r8), allocatable :: f_fevpg  (:,:)  ! evaporation heat flux from ground [mm
 real(r8), allocatable :: f_fgrnd  (:,:)  ! ground heat flux [W/m2]
 real(r8), allocatable :: f_sabvsun(:,:)  ! solar absorbed by sunlit canopy [W/m2]
 real(r8), allocatable :: f_sabvsha(:,:)  ! solar absorbed by shaded [W/m2]
-real(r8), allocatable :: f_sabg   (:,:)  ! solar absorbed by ground  [W/m2]
+real(r8), allocatable :: f_sabg   (:,:)  ! solar absorbed by ground [W/m2]
 real(r8), allocatable :: f_sr     (:,:)  ! total reflected solar radiation (W/m2)
 real(r8), allocatable :: f_solvd  (:,:)  ! incident direct beam vis solar radiation (W/m2)
 real(r8), allocatable :: f_solvi  (:,:)  ! incident diffuse beam vis solar radiation (W/m2)
@@ -87,6 +87,28 @@ real(r8), allocatable :: f_t_room (:,:)  ! temperature of inner building [K]
 real(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
 real(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 real(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+
+!TODO: 分daytime(dt) and nighttime(nt)
+real(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
+real(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
+real(r8), allocatable :: f_srdt    (:,:) ! total reflected solar radiation (W/m2)
+real(r8), allocatable :: f_fsenadt (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
+real(r8), allocatable :: f_lfevpadt(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
+real(r8), allocatable :: f_fgrnddt (:,:) ! ground heat flux [W/m2]
+real(r8), allocatable :: f_olrgdt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
+real(r8), allocatable :: f_rnetdt  (:,:) ! net radiation [W/m2]
+real(r8), allocatable :: f_t_grnddt(:,:) ! ground surface temperature [K]
+real(r8), allocatable :: f_traddt  (:,:) ! radiative temperature of surface [K]
+real(r8), allocatable :: f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
+
+real(r8), allocatable :: f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
+real(r8), allocatable :: f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
+real(r8), allocatable :: f_fgrndnt (:,:) ! ground heat flux [W/m2]
+real(r8), allocatable :: f_olrgnt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
+real(r8), allocatable :: f_rnetnt  (:,:) ! net radiation [W/m2]
+real(r8), allocatable :: f_t_grndnt(:,:) ! ground surface temperature [K]
+real(r8), allocatable :: f_tradnt  (:,:) ! radiative temperature of surface [K]
+real(r8), allocatable :: f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
 
 !---------------------------------------------------------------------
 real(r8), allocatable :: f_t_soisno   (:,:,:)  ! soil temperature [K]
@@ -226,6 +248,27 @@ allocate ( f_fhac   (lon_points,lat_points) )  ! sensible flux from heat or cool
 allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or cool AC [W/m2]
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
 
+allocate ( f_sabvdt  (lon_points,lat_points) ) ! solar absorbed by sunlit canopy [W/m2]
+allocate ( f_sabgdt  (lon_points,lat_points) ) ! solar absorbed by ground [W/m2]
+allocate ( f_srdt    (lon_points,lat_points) ) ! total reflected solar radiation (W/m2)
+allocate ( f_fsenadt (lon_points,lat_points) ) ! sensible heat from canopy height to atmosphere [W/m2]
+allocate ( f_lfevpadt(lon_points,lat_points) ) ! latent heat flux from canopy height to atmosphere [W/m2]
+allocate ( f_fgrnddt (lon_points,lat_points) ) ! ground heat flux [W/m2]
+allocate ( f_olrgdt  (lon_points,lat_points) ) ! outgoing long-wave radiation from ground+canopy [W/m2]
+allocate ( f_rnetdt  (lon_points,lat_points) ) ! net radiation [W/m2]
+allocate ( f_t_grnddt(lon_points,lat_points) ) ! ground surface temperature [K]
+allocate ( f_traddt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
+allocate ( f_trefdt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
+
+allocate ( f_fsenant (lon_points,lat_points) ) ! sensible heat from canopy height to atmosphere [W/m2]
+allocate ( f_lfevpant(lon_points,lat_points) ) ! latent heat flux from canopy height to atmosphere [W/m2]
+allocate ( f_fgrndnt (lon_points,lat_points) ) ! ground heat flux [W/m2]
+allocate ( f_olrgnt  (lon_points,lat_points) ) ! outgoing long-wave radiation from ground+canopy [W/m2]
+allocate ( f_rnetnt  (lon_points,lat_points) ) ! net radiation [W/m2]
+allocate ( f_t_grndnt(lon_points,lat_points) ) ! ground surface temperature [K]
+allocate ( f_tradnt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
+allocate ( f_trefnt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
+
 !---------------------------------------------------------------------
 allocate ( f_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points) )  ! soil temperature [K]
 allocate ( f_wliq_soisno(maxsnl+1:nl_soil,lon_points,lat_points) )  ! liquid water in soil layers [kg/m2]
@@ -358,6 +401,27 @@ f_fhac      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
 
+f_sabvdt    (:,:) = spval
+f_sabgdt    (:,:) = spval
+f_srdt      (:,:) = spval
+f_fsenadt   (:,:) = spval
+f_lfevpadt  (:,:) = spval
+f_fgrnddt   (:,:) = spval
+f_olrgdt    (:,:) = spval
+f_rnetdt    (:,:) = spval
+f_t_grnddt  (:,:) = spval
+f_traddt    (:,:) = spval
+f_trefdt    (:,:) = spval
+
+f_fsenant   (:,:) = spval
+f_lfevpant  (:,:) = spval
+f_fgrndnt   (:,:) = spval
+f_olrgnt    (:,:) = spval
+f_rnetnt    (:,:) = spval
+f_t_grndnt  (:,:) = spval
+f_tradnt    (:,:) = spval
+f_trefnt    (:,:) = spval
+
 f_t_soisno    (:,:,:) = spval
 f_wliq_soisno (:,:,:) = spval
 f_wice_soisno (:,:,:) = spval
@@ -464,6 +528,27 @@ deallocate ( f_t_room )  ! temperature of inner building [K]
 deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
+
+deallocate ( f_sabvdt   )! solar absorbed by sunlit canopy [W/m2]
+deallocate ( f_sabgdt   )! solar absorbed by ground [W/m2]
+deallocate ( f_srdt     )! total reflected solar radiation (W/m2)
+deallocate ( f_fsenadt  )! sensible heat from canopy height to atmosphere [W/m2]
+deallocate ( f_lfevpadt )! latent heat flux from canopy height to atmosphere [W/m2]
+deallocate ( f_fgrnddt  )! ground heat flux [W/m2]
+deallocate ( f_olrgdt   )! outgoing long-wave radiation from ground+canopy [W/m2]
+deallocate ( f_rnetdt   )! net radiation [W/m2]
+deallocate ( f_t_grnddt )! ground surface temperature [K]
+deallocate ( f_traddt   )! radiative temperature of surface [K]
+deallocate ( f_trefdt   )! 2 m height air temperature [kelvin]
+
+deallocate ( f_fsenant  )! sensible heat from canopy height to atmosphere [W/m2]
+deallocate ( f_lfevpant )! latent heat flux from canopy height to atmosphere [W/m2]
+deallocate ( f_fgrndnt  )! ground heat flux [W/m2]
+deallocate ( f_olrgnt   )! outgoing long-wave radiation from ground+canopy [W/m2]
+deallocate ( f_rnetnt   )! net radiation [W/m2]
+deallocate ( f_t_grndnt )! ground surface temperature [K]
+deallocate ( f_tradnt   )! radiative temperature of surface [K]
+deallocate ( f_trefnt   )! 2 m height air temperature [kelvin]
 
 !---------------------------------------------------------------------
 deallocate ( f_t_soisno    )  ! soil temperature [K]

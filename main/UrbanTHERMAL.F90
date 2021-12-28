@@ -1073,10 +1073,10 @@
       ENDIF
 
       ! 计算单位面积
-      IF (fcover(1) >0. ) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
-      IF (fcover(2) >0. ) lwsha = lwsha / fcover(2) * fg !/ (4*fwsha*HL*fb/fg)
-      IF (fcover(3) >0. ) lgimp = lgimp / fcover(3) * fg !/ fgimp
-      IF (fcover(4) >0. ) lgper = lgper / fcover(4) * fg !/ fgper
+      IF (fcover(1) > 0.) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
+      IF (fcover(2) > 0.) lwsha = lwsha / fcover(2) * fg !/ (4*fwsha*HL*fb/fg)
+      IF (fcover(3) > 0.) lgimp = lgimp / fcover(3) * fg !/ fgimp
+      IF (fcover(4) > 0.) lgper = lgper / fcover(4) * fg !/ fgper
       IF ( doveg        ) lveg  = lveg  / fcover(5) * fg !/ fv/fg
 
       ! 加上之前的lout和roof的变化
@@ -1141,14 +1141,13 @@
 ! [11] a simple building energy model
 !=======================================================================
 
-#ifdef URBAN_BEM
       ! Building energy model
       CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), hroof, troommax, troommin, &
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &
                        Fhac, Fwst, Fach )
-#endif
+
       deallocate ( fcover )
 
  END SUBROUTINE UrbanTHERMAL

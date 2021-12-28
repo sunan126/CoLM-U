@@ -511,7 +511,7 @@ SUBROUTINE UrbanCLMMAIN ( &
       forc_rain = prc_rain + prl_rain
       forc_snow = prc_snow + prl_snow
 
-      sabvsun = sabv
+      sabvsun = sabv * fveg * (1-flake)
       sabvsha = 0.
 
 !======================================================================

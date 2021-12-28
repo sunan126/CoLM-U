@@ -197,10 +197,16 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata)
          tk_wall(:,u)    = tkwall      (i,j,t,:) !thermal conductivity of wall [W/m-K]
          tk_gimp(:,u)    = tkimproad   (i,j,t,:) !thermal conductivity of impervious [W/m-K]
 
-         t_roommax(u)    = tbuildingmax  (i,j,t) !maximum temperature of inner room [K]
-         t_roommin(u)    = tbuildingmin  (i,j,t) !minimum temperature of inner room [K]
          thick_roof      = thickroof     (i,j,t) !thickness of roof [m]
          thick_wall      = thickwall     (i,j,t) !thickness of wall [m]
+
+#ifdef URBAN_BEM
+         t_roommax(u)    = tbuildingmax  (i,j,t) !maximum temperature of inner room [K]
+         t_roommin(u)    = tbuildingmin  (i,j,t) !minimum temperature of inner room [K]
+#else
+         t_roommax(u)    = 373.16                !maximum temperature of inner room [K]
+         t_roommin(u)    = 180.00                !minimum temperature of inner room [K]
+#endif
 
 #ifdef URBAN_WATER
          flake(u) = urbanwaterpct(i,j,t)/100. !urban water fractional cover

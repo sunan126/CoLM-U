@@ -4,7 +4,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
                      ,porsl,soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb&
                      ,z0m,zlnd,chil,rho,tau,z_soisno,dz_soisno&
                      ,t_soisno,wliq_soisno,wice_soisno,zwt,wa&
-                     ,t_grnd,tleaf,ldew,sag,scv&   
+                     ,t_grnd,tleaf,ldew,sag,scv&
                      ,snowdp,fveg,fsno,sigf,green,lai,sai,coszen&
                      ,alb,ssun,ssha,thermk,extkb,extkd&
                      ,trad,tref,qref,rst,emis,zol,rib&
@@ -31,9 +31,9 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
   USE GlobalVars
   USE ALBEDO
 
-  IMPLICIT NONE 
+  IMPLICIT NONE
 
-  INTEGER, intent(in) ::        &! 
+  INTEGER, intent(in) ::        &!
         ipatch,                 &! patch index
         patchtype                ! index for land cover TYPE [-]
 
@@ -46,7 +46,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
         soil_s_n_alb,           &! albedo of near infrared of the saturated soil
         soil_d_n_alb,           &! albedo of near infrared of the dry soil
         z0m,                    &! aerodynamic roughness length [m]
-        zlnd,                   &! aerodynamic roughness length over soil surface [m] 
+        zlnd,                   &! aerodynamic roughness length over soil surface [m]
         chil,                   &! leaf angle distribution factor
         rho(2,2),               &! leaf reflectance (iw=iband, il=life and dead)
         tau(2,2),               &! leaf transmittance (iw=iband, il=life and dead)
@@ -89,7 +89,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
         wa,                     &! water storage in aquifer [mm]
         zwt,                    &! the depth to water table [m]
 
-                    ! Additional variables required by reginal model (WRF & RSM) 
+                    ! Additional variables required by reginal model (WRF & RSM)
                     ! ---------------------------------------------------------
         trad,                   &! radiative temperature of surface [K]
         tref,                   &! 2 m height air temperature [kelvin]
@@ -105,7 +105,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
         fh,                     &! integral of profile function for heat
         fq                       ! integral of profile function for moisture
 
-        INTEGER j, snl                      
+        INTEGER j, snl
         REAL(r8) wet(nl_soil), wt, ssw, oro, rhosno_ini, a
 
         INTEGER ps, pe, pc
@@ -170,7 +170,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
 #else
 ! soil temperature and water content
      DO j = 1, nl_soil
-        IF(patchtype==3)THEN !land ice 
+        IF(patchtype==3)THEN !land ice
            t_soisno(j) = 253.
            wliq_soisno(j) = 0.
            wice_soisno(j) = dz_soisno(j)*1000.
@@ -205,7 +205,7 @@ IF (patchtype == 0) THEN
 #endif
 
 #ifdef PFT_CLASSIFICATION
-     ps = patch_pft_s(ipatch)      
+     ps = patch_pft_s(ipatch)
      pe = patch_pft_e(ipatch)
      sigf_p(ps:pe)   = 1.
      ldew_p(ps:pe)   = 0.
@@ -242,7 +242,7 @@ ELSE
      lai    = tlai(ipatch)
      sai    = tsai(ipatch) * sigf
 ENDIF
-     
+
      fsno   = 0.
      scv    = 0.
      sag    = 0.
@@ -284,19 +284,19 @@ ENDIF
 
 ! Additional variables required by reginal model (WRF & RSM)
 ! totally arbitrarily assigned here
-  trad  = t_grnd      
-  tref  = t_grnd      
-  qref  = 0.3     
-  rst   = 1.e36   
-  emis  = 1.0     
-  zol   = -1.0    
-  rib   = -0.1    
-  ustar = 0.25    
-  qstar = 0.001   
-  tstar = -1.5    
-  fm    = alog(30.)  
-  fh    = alog(30.)  
-  fq    = alog(30.)  
+  trad  = t_grnd
+  tref  = t_grnd
+  qref  = 0.3
+  rst   = 1.e36
+  emis  = 1.0
+  zol   = -1.0
+  rib   = -0.1
+  ustar = 0.25
+  qstar = 0.001
+  tstar = -1.5
+  fm    = alog(30.)
+  fh    = alog(30.)
+  fq    = alog(30.)
 
 END SUBROUTINE IniTimeVar
 !-----------------------------------------------------------------------

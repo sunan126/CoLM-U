@@ -1,46 +1,48 @@
 #include <define.h>
 
- SUBROUTINE flxwrite (idate,nac,nac_ln,lon_points,lat_points,&
-                      dir_output,casename)
+ SUBROUTINE flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,&
+                      lon_points,lat_points,dir_output,casename)
 
 !=======================================================================
 ! Original version: Yongjiu Dai, September 15, 1999, 03/2014
 !=======================================================================
 
-  use precision
+  USE precision
   USE GlobalVars
-  use MOD_2D_Fluxes
-  use MOD_TimeInvariants, only: gridlond, gridlatd
-  use timemanager
+  USE MOD_2D_Fluxes
+  USE MOD_TimeInvariants, only: gridlond, gridlatd
+  USE timemanager
   IMPLICIT NONE
 
-  integer, INTENT(in) :: idate(3)
-  integer, INTENT(in) :: nac
-  integer, INTENT(in) :: nac_ln(lon_points,lat_points)
-  integer, INTENT(in) :: lon_points
-  integer, INTENT(in) :: lat_points
+  INTEGER, intent(in) :: idate(3)
+  INTEGER, intent(in) :: nac
+  INTEGER, intent(in) :: nac_ln(lon_points,lat_points)
+  INTEGER, intent(in) :: nac_dt(lon_points,lat_points)
+  INTEGER, intent(in) :: nac_nt(lon_points,lat_points)
+  INTEGER, intent(in) :: lon_points
+  INTEGER, intent(in) :: lat_points
 
-  character(LEN=256) :: dir_output
-  character(LEN=256) :: casename
+  CHARACTER(LEN=256) :: dir_output
+  CHARACTER(LEN=256) :: casename
 
-  integer luout, month, day, i, j, l
-  character(LEN=256) fout
-  character(LEN=256) cdate
-  real(r8) a
+  INTEGER luout, month, day, i, j, l
+  CHARACTER(LEN=256) fout
+  CHARACTER(LEN=256) cdate
+  REAL(r8) a
 
 ! ----------------------------------------------------------------------
 ! Open for model time varying data (model state variables) and history filed
 
      luout = 100
 #if(defined WO_MONTHLY)
-     call julian2monthday(idate(1), idate(2), month, day)
+     CALL julian2monthday(idate(1), idate(2), month, day)
      write(cdate,'(i4.4,"-",i2.2)') idate(1), month
 #else
      write(cdate,'(i4.4,"-",i3.3,"-",i5.5)') idate(1),idate(2),idate(3)
 #endif
      fout = trim(dir_output)//trim(casename)//'_'//'2D_Fluxes'//'_'//trim(cdate)
      print*,trim(fout)
-     OPEN(unit=luout,file=fout,access='sequential',form='unformatted',&
+     open(unit=luout,file=fout,access='sequential',form='unformatted',&
                      status='unknown',action='write')
 
      a = float(nac)
@@ -48,127 +50,148 @@
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,l)
 #endif
-     do j = 1, lat_points
-        do i = 1, lon_points
+     DO j = 1, lat_points
+        DO i = 1, lon_points
 
-           if (f_taux   (i,j) /= spval) f_taux   (i,j) = f_taux   (i,j) / a  ! wind stress: E-W [kg/m/s2]
-           if (f_tauy   (i,j) /= spval) f_tauy   (i,j) = f_tauy   (i,j) / a  ! wind stress: N-S [kg/m/s2]
-           if (f_fsena  (i,j) /= spval) f_fsena  (i,j) = f_fsena  (i,j) / a  ! sensible heat from canopy height to atmosphere [W/m2]
-           if (f_lfevpa (i,j) /= spval) f_lfevpa (i,j) = f_lfevpa (i,j) / a  ! latent heat flux from canopy height to atmosphere [W/m2]
-           if (f_fevpa  (i,j) /= spval) f_fevpa  (i,j) = f_fevpa  (i,j) / a  ! evapotranspiration from canopy to atmosphere [mm/s]
-           if (f_fsenl  (i,j) /= spval) f_fsenl  (i,j) = f_fsenl  (i,j) / a  ! sensible heat from leaves [W/m2]
-           if (f_fevpl  (i,j) /= spval) f_fevpl  (i,j) = f_fevpl  (i,j) / a  ! evaporation+transpiration from leaves [mm/s]
-           if (f_etr    (i,j) /= spval) f_etr    (i,j) = f_etr    (i,j) / a  ! transpiration rate [mm/s]
-           if (f_fseng  (i,j) /= spval) f_fseng  (i,j) = f_fseng  (i,j) / a  ! sensible heat flux from ground [W/m2]
-           if (f_fevpg  (i,j) /= spval) f_fevpg  (i,j) = f_fevpg  (i,j) / a  ! evaporation heat flux from ground [mm/s]
-           if (f_fgrnd  (i,j) /= spval) f_fgrnd  (i,j) = f_fgrnd  (i,j) / a  ! ground heat flux [W/m2]
-           if (f_sabvsun(i,j) /= spval) f_sabvsun(i,j) = f_sabvsun(i,j) / a  ! solar absorbed by sunlit canopy [W/m2]
-           if (f_sabvsha(i,j) /= spval) f_sabvsha(i,j) = f_sabvsha(i,j) / a  ! solar absorbed by shaded [W/m2]
-           if (f_sabg   (i,j) /= spval) f_sabg   (i,j) = f_sabg   (i,j) / a  ! solar absorbed by ground  [W/m2]
-           if (f_olrg   (i,j) /= spval) f_olrg   (i,j) = f_olrg   (i,j) / a  ! outgoing long-wave radiation from ground+canopy [W/m2]
-           if (f_rnet   (i,j) /= spval) f_rnet   (i,j) = f_rnet   (i,j) / a  ! net radiation [W/m2]
-           if (f_xerr   (i,j) /= spval) f_xerr   (i,j) = f_xerr   (i,j) / a  ! the error of water banace [mm/s]
-           if (f_zerr   (i,j) /= spval) f_zerr   (i,j) = f_zerr   (i,j) / a  ! the error of energy balance [W/m2]
-           if (f_rsur   (i,j) /= spval) f_rsur   (i,j) = f_rsur   (i,j) / a  ! surface runoff [mm/s]
-           if (f_rnof   (i,j) /= spval) f_rnof   (i,j) = f_rnof   (i,j) / a  ! total runoff [mm/s]
-           if (f_qintr  (i,j) /= spval) f_qintr  (i,j) = f_qintr  (i,j) / a  ! interception [mm/s]
-           if (f_qinfl  (i,j) /= spval) f_qinfl  (i,j) = f_qinfl  (i,j) / a  ! inflitraton [mm/s]
-           if (f_qdrip  (i,j) /= spval) f_qdrip  (i,j) = f_qdrip  (i,j) / a  ! throughfall [mm/s]
-           if (f_rstfac (i,j) /= spval) f_rstfac (i,j) = f_rstfac (i,j) / a  ! factor of soil water stress
-           if (f_zwt    (i,j) /= spval) f_zwt    (i,j) = f_zwt    (i,j) / a  ! water depth [m]
-           if (f_wa     (i,j) /= spval) f_wa     (i,j) = f_wa     (i,j) / a  ! water storage in aquifer [mm]
-           if (f_wat    (i,j) /= spval) f_wat    (i,j) = f_wat    (i,j) / a  ! total water storage [mm]
-           if (f_assim  (i,j) /= spval) f_assim  (i,j) = f_assim  (i,j) / a  ! canopy assimilation rate [mol m-2 s-1]
-           if (f_respc  (i,j) /= spval) f_respc  (i,j) = f_respc  (i,j) / a  ! respiration (plant+soil) [mol m-2 s-1]
-           if (f_qcharge(i,j) /= spval) f_qcharge(i,j) = f_qcharge(i,j) / a  ! groundwater recharge rate [mm/s]
-
-!---------------------------------------------------------------------
-           if (f_t_grnd (i,j) /= spval) f_t_grnd (i,j) = f_t_grnd (i,j) / a  ! ground surface temperature [K]
-           if (f_tleaf  (i,j) /= spval) f_tleaf  (i,j) = f_tleaf  (i,j) / a  ! sunlit leaf temperature [K]
-           if (f_ldew   (i,j) /= spval) f_ldew   (i,j) = f_ldew   (i,j) / a  ! depth of water on foliage [mm]
-           if (f_scv    (i,j) /= spval) f_scv    (i,j) = f_scv    (i,j) / a  ! snow cover, water equivalent [mm]
-           if (f_snowdp (i,j) /= spval) f_snowdp (i,j) = f_snowdp (i,j) / a  ! snow depth [meter]
-           if (f_fsno   (i,j) /= spval) f_fsno   (i,j) = f_fsno   (i,j) / a  ! fraction of snow cover on ground
-           if (f_sigf   (i,j) /= spval) f_sigf   (i,j) = f_sigf   (i,j) / a  ! fraction of veg cover, excluding snow-covered veg [-]
-           if (f_green  (i,j) /= spval) f_green  (i,j) = f_green  (i,j) / a  ! leaf greenness
-           if (f_lai    (i,j) /= spval) f_lai    (i,j) = f_lai    (i,j) / a  ! leaf area index
-           if (f_laisun (i,j) /= spval) f_laisun (i,j) = f_laisun (i,j) / a  ! leaf area index
-           if (f_laisha (i,j) /= spval) f_laisha (i,j) = f_laisha (i,j) / a  ! leaf area index
-           if (f_sai    (i,j) /= spval) f_sai    (i,j) = f_sai    (i,j) / a  ! stem area index
-           if (f_alb(1,1,i,j) /= spval) f_alb(1,1,i,j) = f_alb(1,1,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
-           if (f_alb(2,1,i,j) /= spval) f_alb(2,1,i,j) = f_alb(2,1,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
-           if (f_alb(1,2,i,j) /= spval) f_alb(1,2,i,j) = f_alb(1,2,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
-           if (f_alb(2,2,i,j) /= spval) f_alb(2,2,i,j) = f_alb(2,2,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
-           if (f_emis   (i,j) /= spval) f_emis   (i,j) = f_emis   (i,j) / a  ! averaged bulk surface emissivity
-           if (f_z0m    (i,j) /= spval) f_z0m    (i,j) = f_z0m    (i,j) / a  ! effective roughness [m]
-           if (f_trad   (i,j) /= spval) f_trad   (i,j) = f_trad   (i,j) / a  ! radiative temperature of surface [K]
-           if (f_tref   (i,j) /= spval) f_tref   (i,j) = f_tref   (i,j) / a  ! 2 m height air temperature [kelvin]
-           if (f_qref   (i,j) /= spval) f_qref   (i,j) = f_qref   (i,j) / a  ! 2 m height air specific humidity [kg/kg]
-           if (f_t_room (i,j) /= spval) f_t_room (i,j) = f_t_room (i,j) / a  ! temperature of inner building [K]
-           if (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
-           if (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
-           if (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
-           if (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
-           if (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
+           IF (f_taux   (i,j) /= spval) f_taux   (i,j) = f_taux   (i,j) / a  ! wind stress: E-W [kg/m/s2]
+           IF (f_tauy   (i,j) /= spval) f_tauy   (i,j) = f_tauy   (i,j) / a  ! wind stress: N-S [kg/m/s2]
+           IF (f_fsena  (i,j) /= spval) f_fsena  (i,j) = f_fsena  (i,j) / a  ! sensible heat from canopy height to atmosphere [W/m2]
+           IF (f_lfevpa (i,j) /= spval) f_lfevpa (i,j) = f_lfevpa (i,j) / a  ! latent heat flux from canopy height to atmosphere [W/m2]
+           IF (f_fevpa  (i,j) /= spval) f_fevpa  (i,j) = f_fevpa  (i,j) / a  ! evapotranspiration from canopy to atmosphere [mm/s]
+           IF (f_fsenl  (i,j) /= spval) f_fsenl  (i,j) = f_fsenl  (i,j) / a  ! sensible heat from leaves [W/m2]
+           IF (f_fevpl  (i,j) /= spval) f_fevpl  (i,j) = f_fevpl  (i,j) / a  ! evaporation+transpiration from leaves [mm/s]
+           IF (f_etr    (i,j) /= spval) f_etr    (i,j) = f_etr    (i,j) / a  ! transpiration rate [mm/s]
+           IF (f_fseng  (i,j) /= spval) f_fseng  (i,j) = f_fseng  (i,j) / a  ! sensible heat flux from ground [W/m2]
+           IF (f_fevpg  (i,j) /= spval) f_fevpg  (i,j) = f_fevpg  (i,j) / a  ! evaporation heat flux from ground [mm/s]
+           IF (f_fgrnd  (i,j) /= spval) f_fgrnd  (i,j) = f_fgrnd  (i,j) / a  ! ground heat flux [W/m2]
+           IF (f_sabvsun(i,j) /= spval) f_sabvsun(i,j) = f_sabvsun(i,j) / a  ! solar absorbed by sunlit canopy [W/m2]
+           IF (f_sabvsha(i,j) /= spval) f_sabvsha(i,j) = f_sabvsha(i,j) / a  ! solar absorbed by shaded [W/m2]
+           IF (f_sabg   (i,j) /= spval) f_sabg   (i,j) = f_sabg   (i,j) / a  ! solar absorbed by ground  [W/m2]
+           IF (f_olrg   (i,j) /= spval) f_olrg   (i,j) = f_olrg   (i,j) / a  ! outgoing long-wave radiation from ground+canopy [W/m2]
+           IF (f_rnet   (i,j) /= spval) f_rnet   (i,j) = f_rnet   (i,j) / a  ! net radiation [W/m2]
+           IF (f_xerr   (i,j) /= spval) f_xerr   (i,j) = f_xerr   (i,j) / a  ! the error of water banace [mm/s]
+           IF (f_zerr   (i,j) /= spval) f_zerr   (i,j) = f_zerr   (i,j) / a  ! the error of energy balance [W/m2]
+           IF (f_rsur   (i,j) /= spval) f_rsur   (i,j) = f_rsur   (i,j) / a  ! surface runoff [mm/s]
+           IF (f_rnof   (i,j) /= spval) f_rnof   (i,j) = f_rnof   (i,j) / a  ! total runoff [mm/s]
+           IF (f_qintr  (i,j) /= spval) f_qintr  (i,j) = f_qintr  (i,j) / a  ! interception [mm/s]
+           IF (f_qinfl  (i,j) /= spval) f_qinfl  (i,j) = f_qinfl  (i,j) / a  ! inflitraton [mm/s]
+           IF (f_qdrip  (i,j) /= spval) f_qdrip  (i,j) = f_qdrip  (i,j) / a  ! throughfall [mm/s]
+           IF (f_rstfac (i,j) /= spval) f_rstfac (i,j) = f_rstfac (i,j) / a  ! factor of soil water stress
+           IF (f_zwt    (i,j) /= spval) f_zwt    (i,j) = f_zwt    (i,j) / a  ! water depth [m]
+           IF (f_wa     (i,j) /= spval) f_wa     (i,j) = f_wa     (i,j) / a  ! water storage in aquifer [mm]
+           IF (f_wat    (i,j) /= spval) f_wat    (i,j) = f_wat    (i,j) / a  ! total water storage [mm]
+           IF (f_assim  (i,j) /= spval) f_assim  (i,j) = f_assim  (i,j) / a  ! canopy assimilation rate [mol m-2 s-1]
+           IF (f_respc  (i,j) /= spval) f_respc  (i,j) = f_respc  (i,j) / a  ! respiration (plant+soil) [mol m-2 s-1]
+           IF (f_qcharge(i,j) /= spval) f_qcharge(i,j) = f_qcharge(i,j) / a  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
-           do l = maxsnl+1, nl_soil
-              if (f_t_soisno   (l,i,j) /= spval) f_t_soisno   (l,i,j) = f_t_soisno   (l,i,j) / a  ! soil temperature [K]
-              if (f_wliq_soisno(l,i,j) /= spval) f_wliq_soisno(l,i,j) = f_wliq_soisno(l,i,j) / a  ! liquid water in soil layers [kg/m2]
-              if (f_wice_soisno(l,i,j) /= spval) f_wice_soisno(l,i,j) = f_wice_soisno(l,i,j) / a  ! ice lens in soil layers [kg/m2]
-           end do
+           IF (f_t_grnd (i,j) /= spval) f_t_grnd (i,j) = f_t_grnd (i,j) / a  ! ground surface temperature [K]
+           IF (f_tleaf  (i,j) /= spval) f_tleaf  (i,j) = f_tleaf  (i,j) / a  ! sunlit leaf temperature [K]
+           IF (f_ldew   (i,j) /= spval) f_ldew   (i,j) = f_ldew   (i,j) / a  ! depth of water on foliage [mm]
+           IF (f_scv    (i,j) /= spval) f_scv    (i,j) = f_scv    (i,j) / a  ! snow cover, water equivalent [mm]
+           IF (f_snowdp (i,j) /= spval) f_snowdp (i,j) = f_snowdp (i,j) / a  ! snow depth [meter]
+           IF (f_fsno   (i,j) /= spval) f_fsno   (i,j) = f_fsno   (i,j) / a  ! fraction of snow cover on ground
+           IF (f_sigf   (i,j) /= spval) f_sigf   (i,j) = f_sigf   (i,j) / a  ! fraction of veg cover, excluding snow-covered veg [-]
+           IF (f_green  (i,j) /= spval) f_green  (i,j) = f_green  (i,j) / a  ! leaf greenness
+           IF (f_lai    (i,j) /= spval) f_lai    (i,j) = f_lai    (i,j) / a  ! leaf area index
+           IF (f_laisun (i,j) /= spval) f_laisun (i,j) = f_laisun (i,j) / a  ! leaf area index
+           IF (f_laisha (i,j) /= spval) f_laisha (i,j) = f_laisha (i,j) / a  ! leaf area index
+           IF (f_sai    (i,j) /= spval) f_sai    (i,j) = f_sai    (i,j) / a  ! stem area index
+           IF (f_alb(1,1,i,j) /= spval) f_alb(1,1,i,j) = f_alb(1,1,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
+           IF (f_alb(2,1,i,j) /= spval) f_alb(2,1,i,j) = f_alb(2,1,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
+           IF (f_alb(1,2,i,j) /= spval) f_alb(1,2,i,j) = f_alb(1,2,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
+           IF (f_alb(2,2,i,j) /= spval) f_alb(2,2,i,j) = f_alb(2,2,i,j) / a  ! averaged albedo [visible, direct; direct, diffuse]
+           IF (f_emis   (i,j) /= spval) f_emis   (i,j) = f_emis   (i,j) / a  ! averaged bulk surface emissivity
+           IF (f_z0m    (i,j) /= spval) f_z0m    (i,j) = f_z0m    (i,j) / a  ! effective roughness [m]
+           IF (f_trad   (i,j) /= spval) f_trad   (i,j) = f_trad   (i,j) / a  ! radiative temperature of surface [K]
+           IF (f_tref   (i,j) /= spval) f_tref   (i,j) = f_tref   (i,j) / a  ! 2 m height air temperature [kelvin]
+           IF (f_qref   (i,j) /= spval) f_qref   (i,j) = f_qref   (i,j) / a  ! 2 m height air specific humidity [kg/kg]
+           IF (f_t_room (i,j) /= spval) f_t_room (i,j) = f_t_room (i,j) / a  ! temperature of inner building [K]
+           IF (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
+           IF (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
+           IF (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
+           IF (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
+           IF (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
 
-           do l = 1, nl_soil
-              if (f_h2osoi     (l,i,j) /= spval) f_h2osoi     (l,i,j) = f_h2osoi     (l,i,j) / a  ! volumetric soil water in layers [m3/m3]
-           end do
+           IF (f_sabvdt  (i,j) /= spval) f_sabvdt  (i,j) = f_sabvdt  (i,j) / nac_dt(i,j)  ! solar absorbed by sunlit canopy [w/m2]
+           IF (f_sabgdt  (i,j) /= spval) f_sabgdt  (i,j) = f_sabgdt  (i,j) / nac_dt(i,j)  ! solar absorbed by ground [w/m2]
+           IF (f_srdt    (i,j) /= spval) f_srdt    (i,j) = f_srdt    (i,j) / nac_dt(i,j)  ! total reflected solar radiation (w/m2)
+           IF (f_fsenadt (i,j) /= spval) f_fsenadt (i,j) = f_fsenadt (i,j) / nac_dt(i,j)  ! sensible heat from canopy height to atmosphere [w/m2]
+           IF (f_lfevpadt(i,j) /= spval) f_lfevpadt(i,j) = f_lfevpadt(i,j) / nac_dt(i,j)  ! latent heat flux from canopy height to atmosphere [w/m2]
+           IF (f_fgrnddt (i,j) /= spval) f_fgrnddt (i,j) = f_fgrnddt (i,j) / nac_dt(i,j)  ! ground heat flux [w/m2]
+           IF (f_olrgdt  (i,j) /= spval) f_olrgdt  (i,j) = f_olrgdt  (i,j) / nac_dt(i,j)  ! outgoing long-wave radiation from ground+canopy [w/m2]
+           IF (f_rnetdt  (i,j) /= spval) f_rnetdt  (i,j) = f_rnetdt  (i,j) / nac_dt(i,j)  ! net radiation [w/m2]
+           IF (f_t_grnddt(i,j) /= spval) f_t_grnddt(i,j) = f_t_grnddt(i,j) / nac_dt(i,j)  ! ground surface temperature [k]
+           IF (f_traddt  (i,j) /= spval) f_traddt  (i,j) = f_traddt  (i,j) / nac_dt(i,j)  ! radiative temperature of surface [k]
+           IF (f_trefdt  (i,j) /= spval) f_trefdt  (i,j) = f_trefdt  (i,j) / nac_dt(i,j)  ! 2 m height air temperature [kelvin]
 
-           do l = 1, nl_lake
-              if (f_t_lake      (l,i,j) /= spval) f_t_lake      (l,i,j) = f_t_lake      (l,i,j) / a  ! lake temperature [K]
-              if (f_lake_icefrac(l,i,j) /= spval) f_lake_icefrac(l,i,j) = f_lake_icefrac(l,i,j) / a  ! lake ice fraction cover [0-1]
-           end do
+           IF (f_fsenant (i,j) /= spval) f_fsenant (i,j) = f_fsenant (i,j) / nac_nt(i,j)  ! sensible heat from canopy height to atmosphere [w/m2]
+           IF (f_lfevpant(i,j) /= spval) f_lfevpant(i,j) = f_lfevpant(i,j) / nac_nt(i,j)  ! latent heat flux from canopy height to atmosphere [w/m2]
+           IF (f_fgrndnt (i,j) /= spval) f_fgrndnt (i,j) = f_fgrndnt (i,j) / nac_nt(i,j)  ! ground heat flux [w/m2]
+           IF (f_olrgnt  (i,j) /= spval) f_olrgnt  (i,j) = f_olrgnt  (i,j) / nac_nt(i,j)  ! outgoing long-wave radiation from ground+canopy [w/m2]
+           IF (f_rnetnt  (i,j) /= spval) f_rnetnt  (i,j) = f_rnetnt  (i,j) / nac_nt(i,j)  ! net radiation [w/m2]
+           IF (f_t_grndnt(i,j) /= spval) f_t_grndnt(i,j) = f_t_grndnt(i,j) / nac_nt(i,j)  ! ground surface temperature [k]
+           IF (f_tradnt  (i,j) /= spval) f_tradnt  (i,j) = f_tradnt  (i,j) / nac_nt(i,j)  ! radiative temperature of surface [k]
+           IF (f_trefnt  (i,j) /= spval) f_trefnt  (i,j) = f_trefnt  (i,j) / nac_nt(i,j)  ! 2 m height air temperature [kelvin]
 
-           if (f_ustar  (i,j) /= spval) f_ustar  (i,j) = f_ustar  (i,j) / a  ! u* in similarity theory [m/s]
-           if (f_tstar  (i,j) /= spval) f_tstar  (i,j) = f_tstar  (i,j) / a  ! t* in similarity theory [kg/kg]
-           if (f_qstar  (i,j) /= spval) f_qstar  (i,j) = f_qstar  (i,j) / a  ! q* in similarity theory [kg/kg]
-           if (f_zol    (i,j) /= spval) f_zol    (i,j) = f_zol    (i,j) / a  ! dimensionless height (z/L) used in Monin-Obukhov theory
-           if (f_rib    (i,j) /= spval) f_rib    (i,j) = f_rib    (i,j) / a  ! bulk Richardson number in surface layer
-           if (f_fm     (i,j) /= spval) f_fm     (i,j) = f_fm     (i,j) / a  ! integral of profile function for momentum
-           if (f_fh     (i,j) /= spval) f_fh     (i,j) = f_fh     (i,j) / a  ! integral of profile function for heat
-           if (f_fq     (i,j) /= spval) f_fq     (i,j) = f_fq     (i,j) / a  ! integral of profile function for moisture
-           if (f_us10m  (i,j) /= spval) f_us10m  (i,j) = f_us10m  (i,j) / a  ! 10m u-velocity [m/s]
-           if (f_vs10m  (i,j) /= spval) f_vs10m  (i,j) = f_vs10m  (i,j) / a  ! 10m v-velocity [m/s]
-           if (f_fm10m  (i,j) /= spval) f_fm10m  (i,j) = f_fm10m  (i,j) / a  ! integral of profile function for momentum at 10m [-]
+!---------------------------------------------------------------------
+           DO l = maxsnl+1, nl_soil
+              IF (f_t_soisno   (l,i,j) /= spval) f_t_soisno   (l,i,j) = f_t_soisno   (l,i,j) / a  ! soil temperature [K]
+              IF (f_wliq_soisno(l,i,j) /= spval) f_wliq_soisno(l,i,j) = f_wliq_soisno(l,i,j) / a  ! liquid water in soil layers [kg/m2]
+              IF (f_wice_soisno(l,i,j) /= spval) f_wice_soisno(l,i,j) = f_wice_soisno(l,i,j) / a  ! ice lens in soil layers [kg/m2]
+           ENDDO
 
-           if (f_xy_us  (i,j) /= spval) f_xy_us  (i,j) = f_xy_us  (i,j) / a  ! wind in eastward direction [m/s]
-           if (f_xy_vs  (i,j) /= spval) f_xy_vs  (i,j) = f_xy_vs  (i,j) / a  ! wind in northward direction [m/s]
-           if (f_xy_t   (i,j) /= spval) f_xy_t   (i,j) = f_xy_t   (i,j) / a  ! temperature at reference height [kelvin]
-           if (f_xy_q   (i,j) /= spval) f_xy_q   (i,j) = f_xy_q   (i,j) / a  ! specific humidity at reference height [kg/kg]
-           if (f_xy_prc (i,j) /= spval) f_xy_prc (i,j) = f_xy_prc (i,j) / a  ! convective precipitation [mm/s]
-           if (f_xy_prl (i,j) /= spval) f_xy_prl (i,j) = f_xy_prl (i,j) / a  ! large scale precipitation [mm/s]
-           if (f_xy_pbot(i,j) /= spval) f_xy_pbot(i,j) = f_xy_pbot(i,j) / a  ! atmospheric pressure at the surface [pa]
-           if (f_xy_frl (i,j) /= spval) f_xy_frl (i,j) = f_xy_frl (i,j) / a  ! atmospheric infrared (longwave) radiation [W/m2]
-           if (f_xy_solarin(i,j) /= spval) f_xy_solarin(i,j) = f_xy_solarin(i,j) / a  ! downward solar radiation at surface [W/m2]
+           DO l = 1, nl_soil
+              IF (f_h2osoi     (l,i,j) /= spval) f_h2osoi     (l,i,j) = f_h2osoi     (l,i,j) / a  ! volumetric soil water in layers [m3/m3]
+           ENDDO
 
-           if (f_sr     (i,j) /= spval) f_sr     (i,j) = f_sr     (i,j) / a  ! total reflected solar radiation (W/m2)
-           if (f_solvd  (i,j) /= spval) f_solvd  (i,j) = f_solvd  (i,j) / a  ! incident direct beam vis solar radiation (W/m2)
-           if (f_solvi  (i,j) /= spval) f_solvi  (i,j) = f_solvi  (i,j) / a  ! incident diffuse beam vis solar radiation (W/m2)
-           if (f_solnd  (i,j) /= spval) f_solnd  (i,j) = f_solnd  (i,j) / a  ! incident direct beam nir solar radiation (W/m2)
-           if (f_solni  (i,j) /= spval) f_solni  (i,j) = f_solni  (i,j) / a  ! incident diffuse beam nir solar radiation (W/m2)
-           if (f_srvd   (i,j) /= spval) f_srvd   (i,j) = f_srvd   (i,j) / a  ! reflected direct beam vis solar radiation (W/m2)
-           if (f_srvi   (i,j) /= spval) f_srvi   (i,j) = f_srvi   (i,j) / a  ! reflected diffuse beam vis solar radiation (W/m2)
-           if (f_srnd   (i,j) /= spval) f_srnd   (i,j) = f_srnd   (i,j) / a  ! reflected direct beam nir solar radiation (W/m2)
-           if (f_srni   (i,j) /= spval) f_srni   (i,j) = f_srni   (i,j) / a  ! reflected diffuse beam nir solar radiation (W/m2)
-           if (f_solvdln(i,j) /= spval) f_solvdln(i,j) = f_solvdln(i,j) / nac_ln(i,j) ! incident direct beam vis solar radiation at local noon (W/m2)
-           if (f_solviln(i,j) /= spval) f_solviln(i,j) = f_solviln(i,j) / nac_ln(i,j) ! incident diffuse beam vis solar radiation at local noon (W/m2)
-           if (f_solndln(i,j) /= spval) f_solndln(i,j) = f_solndln(i,j) / nac_ln(i,j) ! incident direct beam nir solar radiation at local noon (W/m2)
-           if (f_solniln(i,j) /= spval) f_solniln(i,j) = f_solniln(i,j) / nac_ln(i,j) ! incident diffuse beam nir solar radiation at local noon (W/m2)
-           if (f_srvdln (i,j) /= spval) f_srvdln (i,j) = f_srvdln (i,j) / nac_ln(i,j) ! reflected direct beam vis solar radiation at local noon (W/m2)
-           if (f_srviln (i,j) /= spval) f_srviln (i,j) = f_srviln (i,j) / nac_ln(i,j) ! reflected diffuse beam vis solar radiation at local noon (W/m2)
-           if (f_srndln (i,j) /= spval) f_srndln (i,j) = f_srndln (i,j) / nac_ln(i,j) ! reflected direct beam nir solar radiation at local noon (W/m2)
-           if (f_srniln (i,j) /= spval) f_srniln (i,j) = f_srniln (i,j) / nac_ln(i,j) ! reflected diffuse beam nir solar radiation at local noon(W/m2)
+           DO l = 1, nl_lake
+              IF (f_t_lake      (l,i,j) /= spval) f_t_lake      (l,i,j) = f_t_lake      (l,i,j) / a  ! lake temperature [K]
+              IF (f_lake_icefrac(l,i,j) /= spval) f_lake_icefrac(l,i,j) = f_lake_icefrac(l,i,j) / a  ! lake ice fraction cover [0-1]
+           ENDDO
 
-        end do
-     end do
+           IF (f_ustar  (i,j) /= spval) f_ustar  (i,j) = f_ustar  (i,j) / a  ! u* in similarity theory [m/s]
+           IF (f_tstar  (i,j) /= spval) f_tstar  (i,j) = f_tstar  (i,j) / a  ! t* in similarity theory [kg/kg]
+           IF (f_qstar  (i,j) /= spval) f_qstar  (i,j) = f_qstar  (i,j) / a  ! q* in similarity theory [kg/kg]
+           IF (f_zol    (i,j) /= spval) f_zol    (i,j) = f_zol    (i,j) / a  ! dimensionless height (z/L) used in Monin-Obukhov theory
+           IF (f_rib    (i,j) /= spval) f_rib    (i,j) = f_rib    (i,j) / a  ! bulk Richardson number in surface layer
+           IF (f_fm     (i,j) /= spval) f_fm     (i,j) = f_fm     (i,j) / a  ! integral of profile function for momentum
+           IF (f_fh     (i,j) /= spval) f_fh     (i,j) = f_fh     (i,j) / a  ! integral of profile function for heat
+           IF (f_fq     (i,j) /= spval) f_fq     (i,j) = f_fq     (i,j) / a  ! integral of profile function for moisture
+           IF (f_us10m  (i,j) /= spval) f_us10m  (i,j) = f_us10m  (i,j) / a  ! 10m u-velocity [m/s]
+           IF (f_vs10m  (i,j) /= spval) f_vs10m  (i,j) = f_vs10m  (i,j) / a  ! 10m v-velocity [m/s]
+           IF (f_fm10m  (i,j) /= spval) f_fm10m  (i,j) = f_fm10m  (i,j) / a  ! integral of profile function for momentum at 10m [-]
+
+           IF (f_xy_us  (i,j) /= spval) f_xy_us  (i,j) = f_xy_us  (i,j) / a  ! wind in eastward direction [m/s]
+           IF (f_xy_vs  (i,j) /= spval) f_xy_vs  (i,j) = f_xy_vs  (i,j) / a  ! wind in northward direction [m/s]
+           IF (f_xy_t   (i,j) /= spval) f_xy_t   (i,j) = f_xy_t   (i,j) / a  ! temperature at reference height [kelvin]
+           IF (f_xy_q   (i,j) /= spval) f_xy_q   (i,j) = f_xy_q   (i,j) / a  ! specific humidity at reference height [kg/kg]
+           IF (f_xy_prc (i,j) /= spval) f_xy_prc (i,j) = f_xy_prc (i,j) / a  ! convective precipitation [mm/s]
+           IF (f_xy_prl (i,j) /= spval) f_xy_prl (i,j) = f_xy_prl (i,j) / a  ! large scale precipitation [mm/s]
+           IF (f_xy_pbot(i,j) /= spval) f_xy_pbot(i,j) = f_xy_pbot(i,j) / a  ! atmospheric pressure at the surface [pa]
+           IF (f_xy_frl (i,j) /= spval) f_xy_frl (i,j) = f_xy_frl (i,j) / a  ! atmospheric infrared (longwave) radiation [W/m2]
+           IF (f_xy_solarin(i,j) /= spval) f_xy_solarin(i,j) = f_xy_solarin(i,j) / a  ! downward solar radiation at surface [W/m2]
+
+           IF (f_sr     (i,j) /= spval) f_sr     (i,j) = f_sr     (i,j) / a  ! total reflected solar radiation (W/m2)
+           IF (f_solvd  (i,j) /= spval) f_solvd  (i,j) = f_solvd  (i,j) / a  ! incident direct beam vis solar radiation (W/m2)
+           IF (f_solvi  (i,j) /= spval) f_solvi  (i,j) = f_solvi  (i,j) / a  ! incident diffuse beam vis solar radiation (W/m2)
+           IF (f_solnd  (i,j) /= spval) f_solnd  (i,j) = f_solnd  (i,j) / a  ! incident direct beam nir solar radiation (W/m2)
+           IF (f_solni  (i,j) /= spval) f_solni  (i,j) = f_solni  (i,j) / a  ! incident diffuse beam nir solar radiation (W/m2)
+           IF (f_srvd   (i,j) /= spval) f_srvd   (i,j) = f_srvd   (i,j) / a  ! reflected direct beam vis solar radiation (W/m2)
+           IF (f_srvi   (i,j) /= spval) f_srvi   (i,j) = f_srvi   (i,j) / a  ! reflected diffuse beam vis solar radiation (W/m2)
+           IF (f_srnd   (i,j) /= spval) f_srnd   (i,j) = f_srnd   (i,j) / a  ! reflected direct beam nir solar radiation (W/m2)
+           IF (f_srni   (i,j) /= spval) f_srni   (i,j) = f_srni   (i,j) / a  ! reflected diffuse beam nir solar radiation (W/m2)
+           IF (f_solvdln(i,j) /= spval) f_solvdln(i,j) = f_solvdln(i,j) / nac_ln(i,j) ! incident direct beam vis solar radiation at local noon (W/m2)
+           IF (f_solviln(i,j) /= spval) f_solviln(i,j) = f_solviln(i,j) / nac_ln(i,j) ! incident diffuse beam vis solar radiation at local noon (W/m2)
+           IF (f_solndln(i,j) /= spval) f_solndln(i,j) = f_solndln(i,j) / nac_ln(i,j) ! incident direct beam nir solar radiation at local noon (W/m2)
+           IF (f_solniln(i,j) /= spval) f_solniln(i,j) = f_solniln(i,j) / nac_ln(i,j) ! incident diffuse beam nir solar radiation at local noon (W/m2)
+           IF (f_srvdln (i,j) /= spval) f_srvdln (i,j) = f_srvdln (i,j) / nac_ln(i,j) ! reflected direct beam vis solar radiation at local noon (W/m2)
+           IF (f_srviln (i,j) /= spval) f_srviln (i,j) = f_srviln (i,j) / nac_ln(i,j) ! reflected diffuse beam vis solar radiation at local noon (W/m2)
+           IF (f_srndln (i,j) /= spval) f_srndln (i,j) = f_srndln (i,j) / nac_ln(i,j) ! reflected direct beam nir solar radiation at local noon (W/m2)
+           IF (f_srniln (i,j) /= spval) f_srniln (i,j) = f_srniln (i,j) / nac_ln(i,j) ! reflected diffuse beam nir solar radiation at local noon(W/m2)
+
+        ENDDO
+     ENDDO
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
@@ -231,6 +254,27 @@
      write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
      write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
      write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+
+     write(luout) f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [w/m2]
+     write(luout) f_sabgdt  (:,:) ! solar absorbed by ground [w/m2]
+     write(luout) f_srdt    (:,:) ! total reflected solar radiation (w/m2)
+     write(luout) f_fsenadt (:,:) ! sensible heat from canopy height to atmosphere [w/m2]
+     write(luout) f_lfevpadt(:,:) ! latent heat flux from canopy height to atmosphere [w/m2]
+     write(luout) f_fgrnddt (:,:) ! ground heat flux [w/m2]
+     write(luout) f_olrgdt  (:,:) ! outgoing long-wave radiation from ground+canopy [w/m2]
+     write(luout) f_rnetdt  (:,:) ! net radiation [w/m2]
+     write(luout) f_t_grnddt(:,:) ! ground surface temperature [k]
+     write(luout) f_traddt  (:,:) ! radiative temperature of surface [k]
+     write(luout) f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
+
+     write(luout) f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [w/m2]
+     write(luout) f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [w/m2]
+     write(luout) f_fgrndnt (:,:) ! ground heat flux [w/m2]
+     write(luout) f_olrgnt  (:,:) ! outgoing long-wave radiation from ground+canopy [w/m2]
+     write(luout) f_rnetnt  (:,:) ! net radiation [w/m2]
+     write(luout) f_t_grndnt(:,:) ! ground surface temperature [k]
+     write(luout) f_tradnt  (:,:) ! radiative temperature of surface [k]
+     write(luout) f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
 
 !---------------------------------------------------------------------
      write(luout) f_t_soisno   (:,:,:)  ! soil temperature [K]

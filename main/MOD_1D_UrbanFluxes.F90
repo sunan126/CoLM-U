@@ -17,8 +17,7 @@ MODULE MOD_1D_UrbanFluxes
   !REAL(r8), allocatable :: sabwsun   (:) !solar absorption of sunlit wall [W/m2]
   !REAL(r8), allocatable :: sabwsha   (:) !solar absorption of shaded wall [W/m2]
   !REAL(r8), allocatable :: sabgimp   (:) !solar absorption of impervious [W/m2]
-  !REAL(r8), allocatable :: sabsoil   (:) !solar absorption of soil [W/m2]
-  !REAL(r8), allocatable :: sabsnow   (:) !solar absorption of snow [W/m2]
+  !REAL(r8), allocatable :: sabgper   (:) !solar absorption of pervious [W/m2]
 
 ! PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: allocate_1D_UrbanFluxes
@@ -45,8 +44,7 @@ CONTAINS
      !allocate (sabwsun (numurban))
      !allocate (sabwsha (numurban))
      !allocate (sabgimp (numurban))
-     !allocate (sabsoil (numurban))
-     !allocate (sabsnow (numurban))
+     !allocate (sabgper (numurban))
 
   END SUBROUTINE allocate_1D_UrbanFluxes
 
@@ -59,8 +57,7 @@ CONTAINS
      !deallocate (sabwsun )
      !deallocate (sabwsha )
      !deallocate (sabgimp )
-     !deallocate (sabsoil )
-     !deallocate (sabsnow )
+     !deallocate (sabgper )
 
   END SUBROUTINE deallocate_1D_UrbanFluxes
 

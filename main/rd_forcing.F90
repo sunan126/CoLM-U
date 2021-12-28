@@ -28,18 +28,18 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
       real(r8) :: calday  ! Julian cal day (1.xx to 365.xx)
       real(r8) :: sunang, cloud, difrat, vnrat
       real(r8) :: forc_xy_solarin(lon_points,lat_points)
-      real(r8) :: a, hsolar, ratio_rvrf 
+      real(r8) :: a, hsolar, ratio_rvrf
 
       real(r8), external :: orb_coszen
 
       real solar, frl, prcp, tm, us, vs, pres, qm
 
 !added by yuan, 07/06/2016
-      pi = 4.*atan(1.)        
+      pi = 4.*atan(1.)
 
 !------------------------------------------------------------
     ! READ IN THE ATMOSPHERIC FORCING
-      
+
       CALL GETMET(idate)
 
       forc_xy_t      (:,:) = forcn(:,:,1)
@@ -81,8 +81,8 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
 #endif
 
 
-      calday = calendarday(idate, gridlond(1)) 
-      
+      calday = calendarday(idate, gridlond(1))
+
       if(solarin_all_band)then
 
 #if(defined USE_QIAN_DATA)
@@ -133,7 +133,7 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
 #endif
          do j = 1, lat_points
             do i = 1, lon_points
-         !do np = 1, numpatch  
+         !do np = 1, numpatch
          !   i = ixy_patch(np) ! longitude index
          !   j = jxy_patch(np) ! latitude index
 
@@ -174,22 +174,22 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE(i,j)
 #endif
-      do np = 1, numpatch  
+      do np = 1, numpatch
          i = patch2lon(np) ! longitude index
          j = patch2lat(np) ! latitude index
 
        ! [CO2 concentration = 398.03ppm On March 12, 2014, NOAA MLO recorded]
-         forc_pco2m (np) = forc_xy_pbot  (i,j)*398.03e-06 
-         forc_po2m  (np) = forc_xy_pbot  (i,j)*0.209       
-         forc_us    (np) = forc_xy_us    (i,j)            
+         forc_pco2m (np) = forc_xy_pbot  (i,j)*398.03e-06
+         forc_po2m  (np) = forc_xy_pbot  (i,j)*0.209
+         forc_us    (np) = forc_xy_us    (i,j)
          forc_vs    (np) = forc_xy_vs    (i,j)
 
          forc_t     (np) = forc_xy_t     (i,j)
 ! The standard measuring conditions for temperature are two meters above the ground
-! Scientists have measured the most frigid temperature ever 
+! Scientists have measured the most frigid temperature ever
 ! recorded on the continent's eastern highlands: about (180K) colder than dry ice.
          if(forc_t(np) < 180.) forc_t(np) = 180.
-! the highest air temp was found in Kuwait 326 K, Sulaibya 2012-07-31; 
+! the highest air temp was found in Kuwait 326 K, Sulaibya 2012-07-31;
 ! Pakistan, Sindh 2010-05-26; Iraq, Nasiriyah 2011-08-03
          if(forc_t(np) > 326.) forc_t(np) = 326.
 
@@ -198,7 +198,7 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
          forc_prl   (np) = forc_xy_prl   (i,j)
          forc_psrf  (np) = forc_xy_psrf  (i,j)
          forc_pbot  (np) = forc_xy_pbot  (i,j)
-         
+
          forc_sols  (np) = forc_xy_sols  (i,j)
          forc_soll  (np) = forc_xy_soll  (i,j)
          forc_solsd (np) = forc_xy_solsd (i,j)
@@ -210,7 +210,7 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
          forc_hgt_q (np) = forc_xy_hgt_q (i,j)
          forc_rhoair(np) = (forc_pbot(np) &
                          - 0.378*forc_q(np)*forc_pbot(np)/(0.622+0.378*forc_q(np)))&
-                         / (rgas*forc_t(np))  
+                         / (rgas*forc_t(np))
       end do
 #ifdef OPENMP
 !$OMP END PARALLEL DO

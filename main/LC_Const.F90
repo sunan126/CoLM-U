@@ -13,7 +13,7 @@ MODULE LC_Const
 
 #ifdef USGS_CLASSIFICATION
 
-! GLCC USGS Land Use/Land Cover System Legend 
+! GLCC USGS Land Use/Land Cover System Legend
 !---------------------------
 ! 0  Ocean
 ! 1  Urban and Built-Up Land
@@ -26,8 +26,8 @@ MODULE LC_Const
 ! 8  Shrubland
 ! 9  Mixed Shrubland/Grassland
 !10  Savanna
-!11  Deciduous Broadleaf Forest 
-!12  Deciduous Needleleaf Forest 
+!11  Deciduous Broadleaf Forest
+!12  Deciduous Needleleaf Forest
 !13  Evergreen Broadleaf Forest
 !14  Evergreen Needleleaf Forest
 !15  Mixed Forest
@@ -41,7 +41,7 @@ MODULE LC_Const
 !23  Bare Ground Tundra
 !24  Snow or Ice
 
-   ! land water types 
+   ! land water types
    ! 0: soil, 1: urban, 2: wetland, 3: ice, 4: lake
    INTEGER , parameter, dimension(N_land_classification) :: patchtypes_usgs &
       = (/1, 0, 0, 0, 0, 0, 0, 0,&
@@ -85,62 +85,62 @@ MODULE LC_Const
 
    ! ratio to calculate roughness length z0m
    REAL(r8), parameter, dimension(N_land_classification) :: z0mr_usgs = 0.1
-   
-   ! ratio to calculate displacement height d 
+
+   ! ratio to calculate displacement height d
    REAL(r8), parameter, dimension(N_land_classification) :: displar_usgs = 0.667
 
    ! inverse sqrt of leaf dimension [m**-0.5, m=4 cm]
    REAL(r8), parameter, dimension(N_land_classification) :: sqrtdi_usgs = 5.0
-      
+
    ! leaf angle distribution parameter
    REAL(r8), parameter, dimension(N_land_classification) :: chil_usgs &
       = (/-0.300, -0.300, -0.300, -0.300, -0.300, -0.300, -0.300,  0.010,&
            0.010, -0.300,  0.250,  0.010,  0.100,  0.010,  0.125, -0.300,&
           -0.300,  0.100,  0.010, -0.300, -0.300, -0.300, -0.300, -0.300/)
 
-   ! reflectance of green leaf in virsible band 
+   ! reflectance of green leaf in virsible band
    REAL(r8), parameter, dimension(N_land_classification) :: rhol_vis_usgs &
       = (/0.105,  0.105,  0.105,  0.105,  0.105,  0.105,  0.105,  0.100,&
           0.100,  0.105,  0.100,  0.070,  0.100,  0.070,  0.070,  0.105,&
           0.105,  0.100,  0.100,  0.105,  0.105,  0.105,  0.105,  0.105/)
 
-   ! reflectance of dead leaf in virsible band 
+   ! reflectance of dead leaf in virsible band
    REAL(r8), parameter, dimension(N_land_classification) :: rhos_vis_usgs &
       = (/0.360,  0.360,  0.360,  0.360,  0.360,  0.360,  0.360,  0.160,&
           0.160,  0.360,  0.160,  0.160,  0.160,  0.160,  0.160,  0.360,&
           0.360,  0.160,  0.160,  0.360,  0.360,  0.360,  0.360,  0.360/)
 
-   ! reflectance of green leaf in near infrared band 
+   ! reflectance of green leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: rhol_nir_usgs &
       = (/0.580,  0.580,  0.580,  0.580,  0.580,  0.580,  0.580,  0.450,&
           0.450,  0.580,  0.450,  0.350,  0.450,  0.350,  0.400,  0.580,&
           0.580,  0.450,  0.450,  0.580,  0.580,  0.580,  0.580,  0.580/)
 
-   ! reflectance of dead leaf in near infrared band 
+   ! reflectance of dead leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: rhos_nir_usgs &
       = (/0.580,  0.580,  0.580,  0.580,  0.580,  0.580,  0.580,  0.390,&
           0.390,  0.580,  0.390,  0.390,  0.390,  0.390,  0.390,  0.580,&
           0.580,  0.390,  0.390,  0.580,  0.580,  0.580,  0.580,  0.580/)
 
-   ! transmittance of green leaf in visible band 
+   ! transmittance of green leaf in visible band
    REAL(r8), parameter, dimension(N_land_classification) :: taul_vis_usgs &
       = (/0.070,  0.070,  0.070,  0.070,  0.070,  0.070,  0.070,  0.070,&
           0.070,  0.070,  0.050,  0.050,  0.050,  0.050,  0.050,  0.070,&
           0.070,  0.050,  0.070,  0.070,  0.070,  0.070,  0.070,  0.070/)
 
-   ! transmittance of dead leaf in visible band 
+   ! transmittance of dead leaf in visible band
    REAL(r8), parameter, dimension(N_land_classification) :: taus_vis_usgs &
       = (/0.220,  0.220,  0.220,  0.220,  0.220,  0.220,  0.220,  0.001,&
           0.001,  0.220,  0.001,  0.001,  0.001,  0.001,  0.001,  0.220,&
           0.220,  0.001,  0.001,  0.220,  0.220,  0.220,  0.220,  0.220/)
 
-   ! transmittance of green leaf in near infrared band 
+   ! transmittance of green leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: taul_nir_usgs &
       = (/0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,&
           0.250,  0.250,  0.250,  0.100,  0.250,  0.100,  0.150,  0.250,&
           0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250/)
 
-   ! transmittance of dead leaf in near infrared band 
+   ! transmittance of dead leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: taus_nir_usgs &
       = (/0.380,  0.380,  0.380,  0.380,  0.380,  0.380,  0.380,  0.001,&
           0.001,  0.380,  0.001,  0.001,  0.001,  0.001,  0.001,  0.380,&
@@ -182,12 +182,12 @@ MODULE LC_Const
    ! slope of high temperature inhibition FUNCTION (s1)
    REAL(r8), parameter, dimension(N_land_classification) :: shti_usgs = 0.3
 
-   ! slope of low temperature inhibition FUNCTION (s3) 
+   ! slope of low temperature inhibition FUNCTION (s3)
    REAL(r8), parameter, dimension(N_land_classification) :: slti_usgs = 0.2
 
    ! temperature coefficient in gs-a model (s5)
    REAL(r8), parameter, dimension(N_land_classification) :: trda_usgs = 1.3
-   
+
    ! temperature coefficient in gs-a model (s6)
    REAL(r8), parameter, dimension(N_land_classification) :: trdm_usgs = 328.0
 
@@ -236,28 +236,28 @@ MODULE LC_Const
 
 #else
 
-! MODIS IGBP Land Use/Land Cover System Legend 
+! MODIS IGBP Land Use/Land Cover System Legend
 !---------------------------
 ! 0  Ocean
-! 1  Evergreen Needleleaf Forests  
-! 2  Evergreen Broadleaf Forests 
-! 3  Deciduous Needleleaf Forests 
+! 1  Evergreen Needleleaf Forests
+! 2  Evergreen Broadleaf Forests
+! 3  Deciduous Needleleaf Forests
 ! 4  Deciduous Broadleaf Forests
-! 5  Mixed Forests 
-! 6  Closed Shrublands 
-! 7  Open Shrublands 
-! 8  Woody Savannas 
-! 9  Savannas 
-!10  Grasslands 
-!11  Permanent Wetlands 
-!12  Croplands 
-!13  Urban and Built-up Lands 
-!14  Cropland/Natural Vegetation Mosaics 
-!15  Permanent Snow and Ice 
-!16  Barren 
-!17  Water Bodies 
+! 5  Mixed Forests
+! 6  Closed Shrublands
+! 7  Open Shrublands
+! 8  Woody Savannas
+! 9  Savannas
+!10  Grasslands
+!11  Permanent Wetlands
+!12  Croplands
+!13  Urban and Built-up Lands
+!14  Cropland/Natural Vegetation Mosaics
+!15  Permanent Snow and Ice
+!16  Barren
+!17  Water Bodies
 
-   ! land water types 
+   ! land water types
    ! 0: soil, 1: urban, 2: wetland, 3: ice, 4: lake
    INTEGER , parameter, dimension(N_land_classification) :: patchtypes_igbp &
       = (/0, 0, 0, 0, 0, 0, 0, 0,&
@@ -282,7 +282,7 @@ MODULE LC_Const
       !=(/ 1.0,   1.0,   1.0,   1.0,   1.0,   0.0,   0.0,   0.0,&
       !    0.1,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,&
       !    0.0 /)
-   
+
    ! defulat vegetation fractional cover
    REAL(r8), parameter, dimension(N_land_classification) :: fveg0_igbp &
       = 1.0 !(/.../)
@@ -295,62 +295,62 @@ MODULE LC_Const
 
    ! ratio to calculate roughness length z0m
    REAL(r8), parameter, dimension(N_land_classification) :: z0mr_igbp = 0.1
-   
-   ! ratio to calculate displacement height d 
+
+   ! ratio to calculate displacement height d
    REAL(r8), parameter, dimension(N_land_classification) :: displar_igbp = 0.667
 
    ! inverse&sqrt leaf specific dimension size 4 cm
    REAL(r8), parameter, dimension(N_land_classification) :: sqrtdi_igbp = 5.0
-      
+
    ! leaf angle distribution parameter
    REAL(r8), parameter, dimension(N_land_classification) :: chil_igbp &
       = (/ 0.010,  0.100,  0.010,  0.250,  0.125,  0.010,  0.010,  0.010,&
            0.010, -0.300,  0.100, -0.300,  0.010, -0.300,  0.010,  0.010,&
            0.010 /)
 
-   ! reflectance of green leaf in virsible band 
+   ! reflectance of green leaf in virsible band
    REAL(r8), parameter, dimension(N_land_classification) :: rhol_vis_igbp &
       = (/0.070,  0.100,  0.070,  0.100,  0.070,  0.105,  0.105,  0.105,&
           0.105,  0.105,  0.105,  0.105,  0.105,  0.105,  0.105,  0.105,&
           0.105 /)
 
-   ! reflectance of dead leaf in virsible band 
+   ! reflectance of dead leaf in virsible band
    REAL(r8), parameter, dimension(N_land_classification) :: rhos_vis_igbp &
       = (/0.160,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,&
           0.160,  0.360,  0.160,  0.360,  0.160,  0.360,  0.160,  0.160,&
           0.160 /)
 
-   ! reflectance of green leaf in near infrared band 
+   ! reflectance of green leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: rhol_nir_igbp &
       = (/0.350,  0.450,  0.350,  0.450,  0.400,  0.450,  0.450,  0.580,&
           0.580,  0.580,  0.450,  0.580,  0.450,  0.580,  0.450,  0.450,&
           0.580 /)
 
-   ! reflectance of dead leaf in near infrared band 
+   ! reflectance of dead leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: rhos_nir_igbp &
       = (/0.390,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,&
           0.390,  0.580,  0.390,  0.580,  0.390,  0.580,  0.390,  0.390,&
           0.580 /)
 
-   ! transmittance of green leaf in visible band 
+   ! transmittance of green leaf in visible band
    REAL(r8), parameter, dimension(N_land_classification) :: taul_vis_igbp &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,&
           0.050,  0.070,  0.050,  0.070,  0.050,  0.070,  0.050,  0.050,&
           0.050 /)
 
-   ! transmittance of dead leaf in visible band 
+   ! transmittance of dead leaf in visible band
    REAL(r8), parameter, dimension(N_land_classification) :: taus_vis_igbp &
       = (/0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.220,  0.001,  0.220,  0.001,  0.220,  0.001,  0.001,&
           0.001 /)
 
-   ! transmittance of green leaf in near infrared band 
+   ! transmittance of green leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: taul_nir_igbp &
       = (/0.100,  0.250,  0.100,  0.250,  0.150,  0.250,  0.250,  0.250,&
           0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,  0.250,&
           0.250 /)
 
-   ! transmittance of dead leaf in near infrared band 
+   ! transmittance of dead leaf in near infrared band
    REAL(r8), parameter, dimension(N_land_classification) :: taus_nir_igbp &
       = (/0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.380,  0.001,  0.380,  0.001,  0.380,  0.001,  0.001,&
@@ -364,7 +364,7 @@ MODULE LC_Const
            52.0 /)
 
    ! quantum efficiency
-   !TODO: no C4 
+   !TODO: no C4
    REAL(r8), parameter, dimension(N_land_classification) :: effcon_igbp &
       = (/0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
@@ -391,12 +391,12 @@ MODULE LC_Const
    ! slope of high temperature inhibition FUNCTION (s1)
    REAL(r8), parameter, dimension(N_land_classification) :: shti_igbp = 0.3
 
-   ! slope of low temperature inhibition FUNCTION (s3) 
+   ! slope of low temperature inhibition FUNCTION (s3)
    REAL(r8), parameter, dimension(N_land_classification) :: slti_igbp = 0.2
 
    ! temperature coefficient in gs-a model (s5)
    REAL(r8), parameter, dimension(N_land_classification) :: trda_igbp = 1.3
-   
+
    ! temperature coefficient in gs-a model (s6)
    REAL(r8), parameter, dimension(N_land_classification) :: trdm_igbp = 328.0
 
@@ -428,7 +428,7 @@ MODULE LC_Const
       =(/-1.623, -1.623, -1.681, -1.681, -1.652, -1.336, -1.909, -1.582,&
          -1.798, -1.359, -1.359, -1.796, -1.757, -1.796, -1.000, -2.261,&
          -1.000 /)
-   
+
    ! Table 2. Zeng, 2001
    ! water/glacier ==> grass
    ! urban ==> cropland
@@ -451,7 +451,7 @@ MODULE LC_Const
       sai0,       &! canopy stem area index
       chil,       &! leaf angle distribution factor
       z0mr,       &! ratio to calculate roughness length z0m
-      displar,    &! ratio to calculate displacement height d 
+      displar,    &! ratio to calculate displacement height d
       sqrtdi,     &! inverse sqrt of leaf dimension [m**-0.5]
 
       vmax25,     &! maximum carboxylation rate at 25 C at canopy top
@@ -470,19 +470,19 @@ MODULE LC_Const
 
       d50,        &! depth at 50% roots
       beta         ! coefficient of root profile
-      
+
    REAL(r8), PRIVATE, dimension(N_land_classification) :: &
       roota,      &! root fraction para
       rootb        ! root fraction para
-   
+
    REAL(r8) ::    &
       rho(2,2,N_land_classification),&! leaf reflectance
       tau(2,2,N_land_classification)  ! leaf transmittance
 
    ! scheme 1: Schenk and Jackson, 2002, 2: Zeng 2001
-   INTEGER, PRIVATE :: ROOTFR_SCHEME = 1 
+   INTEGER, PRIVATE :: ROOTFR_SCHEME = 1
 
-   ! fraction of roots in each soil layer 
+   ! fraction of roots in each soil layer
    REAL(r8), dimension(nl_soil,N_land_classification) :: rootfr
 
    ! PUBLIC MEMBER FUNCTIONS:
@@ -531,7 +531,7 @@ CONTAINS
       tau    (2,1,:) = taul_nir_usgs   (:)
       tau    (1,2,:) = taus_vis_usgs   (:)
       tau    (2,2,:) = taus_nir_usgs   (:)
-#else 
+#else
       patchtypes (:) = patchtypes_igbp (:)
       htop0      (:) = htop0_igbp      (:)
       hbot0      (:) = hbot0_igbp      (:)
@@ -575,24 +575,24 @@ CONTAINS
       ! ----------------------------------------------------------
       IF (ROOTFR_SCHEME == 1) THEN
          DO i = 1, N_land_classification
-            rootfr(1,i)=1./(1.+(z_soih(1)*100./d50(i))**beta(i)) 
-            rootfr(nl_soil,i)=1.-1./(1.+(z_soih(nl_soil-1)*100./d50(i))**beta(i)) 
+            rootfr(1,i)=1./(1.+(z_soih(1)*100./d50(i))**beta(i))
+            rootfr(nl_soil,i)=1.-1./(1.+(z_soih(nl_soil-1)*100./d50(i))**beta(i))
 
             DO nsl=2,nl_soil-1
                rootfr(nsl,i)=1./(1.+(z_soih(nsl)*100./d50(i))**beta(i)) &
                   -1./(1.+(z_soih(nsl-1)*100./d50(i))**beta(i))
             ENDDO
-         ENDDO 
-      ELSE 
+         ENDDO
+      ELSE
          DO i = 1, N_land_classification
             rootfr(1,i) = 1. - 0.5*( &
                  exp(-roota(i) * z_soih(1)) &
                + exp(-rootb(i) * z_soih(1)) )
-               
+
             rootfr(nl_soil,i) = 0.5*( &
                  exp(-roota(i) * z_soih(nl_soil)) &
                + exp(-rootb(i) * z_soih(nl_soil)) )
-            
+
             DO nsl = 2, nl_soil-1
                rootfr(nsl,i) = 0.5*( &
                     exp(-roota(i) * z_soih(nsl-1)) &

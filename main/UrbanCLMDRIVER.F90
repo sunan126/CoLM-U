@@ -114,7 +114,8 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
         slake(1:,1:,u)  ,lwsun(u)        ,lwsha(u)        ,lgimp(u)        ,&
         lgper(u)        ,lveg(u)         ,fwsun(u)        ,dfwsun(u)       ,&
         t_room(u)       ,troof_inner(u)  ,twsun_inner(u)  ,twsha_inner(u)  ,&
-        t_roommax(u)    ,t_roommin(u)                                      ,&
+        t_roommax(u)    ,t_roommin(u)    ,tafu(u)         ,tu2m(u)         ,&
+        qu2m(u)                                                            ,&
 
         zwt(i)          ,wa(i)                                             ,&
         t_lake(1:,i)    ,lake_icefrac(1:,i)                                ,&

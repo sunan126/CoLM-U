@@ -48,7 +48,8 @@ MODULE UrbanFlux
         croof       ,cgimp       ,cgper       ,tref        ,&
         qref        ,z0m         ,zol         ,rib         ,&
         ustar       ,qstar       ,tstar       ,fm          ,&
-        fh          ,fq          ,tafu                      )
+        fh          ,fq          ,tafu        ,tu2m        ,&
+        qu2m                                                )
 
 !=======================================================================
      USE precision
@@ -154,7 +155,9 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu       ! effective urban air temperature (2nd layer, walls)
+        tafu,     &! effective urban air temperature (2nd layer, walls)
+        tu2m,     &! 2 m urban air temperature [K]
+        qu2m       ! 2 m urban air humidity [kg/kg]
 
 !------------------------ LOCAL VARIABLES ------------------------------
      INTEGER ::   &
@@ -172,8 +175,6 @@ MODULE UrbanFlux
         ram,      &! aerodynamical resistance [s/m]
         rah,      &! thermal resistance [s/m]
         raw,      &! moisture resistance [s/m]
-        raih,     &! temporary variable [kg/m2/s]
-        raiw,     &! temporary variable [kg/m2/s]
         fh2m,     &! relation for temperature at 2m
         fq2m,     &! relation for specific humidity at 2m
         fm10m,    &! integral of profile function for momentum at 10m
@@ -266,6 +267,10 @@ MODULE UrbanFlux
         wtll,     &! sum of normalized heat conductance for air and leaf
         wtlql      ! sum of normalized heat conductance for air and leaf
 
+     REAL(r8) ::  &
+        ra2m,     &! aerodynamic resistance between 2m and bottom layer [s/m]
+        rd2m       ! aerodynamic resistance between bottom layer and ground [s/m]
+
      ! temporal
      INTEGER i
      REAL(r8) bee, tmpw1, tmpw2, fact, facq
@@ -355,7 +360,7 @@ MODULE UrbanFlux
      z0m = z0mu
 
      displa  = displau
-     displau = max(hroof/2., displa)
+     displau = max(hroof/2., displau)
 
 !-----------------------------------------------------------------------
 ! calculate layer decay coefficient
@@ -471,7 +476,7 @@ MODULE UrbanFlux
         !REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd(3) = frd(ktop, hroof, 0., hroof, displa+z0m, 0., z0h_g, &
+        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
@@ -480,14 +485,21 @@ MODULE UrbanFlux
         !REAL(r8) FUNCTION ueffect(utop, htop, hbot, ztop, zbot, z0mg, alpha, bee, fc)
         ueff_lay(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
 
-        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
-        !   hroof, 0., obug, ustarg, displa+z0m, z0qg)
-        rd(2) = frd(ktop, hroof, 0., displa+z0m, z0qg, 0., z0h_g, &
+        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+        !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
+        rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !print *, "------------------------"
         !print *, "rd :", rd
         !print *, "rd_:", rd_
+
+        !TODO: 计算ra2m, rd2m
+        ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., 0., z0h_g, &
+           obug, ustarg, z0mg, alpha, bee, 1.)
+
+        rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
+           obug, ustarg, z0mg, alpha, bee, 1.)
 
 !-----------------------------------------------------------------------
 ! Bulk boundary layer resistance of leaves
@@ -548,7 +560,7 @@ MODULE UrbanFlux
            wtsqi(clev) = wtsqi(clev) + fc(i)*cfw(i)
         ENDDO
 
-        DO i = 3, 3-numlay+1, -1
+        DO i = 3, 2, -1
            wtshi(i) = 1./wtshi(i)
            wtsqi(i) = 1./wtsqi(i)
         ENDDO
@@ -676,9 +688,6 @@ MODULE UrbanFlux
 
 !-----------------------------------------------------------------------
 ! fluxes from ground to canopy space
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
 ! 计算城市地面各组分的感热、潜热
 !-----------------------------------------------------------------------
 
@@ -700,11 +709,19 @@ MODULE UrbanFlux
      cgper  = cgrnds + cgperl*htvp_gper
 
 !-----------------------------------------------------------------------
-! 2 m height air temperature
+! 2 m height air temperature above apparent sink height
 !-----------------------------------------------------------------------
 
      tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
+
+!-----------------------------------------------------------------------
+! 2 m height air temperature above ground surface
+!-----------------------------------------------------------------------
+
+     !TODO: 根据ra2m, rd2m，诊断计算tu2m, qu2m
+     tu2m = (ra2m*tg + rd2m*taf(2)) / (ra2m+rd2m)
+     qu2m = (ra2m*qg + rd2m*qaf(2)) / (ra2m+rd2m)
 
   END SUBROUTINE UrbanOnlyFlux
 
@@ -748,7 +765,8 @@ MODULE UrbanFlux
         lgper       ,lveg        ,lout        ,tref        ,&
         qref        ,z0m         ,zol         ,rib         ,&
         ustar       ,qstar       ,tstar       ,fm          ,&
-        fh          ,fq          ,tafu                      )
+        fh          ,fq          ,tafu        ,tu2m        ,&
+        qu2m                                                )
 
 !=======================================================================
 
@@ -921,7 +939,9 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu       ! effective urban air temperature (2nd layer, walls)
+        tafu,     &! effective urban air temperature (2nd layer, walls)
+        tu2m,     &! 2 m urban air temperature [K]
+        qu2m       ! 2 m urban air humidity [kg/kg]
 
 !-----------------------Local Variables---------------------------------
 ! assign iteration parameters
@@ -1072,6 +1092,10 @@ MODULE UrbanFlux
         wtll,     &! sum of normalized heat conductance for air and leaf
         wtlql      ! sum of normalized heat conductance for air and leaf
 
+     REAL(r8) ::  &
+        ra2m,     &! aerodynamic resistance between 2m and bottom layer [s/m]
+        rd2m       ! aerodynamic resistance between bottom layer and ground [s/m]
+
      ! temporal
      INTEGER i
      REAL(r8) bee, cf, tmpw1, tmpw2, fact, facq
@@ -1189,8 +1213,8 @@ MODULE UrbanFlux
      ! maximum assumption
      ! 11/26/2021, yuan: remove the below
      !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
+     !IF (displau < displav_lay) displau = displav_lay
      IF (z0mu < z0mg) z0mu = z0mg
-     IF (displau < displav_lay) displau = displav_lay
 
      displa = displau
      z0m    = z0mu
@@ -1364,10 +1388,24 @@ MODULE UrbanFlux
            !   hroof, 0., obug, ustarg, displav+z0mv, z0qg)
            rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
+
+           !TODO: 计算ra2m, rd2m
+           ra2m = frd(ktop, hroof, 0., displav+z0mv, 2., 0., z0h_g, &
+              obug, ustarg, z0mg, alpha, bee, 1.)
+
+           rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
+              obug, ustarg, z0mg, alpha, bee, 1.)
         ELSE
            !rd_(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
            !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
            rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
+              obug, ustarg, z0mg, alpha, bee, 1.)
+
+           !TODO: 计算ra2m, rd2m
+           ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., 0., z0h_g, &
+              obug, ustarg, z0mg, alpha, bee, 1.)
+
+           rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ENDIF
 
@@ -1985,11 +2023,19 @@ MODULE UrbanFlux
      cgper = cgrnds + cgperl*htvp_gper
 
 !-----------------------------------------------------------------------
-! 2 m height air temperature
+! 2 m height air temperature above apparent sink height
 !-----------------------------------------------------------------------
 
      tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
+
+!-----------------------------------------------------------------------
+! 2 m height air temperature above ground surface
+!-----------------------------------------------------------------------
+
+     !TODO: 根据ra2m, rd2m，诊断计算tu2m, qu2m
+     tu2m = (ra2m*tg + rd2m*taf(botlay)) / (ra2m+rd2m)
+     qu2m = (ra2m*qg + rd2m*qaf(botlay)) / (ra2m+rd2m)
 
   END SUBROUTINE UrbanVegFlux
 !----------------------------------------------------------------------

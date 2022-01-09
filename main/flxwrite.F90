@@ -107,6 +107,9 @@
            IF (f_tref   (i,j) /= spval) f_tref   (i,j) = f_tref   (i,j) / a  ! 2 m height air temperature [kelvin]
            IF (f_qref   (i,j) /= spval) f_qref   (i,j) = f_qref   (i,j) / a  ! 2 m height air specific humidity [kg/kg]
            IF (f_t_room (i,j) /= spval) f_t_room (i,j) = f_t_room (i,j) / a  ! temperature of inner building [K]
+           IF (f_tafu   (i,j) /= spval) f_tafu   (i,j) = f_tafu   (i,j) / a  ! temperature of outer building [K]
+           IF (f_tu2m   (i,j) /= spval) f_tu2m   (i,j) = f_tu2m   (i,j) / a  ! 2 m urban air temperature [k]
+           IF (f_qu2m   (i,j) /= spval) f_qu2m   (i,j) = f_qu2m   (i,j) / a  ! 2 m urban air humidity [kg/kg]
            IF (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
            IF (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
            IF (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
@@ -124,6 +127,9 @@
            IF (f_t_grnddt(i,j) /= spval) f_t_grnddt(i,j) = f_t_grnddt(i,j) / nac_dt(i,j)  ! ground surface temperature [k]
            IF (f_traddt  (i,j) /= spval) f_traddt  (i,j) = f_traddt  (i,j) / nac_dt(i,j)  ! radiative temperature of surface [k]
            IF (f_trefdt  (i,j) /= spval) f_trefdt  (i,j) = f_trefdt  (i,j) / nac_dt(i,j)  ! 2 m height air temperature [kelvin]
+           IF (f_tafudt  (i,j) /= spval) f_tafudt  (i,j) = f_tafudt  (i,j) / nac_dt(i,j)  ! temperature of outer building [K]
+           IF (f_tu2mdt  (i,j) /= spval) f_tu2mdt  (i,j) = f_tu2mdt  (i,j) / nac_dt(i,j)  ! 2 m urban air temperature [k]
+           IF (f_qu2mdt  (i,j) /= spval) f_qu2mdt  (i,j) = f_qu2mdt  (i,j) / nac_dt(i,j)  ! 2 m urban air humidity [kg/kg]
 
            IF (f_fsenant (i,j) /= spval) f_fsenant (i,j) = f_fsenant (i,j) / nac_nt(i,j)  ! sensible heat from canopy height to atmosphere [w/m2]
            IF (f_lfevpant(i,j) /= spval) f_lfevpant(i,j) = f_lfevpant(i,j) / nac_nt(i,j)  ! latent heat flux from canopy height to atmosphere [w/m2]
@@ -133,6 +139,9 @@
            IF (f_t_grndnt(i,j) /= spval) f_t_grndnt(i,j) = f_t_grndnt(i,j) / nac_nt(i,j)  ! ground surface temperature [k]
            IF (f_tradnt  (i,j) /= spval) f_tradnt  (i,j) = f_tradnt  (i,j) / nac_nt(i,j)  ! radiative temperature of surface [k]
            IF (f_trefnt  (i,j) /= spval) f_trefnt  (i,j) = f_trefnt  (i,j) / nac_nt(i,j)  ! 2 m height air temperature [kelvin]
+           IF (f_tafunt  (i,j) /= spval) f_tafunt  (i,j) = f_tafunt  (i,j) / nac_nt(i,j)  ! temperature of outer building [K]
+           IF (f_tu2mnt  (i,j) /= spval) f_tu2mnt  (i,j) = f_tu2mnt  (i,j) / nac_nt(i,j)  ! 2 m urban air temperature [k]
+           IF (f_qu2mnt  (i,j) /= spval) f_qu2mnt  (i,j) = f_qu2mnt  (i,j) / nac_nt(i,j)  ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
            DO l = maxsnl+1, nl_soil
@@ -251,6 +260,9 @@
      write(luout) f_xy_rain(:,:)  ! rain [mm/s]
      write(luout) f_xy_snow(:,:)  ! snow [mm/s]
      write(luout) f_t_room (:,:)  ! temperature of inner building [K]
+     write(luout) f_tafu   (:,:)  ! temperature of outer building [K]
+     write(luout) f_tu2m   (:,:)  ! 2 m urban air temperature [k]
+     write(luout) f_qu2m   (:,:)  ! 2 m urban air humidity [kg/kg]
      write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
      write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
      write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
@@ -266,6 +278,9 @@
      write(luout) f_t_grnddt(:,:) ! ground surface temperature [k]
      write(luout) f_traddt  (:,:) ! radiative temperature of surface [k]
      write(luout) f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
+     write(luout) f_tafudt  (:,:) ! temperature of outer building [K]
+     write(luout) f_tu2mdt  (:,:) ! 2 m urban air temperature [k]
+     write(luout) f_qu2mdt  (:,:) ! 2 m urban air humidity [kg/kg]
 
      write(luout) f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [w/m2]
      write(luout) f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [w/m2]
@@ -275,6 +290,9 @@
      write(luout) f_t_grndnt(:,:) ! ground surface temperature [k]
      write(luout) f_tradnt  (:,:) ! radiative temperature of surface [k]
      write(luout) f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
+     write(luout) f_tafunt  (:,:) ! temperature of outer building [K]
+     write(luout) f_tu2mnt  (:,:) ! 2 m urban air temperature [k]
+     write(luout) f_qu2mnt  (:,:) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
      write(luout) f_t_soisno   (:,:,:)  ! soil temperature [K]

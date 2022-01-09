@@ -8,152 +8,161 @@ MODULE MOD_2D_Fluxes
 ! Created by Yongjiu Dai, 03/2014
 !---------------------------------------------------------------------
 
-use precision
+USE precision
 USE GlobalVars
 
 IMPLICIT NONE
 SAVE
 
-integer,  allocatable :: mask     (:,:)  ! grid mask flag
-real(r8), allocatable :: frac     (:,:)  ! grid total fraction
-real(r8), allocatable :: area     (:,:)  ! grid cell area
+INTEGER,  allocatable :: mask     (:,:)  ! grid mask flag
+REAL(r8), allocatable :: frac     (:,:)  ! grid total fraction
+REAL(r8), allocatable :: area     (:,:)  ! grid cell area
 
-real(r8), allocatable :: f_taux   (:,:)  ! wind stress: E-W [kg/m/s2]
-real(r8), allocatable :: f_tauy   (:,:)  ! wind stress: N-S [kg/m/s2]
-real(r8), allocatable :: f_fsena  (:,:)  ! sensible heat from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_lfevpa (:,:)  ! latent heat flux from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_fevpa  (:,:)  ! evapotranspiration from canopy to atmosphere [mm/s]
-real(r8), allocatable :: f_fsenl  (:,:)  ! sensible heat from leaves [W/m2]
-real(r8), allocatable :: f_fevpl  (:,:)  ! evaporation+transpiration from leaves [mm/s]
-real(r8), allocatable :: f_etr    (:,:)  ! transpiration rate [mm/s]
-real(r8), allocatable :: f_fseng  (:,:)  ! sensible heat flux from ground [W/m2]
-real(r8), allocatable :: f_fevpg  (:,:)  ! evaporation heat flux from ground [mm/s]
-real(r8), allocatable :: f_fgrnd  (:,:)  ! ground heat flux [W/m2]
-real(r8), allocatable :: f_sabvsun(:,:)  ! solar absorbed by sunlit canopy [W/m2]
-real(r8), allocatable :: f_sabvsha(:,:)  ! solar absorbed by shaded [W/m2]
-real(r8), allocatable :: f_sabg   (:,:)  ! solar absorbed by ground [W/m2]
-real(r8), allocatable :: f_sr     (:,:)  ! total reflected solar radiation (W/m2)
-real(r8), allocatable :: f_solvd  (:,:)  ! incident direct beam vis solar radiation (W/m2)
-real(r8), allocatable :: f_solvi  (:,:)  ! incident diffuse beam vis solar radiation (W/m2)
-real(r8), allocatable :: f_solnd  (:,:)  ! incident direct beam nir solar radiation (W/m2)
-real(r8), allocatable :: f_solni  (:,:)  ! incident diffuse beam nir solar radiation (W/m2)
-real(r8), allocatable :: f_srvd   (:,:)  ! reflected direct beam vis solar radiation (W/m2)
-real(r8), allocatable :: f_srvi   (:,:)  ! reflected diffuse beam vis solar radiation (W/m2)
-real(r8), allocatable :: f_srnd   (:,:)  ! reflected direct beam nir solar radiation (W/m2)
-real(r8), allocatable :: f_srni   (:,:)  ! reflected diffuse beam nir solar radiation (W/m2)
-real(r8), allocatable :: f_solvdln(:,:)  ! incident direct beam vis solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_solviln(:,:)  ! incident diffuse beam vis solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_solndln(:,:)  ! incident direct beam nir solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_solniln(:,:)  ! incident diffuse beam nir solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_srvdln (:,:)  ! reflected direct beam vis solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_srviln (:,:)  ! reflected diffuse beam vis solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_srndln (:,:)  ! reflected direct beam nir solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_srniln (:,:)  ! reflected diffuse beam nir solar radiation at local noon (W/m2)
-real(r8), allocatable :: f_olrg   (:,:)  ! outgoing long-wave radiation from ground+canopy [W/m2]
-real(r8), allocatable :: f_rnet   (:,:)  ! net radiation [W/m2]
-real(r8), allocatable :: f_xerr   (:,:)  ! the error of water banace [mm/s]
-real(r8), allocatable :: f_zerr   (:,:)  ! the error of energy balance [W/m2]
-real(r8), allocatable :: f_rsur   (:,:)  ! surface runoff [mm/s]
-real(r8), allocatable :: f_rnof   (:,:)  ! total runoff [mm/s]
-real(r8), allocatable :: f_qintr  (:,:)  ! interception [mm/s]
-real(r8), allocatable :: f_qinfl  (:,:)  ! inflitration [mm/s]
-real(r8), allocatable :: f_qdrip  (:,:)  ! throughfall [mm/s]
-real(r8), allocatable :: f_assim  (:,:)  ! canopy assimilation rate [mol m-2 s-1]
-real(r8), allocatable :: f_respc  (:,:)  ! respiration (plant+soil) [mol m-2 s-1]
-real(r8), allocatable :: f_qcharge(:,:)  ! groundwater recharge rate [mm/s]
-
-!---------------------------------------------------------------------
-real(r8), allocatable :: f_t_grnd (:,:)  ! ground surface temperature [K]
-real(r8), allocatable :: f_tleaf  (:,:)  ! sunlit leaf temperature [K]
-real(r8), allocatable :: f_ldew   (:,:)  ! depth of water on foliage [mm]
-real(r8), allocatable :: f_scv    (:,:)  ! snow cover, water equivalent [mm]
-real(r8), allocatable :: f_snowdp (:,:)  ! snow depth [meter]
-real(r8), allocatable :: f_fsno   (:,:)  ! fraction of snow cover on ground
-real(r8), allocatable :: f_sigf   (:,:)  ! fraction of veg cover, excluding snow-covered veg [-]
-real(r8), allocatable :: f_green  (:,:)  ! leaf greenness
-real(r8), allocatable :: f_lai    (:,:)  ! leaf area index
-real(r8), allocatable :: f_laisun (:,:)  ! sunlit leaf area index
-real(r8), allocatable :: f_laisha (:,:)  ! shaded leaf area index
-real(r8), allocatable :: f_sai    (:,:)  ! stem area index
-real(r8), allocatable :: f_alb(:,:,:,:)  ! averaged albedo [visible, direct; direct, diffuse]
-real(r8), allocatable :: f_emis   (:,:)  ! averaged bulk surface emissivity
-real(r8), allocatable :: f_z0m    (:,:)  ! effective roughness [m]
-real(r8), allocatable :: f_trad   (:,:)  ! radiative temperature of surface [K]
-real(r8), allocatable :: f_tref   (:,:)  ! 2 m height air temperature [kelvin]
-real(r8), allocatable :: f_qref   (:,:)  ! 2 m height air specific humidity [kg/kg]
+REAL(r8), allocatable :: f_taux   (:,:)  ! wind stress: E-W [kg/m/s2]
+REAL(r8), allocatable :: f_tauy   (:,:)  ! wind stress: N-S [kg/m/s2]
+REAL(r8), allocatable :: f_fsena  (:,:)  ! sensible heat from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_lfevpa (:,:)  ! latent heat flux from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_fevpa  (:,:)  ! evapotranspiration from canopy to atmosphere [mm/s]
+REAL(r8), allocatable :: f_fsenl  (:,:)  ! sensible heat from leaves [W/m2]
+REAL(r8), allocatable :: f_fevpl  (:,:)  ! evaporation+transpiration from leaves [mm/s]
+REAL(r8), allocatable :: f_etr    (:,:)  ! transpiration rate [mm/s]
+REAL(r8), allocatable :: f_fseng  (:,:)  ! sensible heat flux from ground [W/m2]
+REAL(r8), allocatable :: f_fevpg  (:,:)  ! evaporation heat flux from ground [mm/s]
+REAL(r8), allocatable :: f_fgrnd  (:,:)  ! ground heat flux [W/m2]
+REAL(r8), allocatable :: f_sabvsun(:,:)  ! solar absorbed by sunlit canopy [W/m2]
+REAL(r8), allocatable :: f_sabvsha(:,:)  ! solar absorbed by shaded [W/m2]
+REAL(r8), allocatable :: f_sabg   (:,:)  ! solar absorbed by ground [W/m2]
+REAL(r8), allocatable :: f_sr     (:,:)  ! total reflected solar radiation (W/m2)
+REAL(r8), allocatable :: f_solvd  (:,:)  ! incident direct beam vis solar radiation (W/m2)
+REAL(r8), allocatable :: f_solvi  (:,:)  ! incident diffuse beam vis solar radiation (W/m2)
+REAL(r8), allocatable :: f_solnd  (:,:)  ! incident direct beam nir solar radiation (W/m2)
+REAL(r8), allocatable :: f_solni  (:,:)  ! incident diffuse beam nir solar radiation (W/m2)
+REAL(r8), allocatable :: f_srvd   (:,:)  ! reflected direct beam vis solar radiation (W/m2)
+REAL(r8), allocatable :: f_srvi   (:,:)  ! reflected diffuse beam vis solar radiation (W/m2)
+REAL(r8), allocatable :: f_srnd   (:,:)  ! reflected direct beam nir solar radiation (W/m2)
+REAL(r8), allocatable :: f_srni   (:,:)  ! reflected diffuse beam nir solar radiation (W/m2)
+REAL(r8), allocatable :: f_solvdln(:,:)  ! incident direct beam vis solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_solviln(:,:)  ! incident diffuse beam vis solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_solndln(:,:)  ! incident direct beam nir solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_solniln(:,:)  ! incident diffuse beam nir solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_srvdln (:,:)  ! reflected direct beam vis solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_srviln (:,:)  ! reflected diffuse beam vis solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_srndln (:,:)  ! reflected direct beam nir solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_srniln (:,:)  ! reflected diffuse beam nir solar radiation at local noon (W/m2)
+REAL(r8), allocatable :: f_olrg   (:,:)  ! outgoing long-wave radiation from ground+canopy [W/m2]
+REAL(r8), allocatable :: f_rnet   (:,:)  ! net radiation [W/m2]
+REAL(r8), allocatable :: f_xerr   (:,:)  ! the error of water banace [mm/s]
+REAL(r8), allocatable :: f_zerr   (:,:)  ! the error of energy balance [W/m2]
+REAL(r8), allocatable :: f_rsur   (:,:)  ! surface runoff [mm/s]
+REAL(r8), allocatable :: f_rnof   (:,:)  ! total runoff [mm/s]
+REAL(r8), allocatable :: f_qintr  (:,:)  ! interception [mm/s]
+REAL(r8), allocatable :: f_qinfl  (:,:)  ! inflitration [mm/s]
+REAL(r8), allocatable :: f_qdrip  (:,:)  ! throughfall [mm/s]
+REAL(r8), allocatable :: f_assim  (:,:)  ! canopy assimilation rate [mol m-2 s-1]
+REAL(r8), allocatable :: f_respc  (:,:)  ! respiration (plant+soil) [mol m-2 s-1]
+REAL(r8), allocatable :: f_qcharge(:,:)  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
-real(r8), allocatable :: f_t_room (:,:)  ! temperature of inner building [K]
-real(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
-real(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
-real(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+REAL(r8), allocatable :: f_t_grnd (:,:)  ! ground surface temperature [K]
+REAL(r8), allocatable :: f_tleaf  (:,:)  ! sunlit leaf temperature [K]
+REAL(r8), allocatable :: f_ldew   (:,:)  ! depth of water on foliage [mm]
+REAL(r8), allocatable :: f_scv    (:,:)  ! snow cover, water equivalent [mm]
+REAL(r8), allocatable :: f_snowdp (:,:)  ! snow depth [meter]
+REAL(r8), allocatable :: f_fsno   (:,:)  ! fraction of snow cover on ground
+REAL(r8), allocatable :: f_sigf   (:,:)  ! fraction of veg cover, excluding snow-covered veg [-]
+REAL(r8), allocatable :: f_green  (:,:)  ! leaf greenness
+REAL(r8), allocatable :: f_lai    (:,:)  ! leaf area index
+REAL(r8), allocatable :: f_laisun (:,:)  ! sunlit leaf area index
+REAL(r8), allocatable :: f_laisha (:,:)  ! shaded leaf area index
+REAL(r8), allocatable :: f_sai    (:,:)  ! stem area index
+REAL(r8), allocatable :: f_alb(:,:,:,:)  ! averaged albedo [visible, direct; direct, diffuse]
+REAL(r8), allocatable :: f_emis   (:,:)  ! averaged bulk surface emissivity
+REAL(r8), allocatable :: f_z0m    (:,:)  ! effective roughness [m]
+REAL(r8), allocatable :: f_trad   (:,:)  ! radiative temperature of surface [K]
+REAL(r8), allocatable :: f_tref   (:,:)  ! 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_qref   (:,:)  ! 2 m height air specific humidity [kg/kg]
+
+!---------------------------------------------------------------------
+REAL(r8), allocatable :: f_t_room (:,:)  ! temperature of inner building [K]
+REAL(r8), allocatable :: f_tafu   (:,:)  ! temperature of outer building [K]
+REAL(r8), allocatable :: f_tu2m   (:,:)  ! 2 m urban air temperature [K]
+REAL(r8), allocatable :: f_qu2m   (:,:)  ! 2 m urban air humidity [kg/kg]
+REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
+REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
+REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
 
 !TODO: 分daytime(dt) and nighttime(nt)
-real(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
-real(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
-real(r8), allocatable :: f_srdt    (:,:) ! total reflected solar radiation (W/m2)
-real(r8), allocatable :: f_fsenadt (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_lfevpadt(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_fgrnddt (:,:) ! ground heat flux [W/m2]
-real(r8), allocatable :: f_olrgdt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
-real(r8), allocatable :: f_rnetdt  (:,:) ! net radiation [W/m2]
-real(r8), allocatable :: f_t_grnddt(:,:) ! ground surface temperature [K]
-real(r8), allocatable :: f_traddt  (:,:) ! radiative temperature of surface [K]
-real(r8), allocatable :: f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
+REAL(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
+REAL(r8), allocatable :: f_srdt    (:,:) ! total reflected solar radiation (W/m2)
+REAL(r8), allocatable :: f_fsenadt (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_lfevpadt(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_fgrnddt (:,:) ! ground heat flux [W/m2]
+REAL(r8), allocatable :: f_olrgdt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
+REAL(r8), allocatable :: f_rnetdt  (:,:) ! net radiation [W/m2]
+REAL(r8), allocatable :: f_t_grnddt(:,:) ! ground surface temperature [K]
+REAL(r8), allocatable :: f_traddt  (:,:) ! radiative temperature of surface [K]
+REAL(r8), allocatable :: f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_tafudt  (:,:) ! temperature of outer building [K]
+REAL(r8), allocatable :: f_tu2mdt  (:,:) ! 2 m urban air temperature [K]
+REAL(r8), allocatable :: f_qu2mdt  (:,:) ! 2 m urban air humidity [kg/kg]
 
-real(r8), allocatable :: f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
-real(r8), allocatable :: f_fgrndnt (:,:) ! ground heat flux [W/m2]
-real(r8), allocatable :: f_olrgnt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
-real(r8), allocatable :: f_rnetnt  (:,:) ! net radiation [W/m2]
-real(r8), allocatable :: f_t_grndnt(:,:) ! ground surface temperature [K]
-real(r8), allocatable :: f_tradnt  (:,:) ! radiative temperature of surface [K]
-real(r8), allocatable :: f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
-
-!---------------------------------------------------------------------
-real(r8), allocatable :: f_t_soisno   (:,:,:)  ! soil temperature [K]
-real(r8), allocatable :: f_wliq_soisno(:,:,:)  ! liquid water in soil layers [kg/m2]
-real(r8), allocatable :: f_wice_soisno(:,:,:)  ! ice lens in soil layers [kg/m2]
-real(r8), allocatable :: f_h2osoi     (:,:,:)  ! volumetric soil water in layers [m3/m3]
-real(r8), allocatable :: f_rstfac     (:,:)    ! factor of soil water stress
-real(r8), allocatable :: f_zwt        (:,:)    ! the depth to water table [m]
-real(r8), allocatable :: f_wa         (:,:)    ! water storage in aquifer [mm]
-real(r8), allocatable :: f_wat        (:,:)    ! total water storage [mm]
-
-real(r8), allocatable :: f_t_lake     (:,:,:) ! lake temperature [K]
-real(r8), allocatable :: f_lake_icefrac (:,:,:) ! lake ice fraction cover [0-1]
+REAL(r8), allocatable :: f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
+REAL(r8), allocatable :: f_fgrndnt (:,:) ! ground heat flux [W/m2]
+REAL(r8), allocatable :: f_olrgnt  (:,:) ! outgoing long-wave radiation from ground+canopy [W/m2]
+REAL(r8), allocatable :: f_rnetnt  (:,:) ! net radiation [W/m2]
+REAL(r8), allocatable :: f_t_grndnt(:,:) ! ground surface temperature [K]
+REAL(r8), allocatable :: f_tradnt  (:,:) ! radiative temperature of surface [K]
+REAL(r8), allocatable :: f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_tafunt  (:,:) ! temperature of outer building [K]
+REAL(r8), allocatable :: f_tu2mnt  (:,:) ! 2 m urban air temperature [K]
+REAL(r8), allocatable :: f_qu2mnt  (:,:) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
-real(r8), allocatable :: f_ustar  (:,:)  ! u* in similarity theory [m/s]
-real(r8), allocatable :: f_tstar  (:,:)  ! t* in similarity theory [kg/kg]
-real(r8), allocatable :: f_qstar  (:,:)  ! q* in similarity theory [kg/kg]
-real(r8), allocatable :: f_zol    (:,:)  ! dimensionless height (z/L) used in Monin-Obukhov theory
-real(r8), allocatable :: f_rib    (:,:)  ! bulk Richardson number in surface layer
-real(r8), allocatable :: f_fm     (:,:)  ! integral of profile function for momentum
-real(r8), allocatable :: f_fh     (:,:)  ! integral of profile function for heat
-real(r8), allocatable :: f_fq     (:,:)  ! integral of profile function for moisture
-real(r8), allocatable :: f_us10m  (:,:)  ! 10m u-velocity [m/s]
-real(r8), allocatable :: f_vs10m  (:,:)  ! 10m v-velocity [m/s]
-real(r8), allocatable :: f_fm10m  (:,:)  ! integral of profile function for momentum at 10m [-]
+REAL(r8), allocatable :: f_t_soisno   (:,:,:)  ! soil temperature [K]
+REAL(r8), allocatable :: f_wliq_soisno(:,:,:)  ! liquid water in soil layers [kg/m2]
+REAL(r8), allocatable :: f_wice_soisno(:,:,:)  ! ice lens in soil layers [kg/m2]
+REAL(r8), allocatable :: f_h2osoi     (:,:,:)  ! volumetric soil water in layers [m3/m3]
+REAL(r8), allocatable :: f_rstfac     (:,:)    ! factor of soil water stress
+REAL(r8), allocatable :: f_zwt        (:,:)    ! the depth to water table [m]
+REAL(r8), allocatable :: f_wa         (:,:)    ! water storage in aquifer [mm]
+REAL(r8), allocatable :: f_wat        (:,:)    ! total water storage [mm]
+
+REAL(r8), allocatable :: f_t_lake     (:,:,:) ! lake temperature [K]
+REAL(r8), allocatable :: f_lake_icefrac (:,:,:) ! lake ice fraction cover [0-1]
 
 !---------------------------------------------------------------------
-real(r8), allocatable :: f_xy_us  (:,:)  ! wind in eastward direction [m/s]
-real(r8), allocatable :: f_xy_vs  (:,:)  ! wind in northward direction [m/s]
-real(r8), allocatable :: f_xy_t   (:,:)  ! temperature at reference height [kelvin]
-real(r8), allocatable :: f_xy_q   (:,:)  ! specific humidity at reference height [kg/kg]
-real(r8), allocatable :: f_xy_prc (:,:)  ! convective precipitation [mm/s]
-real(r8), allocatable :: f_xy_prl (:,:)  ! large scale precipitation [mm/s]
-real(r8), allocatable :: f_xy_pbot(:,:)  ! atmospheric pressure at the surface [pa]
-real(r8), allocatable :: f_xy_frl (:,:)  ! atmospheric infrared (longwave) radiation [W/m2]
-real(r8), allocatable :: f_xy_solarin(:,:)  ! downward solar radiation at surface [W/m2]
-real(r8), allocatable :: f_xy_rain(:,:)  ! rain [mm/s]
-real(r8), allocatable :: f_xy_snow(:,:)  ! snow [mm/s]
+REAL(r8), allocatable :: f_ustar  (:,:)  ! u* in similarity theory [m/s]
+REAL(r8), allocatable :: f_tstar  (:,:)  ! t* in similarity theory [kg/kg]
+REAL(r8), allocatable :: f_qstar  (:,:)  ! q* in similarity theory [kg/kg]
+REAL(r8), allocatable :: f_zol    (:,:)  ! dimensionless height (z/L) used in Monin-Obukhov theory
+REAL(r8), allocatable :: f_rib    (:,:)  ! bulk Richardson number in surface layer
+REAL(r8), allocatable :: f_fm     (:,:)  ! integral of profile function for momentum
+REAL(r8), allocatable :: f_fh     (:,:)  ! integral of profile function for heat
+REAL(r8), allocatable :: f_fq     (:,:)  ! integral of profile function for moisture
+REAL(r8), allocatable :: f_us10m  (:,:)  ! 10m u-velocity [m/s]
+REAL(r8), allocatable :: f_vs10m  (:,:)  ! 10m v-velocity [m/s]
+REAL(r8), allocatable :: f_fm10m  (:,:)  ! integral of profile function for momentum at 10m [-]
+
+!---------------------------------------------------------------------
+REAL(r8), allocatable :: f_xy_us  (:,:)  ! wind in eastward direction [m/s]
+REAL(r8), allocatable :: f_xy_vs  (:,:)  ! wind in northward direction [m/s]
+REAL(r8), allocatable :: f_xy_t   (:,:)  ! temperature at reference height [kelvin]
+REAL(r8), allocatable :: f_xy_q   (:,:)  ! specific humidity at reference height [kg/kg]
+REAL(r8), allocatable :: f_xy_prc (:,:)  ! convective precipitation [mm/s]
+REAL(r8), allocatable :: f_xy_prl (:,:)  ! large scale precipitation [mm/s]
+REAL(r8), allocatable :: f_xy_pbot(:,:)  ! atmospheric pressure at the surface [pa]
+REAL(r8), allocatable :: f_xy_frl (:,:)  ! atmospheric infrared (longwave) radiation [W/m2]
+REAL(r8), allocatable :: f_xy_solarin(:,:)  ! downward solar radiation at surface [W/m2]
+REAL(r8), allocatable :: f_xy_rain(:,:)  ! rain [mm/s]
+REAL(r8), allocatable :: f_xy_snow(:,:)  ! snow [mm/s]
 
 
 ! PUBLIC MEMBER FUNCTIONS:
-      public :: allocate_2D_Fluxes
-      public :: deallocate_2D_Fluxes
-      public :: FLUSH_2D_Fluxes
+      PUBLIC :: allocate_2D_Fluxes
+      PUBLIC :: deallocate_2D_Fluxes
+      PUBLIC :: FLUSH_2D_Fluxes
 
 ! PRIVATE MEMBER FUNCTIONS:
 
@@ -169,11 +178,11 @@ SUBROUTINE allocate_2D_Fluxes(lon_points,lat_points)
 ! Allocates memory for CLM 2d [lon_points,lat_points] variables
 ! --------------------------------------------------------------------
 
-use precision
+USE precision
 IMPLICIT NONE
 
-Integer, INTENT(in) :: lon_points
-Integer, INTENT(in) :: lat_points
+Integer, intent(in) :: lon_points
+Integer, intent(in) :: lat_points
 
 allocate ( mask     (lon_points,lat_points) )  ! grid mask
 allocate ( frac     (lon_points,lat_points) )  ! grid total fraction
@@ -244,6 +253,9 @@ allocate ( f_qref   (lon_points,lat_points) )  ! 2 m height air specific humidit
 
 !---------------------------------------------------------------------
 allocate ( f_t_room (lon_points,lat_points) )  ! temperature of inner building [K]
+allocate ( f_tafu   (lon_points,lat_points) )  ! temperature of outer building [K]
+allocate ( f_tu2m   (lon_points,lat_points) )  ! 2 m urban air temperature [K]
+allocate ( f_qu2m   (lon_points,lat_points) )  ! 2 m urban air humidity [kg/kg]
 allocate ( f_fhac   (lon_points,lat_points) )  ! sensible flux from heat or cool AC [W/m2]
 allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or cool AC [W/m2]
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
@@ -259,6 +271,9 @@ allocate ( f_rnetdt  (lon_points,lat_points) ) ! net radiation [W/m2]
 allocate ( f_t_grnddt(lon_points,lat_points) ) ! ground surface temperature [K]
 allocate ( f_traddt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
 allocate ( f_trefdt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
+allocate ( f_tafudt  (lon_points,lat_points) ) ! temperature of outer building [K]
+allocate ( f_tu2mdt  (lon_points,lat_points) ) ! 2 m urban air temperature [K]
+allocate ( f_qu2mdt  (lon_points,lat_points) ) ! 2 m urban air humidity [kg/kg]
 
 allocate ( f_fsenant (lon_points,lat_points) ) ! sensible heat from canopy height to atmosphere [W/m2]
 allocate ( f_lfevpant(lon_points,lat_points) ) ! latent heat flux from canopy height to atmosphere [W/m2]
@@ -268,6 +283,9 @@ allocate ( f_rnetnt  (lon_points,lat_points) ) ! net radiation [W/m2]
 allocate ( f_t_grndnt(lon_points,lat_points) ) ! ground surface temperature [K]
 allocate ( f_tradnt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
 allocate ( f_trefnt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
+allocate ( f_tafunt  (lon_points,lat_points) ) ! temperature of outer building [K]
+allocate ( f_tu2mnt  (lon_points,lat_points) ) ! 2 m urban air temperature [K]
+allocate ( f_qu2mnt  (lon_points,lat_points) ) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 allocate ( f_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points) )  ! soil temperature [K]
@@ -397,6 +415,9 @@ f_tref      (:,:) = spval
 f_qref      (:,:) = spval
 
 f_t_room    (:,:) = spval
+f_tafu      (:,:) = spval
+f_tu2m      (:,:) = spval
+f_qu2m      (:,:) = spval
 f_fhac      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
@@ -412,6 +433,9 @@ f_rnetdt    (:,:) = spval
 f_t_grnddt  (:,:) = spval
 f_traddt    (:,:) = spval
 f_trefdt    (:,:) = spval
+f_tafudt    (:,:) = spval
+f_tu2mdt    (:,:) = spval
+f_qu2mdt    (:,:) = spval
 
 f_fsenant   (:,:) = spval
 f_lfevpant  (:,:) = spval
@@ -421,6 +445,9 @@ f_rnetnt    (:,:) = spval
 f_t_grndnt  (:,:) = spval
 f_tradnt    (:,:) = spval
 f_trefnt    (:,:) = spval
+f_tafunt    (:,:) = spval
+f_tu2mnt    (:,:) = spval
+f_qu2mnt    (:,:) = spval
 
 f_t_soisno    (:,:,:) = spval
 f_wliq_soisno (:,:,:) = spval
@@ -525,6 +552,9 @@ deallocate ( f_qref   )  ! 2 m height air specific humidity [kg/kg]
 
 !---------------------------------------------------------------------
 deallocate ( f_t_room )  ! temperature of inner building [K]
+deallocate ( f_tafu   )  ! temperature of outer building [K]
+deallocate ( f_tu2m   )  ! 2 m urban air temperature [K]
+deallocate ( f_qu2m   )  ! 2 m urban air humidity [kg/kg]
 deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
@@ -540,6 +570,9 @@ deallocate ( f_rnetdt   )! net radiation [W/m2]
 deallocate ( f_t_grnddt )! ground surface temperature [K]
 deallocate ( f_traddt   )! radiative temperature of surface [K]
 deallocate ( f_trefdt   )! 2 m height air temperature [kelvin]
+deallocate ( f_tafudt   )! temperature of outer building [K]
+deallocate ( f_tu2mdt   )! 2 m urban air temperature [K]
+deallocate ( f_qu2mdt   )! 2 m urban air humidity [kg/kg]
 
 deallocate ( f_fsenant  )! sensible heat from canopy height to atmosphere [W/m2]
 deallocate ( f_lfevpant )! latent heat flux from canopy height to atmosphere [W/m2]
@@ -549,6 +582,9 @@ deallocate ( f_rnetnt   )! net radiation [W/m2]
 deallocate ( f_t_grndnt )! ground surface temperature [K]
 deallocate ( f_tradnt   )! radiative temperature of surface [K]
 deallocate ( f_trefnt   )! 2 m height air temperature [kelvin]
+deallocate ( f_tafunt   )! temperature of outer building [K]
+deallocate ( f_tu2mnt   )! 2 m urban air temperature [K]
+deallocate ( f_qu2mnt   )! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 deallocate ( f_t_soisno    )  ! soil temperature [K]

@@ -56,7 +56,8 @@ SUBROUTINE UrbanCLMMAIN ( &
            slake        ,lwsun        ,lwsha        ,lgimp        ,&
            lgper        ,lveg         ,fwsun        ,dfwsun       ,&
            t_room       ,troof_inner  ,twsun_inner  ,twsha_inner  ,&
-           t_roommax    ,t_roommin                                ,&
+           t_roommax    ,t_roommin    ,tafu         ,tu2m         ,&
+           qu2m                                                   ,&
 
            zwt          ,wa                                       ,&
            t_lake       ,lake_icefrac                             ,&
@@ -301,6 +302,9 @@ SUBROUTINE UrbanCLMMAIN ( &
         twsha_inner,&! temperature of inner shaded wall [K]
         t_roommax  ,&! maximum temperature of inner room [K]
         t_roommin  ,&! minimum temperature of inner room [K]
+        tafu       ,&! temperature of outer building [K]
+        tu2m       ,&! 2 m urban air temperature [K]
+        qu2m       ,&! 2 m urban air humidity [kg/kg]
         Fhac       ,&! sensible flux from heat or cool AC [W/m2]
         Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
@@ -757,7 +761,8 @@ SUBROUTINE UrbanCLMMAIN ( &
          wice_gimpsno(lbi:)   ,wice_gpersno(lbp:)   ,wice_lakesno(:)      ,t_lake(:)            ,&
          lake_icefrac(:)      ,lveg                 ,tleaf                ,ldew                 ,&
          t_room               ,troof_inner          ,twsun_inner          ,twsha_inner          ,&
-         t_roommax            ,t_roommin                                                        ,&
+         t_roommax            ,t_roommin            ,tafu                 ,tu2m                 ,&
+         qu2m                                                                                   ,&
          ! 输出变量
          taux                 ,tauy                 ,fsena                ,fevpa                ,&
          lfevpa               ,fsenl                ,fevpl                ,etr                  ,&

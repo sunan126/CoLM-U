@@ -45,7 +45,8 @@
         wice_gimpsno   ,wice_gpersno   ,wice_lakesno   ,t_lake         ,&
         lake_icefrac   ,lveg           ,tleaf          ,ldew           ,&
         troom          ,troof_inner    ,twsun_inner    ,twsha_inner    ,&
-        troommax       ,troommin                                       ,&
+        troommax       ,troommin       ,tafu           ,tu2m           ,&
+        qu2m                                                           ,&
 
         ! 输出变量
         taux           ,tauy           ,fsena          ,fevpa          ,&
@@ -244,6 +245,9 @@
         twsha_inner,&! temperature of inner shaded wall
         troommax   ,&! maximum temperature of inner building
         troommin   ,&! minimum temperature of inner building
+        tafu       ,&! temperature of outer building
+        tu2m       ,&! 2 m urban air temperature [K]
+        qu2m       ,&! 2 m urban air humidity [kg/kg]
         Fhac       ,&! flux from heat or cool AC
         Fwst       ,&! waste heat from cool or heat
         Fach         ! flux from air exchange
@@ -380,7 +384,6 @@
         tgimp      ,&! temperature of impervious road
         tgper      ,&! ground soil temperature
         tlake      ,&! lake surface temperature
-        tafu       ,&! temperature of urban air
         troof_bef  ,&! temperature of roof
         twsun_bef  ,&! temperature of sunlit wall
         twsha_bef  ,&! temperature of shaded wall
@@ -715,7 +718,8 @@
             lgper       ,lveg        ,lout        ,tref        ,&
             qref        ,z0m         ,zol         ,rib         ,&
             ustar       ,qstar       ,tstar       ,fm          ,&
-            fh          ,fq          ,tafu                      )
+            fh          ,fq          ,tafu        ,tu2m        ,&
+            qu2m                                                )
       ELSE
 
          nurb = 2
@@ -747,7 +751,8 @@
             croof       ,cgimp       ,cgper       ,tref        ,&
             qref        ,z0m         ,zol         ,rib         ,&
             ustar       ,qstar       ,tstar       ,fm          ,&
-            fh          ,fq          ,tafu                      )
+            fh          ,fq          ,tafu        ,tu2m        ,&
+            qu2m                                                )
 
          !TODO: check
          tleaf   = forc_t

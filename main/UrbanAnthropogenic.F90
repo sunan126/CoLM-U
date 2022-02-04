@@ -143,6 +143,8 @@ CONTAINS
         Fhac  = H*rhoair*cpair*(troom-troom_min)/deltim
         troom = troom_min
         Fwst  = abs(Fhac)*waste_heat
+        ! nagative value, set it to 0.
+        Fhac  = 0.
      ENDIF
 
      Fach = Fach*fcover(0)

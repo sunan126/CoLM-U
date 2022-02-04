@@ -5,7 +5,7 @@
                              z0m, z0hg, zol, ustar, qstar, tstar, fm, fh, fq)
 
 !=======================================================================
-! this is the main subroutine to execute the calculation 
+! this is the main subroutine to execute the calculation
 ! of bare ground fluxes
 !
 !=======================================================================
@@ -16,7 +16,7 @@
   !USE UrbanFlux, only: dewfraction
   USE FRICTION_VELOCITY
   IMPLICIT NONE
- 
+
 !----------------------- Dummy argument --------------------------------
   REAL(r8), intent(in) :: &
         ! atmospherical variables and observational height
@@ -34,7 +34,7 @@
         thm,      &! intermediate variable (tm+0.0098*ht)
         th,       &! potential temperature (kelvin)
         thv,      &! virtual potential temperature (kelvin)
-        
+
         zlnd,     &! roughness length for soil [m]
         zsno,     &! roughness length for snow [m]
         fsno,     &! fraction of ground covered by snow
@@ -97,7 +97,7 @@
          z0mg = zsno
       ELSE
          z0mg = zlnd
-      ENDIF 
+      ENDIF
       z0hg = z0mg
       z0qg = z0mg
 
@@ -109,13 +109,13 @@
       fg  = 1 - fcover(0)
       fgh = fg
       fgw = fg
-      
+
       ! 加权后的qg, tg
       tg = (tgimp*fcover(3) + tgper*fcover(4)) / fgh
       qg = (qgimp*fcover(3) + qgper*fcover(4)) / fgw
 
 !-----------------------------------------------------------------------
-!     Compute sensible and latent fluxes and their derivatives with respect 
+!     Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.
 !-----------------------------------------------------------------------
 ! Initialization variables
@@ -128,7 +128,7 @@
       zldis = hu-0.
 
       CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mg,um,obu)
- 
+
 ! Evaluated stability-dependent variables using moz from prior iteration
       niters=6
 

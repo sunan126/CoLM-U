@@ -25,8 +25,8 @@ set START_YEAR  = 2000          	# model start year                             
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
 set START_SEC   = 0             	# model start secs of day
-set END_YEAR    = 2000          	# model end year
-set END_MONTH   = 4             	# model end month, 10
+set END_YEAR    = 2004          	# model end year
+set END_MONTH   = 1             	# model end month, 10
 set END_DAY     = 1             	# model end Julian day
 set END_SEC     = 0               	# model end secs of day
 set SPIN_YEAR   = $START_YEAR     	# spin-up end year, set default to SATRT_YEAR
@@ -98,11 +98,11 @@ set nthread    = 92
 
 \cat >! .tmp << EOF
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
-#define	URBAN_SLAB                ! run urban community model
 #undef	URBAN_MODEL               ! run urban community model
 #define	URBAN_TREE                ! run urban model with trees
 #define	URBAN_WATER               ! run urban model with water
 #define	URBAN_BEM                 ! run urban model with building energy model
+#define	URBAN_ONLY                ! only for urban patch output
 #undef	RDGRID                    !
 #undef	RAWdata_update            !
 #undef  DYN_PHENOLOGY             !

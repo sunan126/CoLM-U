@@ -82,8 +82,6 @@ MODULE MOD_UrbanTimeVars
 
    REAL(r8), allocatable :: t_room         (:) !temperature of inner building [K]
    REAL(r8), allocatable :: tafu           (:) !temperature of outer building [K]
-   REAL(r8), allocatable :: tu2m           (:) !2 m urban air temperature [K]
-   REAL(r8), allocatable :: qu2m           (:) !2 m urban air humidity [kg/kg]
    REAL(r8), allocatable :: Fhac           (:) !sensible flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fwst           (:) !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fach           (:) !flux from inner and outter air exchange [W/m2]
@@ -173,8 +171,6 @@ CONTAINS
 
       allocate (t_room                        (numurban))
       allocate (tafu                          (numurban))
-      allocate (tu2m                          (numurban))
-      allocate (qu2m                          (numurban))
       allocate (Fhac                          (numurban))
       allocate (Fwst                          (numurban))
       allocate (Fach                          (numurban))
@@ -248,8 +244,6 @@ CONTAINS
 
       deallocate (t_room       )
       deallocate (tafu         )
-      deallocate (tu2m         )
-      deallocate (qu2m         )
       deallocate (Fhac         )
       deallocate (Fwst         )
       deallocate (Fach         )

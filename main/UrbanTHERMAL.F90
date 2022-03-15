@@ -45,8 +45,7 @@
         wice_gimpsno   ,wice_gpersno   ,wice_lakesno   ,t_lake         ,&
         lake_icefrac   ,lveg           ,tleaf          ,ldew           ,&
         troom          ,troof_inner    ,twsun_inner    ,twsha_inner    ,&
-        troommax       ,troommin       ,tafu           ,tu2m           ,&
-        qu2m                                                           ,&
+        troommax       ,troommin       ,tafu                           ,&
 
         ! 输出变量
         taux           ,tauy           ,fsena          ,fevpa          ,&
@@ -246,8 +245,6 @@
         troommax   ,&! maximum temperature of inner building
         troommin   ,&! minimum temperature of inner building
         tafu       ,&! temperature of outer building
-        tu2m       ,&! 2 m urban air temperature [K]
-        qu2m       ,&! 2 m urban air humidity [kg/kg]
         Fhac       ,&! flux from heat or cool AC
         Fwst       ,&! waste heat from cool or heat
         Fach         ! flux from air exchange
@@ -718,8 +715,7 @@
             lgper       ,lveg        ,lout        ,tref        ,&
             qref        ,z0m         ,zol         ,rib         ,&
             ustar       ,qstar       ,tstar       ,fm          ,&
-            fh          ,fq          ,tafu        ,tu2m        ,&
-            qu2m                                                )
+            fh          ,fq          ,tafu                      )
       ELSE
 
          nurb = 2
@@ -751,8 +747,7 @@
             croof       ,cgimp       ,cgper       ,tref        ,&
             qref        ,z0m         ,zol         ,rib         ,&
             ustar       ,qstar       ,tstar       ,fm          ,&
-            fh          ,fq          ,tafu        ,tu2m        ,&
-            qu2m                                                )
+            fh          ,fq          ,tafu                      )
 
          !TODO: check
          tleaf   = forc_t

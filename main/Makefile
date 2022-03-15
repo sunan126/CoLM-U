@@ -41,7 +41,7 @@ OBJS =  precision.o                 \
 	UrbanShortwave.o            \
 	UrbanLongwave.o             \
 	UrbanALBEDO.o               \
-	Urbanetsolar.o              \
+	Urbannetsolar.o             \
 	ASSIM_STOMATA_conductance.o \
 	FRICTION_VELOCITY.o         \
 	LEAF_temperature.o          \
@@ -52,6 +52,7 @@ OBJS =  precision.o                 \
 	GLACIER.o                   \
 	LAKE.o                      \
 	SIMPLE_OCEAN.o              \
+	CLMMAIN.o                   \
 	eroot.o                     \
 	flxwrite.o                  \
 	groundfluxes.o              \
@@ -59,6 +60,7 @@ OBJS =  precision.o                 \
 	LAI_empirical.o             \
 	LAI_readin.o                \
 	LAI_readin_nc.o             \
+	UrbanLAI_readin_nc.o        \
 	LEAF_interception.o         \
 	lpwrite.o                   \
 	meltf.o                     \

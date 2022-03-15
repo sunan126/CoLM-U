@@ -14,20 +14,27 @@ OBJS =  precision.o              \
 	ncio.o                   \
 	MOD_PFTimeInvars.o       \
 	MOD_PCTimeInvars.o       \
+	MOD_UrbanTimeInvars.o    \
 	MOD_TimeInvariants.o     \
 	timemanager.o            \
 	PhysicalConstants.o      \
 	MOD_PFTimeVars.o         \
 	MOD_PCTimeVars.o         \
+	MOD_UrbanTimeVars.o      \
 	MOD_TimeVariables.o      \
 	CLMINI.o                 \
 	initialize.o             \
 	ThreeDCanopy.o           \
 	ALBEDO.o                 \
+	UrbanShortwave.o         \
+	UrbanALBEDO.o            \
 	IniTimeVar.o             \
+	UrbanIniTimeVar.o        \
 	LAI_empirical.o          \
 	LAI_readin.o             \
 	LAI_readin_nc.o          \
+	Urban_readin_nc.o          \
+	UrbanLAI_readin_nc.o     \
 	HTOP_readin_nc.o         \
 	lakedepth_readin.o       \
 	orb_coszen.o             \

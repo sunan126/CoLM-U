@@ -32,7 +32,7 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points,lat_points,&
       REAL(r8), allocatable :: urbantreesai(:,:,:)
 
 ! READ in Leaf area index and stem area index
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V3.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_v3.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

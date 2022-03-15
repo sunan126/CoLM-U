@@ -128,8 +128,6 @@ CONTAINS
       read(11) f_xy_snow(:,:)   ! snow[mm/s]
       read(11) f_t_room (:,:)   ! temperature of inner building [K]
       read(11) f_tafu   (:,:)   ! temperature of outer building [K]
-      read(11) f_tu2m   (:,:)   ! 2 m urban air temperature [K]
-      read(11) f_qu2m   (:,:)   ! 2 m urban air humidity [kg/kg]
       read(11) f_fhac   (:,:)   ! sensible flux from heat or cool AC [W/m2]
       read(11) f_fwst   (:,:)   ! waste heat flux from heat or cool AC [W/m2]
       read(11) f_fach   (:,:)   ! flux from inner and outter air exchange [W/m2]
@@ -146,8 +144,6 @@ CONTAINS
       read(11) f_traddt  (:,:)  ! radiative temperature of surface [k]
       read(11) f_trefdt  (:,:)  ! 2 m height air temperature [kelvin]
       read(11) f_tafudt  (:,:)  ! temperature of outer building [K]
-      read(11) f_tu2mdt  (:,:)  ! 2 m urban air temperature [K]
-      read(11) f_qu2mdt  (:,:)  ! 2 m urban air humidity [kg/kg]
 
       read(11) f_fsenant (:,:)  ! sensible heat from canopy height to atmosphere [w/m2]
       read(11) f_lfevpant(:,:)  ! latent heat flux from canopy height to atmosphere [w/m2]
@@ -158,8 +154,6 @@ CONTAINS
       read(11) f_tradnt  (:,:)  ! radiative temperature of surface [k]
       read(11) f_trefnt  (:,:)  ! 2 m height air temperature [kelvin]
       read(11) f_tafunt  (:,:)  ! temperature of outer building [K]
-      read(11) f_tu2mnt  (:,:)  ! 2 m urban air temperature [K]
-      read(11) f_qu2mnt  (:,:)  ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
       read(11) f_t_soisno   (:,:,:)   ! soil temperature [K]
@@ -599,20 +593,6 @@ CONTAINS
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
-      ! 2 m urban air temperature [K]
-      CALL sanity( nf90_def_var(ncid, 'f_tu2m', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air temperature [K]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
-      ! 2 m urban air humidity [kg/kg]
-      CALL sanity( nf90_def_var(ncid, 'f_qu2m', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air humidity [kg/kg]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','kg/kg') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
       ! sensible flux from heat or cool AC [W/m2]
       CALL sanity( nf90_def_var(ncid, 'f_fhac', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','sensible flux from heat or cool AC [W/m2]') )
@@ -718,20 +698,6 @@ CONTAINS
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
-      ! 2 m urban air temperature in daytime [K]
-      CALL sanity( nf90_def_var(ncid, 'f_tu2mdt', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air temperature in daytime [K]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
-      ! 2 m urban air humidity in daytime [kg/kg]
-      CALL sanity( nf90_def_var(ncid, 'f_qu2mdt', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air humidity in daytime [kg/kg]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','kg/kg') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
       ! sensible heat from canopy height to atmosphere in night-time [W/m2]
       CALL sanity( nf90_def_var(ncid, 'f_fsenant', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','sensible heat from canopy height to atmosphere in night-time [W/m2]') )
@@ -792,20 +758,6 @@ CONTAINS
       CALL sanity( nf90_def_var(ncid, 'f_tafunt', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','temperature of outer building in nighttime [K]') )
       CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
-      ! 2 m urban air temperature in nighttime [K]
-      CALL sanity( nf90_def_var(ncid, 'f_tu2mnt', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air temperature in nighttime [K]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
-      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
-      ! 2 m urban air humidity in nighttime [kg/kg]
-      CALL sanity( nf90_def_var(ncid, 'f_qu2mnt', nf90_double, (/xid,yid/), varid) )
-      CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m urban air humidity in nighttime [kg/kg]') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','kg/kg') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
@@ -1334,14 +1286,6 @@ CONTAINS
       CALL sanity( nf90_inq_varid(ncid,'f_tafu',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_tafu) )
 
-      ! 2 m urban air temperature [K]
-      CALL sanity( nf90_inq_varid(ncid,'f_tu2m',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_tu2m) )
-
-      ! 2 m urban air humidity [kg/kg]
-      CALL sanity( nf90_inq_varid(ncid,'f_qu2m',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_qu2m) )
-
       ! sensible flux from heat or cool AC [W/m2]
       CALL sanity( nf90_inq_varid(ncid,'f_fhac',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_fhac) )
@@ -1402,14 +1346,6 @@ CONTAINS
       CALL sanity( nf90_inq_varid(ncid,'f_tafudt',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_tafudt) )
 
-      ! 2 m urban air temperature in daytime [K]
-      CALL sanity( nf90_inq_varid(ncid,'f_tu2mdt',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_tu2mdt) )
-
-      ! 2 m urban air humidity in daytime [kg/kg]
-      CALL sanity( nf90_inq_varid(ncid,'f_qu2mdt',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_qu2mdt) )
-
       ! sensible heat from canopy height to atmosphere in night-time [W/m2]
       CALL sanity( nf90_inq_varid(ncid,'f_fsenant',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_fsenant) )
@@ -1445,14 +1381,6 @@ CONTAINS
       ! temperature of outer building in nighttime [K]
       CALL sanity( nf90_inq_varid(ncid,'f_tafunt',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_tafunt) )
-
-      ! 2 m urban air temperature in daytime [K]
-      CALL sanity( nf90_inq_varid(ncid,'f_tu2mnt',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_tu2mnt) )
-
-      ! 2 m urban air humidity in daytime [kg/kg]
-      CALL sanity( nf90_inq_varid(ncid,'f_qu2mnt',varid) )
-      CALL sanity( nf90_put_var(ncid,varid,f_qu2mnt) )
 
 !---------------------------------------------------------------------
       ! soil temperature [K]

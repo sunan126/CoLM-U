@@ -48,8 +48,7 @@ MODULE UrbanFlux
         croof       ,cgimp       ,cgper       ,tref        ,&
         qref        ,z0m         ,zol         ,rib         ,&
         ustar       ,qstar       ,tstar       ,fm          ,&
-        fh          ,fq          ,tafu        ,tu2m        ,&
-        qu2m                                                )
+        fh          ,fq          ,tafu                      )
 
 !=======================================================================
      USE precision
@@ -155,9 +154,7 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu,     &! effective urban air temperature (2nd layer, walls)
-        tu2m,     &! 2 m urban air temperature [K]
-        qu2m       ! 2 m urban air humidity [kg/kg]
+        tafu       ! effective urban air temperature (2nd layer, walls)
 
 !------------------------ LOCAL VARIABLES ------------------------------
      INTEGER ::   &
@@ -715,14 +712,6 @@ MODULE UrbanFlux
      tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
 
-!-----------------------------------------------------------------------
-! 2 m height air temperature above ground surface
-!-----------------------------------------------------------------------
-
-     !TODO: 根据ra2m, rd2m，诊断计算tu2m, qu2m
-     tu2m = (ra2m*tg + rd2m*taf(2)) / (ra2m+rd2m)
-     qu2m = (ra2m*qg + rd2m*qaf(2)) / (ra2m+rd2m)
-
   END SUBROUTINE UrbanOnlyFlux
 
 
@@ -765,8 +754,7 @@ MODULE UrbanFlux
         lgper       ,lveg        ,lout        ,tref        ,&
         qref        ,z0m         ,zol         ,rib         ,&
         ustar       ,qstar       ,tstar       ,fm          ,&
-        fh          ,fq          ,tafu        ,tu2m        ,&
-        qu2m                                                )
+        fh          ,fq          ,tafu                      )
 
 !=======================================================================
 
@@ -939,9 +927,7 @@ MODULE UrbanFlux
         fm,       &! integral of profile function for momentum
         fh,       &! integral of profile function for heat
         fq,       &! integral of profile function for moisture
-        tafu,     &! effective urban air temperature (2nd layer, walls)
-        tu2m,     &! 2 m urban air temperature [K]
-        qu2m       ! 2 m urban air humidity [kg/kg]
+        tafu       ! effective urban air temperature (2nd layer, walls)
 
 !-----------------------Local Variables---------------------------------
 ! assign iteration parameters
@@ -2028,14 +2014,6 @@ MODULE UrbanFlux
 
      tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
      qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
-
-!-----------------------------------------------------------------------
-! 2 m height air temperature above ground surface
-!-----------------------------------------------------------------------
-
-     !TODO: 根据ra2m, rd2m，诊断计算tu2m, qu2m
-     tu2m = (ra2m*tg + rd2m*taf(botlay)) / (ra2m+rd2m)
-     qu2m = (ra2m*qg + rd2m*qaf(botlay)) / (ra2m+rd2m)
 
   END SUBROUTINE UrbanVegFlux
 !----------------------------------------------------------------------

@@ -96,8 +96,6 @@ REAL(r8) a_qref   (lon_points,lat_points)  ! 2 m height air specific humidity [k
 !---------------------------------------------------------------------
 REAL(r8) a_t_room (lon_points,lat_points)  ! temperature of inner building [K]
 REAL(r8) a_tafu   (lon_points,lat_points)  ! temperature of outer building [K]
-REAL(r8) a_tu2m   (lon_points,lat_points)  ! 2 m urban air temperature [k]
-REAL(r8) a_qu2m   (lon_points,lat_points)  ! 2 m urban air humidity [kg/kg]
 REAL(r8) a_fhac   (lon_points,lat_points)  ! sensible flux from heat or cool AC [W/m2]
 REAL(r8) a_fwst   (lon_points,lat_points)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8) a_fach   (lon_points,lat_points)  ! flux from inner and outter air exchange [W/m2]
@@ -114,8 +112,6 @@ REAL(r8) a_t_grnddt(lon_points,lat_points) ! ground surface temperature [K]
 REAL(r8) a_traddt  (lon_points,lat_points) ! radiative temperature of surface [K]
 REAL(r8) a_trefdt  (lon_points,lat_points) ! 2 m height air temperature [kelvin]
 REAL(r8) a_tafudt  (lon_points,lat_points) ! temperature of outer building [K]
-REAL(r8) a_tu2mdt  (lon_points,lat_points) ! 2 m urban air temperature [K]
-REAL(r8) a_qu2mdt  (lon_points,lat_points) ! 2 m urban air humidity [kg/kg]
 
 REAL(r8) a_fsenant (lon_points,lat_points) ! sensible heat from canopy height to atmosphere [W/m2]
 REAL(r8) a_lfevpant(lon_points,lat_points) ! latent heat flux from canopy height to atmosphere [W/m2]
@@ -126,8 +122,6 @@ REAL(r8) a_t_grndnt(lon_points,lat_points) ! ground surface temperature [K]
 REAL(r8) a_tradnt  (lon_points,lat_points) ! radiative temperature of surface [K]
 REAL(r8) a_trefnt  (lon_points,lat_points) ! 2 m height air temperature [kelvin]
 REAL(r8) a_tafunt  (lon_points,lat_points) ! temperature of outer building [K]
-REAL(r8) a_tu2mnt  (lon_points,lat_points) ! 2 m urban air temperature [K]
-REAL(r8) a_qu2mnt  (lon_points,lat_points) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 REAL(r8) a_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points)  ! soil temperature [K]
@@ -255,8 +249,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
       a_t_room (:,:) = 0.
       a_tafu   (:,:) = 0.
-      a_tu2m   (:,:) = 0.
-      a_qu2m   (:,:) = 0.
       a_fhac   (:,:) = 0.
       a_fwst   (:,:) = 0.
       a_fach   (:,:) = 0.
@@ -273,8 +265,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_traddt  (:,:) = spval
       a_trefdt  (:,:) = spval
       a_tafudt  (:,:) = spval
-      a_tu2mdt  (:,:) = spval
-      a_qu2mdt  (:,:) = spval
 
       a_fsenant (:,:) = spval
       a_lfevpant(:,:) = spval
@@ -285,8 +275,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_tradnt  (:,:) = spval
       a_trefnt  (:,:) = spval
       a_tafunt  (:,:) = spval
-      a_tu2mnt  (:,:) = spval
-      a_qu2mnt  (:,:) = spval
 
       a_sr     (:,:) = spval
       a_solvd  (:,:) = spval
@@ -316,7 +304,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#if (defined URBAN_MODEL || defined URBAN_SLAB)
+#ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
@@ -376,13 +364,13 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
 #ifdef URBAN_MODEL
                u = patch2urb(np)
-               a_t_room (i,j) = a_t_room (i,j) + patchfrac(np)*t_room (u)
-               a_tafu   (i,j) = a_tafu   (i,j) + patchfrac(np)*tafu   (u)
-               a_tu2m   (i,j) = a_tu2m   (i,j) + patchfrac(np)*tu2m   (u)
-               a_qu2m   (i,j) = a_qu2m   (i,j) + patchfrac(np)*qu2m   (u)
-               a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac   (u)
-               a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst   (u)
-               a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
+               IF (u > 0) THEN
+                  a_t_room (i,j) = a_t_room (i,j) + patchfrac(np)*t_room (u)
+                  a_tafu   (i,j) = a_tafu   (i,j) + patchfrac(np)*tafu   (u)
+                  a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac   (u)
+                  a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst   (u)
+                  a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
+               ENDIF
 
                !TODO: 根据coszen(np)的正负->daytime or nighttime
                IF (coszen(np) > 0.) THEN
@@ -395,9 +383,9 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   CALL acc(olrg   (np), patchfrac(np), a_olrgdt  (i,j))
                   CALL acc(t_grnd (np), patchfrac(np), a_t_grnddt(i,j))
                   CALL acc(tref   (np), patchfrac(np), a_trefdt  (i,j))
-                  CALL acc(tafu   (u ), patchfrac(np), a_tafudt  (i,j))
-                  CALL acc(tu2m   (u ), patchfrac(np), a_tu2mdt  (i,j))
-                  CALL acc(qu2m   (u ), patchfrac(np), a_qu2mdt  (i,j))
+                  IF (u > 0) THEN
+                     CALL acc(tafu(u ), patchfrac(np), a_tafudt  (i,j))
+                  ENDIF
 
                   IF (a_rnetdt(i,j) /= spval) THEN
                      a_rnetdt(i,j) = a_rnetdt(i,j) + patchfrac(np)*(sabg(np)+sabvsun(np)+sabvsha(np)-olrg(np))
@@ -412,9 +400,9 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   CALL acc(olrg   (np), patchfrac(np), a_olrgnt  (i,j))
                   CALL acc(t_grnd (np), patchfrac(np), a_t_grndnt(i,j))
                   CALL acc(tref   (np), patchfrac(np), a_trefnt  (i,j))
-                  CALL acc(tafu   (u ), patchfrac(np), a_tafunt  (i,j))
-                  CALL acc(tu2m   (u ), patchfrac(np), a_tu2mnt  (i,j))
-                  CALL acc(qu2m   (u ), patchfrac(np), a_qu2mnt  (i,j))
+                  IF (u > 0) THEN
+                     CALL acc(tafu(u ), patchfrac(np), a_tafunt  (i,j))
+                  ENDIF
 
                   IF (a_rnetnt(i,j) /= spval) THEN
                      a_rnetnt(i,j) = a_rnetnt(i,j) + patchfrac(np)*(sabg(np)+sabvsun(np)+sabvsha(np)-olrg(np))
@@ -518,8 +506,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 #ifdef URBAN_MODEL
                a_t_room (i,j) = a_t_room (i,j) / sumwt(i,j)
                a_tafu   (i,j) = a_tafu   (i,j) / sumwt(i,j)
-               a_tu2m   (i,j) = a_tu2m   (i,j) / sumwt(i,j)
-               a_qu2m   (i,j) = a_qu2m   (i,j) / sumwt(i,j)
                a_fhac   (i,j) = a_fhac   (i,j) / sumwt(i,j)
                a_fwst   (i,j) = a_fwst   (i,j) / sumwt(i,j)
                a_fach   (i,j) = a_fach   (i,j) / sumwt(i,j)
@@ -536,8 +522,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                IF (a_t_grnddt(i,j) /= spval) a_t_grnddt(i,j) = a_t_grnddt(i,j) / sumwt(i,j)
                IF (a_trefdt  (i,j) /= spval) a_trefdt  (i,j) = a_trefdt  (i,j) / sumwt(i,j)
                IF (a_tafudt  (i,j) /= spval) a_tafudt  (i,j) = a_tafudt  (i,j) / sumwt(i,j)
-               IF (a_tu2mdt  (i,j) /= spval) a_tu2mdt  (i,j) = a_tu2mdt  (i,j) / sumwt(i,j)
-               IF (a_qu2mdt  (i,j) /= spval) a_qu2mdt  (i,j) = a_qu2mdt  (i,j) / sumwt(i,j)
 
                IF (a_fsenant (i,j) /= spval) a_fsenant (i,j) = a_fsenant (i,j) / sumwt(i,j)
                IF (a_lfevpant(i,j) /= spval) a_lfevpant(i,j) = a_lfevpant(i,j) / sumwt(i,j)
@@ -548,8 +532,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                IF (a_t_grndnt(i,j) /= spval) a_t_grndnt(i,j) = a_t_grndnt(i,j) / sumwt(i,j)
                IF (a_trefnt  (i,j) /= spval) a_trefnt  (i,j) = a_trefnt  (i,j) / sumwt(i,j)
                IF (a_tafunt  (i,j) /= spval) a_tafunt  (i,j) = a_tafunt  (i,j) / sumwt(i,j)
-               IF (a_tu2mnt  (i,j) /= spval) a_tu2mnt  (i,j) = a_tu2mnt  (i,j) / sumwt(i,j)
-               IF (a_qu2mnt  (i,j) /= spval) a_qu2mnt  (i,j) = a_qu2mnt  (i,j) / sumwt(i,j)
 #endif
                IF (a_sr     (i,j) /= spval) a_sr     (i,j) = a_sr     (i,j) / sumwt(i,j)
                IF (a_solvd  (i,j) /= spval) a_solvd  (i,j) = a_solvd  (i,j) / sumwt(i,j)
@@ -629,8 +611,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
                a_t_room (i,j) = spval
                a_tafu   (i,j) = spval
-               a_tu2m   (i,j) = spval
-               a_qu2m   (i,j) = spval
                a_fhac   (i,j) = spval
                a_fwst   (i,j) = spval
                a_fach   (i,j) = spval
@@ -647,8 +627,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_traddt  (i,j) = spval
                a_trefdt  (i,j) = spval
                a_tafudt  (i,j) = spval
-               a_tu2mdt  (i,j) = spval
-               a_qu2mdt  (i,j) = spval
 
                a_fsenant (i,j) = spval
                a_lfevpant(i,j) = spval
@@ -659,8 +637,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_tradnt  (i,j) = spval
                a_trefnt  (i,j) = spval
                a_tafunt  (i,j) = spval
-               a_tu2mnt  (i,j) = spval
-               a_qu2mnt  (i,j) = spval
 
                a_sr     (i,j) = spval
                a_solvd  (i,j) = spval
@@ -711,7 +687,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#if (defined URBAN_MODEL || defined URBAN_SLAB)
+#ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                IF(patchtype(np) <= 3)THEN  ! excluded the land water bodies and ocean patches
@@ -778,7 +754,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#if (defined URBAN_MODEL || defined URBAN_SLAB)
+#ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                IF(patchtype(np) <= 2)THEN  ! excluded the land water bodies and ocean patches
@@ -848,9 +824,11 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   cycle
                ELSE
                   u = patch2urb(np)
+                  IF (u > 0) THEN
                   sumwt(i,j) = sumwt(i,j) + patchfrac(np)*flake(u)
                   a_t_lake(1:nl_lake,i,j) = a_t_lake(1:nl_lake,i,j) + patchfrac(np)*flake(u)*t_lake(1:nl_lake,np)
                   a_lake_icefrac(1:nl_lake,i,j) = a_lake_icefrac(1:nl_lake,i,j) + patchfrac(np)*flake(u)*lake_icefrac(1:nl_lake,np)
+                  ENDIF
                ENDIF
 #endif
                IF(patchtype(np) == 4)THEN  ! land water bodies only
@@ -906,7 +884,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
 ! 10/05/2021, yuan: only for urban output
-#if (defined URBAN_MODEL || defined URBAN_SLAB)
+#ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
@@ -1090,8 +1068,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
             CALL acc(a_t_room (i,j), 1., f_t_room (i,j))
             CALL acc(a_tafu   (i,j), 1., f_tafu   (i,j))
-            CALL acc(a_tu2m   (i,j), 1., f_tu2m   (i,j))
-            CALL acc(a_qu2m   (i,j), 1., f_qu2m   (i,j))
             CALL acc(a_fhac   (i,j), 1., f_fhac   (i,j))
             CALL acc(a_fwst   (i,j), 1., f_fwst   (i,j))
             CALL acc(a_fach   (i,j), 1., f_fach   (i,j))
@@ -1108,8 +1084,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             CALL acc(a_traddt  (i,j), 1., f_traddt  (i,j))
             CALL acc(a_trefdt  (i,j), 1., f_trefdt  (i,j))
             CALL acc(a_tafudt  (i,j), 1., f_tafudt  (i,j))
-            CALL acc(a_tu2mdt  (i,j), 1., f_tu2mdt  (i,j))
-            CALL acc(a_qu2mdt  (i,j), 1., f_qu2mdt  (i,j))
 
             CALL acc(a_fsenant (i,j), 1., f_fsenant (i,j))
             CALL acc(a_lfevpant(i,j), 1., f_lfevpant(i,j))
@@ -1120,8 +1094,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             CALL acc(a_tradnt  (i,j), 1., f_tradnt  (i,j))
             CALL acc(a_trefnt  (i,j), 1., f_trefnt  (i,j))
             CALL acc(a_tafunt  (i,j), 1., f_tafunt  (i,j))
-            CALL acc(a_tu2mnt  (i,j), 1., f_tu2mnt  (i,j))
-            CALL acc(a_qu2mnt  (i,j), 1., f_qu2mnt  (i,j))
 
             DO l = maxsnl+1, nl_soil
                CALL acc(a_t_soisno   (l,i,j), 1., f_t_soisno   (l,i,j))

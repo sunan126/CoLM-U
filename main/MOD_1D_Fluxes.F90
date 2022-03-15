@@ -194,7 +194,7 @@ MODULE MOD_1D_Fluxes
      deallocate (respc   )  !canopy respiration (mol m-2 s-1)
 
      deallocate (qcharge )  !groundwater recharge [mm/s]
-     
+
 #ifdef PFT_CLASSIFICATION
      CALL deallocate_1D_PFTFluxes
 #endif

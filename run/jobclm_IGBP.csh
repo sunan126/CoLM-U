@@ -21,12 +21,12 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = IGBP           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set START_YEAR  = 2003          	# model start year                                     <MARK #2>
-set START_MONTH = 7             	# model start Month
+set START_YEAR  = 2000          	# model start year                                     <MARK #2>
+set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
 set START_SEC   = 0             	# model start secs of day
-set END_YEAR    = 2003          	# model end year
-set END_MONTH   = 8             	# model end month, 10
+set END_YEAR    = 2004          	# model end year
+set END_MONTH   = 1             	# model end month, 10
 set END_DAY     = 1             	# model end Julian day
 set END_SEC     = 0               	# model end secs of day
 set SPIN_YEAR   = $START_YEAR     	# spin-up end year, set default to SATRT_YEAR
@@ -40,8 +40,8 @@ set WRST_FREQ   = MONTHLY     		# write restart file frequency: HOURLY/DAILY/MON
 
 # model resolution and running scope setting
 #-------------------------------------------------------
-set LON_POINTS  =  720              
-set LAT_POINTS  =  360               
+set LON_POINTS  =  720
+set LAT_POINTS  =  360
 set EDGE_N      =   90.
 set EDGE_E      =  180.
 set EDGE_S      =  -90.
@@ -69,8 +69,8 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                                # <MARK #4>
-setenv DAT_RAWDIR $HOME/data/CLMrawdata         
-setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep
+setenv DAT_RAWDIR $HOME/data/CLMrawdata
+setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
 setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
@@ -110,7 +110,7 @@ set nthread    = 92
 #define	WR_${WRST_FREQ}           !
 #undef	CLMDEBUG                  !
 #define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
-#define	HEIGHT_V $HEIGHT_V        ! 
+#define	HEIGHT_V $HEIGHT_V        !
 #define	HEIGHT_T $HEIGHT_T        !
 #define	HEIGHT_Q $HEIGHT_Q        !
 EOF
@@ -247,14 +247,14 @@ set RESTART = 1
 set SPINUP  = 2
 
 set RESTART_FREQ = 2
-if ( $WRST_FREQ == "YEARLY"  ) then 
-  set RESTART_FREQ = 0 
+if ( $WRST_FREQ == "YEARLY"  ) then
+  set RESTART_FREQ = 0
 endif
-if ( $WRST_FREQ == "DAILY"   ) then 
-  set RESTART_FREQ = 1 
+if ( $WRST_FREQ == "DAILY"   ) then
+  set RESTART_FREQ = 1
 endif
-if ( $WRST_FREQ == "MONTHLY" ) then 
-  set RESTART_FREQ = 2 
+if ( $WRST_FREQ == "MONTHLY" ) then
+  set RESTART_FREQ = 2
 endif
 
 # compile
@@ -329,9 +329,9 @@ cp -vf $CLM_SRCDIR/clm.x $CAS_RUNDIR/.
 #/usr/bin/time ./clm.x < $CAS_RUNDIR/timeloop.stdin > $CAS_RUNDIR/exe.timeloop.log || exit 4
 
 #if ( $use_mpi == "YES" ) then
-#    /usr/bin/time -p /usr/bin/mpirun -np $nproc ./clm.x < $CAS_RUNDIR/timeloop.stdin 
+#    /usr/bin/time -p /usr/bin/mpirun -np $nproc ./clm.x < $CAS_RUNDIR/timeloop.stdin
 #else
-#    ./clm.x < $CAS_RUNDIR/timeloop.stdin 
+#    ./clm.x < $CAS_RUNDIR/timeloop.stdin
 #endif
 
 #----------------------------------------------------------------------

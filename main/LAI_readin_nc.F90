@@ -45,7 +45,7 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 
 ! READ in Leaf area index and stem area index
 
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_V4.5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
@@ -114,9 +114,9 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_LAI",  pftlai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_SAI",  pftsai_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_LAI", pclai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_SAI", pcsai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT",         pctpc_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_LAI",   pclai_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_SAI",   pcsai_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_PC",           pctpc_vid ) )
 
       CALL nccheck( nf90_get_var(ncid, pftlai_vid, pftlai, &
                     start=(/1,1,1,month/), &
@@ -190,9 +190,9 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
                           0:N_PFT-1,1:N_land_classification) )
       allocate ( pctpc(1:lon_points,1:lat_points, &
                           0:N_PFT-1,1:N_land_classification) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_LAI", pclai_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_ePFT_SAI", pcsai_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT",         pctpc_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_LAI", pclai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_SAI", pcsai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_PC",         pctpc_vid) )
 
       CALL nccheck( nf90_get_var(ncid, pclai_vid, pclai, &
                     start=(/1,1,1,1,month/), &

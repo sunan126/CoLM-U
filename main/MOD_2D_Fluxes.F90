@@ -85,8 +85,6 @@ REAL(r8), allocatable :: f_qref   (:,:)  ! 2 m height air specific humidity [kg/
 !---------------------------------------------------------------------
 REAL(r8), allocatable :: f_t_room (:,:)  ! temperature of inner building [K]
 REAL(r8), allocatable :: f_tafu   (:,:)  ! temperature of outer building [K]
-REAL(r8), allocatable :: f_tu2m   (:,:)  ! 2 m urban air temperature [K]
-REAL(r8), allocatable :: f_qu2m   (:,:)  ! 2 m urban air humidity [kg/kg]
 REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
@@ -104,8 +102,6 @@ REAL(r8), allocatable :: f_t_grnddt(:,:) ! ground surface temperature [K]
 REAL(r8), allocatable :: f_traddt  (:,:) ! radiative temperature of surface [K]
 REAL(r8), allocatable :: f_trefdt  (:,:) ! 2 m height air temperature [kelvin]
 REAL(r8), allocatable :: f_tafudt  (:,:) ! temperature of outer building [K]
-REAL(r8), allocatable :: f_tu2mdt  (:,:) ! 2 m urban air temperature [K]
-REAL(r8), allocatable :: f_qu2mdt  (:,:) ! 2 m urban air humidity [kg/kg]
 
 REAL(r8), allocatable :: f_fsenant (:,:) ! sensible heat from canopy height to atmosphere [W/m2]
 REAL(r8), allocatable :: f_lfevpant(:,:) ! latent heat flux from canopy height to atmosphere [W/m2]
@@ -116,8 +112,6 @@ REAL(r8), allocatable :: f_t_grndnt(:,:) ! ground surface temperature [K]
 REAL(r8), allocatable :: f_tradnt  (:,:) ! radiative temperature of surface [K]
 REAL(r8), allocatable :: f_trefnt  (:,:) ! 2 m height air temperature [kelvin]
 REAL(r8), allocatable :: f_tafunt  (:,:) ! temperature of outer building [K]
-REAL(r8), allocatable :: f_tu2mnt  (:,:) ! 2 m urban air temperature [K]
-REAL(r8), allocatable :: f_qu2mnt  (:,:) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 REAL(r8), allocatable :: f_t_soisno   (:,:,:)  ! soil temperature [K]
@@ -254,8 +248,6 @@ allocate ( f_qref   (lon_points,lat_points) )  ! 2 m height air specific humidit
 !---------------------------------------------------------------------
 allocate ( f_t_room (lon_points,lat_points) )  ! temperature of inner building [K]
 allocate ( f_tafu   (lon_points,lat_points) )  ! temperature of outer building [K]
-allocate ( f_tu2m   (lon_points,lat_points) )  ! 2 m urban air temperature [K]
-allocate ( f_qu2m   (lon_points,lat_points) )  ! 2 m urban air humidity [kg/kg]
 allocate ( f_fhac   (lon_points,lat_points) )  ! sensible flux from heat or cool AC [W/m2]
 allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or cool AC [W/m2]
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
@@ -272,8 +264,6 @@ allocate ( f_t_grnddt(lon_points,lat_points) ) ! ground surface temperature [K]
 allocate ( f_traddt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
 allocate ( f_trefdt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
 allocate ( f_tafudt  (lon_points,lat_points) ) ! temperature of outer building [K]
-allocate ( f_tu2mdt  (lon_points,lat_points) ) ! 2 m urban air temperature [K]
-allocate ( f_qu2mdt  (lon_points,lat_points) ) ! 2 m urban air humidity [kg/kg]
 
 allocate ( f_fsenant (lon_points,lat_points) ) ! sensible heat from canopy height to atmosphere [W/m2]
 allocate ( f_lfevpant(lon_points,lat_points) ) ! latent heat flux from canopy height to atmosphere [W/m2]
@@ -284,8 +274,6 @@ allocate ( f_t_grndnt(lon_points,lat_points) ) ! ground surface temperature [K]
 allocate ( f_tradnt  (lon_points,lat_points) ) ! radiative temperature of surface [K]
 allocate ( f_trefnt  (lon_points,lat_points) ) ! 2 m height air temperature [kelvin]
 allocate ( f_tafunt  (lon_points,lat_points) ) ! temperature of outer building [K]
-allocate ( f_tu2mnt  (lon_points,lat_points) ) ! 2 m urban air temperature [K]
-allocate ( f_qu2mnt  (lon_points,lat_points) ) ! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 allocate ( f_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points) )  ! soil temperature [K]
@@ -416,8 +404,6 @@ f_qref      (:,:) = spval
 
 f_t_room    (:,:) = spval
 f_tafu      (:,:) = spval
-f_tu2m      (:,:) = spval
-f_qu2m      (:,:) = spval
 f_fhac      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
@@ -434,8 +420,6 @@ f_t_grnddt  (:,:) = spval
 f_traddt    (:,:) = spval
 f_trefdt    (:,:) = spval
 f_tafudt    (:,:) = spval
-f_tu2mdt    (:,:) = spval
-f_qu2mdt    (:,:) = spval
 
 f_fsenant   (:,:) = spval
 f_lfevpant  (:,:) = spval
@@ -446,8 +430,6 @@ f_t_grndnt  (:,:) = spval
 f_tradnt    (:,:) = spval
 f_trefnt    (:,:) = spval
 f_tafunt    (:,:) = spval
-f_tu2mnt    (:,:) = spval
-f_qu2mnt    (:,:) = spval
 
 f_t_soisno    (:,:,:) = spval
 f_wliq_soisno (:,:,:) = spval
@@ -553,8 +535,6 @@ deallocate ( f_qref   )  ! 2 m height air specific humidity [kg/kg]
 !---------------------------------------------------------------------
 deallocate ( f_t_room )  ! temperature of inner building [K]
 deallocate ( f_tafu   )  ! temperature of outer building [K]
-deallocate ( f_tu2m   )  ! 2 m urban air temperature [K]
-deallocate ( f_qu2m   )  ! 2 m urban air humidity [kg/kg]
 deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
@@ -571,8 +551,6 @@ deallocate ( f_t_grnddt )! ground surface temperature [K]
 deallocate ( f_traddt   )! radiative temperature of surface [K]
 deallocate ( f_trefdt   )! 2 m height air temperature [kelvin]
 deallocate ( f_tafudt   )! temperature of outer building [K]
-deallocate ( f_tu2mdt   )! 2 m urban air temperature [K]
-deallocate ( f_qu2mdt   )! 2 m urban air humidity [kg/kg]
 
 deallocate ( f_fsenant  )! sensible heat from canopy height to atmosphere [W/m2]
 deallocate ( f_lfevpant )! latent heat flux from canopy height to atmosphere [W/m2]
@@ -583,8 +561,6 @@ deallocate ( f_t_grndnt )! ground surface temperature [K]
 deallocate ( f_tradnt   )! radiative temperature of surface [K]
 deallocate ( f_trefnt   )! 2 m height air temperature [kelvin]
 deallocate ( f_tafunt   )! temperature of outer building [K]
-deallocate ( f_tu2mnt   )! 2 m urban air temperature [K]
-deallocate ( f_qu2mnt   )! 2 m urban air humidity [kg/kg]
 
 !---------------------------------------------------------------------
 deallocate ( f_t_soisno    )  ! soil temperature [K]

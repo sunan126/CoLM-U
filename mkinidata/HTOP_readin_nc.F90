@@ -33,7 +33,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
       REAL(r8), allocatable :: htoplc(:,:,:)
       REAL(r8), allocatable :: htoppft(:,:,:)
 
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_V4.5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
@@ -57,7 +57,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 #endif
          htop(npatch) = htop0(m)
          hbot(npatch) = hbot0(m)
-         
+
          ! trees or woody savannas
          IF ( m<6 .or. m==8 ) THEN
 ! 01/06/2020, yuan: adjust htop reading
@@ -66,7 +66,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             hbot(npatch) = htop(npatch)*hbot0(m)/htop0(m)
             hbot(npatch) = max(1., hbot(npatch))
          ENDIF
-         
+
       end do
 #ifdef OPENMP
 !$OMP END PARALLEL DO
@@ -88,7 +88,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
          j = patch2lat(npatch)
          t = patchtype(npatch)
          m = patchclass(npatch)
-         
+
 ! 12/07/2021, yuan: Urban filter
 #ifdef URBAN_MODEL
          IF (m == URBAN) cycle
@@ -99,10 +99,10 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
 
             DO p = ps, pe
                n = pftclass(p)
-               
+
                htop_p(p) = htop0_p(n)
                hbot_p(p) = hbot0_p(n)
-               
+
                ! trees
 ! yuan, 01/06/2020: adjust htop reading
 ! yuan, 11/15/2021: adjust htop setting
@@ -116,12 +116,12 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
             htop(npatch) = sum(htop_p(ps:pe)*pftfrac(ps:pe))
             hbot(npatch) = sum(hbot_p(ps:pe)*pftfrac(ps:pe))
 
-         ELSE 
+         ELSE
             htop(npatch) = htop0(m)
             hbot(npatch) = hbot0(m)
-         ENDIF 
- 
-      ENDDO 
+         ENDIF
+
+      ENDDO
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif

@@ -21,11 +21,11 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = NOHWT           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set START_YEAR  = 2003          	# model start year                                     <MARK #2>
-set START_MONTH = 3             	# model start Month
+set START_YEAR  = 2000          	# model start year                                     <MARK #2>
+set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
 set START_SEC   = 0             	# model start secs of day
-set END_YEAR    = 2006          	# model end year
+set END_YEAR    = 2004          	# model end year
 set END_MONTH   = 1             	# model end month, 10
 set END_DAY     = 1             	# model end Julian day
 set END_SEC     = 0               	# model end secs of day
@@ -102,6 +102,7 @@ set nthread    = 92
 #undef	URBAN_TREE                ! run urban model with trees
 #undef	URBAN_WATER               ! run urban model with water
 #undef	URBAN_BEM                 ! run urban model with building energy model
+#define	URBAN_ONLY                ! only for urban patch output
 #undef	RDGRID                    !
 #undef	RAWdata_update            !
 #undef  DYN_PHENOLOGY             !

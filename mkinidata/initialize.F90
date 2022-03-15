@@ -65,7 +65,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
   REAL(r8), allocatable :: landfrac(:,:)            !land fractional cover
   REAL(r8), allocatable :: pctlc(:,:,:)             !percent each land cover TYPE
-  REAL(r8), allocatable :: pctelc(:,:,:)            !percent PC land cover TYPE
   REAL(r8), allocatable :: pctpft(:,:,:)            !percent PFT
   REAL(r8), allocatable :: pcturban(:,:)            !percent urban
   REAL(r8), allocatable :: pctwater(:,:)            !percent water body
@@ -109,7 +108,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   INTEGER Julian_8day
 
   INTEGER npft, npc, nurb
-  INTEGER ncid, landfrac_vid, pctlc_vid, pctelc_vid
+  INTEGER ncid, landfrac_vid, pctlc_vid
   INTEGER pctpft_vid, pctpc_vid
   INTEGER pcturban_vid, pctwater_vid, pctwetland_vid, pctglacier_vid
 
@@ -200,14 +199,11 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       write(6,*) 'Total land patches = ', numpatch
 #endif
 
-!TODO: 添加单点模式，读取500m分辨率nc文件
-
-
 ! 添加城市数据读取，目前仅支持MODIS IGBP数据
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
 !TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_V3.nc'
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_v3.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -221,17 +217,17 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #ifdef IGBP_CLASSIFICATION
 
       allocate (landfrac(1:lon_points,1:lat_points))
-      allocate (pctlc(1:lon_points,1:lat_points,1:N_land_classification))
+      allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
 !TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_V4.5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, "LANDFRAC", landfrac_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_LC", pctlc_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "LANDFRAC", landfrac_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_LC",   pctlc_vid   ) )
       CALL nccheck( nf90_get_var(ncid, landfrac_vid, landfrac) )
-      CALL nccheck( nf90_get_var(ncid, pctlc_vid, pctlc) )
+      CALL nccheck( nf90_get_var(ncid, pctlc_vid,    pctlc   ) )
       CALL nccheck( nf90_close(ncid) )
 
       landfrac = landfrac / 100.
@@ -289,13 +285,13 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
 #ifdef PFT_CLASSIFICATION
 
-      allocate (landfrac(1:lon_points,1:lat_points))
-      allocate (pctpft(1:lon_points,1:lat_points,0:N_PFT-1))
-      allocate (pcturban(1:lon_points,1:lat_points))
-      allocate (pctwater(1:lon_points,1:lat_points))
+      allocate (landfrac  (1:lon_points,1:lat_points))
+      allocate (pcturban  (1:lon_points,1:lat_points))
+      allocate (pctwater  (1:lon_points,1:lat_points))
       allocate (pctwetland(1:lon_points,1:lat_points))
       allocate (pctglacier(1:lon_points,1:lat_points))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_V4.5.nc'
+      allocate (pctpft    (1:lon_points,1:lat_points,0:N_PFT-1))
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -387,27 +383,27 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #ifdef PC_CLASSIFICATION
 
       allocate (landfrac(1:lon_points,1:lat_points))
-      allocate (pctelc(1:lon_points,1:lat_points,1:N_land_classification))
-      allocate (pctpc(1:lon_points,1:lat_points,0:N_PFT-1,1:N_land_classification))
+      allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
+      allocate (pctpc   (1:lon_points,1:lat_points,0:N_PFT-1,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_V4.5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
       CALL nccheck( nf90_inq_varid(ncid, "LANDFRAC", landfrac_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_eLC",  pctelc_vid  ) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_ePFT", pctpc_vid   ) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_LC",   pctlc_vid   ) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_PC",   pctpc_vid   ) )
       CALL nccheck( nf90_get_var(ncid, landfrac_vid, landfrac) )
-      CALL nccheck( nf90_get_var(ncid, pctelc_vid,   pctelc  ) )
+      CALL nccheck( nf90_get_var(ncid, pctlc_vid,    pctlc   ) )
       CALL nccheck( nf90_get_var(ncid, pctpc_vid,    pctpc   ) )
       CALL nccheck( nf90_close(ncid) )
 
       landfrac = landfrac / 100.
-      pctelc   = pctelc   / 100.
+      pctlc    = pctlc    / 100.
       pctpc    = pctpc    / 100.
 
       DO np = 1, N_land_classification
-         fraction_patches(:,:,np) = pctelc(:,:,np) * landfrac(:,:)
+         fraction_patches(:,:,np) = pctlc(:,:,np) * landfrac(:,:)
       ENDDO
 
       print*,'fraction   =', minval(fraction_patches, mask = fraction_patches .gt. -1.0e30), &
@@ -614,8 +610,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 
 #ifdef PFT_CLASSIFICATION
       npatch = 0
-      npft = 0
-      nurb = 0
+      npft   = 0
+      nurb   = 0
       patchfrac(:) = 0.
       l = 0; m = 0
       grid_patch_s(:,:) = -1
@@ -875,7 +871,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       ENDIF
 
       deallocate (landfrac        )
-      deallocate (pctelc          )
+      deallocate (pctlc           )
       deallocate (pctpc           )
       deallocate (fraction_patches)
 

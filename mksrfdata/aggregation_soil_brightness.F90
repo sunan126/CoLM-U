@@ -29,9 +29,9 @@ IMPLICIT NONE
       integer, intent(in) :: ncol_end
       integer, intent(in) :: nx_fine_gridcell
       integer, intent(in) :: ny_fine_gridcell
-      
+
       integer, intent(in) :: READ_row_UB(lat_points)  ! north boundary index for fine gird cell
-      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell  
+      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell
       integer, intent(in) :: READ_row_LB(lat_points)  ! south boundary index for fine gird cell
       integer, intent(in) :: READ_col_LB(lon_points)  ! east boundary index for fine gird cell
 
@@ -57,8 +57,8 @@ IMPLICIT NONE
       INTEGER ncol30s_start, ncol30s_end
 
       integer, allocatable :: landtypes (:,:)
-      integer, allocatable :: isc(:,:) 
-      integer, allocatable :: num_patches(:) 
+      integer, allocatable :: isc(:,:)
+      integer, allocatable :: num_patches(:)
 
       real(r8), allocatable :: a_s_v_refl (:,:)
       real(r8), allocatable :: a_d_v_refl (:,:)
@@ -118,9 +118,9 @@ IMPLICIT NONE
      ! -------------------
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2005.bin'
+      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2000.bin'
 #endif
-      
+
       print*,lndname
       open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow_start, nrow_end
@@ -132,13 +132,13 @@ IMPLICIT NONE
 #endif
 
 #ifdef USGS_CLASSIFICATION
-      nrow30s_start = nrow_Start
+      nrow30s_start = nrow_start
       nrow30s_end   = nrow_end
       ncol30s_start = ncol_start
       ncol30s_end   = ncol_end
       suffix        = ''
 #else
-      nrow30s_start = int((nrow_Start+1)/2)
+      nrow30s_start = int((nrow_start+1)/2)
       nrow30s_end   = int((nrow_end+1)/2)
       ncol30s_start = int((ncol_start+1)/2)
       ncol30s_end   = int((ncol_end+1)/2)
@@ -183,7 +183,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
       do j = 1, lat_points
 
 #if(defined USER_GRID)
-         j1 = READ_row_UB(j)   ! read upper boundary of latitude 
+         j1 = READ_row_UB(j)   ! read upper boundary of latitude
          j2 = READ_row_LB(j)   ! read lower boundary of latitude
 #else
          j1 = nrow_start + (j-1)*ny_fine_gridcell
@@ -192,15 +192,15 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
          do i = 1, lon_points
 
 #if(defined USER_GRID)
-            i1 = READ_col_UB(i)   ! read upper boundary of longitude 
+            i1 = READ_col_UB(i)   ! read upper boundary of longitude
             i2 = READ_col_LB(i)   ! read lower boundary of longitude
-#else            
-            i1 = ncol_start + (i-1)*nx_fine_gridcell 
+#else
+            i1 = ncol_start + (i-1)*nx_fine_gridcell
             i2 = ncol_start -1 + i*nx_fine_gridcell
 #endif
             num_patches(:) = 0
-            do nrow = j1, j2            
-               if(i1 > i2) i2 = i2 + nlon   ! for coarse grid crosses the dateline    
+            do nrow = j1, j2
+               if(i1 > i2) i2 = i2 + nlon   ! for coarse grid crosses the dateline
                do ncol = i1, i2
                   ncol_mod = mod(ncol,nlon)
                   nrow_mod = nrow
@@ -210,10 +210,10 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                   IF (L == 0) cycle
 
                   num_patches(L) = num_patches(L) + 1
-                  LL = num_patches(L) 
+                  LL = num_patches(L)
 ! yuan, 07/30/2019: total grid soil info stored to position 0 (ocean)
                   num_patches(0) = num_patches(0) + 1
-                  LL0 = num_patches(0) 
+                  LL0 = num_patches(0)
 
 ! yuan, 07/30/2019: 500m (15s) ==> 1km (30s)
 #ifndef USGS_CLASSIFICATION
@@ -233,14 +233,14 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                   a_d_n_refl (0,LL0) = soil_d_n_refl( ii )
                enddo
             enddo
-            
-            do L = 0, N_land_classification 
+
+            do L = 0, N_land_classification
 #if(defined USGS_CLASSIFICATION)
                if(L/=16 .and. L/=24)then  ! NOT OCEAN(0)/WATER BODIES(16)/GLACIER and ICESHEET(24)
 #else
                if(L/=17 .and. L/=15)then  ! NOT OCEAN(0)/WATER BODIES(17)/GLACIER and ICE SHEET(15)
 #endif
-                  np = num_patches(L) 
+                  np = num_patches(L)
                   if(np == 0)then
 ! yuan, 12/29/2019: bug, inconsistant with land fraction and land cover data
                      ! set to color index 15 (for ocean fill value)
@@ -259,7 +259,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                      soil_s_n_alb (L,i,j) = a_s_n_refl(L,1)
                      soil_d_n_alb (L,i,j) = a_d_n_refl(L,1)
                   else
-                     soil_s_v_alb (L,i,j) = median ( a_s_v_refl(L,1:np), np) 
+                     soil_s_v_alb (L,i,j) = median ( a_s_v_refl(L,1:np), np)
                      soil_d_v_alb (L,i,j) = median ( a_d_v_refl(L,1:np), np)
                      soil_s_n_alb (L,i,j) = median ( a_s_n_refl(L,1:np), np)
                      soil_d_n_alb (L,i,j) = median ( a_d_n_refl(L,1:np), np)

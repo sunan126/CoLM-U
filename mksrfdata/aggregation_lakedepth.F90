@@ -11,7 +11,7 @@ SUBROUTINE aggregation_lakedepth( dir_rawdata, dir_model_landdata, &
 ! 1. Global land cover types (updated with the specific dataset)
 !
 ! 2. Global Lake Coverage and Lake Depth
-!   (http://nwpi.krc.karelia.run/flake/)      
+!   (http://nwpi.krc.karelia.run/flake/)
 !    Kourzeneva, E., H. Asensio, E. Martin, and S. Faroux, 2012: Global
 !    gridded dataset of lake coverage and lake depth for use in numerical
 !    weather prediction and climate modelling. Tellus A, 64, 15640.
@@ -43,7 +43,7 @@ IMPLICIT NONE
       integer, intent(in) :: nx_fine_gridcell
       integer, intent(in) :: ny_fine_gridcell
       integer, intent(in) :: READ_row_UB(lat_points)  ! north boundary index for fine gird cell
-      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell  
+      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell
       integer, intent(in) :: READ_row_LB(lat_points)  ! south boundary index for fine gird cell
       integer, intent(in) :: READ_col_LB(lon_points)  ! east boundary index for fine gird cell
 
@@ -81,8 +81,8 @@ IMPLICIT NONE
 ! ... (1) gloabl land cover types
 ! ........................................
       iunit = 100
-      inquire(iolength=length) land_chr1 
-      allocate ( landtypes (nlon,nlat) ) 
+      inquire(iolength=length) land_chr1
+      allocate ( landtypes (nlon,nlat) )
 
 #if(defined USE_POINT_DATA)
 
@@ -99,17 +99,17 @@ IMPLICIT NONE
 #if(defined USGS_CLASSIFICATION)
      ! GLCC USGS classification
      ! -------------------
-      lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin' 
+      lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2005.bin'
+      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2000.bin'
 #endif
- 
+
       print*,lndname
-      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
+      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow_start, nrow_end
-         read(iunit,rec=nrow,err=100) land_chr1 
-         landtypes(:,nrow) = ichar(land_chr1(:)) 
-      enddo 
+         read(iunit,rec=nrow,err=100) land_chr1
+         landtypes(:,nrow) = ichar(land_chr1(:))
+      enddo
       close (iunit)
 
 #endif
@@ -137,15 +137,15 @@ IMPLICIT NONE
 ! ................................................
       iunit = 100
       inquire(iolength=length) land_int2
-      lndname = trim(dir_rawdata)//'lake_depth/GlobalLakeDepth.bin' 
+      lndname = trim(dir_rawdata)//'lake_depth/GlobalLakeDepth.bin'
       print*,lndname
       allocate ( lakedepth (nlon30s,nlat30s) )
 
-      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
+      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow30s_start, nrow30s_end
          read(iunit,rec=nrow,err=100) land_int2
          lakedepth(:,nrow) = land_int2(:) * 0.1
-      enddo 
+      enddo
       close (iunit)
       print*,minval(lakedepth(:,nrow30s_start:nrow30s_end)), &
              maxval(lakedepth(:,nrow30s_start:nrow30s_end))
@@ -163,7 +163,7 @@ IMPLICIT NONE
 print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) SCHEDULE(DYNAMIC,1) &
 !$OMP PRIVATE(i,j,i1,i2,j1,j2,nrow,ncol,ncol_mod,nrow_mod,L,LL,num_patches,np) &
-!$OMP PRIVATE(a_lakedepth) 
+!$OMP PRIVATE(a_lakedepth)
 #endif
       do j = 1, lat_points
 
@@ -180,17 +180,17 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #if(defined USER_GRID)
             i1 = READ_col_UB(i)   ! read upper boundary of longitude
             i2 = READ_col_LB(i)   ! read lower boundary of longitude
-#else            
-            i1 = ncol_start + (i-1)*nx_fine_gridcell 
+#else
+            i1 = ncol_start + (i-1)*nx_fine_gridcell
             i2 = ncol_start -1 + i*nx_fine_gridcell
 #endif
             num_patches(:) = 0
             a_lakedepth (:) = 0.
 
-            do nrow = j1, j2          
+            do nrow = j1, j2
                if(i1 > i2) i2 = i2 + nlon   ! for coarse grid crosses the dateline
                do ncol = i1, i2
-                  ncol_mod = mod(ncol,nlon)   
+                  ncol_mod = mod(ncol,nlon)
                   nrow_mod = nrow
                   if(ncol_mod == 0) ncol_mod = nlon
 
@@ -235,7 +235,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #endif
 
 ! Write-out the lake depth of the lake pacth in the gridcell
-      lndname = trim(dir_model_landdata)//'model_GlobalLakeDepth'//trim(suffix)//'.bin' 
+      lndname = trim(dir_model_landdata)//'model_GlobalLakeDepth'//trim(suffix)//'.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) lakedepth_patches

@@ -2,7 +2,7 @@
 
 PROGRAM mksrfdata
 ! ======================================================================
-! Surface grid edges: 
+! Surface grid edges:
 ! The model domain was defined with the north, east, south, west edges:
 !          edgen: northern edge of grid : > -90 and <= 90 (degrees)
 !          edgee: eastern edge of grid  : > western edge and <= 180
@@ -13,8 +13,8 @@ PROGRAM mksrfdata
 !                 NORTHERN edge (POLE) to SOUTHERN edge (POLE)
 ! Region (global) longitude grid starts at:
 !                 WESTERN edge (DATELINE with western edge)
-!                 West of Greenwich defined negative for global grids, 
-!                 the western edge of the longitude grid starts at the dateline 
+!                 West of Greenwich defined negative for global grids,
+!                 the western edge of the longitude grid starts at the dateline
 !
 ! Land characteristics at the 30 arc-seconds grid resolution (RAW DATA):
 !              1. Global Terrain Dataset (elevation height,...)
@@ -28,7 +28,7 @@ PROGRAM mksrfdata
 ! Land charateristics at the model grid resolution (CREATED):
 !              1. Model grid (longitude, latitude)
 !              2. Fraction (area) of patches of grid (0-1)
-!                 2.1 Fraction of land water bodies (lake, reservoir, river) 
+!                 2.1 Fraction of land water bodies (lake, reservoir, river)
 !                 2.2 Fraction of wetland
 !                 2.3 Fraction of glacier
 !                 2.4 Fraction of urban and built-up
@@ -65,7 +65,7 @@ IMPLICIT NONE
       real(r8),allocatable :: lats(:)       ! grid cell latitude, sourthern edge (deg)
       real(r8),allocatable :: lonw(:)       ! grid cell longitude, western edge (deg)
       real(r8),allocatable :: lone(:)       ! grid cell longitude, eastern edge (deg)
-      real(r8),allocatable :: sinn(:)       ! grid cell latitude, northern edge(sin)  
+      real(r8),allocatable :: sinn(:)       ! grid cell latitude, northern edge(sin)
       real(r8),allocatable :: sins(:)       ! grid cell latitude, northern edge(sin)
       real(r8),allocatable :: lonw_rad(:)   ! grid cell longitude, western edge (radian)
       real(r8),allocatable :: lone_rad(:)   ! grid cell longitude, eastern edge (radian)
@@ -73,8 +73,8 @@ IMPLICIT NONE
       real(r8) :: sins_i(nlat)              ! fine grid cell latitude, northern edge(sin)
       real(r8) :: lonw_rad_i(nlon)          ! fine grid cell longitude, western edge (radian)
       real(r8) :: lone_rad_i(nlon)          ! fine grid cell longitude, eastern edge (radian)
-      integer,allocatable :: READ_row_UB(:) ! north boundary index for fine gird cell  
-      integer,allocatable :: READ_col_UB(:) ! west boundary index for fine gird cell  
+      integer,allocatable :: READ_row_UB(:) ! north boundary index for fine gird cell
+      integer,allocatable :: READ_col_UB(:) ! west boundary index for fine gird cell
       integer,allocatable :: READ_row_LB(:) ! south boundary index for fine gird cell
       integer,allocatable :: READ_col_LB(:) ! east boundary index for fine gird cell
 
@@ -91,7 +91,7 @@ IMPLICIT NONE
                           lon_points,lat_points,edgen,edgee,edges,edgew
 
       read(5,mksrfexp)
-      
+
       allocate(latn(lat_points))
       allocate(lats(lat_points))
       allocate(lonw(lon_points))
@@ -99,7 +99,7 @@ IMPLICIT NONE
       allocate(sinn(lat_points))
       allocate(sins(lat_points))
       allocate(lonw_rad(lon_points))
-      allocate(lone_rad(lon_points)) 
+      allocate(lone_rad(lon_points))
       allocate(READ_row_UB(lat_points))
       allocate(READ_row_LB(lat_points))
       allocate(READ_col_UB(lon_points))
@@ -198,7 +198,7 @@ IMPLICIT NONE
       deallocate(sinn)
       deallocate(sins)
       deallocate(lonw_rad)
-      deallocate(lone_rad) 
+      deallocate(lone_rad)
       deallocate(READ_row_UB)
       deallocate(READ_row_LB)
       deallocate(READ_col_UB)

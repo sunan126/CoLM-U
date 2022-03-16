@@ -3,10 +3,10 @@ SUBROUTINE rd_soil_properties(dir_rawdata)
 ! ----------------------------------------------------------------------
 ! => Read in soil characteristic dataset from original "raw" data files -
 !     data with 30 arc seconds resolution
-! => Fill the missing data 
+! => Fill the missing data
 ! => Estimate the soil hydraulic and thermal parameters at the resolution of 30 arc seconds
 !
-! 6. Global Soil Characteristics 
+! 6. Global Soil Characteristics
 !    (http://globalchange.bnu.edu.cn)
 ! 6.1 percentage of gravel (% volume)
 ! 6.2 percentage of sand   (% weight)
@@ -15,10 +15,10 @@ SUBROUTINE rd_soil_properties(dir_rawdata)
 ! 6.5 bulk density (BD)    (g/cm3)
 ! 6.6 ...
 !
-! Reference: 
+! Reference:
 ! (1) http://globalchange.bnu.edu.cn
-! (2) Shangguan et al., 2014: 
-!     A global soil data set for earth system modeling. 
+! (2) Shangguan et al., 2014:
+!     A global soil data set for earth system modeling.
 !     J. of Advances in Modeling Earth Systems, DOI: 10.1002/2013MS000293
 ! (3) Dai et al.,2014: Implementation of a New Global Soil Dataset in the Common Land Model.
 !
@@ -30,7 +30,7 @@ USE GlobalVars
 IMPLICIT NONE
 
 ! arguments:
-      character(len=256), intent(in) :: dir_rawdata 
+      character(len=256), intent(in) :: dir_rawdata
       character(len=256) lndname
       character(len=1) land_chr1(nlon)
       integer(kind=1)  land_int1(nlon30s)
@@ -38,7 +38,7 @@ IMPLICIT NONE
 
       ! (1) global land cover characteristics
       ! ---------------------------------
-      integer, allocatable :: landtypes(:,:)  ! GLCC USGS/MODIS IGBP land cover types 
+      integer, allocatable :: landtypes(:,:)  ! GLCC USGS/MODIS IGBP land cover types
 
       ! (6) global soil characteristcs
       ! --------------------------
@@ -51,7 +51,7 @@ IMPLICIT NONE
       ! ---------------------------------------------------------------
       integer i, j, i1, j1
       integer nrow, ncol
-      integer iunit    
+      integer iunit
       integer length
       integer nsl, MODEL_SOIL_LAYER
 
@@ -67,7 +67,7 @@ IMPLICIT NONE
       real(r8), allocatable :: tkdry_l     (:,:) ! thermal conductivity for dry soil  [W/(m-K)]
 
 ! CLM soil layer thickiness and depths
-      integer nl_soil 
+      integer nl_soil
       real(r8), allocatable ::  zsoi(:)  ! soil layer depth [m]
       real(r8), allocatable ::  dzsoi(:) ! soil node thickness [m]
       real(r8), allocatable ::  zsoih(:) ! interface level below a zsoi level [m]
@@ -94,10 +94,10 @@ IMPLICIT NONE
       integer ii, iii, iiii, jj, jjj, jjjj
 
 ! ........................................
-! ... (1) gloabl land cover characteristics  
+! ... (1) gloabl land cover characteristics
 ! ........................................
-      iunit = 100 
-      inquire(iolength=length) land_chr1 
+      iunit = 100
+      inquire(iolength=length) land_chr1
       allocate ( landtypes(nlon,nlat) )
 
 #if(defined USGS_CLASSIFICATION)
@@ -105,15 +105,15 @@ IMPLICIT NONE
       ! -------------------
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2005.bin'
+      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2000.bin'
 #endif
-      
+
       print*,lndname
-      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
-      do nrow = 1, nlat 
-         read(iunit,rec=nrow,err=100) land_chr1 
-         landtypes(:,nrow) = ichar(land_chr1(:)) 
-      enddo 
+      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+      do nrow = 1, nlat
+         read(iunit,rec=nrow,err=100) land_chr1
+         landtypes(:,nrow) = ichar(land_chr1(:))
+      enddo
       close (iunit)
 
 #ifdef USGS_CLASSIFICATION
@@ -215,7 +215,7 @@ IMPLICIT NONE
       iunit = 100
       DO nsl = 1, 8
          MODEL_SOIL_LAYER = nsl
-         write(c,'(i1)') MODEL_SOIL_LAYER 
+         write(c,'(i1)') MODEL_SOIL_LAYER
 
          ! ------------------------------------
          ! (6.1) precentage of gravel (% volume)
@@ -223,7 +223,7 @@ IMPLICIT NONE
          inquire(iolength=length) land_int1
          lndname = trim(dir_rawdata)//'soil/GRAV_L'//trim(c)
          print*,lndname
-         
+
          open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
          do nrow = 1, nlat30s
             read(iunit,rec=nrow,err=100) land_int1
@@ -267,7 +267,7 @@ IMPLICIT NONE
          print*,lndname
 
          open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = 1, nlat30s 
+         do nrow = 1, nlat30s
             read(iunit,rec=nrow,err=100) land_int2
             int_soil_oc_l(:,nrow) = land_int2(:)
          enddo
@@ -280,9 +280,9 @@ IMPLICIT NONE
          lndname = trim(dir_rawdata)//'soil/BD_L'//trim(c)
          print*,lndname
 
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
-         do nrow = 1, nlat30s 
-            read(iunit,rec=nrow,err=100) land_int2 
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         do nrow = 1, nlat30s
+            read(iunit,rec=nrow,err=100) land_int2
             int_soil_bd_l(:,nrow) = land_int2(:)
          enddo
          close (iunit)
@@ -366,9 +366,9 @@ print *, 'OPENMP enabled, threads num = ', OPENMP, "soil hydraulic parameters...
                   endif
                   if( soil_oc_l < 0.01 ) soil_oc_l = 0.01
                   if( soil_oc_l > 58.0 ) soil_oc_l = 58.0
-                  if( soil_bd_l < 0.1  ) soil_bd_l = 0.1 
+                  if( soil_bd_l < 0.1  ) soil_bd_l = 0.1
 
-                  soildepth = zsoih(MODEL_SOIL_LAYER)*100.0 
+                  soildepth = zsoih(MODEL_SOIL_LAYER)*100.0
 
                  ! estimating soil hydraulic properties
                  ! ------------------------------------
@@ -407,7 +407,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP, "soil hydraulic parameters...
                tksatu_l (i,j) = tksatu
                tkdry_l  (i,j) = tkdry
 
-            enddo 
+            enddo
          enddo
 #ifdef OPENMP
 !$OMP END PARALLEL DO
@@ -483,7 +483,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP, "soil hydraulic parameters...
 
 ! (7) Write out the thermal conductivity for dry soil [W/(m-K)]
          inquire(iolength=length) tkdry_l(:,1)
-         lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tkdry_l'//trim(c)//trim(suffix) 
+         lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tkdry_l'//trim(c)//trim(suffix)
          print*,lndname
          open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
          do j = 1, nlat
@@ -492,7 +492,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP, "soil hydraulic parameters...
          close(iunit)
 
       ENDDO
-         
+
       deallocate ( int_soil_grav_l ,&
                    int_soil_sand_l ,&
                    int_soil_clay_l ,&

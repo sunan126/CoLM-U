@@ -1,11 +1,6 @@
 #define	IGBP_CLASSIFICATION       
-#define	URBAN_MODEL               
-#define	URBAN_TREE                
-#define	URBAN_WATER               
-#define	URBAN_BEM                 
-#undef	URBAN_ONLY                
 #undef	RDGRID                    
-#undef	RAWdata_update            
+#define	RAWdata_update            
 #undef  DYN_PHENOLOGY             
 #undef	SOILINI                   
 #define	LANDONLY                  

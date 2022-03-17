@@ -19,7 +19,7 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 
 # case name and simulating time setting
 #-------------------------------------------------------
-set CASE_NAME   = IGBPU           	# case name                                            <MARK #1>
+set CASE_NAME   = IGBPU2000           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
@@ -71,7 +71,7 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 setenv DAT_ROOT   $HOME/data/inputdata                                # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
 setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
-setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
+setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp_2000
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
 # case directory

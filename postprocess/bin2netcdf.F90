@@ -30,7 +30,7 @@ PROGRAM bin2netcdf
    !INTEGER,  parameter :: nl_lake    = 10      ! number of lake layers
    !INTEGER,  parameter :: maxsnl     = -5      ! max number of snow layers
 
-   REAL(r4), parameter :: spval_r4   = -1.e36_r4 ! a special value for missing and filling USE
+   REAL(r4), parameter :: spval_r4   = -1.e36_r4 ! a special value for missing and filling use
 
    REAL(r8) :: lons_r8(lon_points)
    REAL(r8) :: lats_r8(lat_points)
@@ -74,7 +74,7 @@ CONTAINS
 
       read(11) lons_r8  (:)     ! longitudes in degree
       read(11) lats_r8  (:)     ! latitudes in degree
-      read(11) mask     (:,:)   ! grid mask [1: target (land), 0: NONE]
+      read(11) mask     (:,:)   ! grid mask [1: target (land), 0: none]
       read(11) frac     (:,:)   ! grid total fraction [fraction]
       read(11) area     (:,:)   ! grid cell area [km2]
       read(11) f_taux   (:,:)   ! wind stress: E-W [kg/m/s2]
@@ -259,7 +259,7 @@ CONTAINS
       ! grid mask
       CALL sanity( nf90_def_var(ncid, 'landmask', nf90_int, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','grid mask') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','NONE') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','none') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', -1) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', -1) )
 
@@ -1056,7 +1056,7 @@ CONTAINS
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
 
-    ! END defination
+    ! end defination
       CALL sanity( nf90_enddef(ncid) )
 
     ! write data
@@ -1658,7 +1658,7 @@ CONTAINS
       ! grid mask
       CALL sanity( nf90_def_var(ncid, 'landmask', nf90_int, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','grid mask') )
-      CALL sanity( nf90_put_att(ncid, varid, 'units','NONE') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','none') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', -1) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', -1) )
 
@@ -2434,7 +2434,7 @@ CONTAINS
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval_r4) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval_r4) )
 
-    ! END defination
+    ! end defination
       CALL sanity( nf90_enddef(ncid) )
 
     ! write data
@@ -3298,7 +3298,7 @@ CONTAINS
       INTEGER, intent(in) :: ret
 
       IF (ret .ne. nf90_noerr) THEN
-         write(6, *) trim(nf90_strerror(ret)); stop
+         write(6, *) trim(nf90_strerror(ret)); STOP
       ENDIF
 
    END SUBROUTINE sanity

@@ -202,8 +202,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! 添加城市数据读取，目前仅支持MODIS IGBP数据
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-!TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2005_v3.nc'
+!TODO: here for year 2000, need a input PARAMETER for a perscribed year
+      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2000_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -219,8 +219,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (landfrac(1:lon_points,1:lat_points))
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-!TODO: here for year 2005, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
+!TODO: here for year 2000, need a input PARAMETER for a perscribed year
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -291,7 +291,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctwetland(1:lon_points,1:lat_points))
       allocate (pctglacier(1:lon_points,1:lat_points))
       allocate (pctpft    (1:lon_points,1:lat_points,0:N_PFT-1))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -386,7 +386,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (pctpc   (1:lon_points,1:lat_points,0:N_PFT-1,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )

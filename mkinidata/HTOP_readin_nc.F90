@@ -33,7 +33,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata)
       REAL(r8), allocatable :: htoplc(:,:,:)
       REAL(r8), allocatable :: htoppft(:,:,:)
 
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2005_v5.nc'
+      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

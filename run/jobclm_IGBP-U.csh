@@ -19,8 +19,9 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 
 # case name and simulating time setting
 #-------------------------------------------------------
-set CASE_NAME   = IGBPU2000           	# case name                                            <MARK #1>
+set CASE_NAME   = IGBPU2005           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
+set LC_YEAR     = 2005          	# which year of land cover data used
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
@@ -71,7 +72,7 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 setenv DAT_ROOT   $HOME/data/inputdata                                # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
 setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
-setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp_2000
+setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
 # case directory
@@ -98,6 +99,7 @@ set nthread    = 92
 
 \cat >! .tmp << EOF
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
+#define	LAICHANGE                 ! change LAI for each year
 #define	URBAN_MODEL               ! run urban community model
 #define	URBAN_TREE                ! run urban model with trees
 #define	URBAN_WATER               ! run urban model with water
@@ -144,7 +146,7 @@ else
   echo "#undef  CaMa_Flood" >> $CLM_INCDIR/define.h
 endif
 
-
+cp -f $CLM_INCDIR/define.h $CAS_RUNDIR/define.h
 
 #-------------------------------------------------------
 # [4] compling and executing CoLM surface data making
@@ -161,6 +163,7 @@ make >& $CAS_RUNDIR/compile.mksrf.log || exit 5
 &mksrfexp
 dir_rawdata        = '$DAT_RAWDIR/'
 dir_model_landdata = '$DAT_SRFDIR/'
+lc_year            = $LC_YEAR
 lon_points         = $LON_POINTS
 lat_points         = $LAT_POINTS
 edgen              = $EDGE_N
@@ -197,6 +200,7 @@ dir_infolist       = '$CAS_RUNDIR/'
 lon_points         = $LON_POINTS
 lat_points         = $LAT_POINTS
 greenwich          = $GREENWICH
+lc_year            = $LC_YEAR
 s_year             = $START_YEAR
 s_month            = $START_MONTH
 s_day              = $START_DAY
@@ -309,6 +313,7 @@ lon_points         = $LON_POINTS
 lat_points         = $LAT_POINTS
 deltim             = $TIMESTEP
 solarin_all_band   = .true.
+lc_year            = $LC_YEAR
 e_year             = $END_YEAR
 e_month            = $END_MONTH
 e_day              = $END_DAY

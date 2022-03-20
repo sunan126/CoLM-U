@@ -2,7 +2,7 @@
 #include <define.h>
 
 SUBROUTINE aggregation_soil_parameters ( dir_rawdata,dir_model_landdata, &
-                                         lon_points,lat_points, &
+                                         lc_year,lon_points,lat_points, &
                                          nrow_start,nrow_end,ncol_start,ncol_end, &
                                          nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                                          READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
@@ -21,6 +21,7 @@ IMPLICIT NONE
       character(LEN=256), intent(in) :: dir_rawdata
       character(LEN=256), intent(in) :: dir_model_landdata
 
+      INTEGER, intent(in) :: lc_year    ! which year of land cover data used
       integer, intent(in) :: lon_points ! number of model longitude grid points
       integer, intent(in) :: lat_points ! model  of model latitude grid points
       integer, intent(in) :: nrow_start
@@ -40,6 +41,7 @@ IMPLICIT NONE
 ! local variables:
 ! ---------------------------------------------------------------
       character(len=256) lndname
+      CHARACTER(len=256) cyear
       character(len=1) land_chr1(nlon)
       character(len=2) land_chr2(nlon)
       character(len=256) c
@@ -107,9 +109,11 @@ IMPLICIT NONE
 #if(defined USGS_CLASSIFICATION)
      ! GLCC USGS classification
      ! -------------------
+      cyear   = ''
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2000.bin'
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-'//trim(cyear)//'.bin'
 #endif
 
       print*,lndname
@@ -345,49 +349,49 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #endif
 
 ! (1) Write-out the saturated water content [cm3/cm3]
-         lndname = trim(dir_model_landdata)//'model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_theta_s_l
          close(iunit)
 
 ! (2) Write-out the matric potential at saturation [cm]
-         lndname = trim(dir_model_landdata)//'model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_psi_s_l
          close(iunit)
 
 ! (3) Write-out the pore size distribution index [dimensionless]
-         lndname = trim(dir_model_landdata)//'model_lambda_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lambda_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_lambda_l
          close(iunit)
 
 ! (4) Write-out the saturated hydraulic conductivity [cm/day]
-         lndname = trim(dir_model_landdata)//'model_k_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_k_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_k_s_l
          close(iunit)
 
 ! (5) Write-out the heat capacity of soil solids [J/(m3 K)]
-         lndname = trim(dir_model_landdata)//'model_csol_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_csol_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_csol_l
          close(iunit)
 
 ! (6) Write-out the thermal conductivity of saturated soil [W/m-K]
-         lndname = trim(dir_model_landdata)//'model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_tksatu_l
          close(iunit)
 
 ! (7) Write-out the thermal conductivity for dry soil [W/(m-K)]
-         lndname = trim(dir_model_landdata)//'model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
          print*,lndname
          open(iunit,file=trim(lndname),form='unformatted',status='unknown')
          write(iunit,err=100) soil_tkdry_l

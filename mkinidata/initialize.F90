@@ -1,7 +1,7 @@
 #include <define.h>
 
 SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
-                       idate,greenwich,lon_points,lat_points,&
+                       lc_year,idate,greenwich,lon_points,lat_points,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
 
@@ -38,6 +38,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
    CHARACTER(LEN=256), INTENT(in) :: dir_model_landdata !
    CHARACTER(LEN=256), INTENT(in) :: dir_restart_hist   !
    LOGICAL, INTENT(in)    :: greenwich   !true: greenwich time, false: local time
+   INTEGER, INTENT(in)    :: lc_year     !which year of land cover data used
    INTEGER, INTENT(in)    :: lon_points  !number of longitude points on model grid
    INTEGER, INTENT(in)    :: lat_points  !number of latitude points on model grid
    INTEGER, INTENT(inout) :: idate(3)    !year, julian day, seconds of the starting time
@@ -103,6 +104,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   INTEGER  :: numpatch_lat(lat_points) !number of patches of grids at lon. strip
 
   CHARACTER(LEN=255) :: cdate          !CHARACTER for date
+  CHARACTER(len=256) :: cyear
   CHARACTER(len=256) :: lndname
   INTEGER iunit
   INTEGER Julian_8day
@@ -115,6 +117,11 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   REAL(r8) sumpctpft
   REAL(r8), external :: orb_coszen     !cosine of the solar zenith angle
 
+#ifdef USGS_CLASSIFICATION
+      cyear = ''
+#else
+      write(cyear,'(i4.4)') lc_year
+#endif
 
 ! ----------------------------------------------------------------------
 ! [1] READ IN LAND INFORMATION
@@ -122,7 +129,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! ----------------------------------------------------------------------
 ! Read in the coordinate of the center of the model grids and area of grid cells
       iunit = 100
-      lndname = trim(dir_model_landdata)//'model_lonlat_gridcell.bin'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit) latixy
@@ -202,8 +209,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! 添加城市数据读取，目前仅支持MODIS IGBP数据
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-!TODO: here for year 2000, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'urban_0.5x0.5.MOD2000_v5.nc'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/urban_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -219,8 +225,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (landfrac(1:lon_points,1:lat_points))
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-!TODO: here for year 2000, need a input PARAMETER for a perscribed year
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -291,7 +296,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctwetland(1:lon_points,1:lat_points))
       allocate (pctglacier(1:lon_points,1:lat_points))
       allocate (pctpft    (1:lon_points,1:lat_points,0:N_PFT-1))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -386,7 +391,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (pctpc   (1:lon_points,1:lat_points,0:N_PFT-1,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -888,13 +893,13 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
     ! ------------------------------------------
     ! Lake depth and layers' thickness
     ! ------------------------------------------
-      CALL lakedepth_readin (lon_points,lat_points,dir_model_landdata)
+      CALL lakedepth_readin (lon_points,lat_points,dir_model_landdata,lc_year)
 
 ! ...............................................................
 ! 3.2 Read in the soil parameters of the patches of the gridcells
 ! ...............................................................
 
-      CALL soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
+      CALL soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_year)
 
 ! ...............................................................
 ! 3.3 Plant time-invariant variables (based on the look-up tables or global map)
@@ -908,7 +913,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       ENDDO
 #else
       ! read global tree top height from nc file
-      CALL HTOP_readin_nc (lon_points, lat_points, dir_model_landdata)
+      CALL HTOP_readin_nc (lon_points, lat_points, dir_model_landdata,lc_year)
 #endif
 
 ! ...............................................................
@@ -917,7 +922,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! ...............................................................
 
 #ifdef URBAN_MODEL
-      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata)
+      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata, lc_year)
 #endif
 
 !TODO: 单点模式，读取htop
@@ -1059,10 +1064,19 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 #else
 ! yuan, 08/03/2019: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
-      CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
+#ifdef LAICHANGE
+      CALL LAI_readin_nc (lon_points, lat_points,    year, month, dir_model_landdata)
+#else
+      CALL LAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
+#endif
+
 #ifdef URBAN_MODEL
       ! 读取城市LAI/SAI数据
-      CALL UrbanLAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
+#ifdef LAICHANGE
+      CALL UrbanLAI_readin_nc (lon_points, lat_points,    year, month, dir_model_landdata)
+#else
+      CALL UrbanLAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
+#endif
 #endif
 
 #endif

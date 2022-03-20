@@ -1,5 +1,5 @@
 #include <define.h>
-SUBROUTINE rd_soil_properties(dir_rawdata)
+SUBROUTINE rd_soil_properties(dir_rawdata,lc_year)
 ! ----------------------------------------------------------------------
 ! => Read in soil characteristic dataset from original "raw" data files -
 !     data with 30 arc seconds resolution
@@ -31,7 +31,9 @@ IMPLICIT NONE
 
 ! arguments:
       character(len=256), intent(in) :: dir_rawdata
+      INTEGER, intent(in) :: lc_year
       character(len=256) lndname
+      CHARACTER(len=256) cyear
       character(len=1) land_chr1(nlon)
       integer(kind=1)  land_int1(nlon30s)
       integer(kind=2)  land_int2(nlon30s)
@@ -105,7 +107,8 @@ IMPLICIT NONE
       ! -------------------
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-2000.bin'
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-'//trim(cyear)//'.bin'
 #endif
 
       print*,lndname

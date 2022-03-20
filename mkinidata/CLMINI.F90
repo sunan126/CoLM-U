@@ -20,7 +20,7 @@ PROGRAM CLMINI
       USE GlobalVars
       USE LC_Const
       USE PFT_Const
-      
+
       IMPLICIT NONE
 
 ! ----------------local variables ---------------------------------
@@ -30,18 +30,19 @@ PROGRAM CLMINI
       CHARACTER(LEN=256) :: dir_infolist
       INTEGER :: s_year      ! starting date for run in year
       INTEGER :: s_julian    ! starting date for run in julian day
-      INTEGER :: s_month     ! starting month for run 
-      INTEGER :: s_day       ! starting day for run 
+      INTEGER :: s_month     ! starting month for run
+      INTEGER :: s_day       ! starting day for run
       INTEGER :: s_seconds   ! starting time of day for run in seconds
       INTEGER :: idate(3)    ! starting date
       LOGICAL :: greenwich   ! true: greenwich time, false: local time
 
       INTEGER :: lon_points  ! number of longitude points on model grid
       INTEGER :: lat_points  ! number of latitude points on model grid
+      INTEGER :: lc_year     ! which year of land cover data used
 
       CHARACTER(LEN=256) :: finfolist      ! file name of run information
 
-!  Required by atmospheric models's initialization (such as GRAPES/WRF/RSM/EMSs) 
+!  Required by atmospheric models's initialization (such as GRAPES/WRF/RSM/EMSs)
       REAL(r8), allocatable :: tg_xy   (:,:)
       REAL(r8), allocatable :: albvb_xy(:,:)
       REAL(r8), allocatable :: albvd_xy(:,:)
@@ -56,7 +57,7 @@ PROGRAM CLMINI
       namelist /clminiexp/ casename,dir_model_landdata,&
                            dir_restart_hist,dir_infolist,&
                            lon_points,lat_points,greenwich,&
-                           s_year,s_month,s_day,s_seconds
+                           lc_year,s_year,s_month,s_day,s_seconds
 ! ----------------------------------------------------------------------
       read (5,clminiexp)
 
@@ -68,7 +69,7 @@ PROGRAM CLMINI
       numpft   = 0
       numpc    = 0
       numurban = 0
-      
+
       CALL monthday2julian(s_year,s_month,s_day,s_julian)
       idate(1) = s_year; idate(2) = s_julian; idate(3) = s_seconds
 
@@ -84,7 +85,7 @@ PROGRAM CLMINI
       allocate ( fq_xy   (lon_points,lat_points) )
 
       CALL initialize (casename,dir_model_landdata,dir_restart_hist,&
-                       idate,greenwich,lon_points,lat_points,&
+                       lc_year,idate,greenwich,lon_points,lat_points,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
 

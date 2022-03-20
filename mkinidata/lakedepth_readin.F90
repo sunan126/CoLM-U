@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata)
+SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata,lc_year)
 
    use precision
    use MOD_TimeInvariants
@@ -10,9 +10,11 @@ SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata)
 
    integer, INTENT(in) :: lon_points ! number of longitude points on model grid
    integer, INTENT(in) :: lat_points ! number of latitude points on model grid
+   INTEGER, intent(in) :: lc_year    ! which year of land cover data used
    character(LEN=256), INTENT(in) :: dir_model_landdata
 
    character(len=256) :: lndname
+   CHARACTER(len=256) :: cyear
    integer iunit
    real(r8) :: depthratio            ! ratio of lake depth to standard deep lake depth
    integer :: i, j, npatch
@@ -51,9 +53,11 @@ SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata)
 
       iunit = 100
 #ifdef USGS_CLASSIFICATION
+      cyear   = ''
       lndname = trim(dir_model_landdata)//'model_GlobalLakeDepth.bin'
 #else
-      lndname = trim(dir_model_landdata)//'model_GlobalLakeDepth.igbp.bin'
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_GlobalLakeDepth.igbp.bin'
 #endif
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
@@ -78,7 +82,7 @@ SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata)
             dz_lake(nl_lake,npatch) = dzlak(nl_lake)*depthratio - (dz_lake(1,npatch) - dzlak(1)*depthratio)
          else if(lakedepth(npatch) > 0. .and. lakedepth(npatch) <= 1.)then
             dz_lake(:,npatch) = lakedepth(npatch) / nl_lake
-         else   ! non land water bodies or missing value of the lake depth 
+         else   ! non land water bodies or missing value of the lake depth
             lakedepth(npatch) = sum(dzlak(1:nl_lake))
             dz_lake(1:nl_lake,npatch) = dzlak(1:nl_lake)
          end if

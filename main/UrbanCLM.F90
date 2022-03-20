@@ -43,6 +43,7 @@
       CHARACTER(LEN=256) :: casename  !casename name
       INTEGER :: lon_points       !number of longitude points on model grids
       INTEGER :: lat_points       !number of latitude points on model grids
+      integer :: lc_year          !which year of land cover data used
       INTEGER :: idate(3)         !calendar (year, julian day, seconds)
       INTEGER :: edate(3)         !calendar (year, julian day, seconds)
       INTEGER :: pdate(3)         !calendar (year, julian day, seconds)
@@ -100,23 +101,24 @@
                         lat_points,             &!7
                         deltim,                 &!8
                         solarin_all_band,       &!9
-                        e_year,                 &!10
-                        e_month,                &!11
-                        e_day,                  &!12
-                        e_seconds,              &!13
-                        p_year,                 &!14
-                        p_month,                &!15
-                        p_day,                  &!16
-                        p_seconds,              &!17
-                        numpatch,               &!18
-                        numpft,                 &!19
-                        numpc,                  &!20
-                        numurban,               &!21
-                        greenwich,              &!22
-                        s_year,                 &!23
-                        s_month,                &!24
-                        s_day,                  &!25
-                        s_seconds                !26
+                        lc_year,                &!10
+                        e_year,                 &!11
+                        e_month,                &!12
+                        e_day,                  &!13
+                        e_seconds,              &!14
+                        p_year,                 &!15
+                        p_month,                &!16
+                        p_day,                  &!17
+                        p_seconds,              &!18
+                        numpatch,               &!19
+                        numpft,                 &!10
+                        numpc,                  &!21
+                        numurban,               &!22
+                        greenwich,              &!23
+                        s_year,                 &!24
+                        s_month,                &!25
+                        s_day,                  &!26
+                        s_seconds                !27
 ! ======================================================================
 !     define the run and open files (for off-line use)
 
@@ -256,8 +258,13 @@ print*, 'TIMELOOP = ', istep
 ! 08/03/2019, yuan: read global LAI/SAI data
          CALL julian2monthday (ldate(1), ldate(2), month, mday)
          IF (month /= month_p) THEN
-            CALL LAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
-            CALL UrbanLAI_readin_nc (lon_points, lat_points, month, dir_model_landdata)
+#ifdef LAICHANGE
+            CALL LAI_readin_nc      (lon_points, lat_points, year, month, dir_model_landdata)
+            CALL UrbanLAI_readin_nc (lon_points, lat_points, year, month, dir_model_landdata)
+#else
+            CALL LAI_readin_nc      (lon_points, lat_points, lc_year, month, dir_model_landdata)
+            CALL UrbanLAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
+#endif
          ENDIF
 #endif
 

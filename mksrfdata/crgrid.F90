@@ -1,10 +1,10 @@
 #include <define.h>
 
 SUBROUTINE crgrid(dir_model_landdata,edgen,edgee,edges,edgew,&
-                  lon_points,lat_points,latn,lats,lonw,lone)
+                  lc_year,lon_points,lat_points,latn,lats,lonw,lone)
 ! ----------------------------------------------------------------------
 ! generate land model grid when mode is offline.
-! surface grid edges -- grids do not have to be global. 
+! surface grid edges -- grids do not have to be global.
 ! to allow this, grids must define the north, east, south, west edges:
 !    edgen: northern edge of grid : > -90 and <= 90 (degrees)
 !    edgee: eastern edge of grid  : > western edge and <= 180
@@ -14,12 +14,12 @@ SUBROUTINE crgrid(dir_model_landdata,edgen,edgee,edges,edgew,&
 ! region (global) latitude grid goes from:
 !                          NORTHERN edge (POLE) to SOUTHERN edge (POLE)
 ! region (global) longitude grid starts at:
-!                          WESTERN edge 
+!                          WESTERN edge
 !                         (DATELINE with western edge)
 !
 ! west of Greenwich defined negative
-! for global grids, the western edge of the longitude grid starts 
-! at the dateline 
+! for global grids, the western edge of the longitude grid starts
+! at the dateline
 !
 ! ----------------------------------------------------------------------
 use precision
@@ -28,8 +28,9 @@ IMPLICIT NONE
 
 ! arguments:
       character(len=256), intent(in) :: dir_model_landdata
-      integer, intent(in) :: lon_points  ! input number of longitudes
-      integer, intent(in) :: lat_points  ! input number of latitudes
+      INTEGER,  intent(in) :: lc_year    ! which year of land cover data used
+      integer,  intent(in) :: lon_points ! input number of longitudes
+      integer,  intent(in) :: lat_points ! input number of latitudes
       real(r8), intent(in) :: edgen      ! northern edge of grid (degrees)
       real(r8), intent(in) :: edgee      ! eastern edge of grid (degrees)
       real(r8), intent(in) :: edges      ! southern edge of grid (degrees)
@@ -45,12 +46,13 @@ IMPLICIT NONE
       real(r8), intent(out) :: lats(lat_points)     ! grid cell latitude, northern edge (degrees)
       real(r8), intent(out) :: lone(lon_points)     ! grid cell longitude, western edge (degrees)
 
-      integer :: iunit 
+      integer :: iunit
       character(len=256) lndname
+      CHARACTER(len=256) cyear
       real(r8) :: latixy(lon_points,lat_points)  ! latitude (degrees) of the center of the model grids
       real(r8) :: longxy(lon_points,lat_points)  ! longitude (degrees) of the center of the model grids
       real(r8) :: area(lon_points,lat_points)    ! grid cell area
- 
+
       real(r8) dx2
 
     ! ------------------------------------------------------------------
@@ -67,9 +69,9 @@ IMPLICIT NONE
          end do
       end do
       center_at_dateline = .false.
-    
+
     ! ------------------------------------------
-    ! determine the model grid edges 
+    ! determine the model grid edges
     ! ------------------------------------------
     ! latitudes
       latn(1) = edgen
@@ -94,7 +96,7 @@ IMPLICIT NONE
          if(lon_points > 1) then ! not single-point
             lonw(2) = longxy(1,1) + dx2
             lone(1) = longxy(1,1) + dx2
-         endif   
+         endif
       endif
 
       do i = 3, lon_points
@@ -112,13 +114,14 @@ IMPLICIT NONE
 #else
       call cellarea (lat_points,lon_points,latn,lats,lonw,lone,&
                      edgen,edgee,edges,edgew,area)
-#endif    
-    
+#endif
+
     ! ------------------------------------------
     ! write out the coordinate of the center of the model grids and area of grid cells
     ! ------------------------------------------
       iunit = 100
-      lndname = trim(dir_model_landdata)//'model_lonlat_gridcell.bin'
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit) latixy

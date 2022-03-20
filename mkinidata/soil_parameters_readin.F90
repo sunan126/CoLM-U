@@ -1,12 +1,12 @@
 #include <define.h>
 
-SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
+SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_year)
 ! ======================================================================
 ! Read in soil parameters in (patches,lon_points,lat_points) and
 ! => 1d vector [numpatch]
 !
 ! Created by Yongjiu Dai, 03/2014
-!             
+!
 ! ======================================================================
    use precision
    use MOD_TimeInvariants
@@ -18,6 +18,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
    character(LEN=256), INTENT(in) :: dir_model_landdata
    integer, INTENT(in) :: lon_points ! number of longitude points on model grid
    integer, INTENT(in) :: lat_points ! number of latitude points on model grid
+   INTEGER, intent(in) :: lc_year    ! which year of land cover data used
 
 ! ------------------------ local variables -----------------------------
   real(r8), allocatable :: soil_theta_s_l (:,:,:)  ! saturated water content (cm3/cm3)
@@ -40,20 +41,23 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
   character(len=256) :: c
   CHARACTER(len=256) :: suffix
   character(len=256) :: lndname
+  CHARACTER(len=256) :: cyear
   integer iunit
   integer MODEL_SOIL_LAYER
 
 #ifdef USGS_CLASSIFICATION
   suffix        = ''
+  cyear         = ''
 #else
   suffix        = '.igbp'
+  write(cyear,'(i4.4)') lc_year
 #endif
 
 ! ...............................................................
 
       iunit = 100
       DO nsl = 1, 8
-         MODEL_SOIL_LAYER = nsl 
+         MODEL_SOIL_LAYER = nsl
          write(c,'(i1)') MODEL_SOIL_LAYER
 
          allocate ( soil_theta_s_l (0:N_land_classification,1:lon_points,1:lat_points) )
@@ -65,49 +69,49 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
          allocate ( soil_tkdry_l   (0:N_land_classification,1:lon_points,1:lat_points) )
 
 ! (1) read in the saturated water content [cm3/cm3]
-         lndname = trim(dir_model_landdata)//'model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_theta_s_l
          close(iunit)
 
 ! (2) read in the matric potential at saturation [cm]
-         lndname = trim(dir_model_landdata)//'model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_psi_s_l
          close(iunit)
 
 ! (3) read in the pore size distribution index [dimensionless]
-         lndname = trim(dir_model_landdata)//'model_lambda_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lambda_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_lambda_l
          close(iunit)
 
 ! (4) read in the saturated hydraulic conductivity [cm/day]
-         lndname = trim(dir_model_landdata)//'model_k_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_k_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_k_s_l
          close(iunit)
 
 ! (5) read in the heat capacity of soil solids [J/(m3 K)]
-         lndname = trim(dir_model_landdata)//'model_csol_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_csol_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_csol_l
          close(iunit)
 
 ! (6) read in the thermal conductivity of saturated soil [W/m-K]
-         lndname = trim(dir_model_landdata)//'model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_tksatu_l
          close(iunit)
 
 ! (7) read in the thermal conductivity for dry soil [W/(m-K)]
-         lndname = trim(dir_model_landdata)//'model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_tkdry_l
@@ -123,7 +127,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
 ! for PFT structure, all the patches share the same soil data, storted at
 ! position 0 of array (0:N_land_classification,:,:)
 #ifdef PFT_CLASSIFICATION
-            IF( t == 0 ) THEN     
+            IF( t == 0 ) THEN
                 porsl (nsl,npatch) =    soil_theta_s_l  (0,i,j)               ! cm/cm
                 psi0  (nsl,npatch) =    soil_psi_s_l    (0,i,j) * 10.         ! cm -> mm
                 bsw   (nsl,npatch) = 1./soil_lambda_l   (0,i,j)               ! dimensionless
@@ -141,7 +145,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
                 dkdry (nsl,npatch) =    soil_tkdry_l    (m,i,j)               ! W/(m K)
             END IF
 #else
-            if( m == 0 )then     
+            if( m == 0 )then
                 ! ocean
                 porsl (nsl,npatch) = -1.e36
                 psi0  (nsl,npatch) = -1.e36
@@ -173,7 +177,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
       ENDDO
 
       ! The parameters of the top NINTH soil layers were given by datasets
-      ! [0-0.045 (LAYER 1-2), 0.045-0.091, 0.091-0.166, 0.166-0.289, 
+      ! [0-0.045 (LAYER 1-2), 0.045-0.091, 0.091-0.166, 0.166-0.289,
       !  0.289-0.493, 0.493-0.829, 0.829-1.383 and 1.383-2.296 m].
       ! The NINTH layer's soil parameters will assigned to the bottom soil layer (2.296 - 3.8019m).
 
@@ -233,28 +237,28 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
       allocate ( d_n_alb (0:N_land_classification,1:lon_points,1:lat_points) )
 
 ! (1) Read in the albedo of visible of the saturated soil
-      lndname = trim(dir_model_landdata)//'soil_s_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) s_v_alb
       close(iunit)
 
 ! (1) Read in the albedo of visible of the dry soil
-      lndname = trim(dir_model_landdata)//'soil_d_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) d_v_alb
       close(iunit)
 
 ! (3) Read in the albedo of near infrared of the saturated soil
-      lndname = trim(dir_model_landdata)//'soil_s_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) s_n_alb
       close(iunit)
 
 ! (4) Read in the albedo of near infrared of the dry soil
-      lndname = trim(dir_model_landdata)//'soil_d_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) d_n_alb
@@ -268,12 +272,12 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
 ! yuan, 12/28/2019: Bug, add patchtype
          t = patchtype(npatch)
          m = patchclass(npatch)
-         !if( m == 0 )then 
+         !if( m == 0 )then
 ! for PFT structure, all the patches share the same soil data, storted at
 ! position 0 of array (0:N_land_classification,:,:)
 #ifdef PFT_CLASSIFICATION
-         IF ( t == 0 ) THEN 
-             ! ocean 
+         IF ( t == 0 ) THEN
+             ! ocean
              soil_s_v_alb (npatch) = s_v_alb (0,i,j)
              soil_d_v_alb (npatch) = d_v_alb (0,i,j)
              soil_s_n_alb (npatch) = s_n_alb (0,i,j)
@@ -285,7 +289,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata)
              soil_d_n_alb (npatch) = d_n_alb (m,i,j)
          END IF
 #else
-         if( m == 0 )then 
+         if( m == 0 )then
              soil_s_v_alb (npatch) = -1.e36
              soil_d_v_alb (npatch) = -1.e36
              soil_s_n_alb (npatch) = -1.e36

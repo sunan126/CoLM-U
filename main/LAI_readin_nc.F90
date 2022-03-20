@@ -1,7 +1,7 @@
 #include <define.h>
 
-SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
-           month, dir_model_landdata)
+SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
+           year, month, dir_model_landdata)
 
 ! ===========================================================
 ! Read in the LAI, the LAI dataset was created by Yuan et al. (2019)
@@ -25,11 +25,13 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 
       INTEGER, intent(in) :: lon_points
       INTEGER, intent(in) :: lat_points
+      INTEGER, intent(in) :: year
       INTEGER, intent(in) :: month
       CHARACTER(LEN=256), intent(in) :: dir_model_landdata
 
       CHARACTER(LEN=256) :: c
       CHARACTER(LEN=256) :: lndname
+      CHARACTER(len=256) :: cyear
       INTEGER :: ncid
       INTEGER :: lclai_vid, lcsai_vid, pftlai_vid, pftsai_vid
       INTEGER :: pclai_vid, pcsai_vid, pctpc_vid
@@ -45,7 +47,8 @@ SUBROUTINE LAI_readin_nc (lon_points,lat_points,&
 
 ! READ in Leaf area index and stem area index
 
-      lndname = trim(dir_model_landdata)//'global_0.5x0.5.MOD2000_v5.nc'
+      write(cyear,'(i4.4)') year
+      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

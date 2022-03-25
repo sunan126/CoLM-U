@@ -1,6 +1,6 @@
-#include <define.h> 
+#include <define.h>
 
-MODULE MOD_TimeInvariants 
+MODULE MOD_TimeInvariants
 ! -------------------------------
 ! Created by Yongjiu Dai, 03/2014
 ! -------------------------------
@@ -204,7 +204,7 @@ MODULE MOD_TimeInvariants
            smpmin,          &! restriction for min of soil poten. (mm)
            trsmx0,          &! max transpiration for moist soil+100% veg.  [mm/s]
            tcrit             ! critical temp. to determine rain or snow
-     
+
      ! PFT/PC time invariants
 #ifdef PFT_CLASSIFICATION
      read (lhistTimeConst)  &!
@@ -223,7 +223,7 @@ MODULE MOD_TimeInvariants
            pc2patch,        &! projection from PC to patch
            pcfrac,          &! PC fractional cover
            htop_c,          &! canopy top height [m]
-           hbot_c            ! canopy bottom height [m]   
+           hbot_c            ! canopy bottom height [m]
 #endif
 
 #ifdef URBAN_MODEL
@@ -354,7 +354,7 @@ MODULE MOD_TimeInvariants
            pc2patch,        &! projection from PC to patch
            pcfrac,          &! PC fractional cover
            htop_c,          &! canopy top height [m]
-           hbot_c            ! canopy bottom height [m]   
+           hbot_c            ! canopy bottom height [m]
 #endif
 
 #ifdef URBAN_MODEL

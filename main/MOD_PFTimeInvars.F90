@@ -1,6 +1,6 @@
-#include <define.h> 
+#include <define.h>
 
-MODULE MOD_PFTimeInvars 
+MODULE MOD_PFTimeInvars
 ! -------------------------------
 ! Created by Hua Yuan, 08/2019
 ! -------------------------------
@@ -39,13 +39,13 @@ MODULE MOD_PFTimeInvars
      USE precision
      IMPLICIT NONE
 
-     allocate (pftclass      (numpft))   
-     allocate (pftfrac       (numpft))   
+     allocate (pftclass      (numpft))
+     allocate (pftfrac       (numpft))
      allocate (patch_pft_s (numpatch))
      allocate (patch_pft_e (numpatch))
-     allocate (pft2patch     (numpft)) 
-     allocate (htop_p        (numpft)) 
-     allocate (hbot_p        (numpft)) 
+     allocate (pft2patch     (numpft))
+     allocate (htop_p        (numpft))
+     allocate (hbot_p        (numpft))
 
   END SUBROUTINE allocate_PFTimeInvars
 
@@ -60,8 +60,8 @@ MODULE MOD_PFTimeInvars
      deallocate (patch_pft_s )
      deallocate (patch_pft_e )
      deallocate (pft2patch   )
-     deallocate (htop_p      ) 
-     deallocate (hbot_p      ) 
+     deallocate (htop_p      )
+     deallocate (hbot_p      )
 
   END SUBROUTINE deallocate_PFTimeInvars
 

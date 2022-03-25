@@ -10,13 +10,13 @@ SUBROUTINE lpwrite(idate,deltim,lwrite,rwrite)
   real,    intent(in) :: deltim
   logical, intent(inout) :: lwrite
   logical, intent(inout) :: rwrite
-         
+
 #if(defined WO_HOURLY)
   lwrite = .true.
 #elif(defined WO_DAILY)
   lwrite = isendofday(idate, deltim)
 #elif(defined WO_MONTHLY)
-  lwrite = isendofmonth(idate, deltim)       
+  lwrite = isendofmonth(idate, deltim)
 #elif(defined WO_YEARLY)
   lwrite = isendofyear(idate, deltim)
 #endif
@@ -26,7 +26,7 @@ SUBROUTINE lpwrite(idate,deltim,lwrite,rwrite)
 #elif(defined WR_DAILY)
   rwrite = isendofday(idate, deltim)
 #elif(defined WR_MONTHLY)
-  rwrite = isendofmonth(idate, deltim)       
+  rwrite = isendofmonth(idate, deltim)
 #elif(defined WR_YEARLY)
   rwrite = isendofyear(idate, deltim)
 #endif

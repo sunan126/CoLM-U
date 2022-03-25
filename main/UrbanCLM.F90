@@ -257,10 +257,11 @@ print*, 'TIMELOOP = ', istep
 #else
 ! 08/03/2019, yuan: read global LAI/SAI data
          CALL julian2monthday (ldate(1), ldate(2), month, mday)
+         year = ldate(1)
          IF (month /= month_p) THEN
 #ifdef LAICHANGE
-            CALL LAI_readin_nc      (lon_points, lat_points, year, month, dir_model_landdata)
-            CALL UrbanLAI_readin_nc (lon_points, lat_points, year, month, dir_model_landdata)
+            CALL LAI_readin_nc      (lon_points, lat_points,    year, month, dir_model_landdata)
+            CALL UrbanLAI_readin_nc (lon_points, lat_points,    year, month, dir_model_landdata)
 #else
             CALL LAI_readin_nc      (lon_points, lat_points, lc_year, month, dir_model_landdata)
             CALL UrbanLAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
@@ -330,6 +331,11 @@ print*, 'TIMELOOP = ', istep
                CALL WRITE_TimeVariables (idate,dir_restart_hist,casename)
             ENDIF
          ENDIF
+
+#ifdef LCCHANGE
+         !TODO: DO land cover change simulation
+
+#endif
 
          istep = istep + 1
 

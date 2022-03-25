@@ -152,10 +152,10 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    INTEGER , intent(in) :: lbp, ubp                   !pft bounds
    INTEGER , intent(in) :: canlev(lbp:ubp)            !canopy level for current pft
    REAL(r8), intent(in) :: pwtcol(lbp:ubp)            !weight of pft wrt corresponding column
-   REAL(r8), intent(in) :: csiz  (lbp:ubp)            !
-   REAL(r8), intent(in) :: chgt  (lbp:ubp)            !
+   REAL(r8), intent(in) :: csiz  (lbp:ubp)            !crown size of vegetation
+   REAL(r8), intent(in) :: chgt  (lbp:ubp)            !central height of crown
    REAL(r8), intent(in) :: chil  (lbp:ubp)            !leaf angle distribution parameter
-   REAL(r8), intent(in) :: lsai  (lbp:ubp)            !
+   REAL(r8), intent(in) :: lsai  (lbp:ubp)            !LAI+SAI
    REAL(r8), intent(in) :: rho   (lbp:ubp,numrad)     !leaf/stem refl weighted by fraction LAI and SAI
    REAL(r8), intent(in) :: tau   (lbp:ubp,numrad)     !leaf/stem tran weighted by fraction LAI and SAI
 
@@ -170,10 +170,10 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    REAL(r8), intent(out) :: ftdd(lbp:ubp,numrad)      !down direct flux below veg per unit dir flx
    REAL(r8), intent(out) :: ftid(lbp:ubp,numrad)      !down diffuse flux below veg per unit dir flx
    REAL(r8), intent(out) :: ftii(lbp:ubp,numrad)      !down diffuse flux below veg per unit dif flx
-   REAL(r8), intent(out) :: fadd(lbp:ubp,numrad)      !
-   REAL(r8), intent(out) :: psun  (lbp:ubp)           !
-   REAL(r8), intent(out) :: thermk(lbp:ubp)           !
-   REAL(r8), intent(out) :: fshade(lbp:ubp)           !
+   REAL(r8), intent(out) :: fadd(lbp:ubp,numrad)      !absorbed flux in direct mode per unit direct flux
+   REAL(r8), intent(out) :: psun  (lbp:ubp)           !percent sunlit vegetation cover
+   REAL(r8), intent(out) :: thermk(lbp:ubp)           !direct transmittance of diffuse radiation
+   REAL(r8), intent(out) :: fshade(lbp:ubp)           !shadow in diffuse case of vegetation
 
 ! !LOCAL VARIABLES:
    REAL(selected_real_kind(12)), external::OverlapArea
@@ -231,9 +231,9 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    REAL(r8) :: fabi_lay(nlay,numrad)!layer absorption for diffuse beam
    REAL(r8) :: fabs_lay(0:4,numrad) !layer absorption for all five layers
    REAL(r8) :: fabs_leq(0:4,numrad) !layer absorption for all five layers
-   REAL(r8) :: A(6,6)               !
-   REAL(r8) :: B(6,2)               !
-   REAL(r8) :: X(6,2)               !
+   REAL(r8) :: A(6,6)               !three-layer radiation transfer eqation (EQ. 19, Yuan et al., 2014)
+   REAL(r8) :: B(6,2)               !three-layer radiation transfer eqation (EQ. 19, Yuan et al., 2014)
+   REAL(r8) :: X(6,2)               !three-layer radiation transfer eqation (EQ. 19, Yuan et al., 2014)
    REAL(r8) :: fabsm                !pft absorption for multiple reflections
    REAL(r8) :: faid_lay(nlay)       !layer diffused absorption for direct beam
    REAL(r8) :: faid_p               !pft absorption direct beam
@@ -264,13 +264,13 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    REAL(r8) :: pfc                  !contribution of current pft in layer
    REAL(r8) :: probm                !prob photon reflect diffusly from grnd reach canopy
    REAL(r8) :: ref(0:nlay+1,0:nlay+1)!radiation reflected between five layers
-   REAL(r8) :: fadd_lay(nlay,numrad)!
+   REAL(r8) :: fadd_lay(nlay,numrad)!layer absorbed flux in direct mode per unit direct flux
    REAL(r8) :: shad_oa(nlay,nlay)   !shadow overlaps (direct beam)
    REAL(r8) :: shadow_d(nlay)       !layer shadow for direct beam
    REAL(r8) :: shadow_i(nlay)       !layer shadow for diffuse beam
    REAL(r8) :: sum_fabd(3)          !sum of absorption for all pfts in grid (direct)
    REAL(r8) :: sum_fabi(3)          !sum of absorption for all pfts in grid (diffuse)
-   REAL(r8) :: sum_fadd(nlay)       !
+   REAL(r8) :: sum_fadd(nlay)       !sum of absorbed flux in direct mode per unit direct flux
    REAL(r8) :: taud_lay(nlay)       !direct transmission for a layer
    REAL(r8) :: taui_lay(nlay)       !diffuse transmission for a layer
    REAL(r8) :: trd(0:nlay+1,0:nlay+1)!direct radiation transmitted between five layers
@@ -928,10 +928,10 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    REAL(r8)::ald       !forward frac of 3D scat rad in all direction for diffuse
    REAL(r8)::ali       !forward frac of 3D scat rad in all direction for diffuse
 
-   REAL(r8)::wb
-   REAL(r8)::alpha
-   REAL(r8)::nd
-   REAL(r8)::ni
+   REAL(r8)::wb        !EQ. (2.14), Dickinson 1983, omega*beta
+   REAL(r8)::alpha     !EQ. (2.14), Dickinson 1983, alpha
+   REAL(r8)::nd        !EQ. (4), Appendix 1, Yuan, dissertation
+   REAL(r8)::ni        !EQ. (4), Appendix 1, Yuan, dissertation
    REAL(r8)::gee=0.5_r8                !Ross factor geometric blocking
 
    REAL(r8),parameter::D0 = 0.0_r8     !64-bit REAL number
@@ -943,7 +943,7 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    REAL(r8),parameter::DH = 0.5_r8     !64-bit REAL number
    REAL(r16),parameter::DD1 = 1.0_r16  !128-bit REAL number
 
-   REAL(r8),parameter :: pi = 3.14159265358979323846_R8  ! pi
+   REAL(r8),parameter :: pi = 3.14159265358979323846_R8  !pi
    REAL(selected_real_kind(12)), external::tee
 
    tau = D3/D4*gee*lsai

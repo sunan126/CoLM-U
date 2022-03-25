@@ -1,6 +1,6 @@
-#include <define.h> 
+#include <define.h>
 
-MODULE MOD_PCTimeInvars 
+MODULE MOD_PCTimeInvars
 ! -------------------------------
 ! Created by Hua Yuan, 08/2019
 ! -------------------------------
@@ -15,7 +15,7 @@ MODULE MOD_PCTimeInvars
   INTEGER , allocatable :: pc2patch(:)    !projection from PC to patch
   REAL(r8), allocatable :: pcfrac(:,:)    !PC fractional cover
   REAL(r8), allocatable :: htop_c(:,:)    !canopy top height [m]
-  REAL(r8), allocatable :: hbot_c(:,:)    !canopy bottom height [m]   
+  REAL(r8), allocatable :: hbot_c(:,:)    !canopy bottom height [m]
 
 ! PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: allocate_PCTimeInvars
@@ -40,8 +40,8 @@ MODULE MOD_PCTimeInvars
      allocate (patch2pc        (numpatch))
      allocate (pc2patch           (numpc))
      allocate (pcfrac   (0:N_PFT-1,numpc))
-     allocate (htop_c   (0:N_PFT-1,numpc)) 
-     allocate (hbot_c   (0:N_PFT-1,numpc)) 
+     allocate (htop_c   (0:N_PFT-1,numpc))
+     allocate (hbot_c   (0:N_PFT-1,numpc))
 
   END SUBROUTINE allocate_PCTimeInvars
 
@@ -53,9 +53,9 @@ MODULE MOD_PCTimeInvars
 
      deallocate (patch2pc )
      deallocate (pc2patch )
-     deallocate (pcfrac   )  
-     deallocate (htop_c   ) 
-     deallocate (hbot_c   ) 
+     deallocate (pcfrac   )
+     deallocate (htop_c   )
+     deallocate (hbot_c   )
 
   END SUBROUTINE deallocate_PCTimeInvars
 

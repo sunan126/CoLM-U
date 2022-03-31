@@ -924,10 +924,12 @@
       lnet  = lroof   *fcover(0) + lwsun   *fcover(1) + lwsha   *fcover(2) + &
               lgimp   *fcover(3) + lgper   *fcover(4)
 
-      sabg  = sabroof *fcover(0) + sabwsha *fcover(1) + sabwsha *fcover(2) + &
+      ! 03/30/2022, wenzong: bug find, sabgwsha->sabgwsun
+      sabg  = sabroof *fcover(0) + sabwsun *fcover(1) + sabwsha *fcover(2) + &
               sabgimp *fcover(3) + sabgper *fcover(4)
 
-      fseng = fsenroof*fcover(0) + fsenwsha*fcover(1) + fsenwsha*fcover(2) + &
+      ! 03/30/2022, wenzong: bug find, fsenwsha->fsenwsun
+      fseng = fsenroof*fcover(0) + fsenwsun*fcover(1) + fsenwsha*fcover(2) + &
               fsengimp*fcover(3) + fsengper*fcover(4)
 
       fevpg = fevproof*fcover(0) + fevpgimp*fcover(3) + fevpgper*fcover(4)

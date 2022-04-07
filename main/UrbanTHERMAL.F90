@@ -1138,6 +1138,8 @@
 100  format(10(f15.3))
 #endif
 
+      ! diagnostic sabg only for pervious and impervious ground
+      sabg = sabgper*fgper + sabgimp*(1-fgper)
 
 !=======================================================================
 ! [11] a simple building energy model

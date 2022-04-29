@@ -71,7 +71,7 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
-      allocate (urbclass             (numpatch))
+      allocate (urbclass             (numurban))
       allocate (patch2urb            (numpatch))
       allocate (urb2patch            (numurban))
 

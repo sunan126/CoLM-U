@@ -160,7 +160,7 @@ MODULE MOD_TimeVariables
   END SUBROUTINE allocate_TimeVariables
 
 
-  SUBROUTINE READ_TimeVariables (idate,dir_restart_hist,casename)
+  SUBROUTINE READ_TimeVariables (idate,lc_year,dir_restart_hist,casename)
 ! --------------------------------------------------------------------
 ! Read the model variables for restart run [histTimeVar]
 ! ...............................................................
@@ -174,17 +174,22 @@ MODULE MOD_TimeVariables
      CHARACTER(LEN=255), intent(in) :: dir_restart_hist
      CHARACTER(LEN=256), intent(in) :: casename
      INTEGER, intent(in) :: idate(3)     !calendar (year, julian day, seconds)
+     INTEGER, intent(in) :: lc_year      !year of land cover type data
 
      INTEGER :: lhistTimeVar             !logical unit number of restart time-varying file
      INTEGER :: id(3)                    !calendar (year, julian day, seconds)
      CHARACTER(LEN=255) :: cdate         !character for date
+     CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeVar  !file name of time-varying file
 
      ! the model variables for restart run
      write(cdate,'(i4.4,"-",i3.3,"-",i5.5)') idate(1),idate(2),idate(3)
 
+     ! land cover type year
+     write(cyear,'(i4.4)') lc_year
+
      lhistTimeVar = 100
-     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)
+     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
      print*,trim(fhistTimeVar)
      open(unit=lhistTimeVar,file=trim(fhistTimeVar),status='unknown',&
                             form='unformatted',action='read')
@@ -253,11 +258,7 @@ MODULE MOD_TimeVariables
            ssha_p,          &! shaded canopy absorption for solar radiation (0-1)
            thermk_p,        &! canopy gap fraction for tir radiation
            extkb_p,         &! (k, g(mu)/mu) direct solar extinction coefficient
-           extkd_p,         &! diffuse and scattered diffuse PAR extinction coefficient
-           tref_p,          &! 2 m height air temperature [kelvin]
-           qref_p,          &! 2 m height air specific humidity
-           rst_p,           &! canopy stomatal resistance (s/m)
-           z0m_p             ! effective roughness [m]
+           extkd_p           ! diffuse and scattered diffuse PAR extinction coefficient
 #endif
 
 #ifdef PC_CLASSIFICATION
@@ -274,9 +275,7 @@ MODULE MOD_TimeVariables
            thermk_c,        &! canopy gap fraction for tir radiation
            fshade_c,        &! canopy gap fraction for tir radiation
            extkb_c,         &! (k, g(mu)/mu) direct solar extinction coefficient
-           extkd_c,         &! diffuse and scattered diffuse PAR extinction coefficient
-           rst_c,           &! canopy stomatal resistance (s/m)
-           z0m_c             ! effective roughness [m]
+           extkd_c           ! diffuse and scattered diffuse PAR extinction coefficient
 #endif
 
 #ifdef URBAN_MODEL
@@ -305,9 +304,6 @@ MODULE MOD_TimeVariables
            troof_inner,     &! temperature of roof [K]
            twsun_inner,     &! temperature of sunlit wall [K]
            twsha_inner,     &! temperature of shaded wall [K]
-           !tgimp,           &! temperature of impervious [K]
-           !tgper,           &! temperature of pervious [K]
-           !tlake,           &! temperature of lake [K]
            t_roofsno,       &! temperature of roof [K]
            t_wallsun,       &! temperature of sunlit wall [K]
            t_wallsha,       &! temperature of shaded wall [K]
@@ -347,7 +343,6 @@ MODULE MOD_TimeVariables
            IF (id(1) /= idate(1) .or. id(2) /= idate(2) .or. id(3) /= idate(3)) THEN
               print*, 'id = ', id, 'idate = ', idate
               print*, 'The date of initial data is NOT IDENTICAL TO initial set-up'
-              CALL abort
            ENDIF
 
      close(lhistTimeVar)
@@ -355,7 +350,7 @@ MODULE MOD_TimeVariables
   END SUBROUTINE READ_TimeVariables
 
 
-  SUBROUTINE WRITE_TimeVariables (idate,dir_restart_hist,casename)
+  SUBROUTINE WRITE_TimeVariables (idate,lc_year,dir_restart_hist,casename)
 ! --------------------------------------------------------------------
 ! Write out the model variables for restart run [histTimeVar]
 ! --------------------------------------------------------------------
@@ -367,12 +362,14 @@ MODULE MOD_TimeVariables
      IMPLICIT NONE
 
      INTEGER, intent(in) :: idate(3)     !calendar (year, julian day, seconds)
+     INTEGER, intent(in) :: lc_year      !year of land cover type data
      CHARACTER(LEN=255), intent(in) :: dir_restart_hist
      CHARACTER(LEN=256), intent(in) :: casename
 
      INTEGER :: lhistTimeVar             !logical unit number of restart time-varying file
      INTEGER :: id(3)                    !calendar (year, julian day, seconds), temporal
      CHARACTER(LEN=255) :: cdate         !character for date
+     CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeVar  !file name of time-varying file
 
 ! ...............................................................
@@ -383,8 +380,11 @@ MODULE MOD_TimeVariables
      ! the model variables for restart run
      write(cdate,'(i4.4,"-",i3.3,"-",i5.5)') id(1), id(2), id(3)
 
+     ! land cover type year
+     write(cyear,'(i4.4)') lc_year
+
      lhistTimeVar = 100
-     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)
+     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
      print*,trim(fhistTimeVar)
      open(unit=lhistTimeVar,file=trim(fhistTimeVar),status='unknown',&
                             form='unformatted',action='write')
@@ -453,11 +453,7 @@ MODULE MOD_TimeVariables
            ssha_p,          &! shaded canopy absorption for solar radiation (0-1)
            thermk_p,        &! canopy gap fraction for tir radiation
            extkb_p,         &! (k, g(mu)/mu) direct solar extinction coefficient
-           extkd_p,         &! diffuse and scattered diffuse PAR extinction coefficient
-           tref_p,          &! 2 m height air temperature [kelvin]
-           qref_p,          &! 2 m height air specific humidity
-           rst_p,           &! canopy stomatal resistance (s/m)
-           z0m_p             ! effective roughness [m]
+           extkd_p           ! diffuse and scattered diffuse PAR extinction coefficient
 #endif
 
 #ifdef PC_CLASSIFICATION
@@ -474,9 +470,7 @@ MODULE MOD_TimeVariables
            thermk_c,        &! canopy gap fraction for tir radiation
            fshade_c,        &! canopy gap fraction for tir radiation
            extkb_c,         &! (k, g(mu)/mu) direct solar extinction coefficient
-           extkd_c,         &! diffuse and scattered diffuse PAR extinction coefficient
-           rst_c,           &! canopy stomatal resistance (s/m)
-           z0m_c             ! effective roughness [m]
+           extkd_c           ! diffuse and scattered diffuse PAR extinction coefficient
 #endif
 
 #ifdef URBAN_MODEL
@@ -505,9 +499,6 @@ MODULE MOD_TimeVariables
            troof_inner,     &! temperature of roof [K]
            twsun_inner,     &! temperature of sunlit wall [K]
            twsha_inner,     &! temperature of shaded wall [K]
-           !tgimp,           &! temperature of impervious [K]
-           !tgper,           &! temperature of pervious [K]
-           !tlake,           &! temperature of lake [K]
            t_roofsno,       &! temperature of roof [K]
            t_wallsun,       &! temperature of sunlit wall [K]
            t_wallsha,       &! temperature of shaded wall [K]

@@ -43,7 +43,7 @@
       CHARACTER(LEN=256) :: casename  !casename name
       INTEGER :: lon_points       !number of longitude points on model grids
       INTEGER :: lat_points       !number of latitude points on model grids
-      integer :: lc_year          !which year of land cover data used
+      INTEGER :: lc_year          !which year of land cover data used
       INTEGER :: idate(3)         !calendar (year, julian day, seconds)
       INTEGER :: edate(3)         !calendar (year, julian day, seconds)
       INTEGER :: pdate(3)         !calendar (year, julian day, seconds)
@@ -56,6 +56,7 @@
       CHARACTER(len=256) :: dir_forcing
       CHARACTER(len=256) :: dir_output
       CHARACTER(len=256) :: dir_restart_hist
+      CHARACTER(len=256) :: cdate
 
       LOGICAL :: doalb            !true => start up the surface albedo calculation
       LOGICAL :: dolai            !true => start up the time-varying vegetation paramter
@@ -161,10 +162,10 @@
       allocate (nac_nt(lon_points,lat_points))
 ! ----------------------------------------------------------------------
     ! Read in the model time invariant constant data
-      CALL READ_TimeInvariants(dir_restart_hist,casename)
+      CALL READ_TimeInvariants(lc_year,dir_restart_hist,casename)
 
     ! Read in the model time varying data (model state variables)
-      CALL READ_TimeVariables (idate,dir_restart_hist,casename)
+      CALL READ_TimeVariables (idate,lc_year,dir_restart_hist,casename)
 
 
 !-----------------------
@@ -219,7 +220,10 @@
       CALL adj2begin(ldate)
 
       TIMELOOP : DO while (itstamp < etstamp)
-print*, 'TIMELOOP = ', istep
+
+         CALL julian2monthday (idate(1), idate(2), month, mday)
+         write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') idate(1),month,mday,idate(3)
+         print*, 'TIMELOOP: ', istep, "| DATE: ", trim(cdate)
 
          Julian_1day_p = int(calendarday(ldate)-1)/1*1 + 1
          Julian_8day_p = int(calendarday(ldate)-1)/8*8 + 1
@@ -325,17 +329,24 @@ print*, 'TIMELOOP = ', istep
             nac_dt(:,:) = 0; nac_nt(:,:) = 0
          ENDIF
 
+#ifdef LULCC
+         ! DO land use and land cover change simulation
+         IF ( isendofyear(idate, deltim) ) THEN
+            CALL LuLccDRIVER (casename,dir_model_landdata,dir_restart_hist,&
+                              idate,greenwich,lon_points,lat_points)
+         ENDIF
+#endif
+
          IF ( rwrite ) THEN
             ! output restart file for the last timestep of spin-up
             IF ( .not. (itstamp<ptstamp) ) THEN
-               CALL WRITE_TimeVariables (idate,dir_restart_hist,casename)
+#ifdef LULCC
+               CALL WRITE_TimeVariables (idate,   year,dir_restart_hist,casename)
+#else
+               CALL WRITE_TimeVariables (idate,lc_year,dir_restart_hist,casename)
+#endif
             ENDIF
          ENDIF
-
-#ifdef LCCHANGE
-         !TODO: DO land cover change simulation
-
-#endif
 
          istep = istep + 1
 

@@ -12,7 +12,7 @@ MODULE MOD_TimeInvariants
 ! surface classification and soil information
   INTEGER,  allocatable :: patch2lon      (:)  !patch longitude index
   INTEGER,  allocatable :: patch2lat      (:)  !patch latitude index
-  INTEGER,  allocatable :: patchclass     (:)  !index of land cover type of the patches at the fraction > 0
+  INTEGER,  allocatable :: patchclass     (:)  !index of land cover type
   INTEGER,  allocatable :: patchtype      (:)  !land water type
   INTEGER,  allocatable :: grid_patch_s (:,:)  !start patch number of grid
   INTEGER,  allocatable :: grid_patch_e (:,:)  !end patch number of grid
@@ -133,7 +133,7 @@ MODULE MOD_TimeInvariants
   END SUBROUTINE allocate_TimeInvariants
 
 
-  SUBROUTINE READ_TimeInvariants(dir_restart_hist,casename)
+  SUBROUTINE READ_TimeInvariants(lc_year,dir_restart_hist,casename)
 ! --------------------------------------------------------------------
 ! Write out as a restart file [histTimeConst]
 ! ...............................................
@@ -144,14 +144,19 @@ MODULE MOD_TimeInvariants
      USE MOD_UrbanTimeInvars
      IMPLICIT NONE
 
+     INTEGER, intent(in) :: lc_year      !year of land cover type data
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
      CHARACTER(LEN=256), intent(in) :: dir_restart_hist
 
+     CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeConst
      INTEGER :: lhistTimeConst
 
+     ! land cover type year
+     write(cyear,'(i4.4)') lc_year
+
      lhistTimeConst = 100
-     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'
+     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
      open(unit=lhistTimeConst,file=trim(fhistTimeConst),status='unknown',&
                               form='unformatted',action='read')
 
@@ -263,7 +268,7 @@ MODULE MOD_TimeInvariants
   END SUBROUTINE READ_TimeInvariants
 
 
-  SUBROUTINE WRITE_TimeInvariants(dir_restart_hist,casename)
+  SUBROUTINE WRITE_TimeInvariants(lc_year,dir_restart_hist,casename)
 ! --------------------------------------------------------------------
 ! Write out as a restart file [histTimeConst]
 ! ...............................................
@@ -274,14 +279,19 @@ MODULE MOD_TimeInvariants
      USE MOD_UrbanTimeInvars
      IMPLICIT NONE
 
+     INTEGER, intent(in) :: lc_year      !year of land cover type data
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
      CHARACTER(LEN=256), intent(in) :: dir_restart_hist
 
+     CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeConst
      INTEGER :: lhistTimeConst
 
+     ! land cover type year
+     write(cyear,'(i4.4)') lc_year
+
      lhistTimeConst = 100
-     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'
+     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
      open(unit=lhistTimeConst,file=trim(fhistTimeConst),status='unknown',&
                               form='unformatted',action='write')
 

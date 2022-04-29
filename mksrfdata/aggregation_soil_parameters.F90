@@ -173,70 +173,84 @@ IMPLICIT NONE
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/theta_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) theta_s_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) theta_s_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) theta_s_l(:,:)
          close(iunit)
 
 ! (2) Read in the matric potential at saturation [cm]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/psi_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) psi_s_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) psi_s_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) psi_s_l(:,:)
          close(iunit)
 
 ! (3) Read in the pore size distribution index [dimensionless]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/lambda_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) lambda_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) lambda_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) lambda_l(:,:)
          close(iunit)
 
 ! (4) Read in the saturated hydraulic conductivity [cm/day]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/k_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) k_s_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) k_s_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) k_s_l(:,:)
          close(iunit)
 
 ! (5) Read in the heat capacity of soil solids [J/(m3 K)]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/csol_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) csol_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) csol_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) csol_l(:,:)
          close(iunit)
 
 ! (6) Read in the thermal conductivity of saturated soil [W/m-K]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tksatu_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) tksatu_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) tksatu_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) tksatu_l(:,:)
          close(iunit)
 
 ! (7) Read in the thermal conductivity for dry soil [W/(m-K)]
          inquire(iolength=length) tmp
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tkdry_l'//trim(c)//trim(suffix)
          print*,lndname
-         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
-         do nrow = nrow_start, nrow_end
-            read(iunit,rec=nrow,err=100) tkdry_l(:,nrow)
-         enddo
+         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
+         !do nrow = nrow_start, nrow_end
+         !   read(iunit,rec=nrow,err=100) tkdry_l(:,nrow)
+         !enddo
+         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='read')
+         read(iunit,err=100) tkdry_l(:,:)
          close(iunit)
 
 

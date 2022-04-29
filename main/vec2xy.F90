@@ -174,6 +174,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
       INTEGER  i,j,np,u,l
       REAL(r8) sumwt(lon_points,lat_points)
+      REAL(r8) urbwt(lon_points,lat_points)
       REAL(r8) rhoair,thm,th,thv,ur,displa_av,zldis,hgt_u,hgt_t,hgt_q
       REAL(r8) z0m_av,z0h_av,z0q_av,us,vs,tm,qm,psrf
       REAL(r8) obu,fh2m,fq2m
@@ -198,6 +199,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 ! Mapping the fluxes and state variables at patch [numpatch] to grid [lon_points,lat_points]
 ! ------------------------------------------------------------------------------------------
       sumwt    (:,:) = 0.
+      urbwt    (:,:) = 0.
       a_taux   (:,:) = 0.
       a_tauy   (:,:) = 0.
       a_fsena  (:,:) = 0.
@@ -365,13 +367,14 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 #ifdef URBAN_MODEL
                u = patch2urb(np)
                IF (u > 0) THEN
+                  urbwt(i,j) = urbwt(i,j) + patchfrac(np)
                   a_t_room (i,j) = a_t_room (i,j) + patchfrac(np)*t_room (u)
                   a_tafu   (i,j) = a_tafu   (i,j) + patchfrac(np)*tafu   (u)
                   a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac   (u)
                   a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst   (u)
                   a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
                ENDIF
-
+#endif
                !TODO: 根据coszen(np)的正负->daytime or nighttime
                IF (coszen(np) > 0.) THEN
                   CALL acc(sabvsun(np), patchfrac(np), a_sabvdt  (i,j))
@@ -411,7 +414,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   ENDIF
 
                ENDIF
-#endif
+
                ! radiation fluxes
                CALL acc(sr     (np), patchfrac(np), a_sr     (i,j))
                CALL acc(solvd  (np), patchfrac(np), a_solvd  (i,j))
@@ -504,12 +507,20 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_xy_snow(i,j) = a_xy_snow(i,j) / sumwt(i,j)
 
 #ifdef URBAN_MODEL
-               a_t_room (i,j) = a_t_room (i,j) / sumwt(i,j)
-               a_tafu   (i,j) = a_tafu   (i,j) / sumwt(i,j)
-               a_fhac   (i,j) = a_fhac   (i,j) / sumwt(i,j)
-               a_fwst   (i,j) = a_fwst   (i,j) / sumwt(i,j)
-               a_fach   (i,j) = a_fach   (i,j) / sumwt(i,j)
-
+               IF(urbwt(i,j).gt.0.00001)THEN
+                  a_t_room (i,j) = a_t_room (i,j) / urbwt(i,j)
+                  a_tafu   (i,j) = a_tafu   (i,j) / urbwt(i,j)
+                  a_fhac   (i,j) = a_fhac   (i,j) / urbwt(i,j)
+                  a_fwst   (i,j) = a_fwst   (i,j) / urbwt(i,j)
+                  a_fach   (i,j) = a_fach   (i,j) / urbwt(i,j)
+               ELSE
+                  a_t_room (i,j) = spval
+                  a_tafu   (i,j) = spval
+                  a_fhac   (i,j) = spval
+                  a_fwst   (i,j) = spval
+                  a_fach   (i,j) = spval
+               ENDIF
+#endif
                IF (a_sabvdt  (i,j) /= spval) a_sabvdt  (i,j) = a_sabvdt  (i,j) / sumwt(i,j)
                IF (a_sabgdt  (i,j) /= spval) a_sabgdt  (i,j) = a_sabgdt  (i,j) / sumwt(i,j)
                IF (a_srdt    (i,j) /= spval) a_srdt    (i,j) = a_srdt    (i,j) / sumwt(i,j)
@@ -532,7 +543,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                IF (a_t_grndnt(i,j) /= spval) a_t_grndnt(i,j) = a_t_grndnt(i,j) / sumwt(i,j)
                IF (a_trefnt  (i,j) /= spval) a_trefnt  (i,j) = a_trefnt  (i,j) / sumwt(i,j)
                IF (a_tafunt  (i,j) /= spval) a_tafunt  (i,j) = a_tafunt  (i,j) / sumwt(i,j)
-#endif
+
                IF (a_sr     (i,j) /= spval) a_sr     (i,j) = a_sr     (i,j) / sumwt(i,j)
                IF (a_solvd  (i,j) /= spval) a_solvd  (i,j) = a_solvd  (i,j) / sumwt(i,j)
                IF (a_solvi  (i,j) /= spval) a_solvi  (i,j) = a_solvi  (i,j) / sumwt(i,j)
@@ -609,12 +620,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                a_xy_rain(i,j) = spval
                a_xy_snow(i,j) = spval
 
-               a_t_room (i,j) = spval
-               a_tafu   (i,j) = spval
-               a_fhac   (i,j) = spval
-               a_fwst   (i,j) = spval
-               a_fach   (i,j) = spval
-
                a_sabvdt  (i,j) = spval
                a_sabgdt  (i,j) = spval
                a_srdt    (i,j) = spval
@@ -658,8 +663,6 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
                mask(i,j) = 0
                frac(i,j) = 0.
-
-
             ENDIF
 
          ENDDO

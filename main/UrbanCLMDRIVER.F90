@@ -44,6 +44,7 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
   DO i = 1, numpatch
 
      m = patchclass(i)
+     !print *, "patch:", i, "patchclass:", m
 
 #ifdef URBAN_ONLY
      IF (m .ne. URBAN) CYCLE

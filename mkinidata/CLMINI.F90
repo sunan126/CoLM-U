@@ -40,6 +40,7 @@ PROGRAM CLMINI
       INTEGER :: lat_points  ! number of latitude points on model grid
       INTEGER :: lc_year     ! which year of land cover data used
 
+      CHARACTER(len=256) :: cyear          ! character for year
       CHARACTER(LEN=256) :: finfolist      ! file name of run information
 
 !  Required by atmospheric models's initialization (such as GRAPES/WRF/RSM/EMSs)
@@ -62,8 +63,8 @@ PROGRAM CLMINI
       read (5,clminiexp)
 
       CALL Init_GlovalVars
-      CAll Init_LC_Const
-      CAll Init_PFT_Const
+      CALL Init_LC_Const
+      CALL Init_PFT_Const
 
       numpatch = 0
       numpft   = 0
@@ -89,7 +90,8 @@ PROGRAM CLMINI
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
 
-      finfolist = trim(dir_infolist)//'clmini.infolist'
+      write(cyear,'(i4.4)') lc_year
+      finfolist = trim(dir_restart_hist)//'clmini.infolist'//'.lc'//trim(cyear)
       open(100,file=trim(finfolist),form='formatted')
       write(100,*) 'numpatch  = ', numpatch   !1.1
       write(100,*) 'numpft    = ', numpft     !1.2

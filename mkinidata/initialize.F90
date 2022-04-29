@@ -34,14 +34,14 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
    IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
-   CHARACTER(LEN=256), INTENT(in) :: casename           !casename name
-   CHARACTER(LEN=256), INTENT(in) :: dir_model_landdata !
-   CHARACTER(LEN=256), INTENT(in) :: dir_restart_hist   !
-   LOGICAL, INTENT(in)    :: greenwich   !true: greenwich time, false: local time
-   INTEGER, INTENT(in)    :: lc_year     !which year of land cover data used
-   INTEGER, INTENT(in)    :: lon_points  !number of longitude points on model grid
-   INTEGER, INTENT(in)    :: lat_points  !number of latitude points on model grid
-   INTEGER, INTENT(inout) :: idate(3)    !year, julian day, seconds of the starting time
+   CHARACTER(LEN=256), intent(in) :: casename           !casename name
+   CHARACTER(LEN=256), intent(in) :: dir_model_landdata !surface data directory
+   CHARACTER(LEN=256), intent(in) :: dir_restart_hist   !case restart data directory
+   LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
+   INTEGER, intent(in)    :: lc_year     !which year of land cover data used
+   INTEGER, intent(in)    :: lon_points  !number of longitude points on model grid
+   INTEGER, intent(in)    :: lat_points  !number of latitude points on model grid
+   INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
 
 ! required by atmospheric models initialization (such as GRAPES, RSM, ...)
    REAL(r8), intent(out) :: tg_xy   (lon_points,lat_points) !
@@ -104,8 +104,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
   INTEGER  :: numpatch_lat(lat_points) !number of patches of grids at lon. strip
 
   CHARACTER(LEN=255) :: cdate          !CHARACTER for date
-  CHARACTER(len=256) :: cyear
-  CHARACTER(len=256) :: lndname
+  CHARACTER(len=256) :: cyear          !character for year
+  CHARACTER(len=256) :: lndname        !land surface data file name
   INTEGER iunit
   INTEGER Julian_8day
 
@@ -131,7 +131,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       iunit = 100
       lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
-      OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
+      open(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit) latixy
       READ(iunit) longxy
       READ(iunit) area_gridcells
@@ -170,7 +170,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (fraction_patches(0:N_land_classification,1:lon_points,1:lat_points))
       lndname = trim(dir_model_landdata)//'model_landtypes.bin'
       print*,trim(lndname)
-      OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
+      open(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit,err=100) fraction_patches
       close(iunit)
       print*,'fraction   =', minval(fraction_patches, mask = fraction_patches .gt. -1.0e30), &
@@ -449,7 +449,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       ENDDO
 
       numpatch = npatch
-      numpc = npc
+      numpc    = npc
       numurban = nurb
       IF (numpatch .ne. sum(numpatch_lat)) THEN
          write(6,*) 'Total number of patches NOT as the summation of numpatch_lat'
@@ -475,14 +475,15 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! Build 1d land vector and 1d patch vector mapping components
 ! --------------------------------------------------------------------
 
+      grid_patch_s(:,:) = -1
+      grid_patch_e(:,:) = -1
+
 ! Determine land vector and patch vector mapping components
 
 #ifdef USGS_CLASSIFICATION
       npatch = 0
       patchfrac(:) = 0.
       l = 0; m = 0
-      grid_patch_s(:,:) = -1
-      grid_patch_e(:,:) = -1
 
       DO j = 1, lat_points
          DO i = 1, lon_points
@@ -507,7 +508,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                   patchtype(npatch)  = patchtypes(np)
                   grid_patch_e(i,j)  = npatch
 
-                  IF (l.ne.i .OR. m.ne.j) THEN
+                  IF (l.ne.i .or. m.ne.j) THEN
                      l = i; m = j; grid_patch_s(i,j) = npatch
                   ENDIF
 
@@ -529,9 +530,8 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       npatch = 0
       nurb = 0
       patchfrac(:) = 0.
+      patch2urb(:) = -1
       l = 0; m = 0
-      grid_patch_s(:,:) = -1
-      grid_patch_e(:,:) = -1
 
       DO j = 1, lat_points
          DO i = 1, lon_points
@@ -552,7 +552,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                   patchtype(npatch)  = patchtypes(np)
                   grid_patch_e(i,j)  = npatch
 
-                  IF (l.ne.i .OR. m.ne.j) THEN
+                  IF (l.ne.i .or. m.ne.j) THEN
                      l = i; m = j; grid_patch_s(i,j) = npatch
                   ENDIF
 #else
@@ -570,7 +570,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                            patchtype(npatch)  = patchtypes(np)
                            grid_patch_e(i,j)  = npatch
 
-                           IF (l.ne.i .OR. m.ne.j) THEN
+                           IF (l.ne.i .or. m.ne.j) THEN
                               l = i; m = j; grid_patch_s(i,j) = npatch
                            ENDIF
 
@@ -592,7 +592,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                      patchtype(npatch)  = patchtypes(np)
                      grid_patch_e(i,j)  = npatch
 
-                     IF (l.ne.i .OR. m.ne.j) THEN
+                     IF (l.ne.i .or. m.ne.j) THEN
                         l = i; m = j; grid_patch_s(i,j) = npatch
                      ENDIF
                   ENDIF
@@ -619,10 +619,9 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       nurb   = 0
       patchfrac(:) = 0.
       l = 0; m = 0
-      grid_patch_s(:,:) = -1
-      grid_patch_e(:,:) = -1
-      patch_pft_s(:)    = -1
-      patch_pft_e(:)    = -1
+      patch_pft_s(:) = -1
+      patch_pft_e(:) = -1
+      patch2urb(:)   = -1
 
       DO j = 1, lat_points
          DO i = 1, lon_points
@@ -644,7 +643,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                grid_patch_e(i,j)  = npatch
                patch_pft_s(npatch)= -1
 
-               IF (l.ne.i .OR. m.ne.j) THEN
+               IF (l.ne.i .or. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
 
@@ -677,7 +676,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                patchtype(npatch)  = 1                           !urban patch
                grid_patch_e(i,j)  = npatch
 
-               IF (l.ne.i .OR. m.ne.j) THEN
+               IF (l.ne.i .or. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
 #else
@@ -694,7 +693,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                      patchtype(npatch)  = 1                           !urban patch
                      grid_patch_e(i,j)  = npatch
 
-                     IF (l.ne.i .OR. m.ne.j) THEN
+                     IF (l.ne.i .or. m.ne.j) THEN
                         l = i; m = j; grid_patch_s(i,j) = npatch
                      ENDIF
 
@@ -719,7 +718,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                patchtype(npatch)  = 2                             !wetlant patch
                grid_patch_e(i,j)  = npatch
 
-               IF (l.ne.i .OR. m.ne.j) THEN
+               IF (l.ne.i .or. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
             ENDIF
@@ -736,7 +735,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                patchtype(npatch)  = 3                             !glacier patch
                grid_patch_e(i,j)  = npatch
 
-               IF (l.ne.i .OR. m.ne.j) THEN
+               IF (l.ne.i .or. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
             ENDIF
@@ -753,7 +752,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                patchtype(npatch)  = 4                           !water patch
                grid_patch_e(i,j)  = npatch
 
-               IF (l.ne.i .OR. m.ne.j) THEN
+               IF (l.ne.i .or. m.ne.j) THEN
                   l = i; m = j; grid_patch_s(i,j) = npatch
                ENDIF
             ENDIF
@@ -780,9 +779,9 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       npc = 0
       nurb = 0
       patchfrac(:) = 0.
+      patch2pc(:)  = -1
+      patch2urb(:) = -1
       l = 0; m = 0
-      grid_patch_s(:,:) = -1
-      grid_patch_e(:,:) = -1
 
       DO j = 1, lat_points
          DO i = 1, lon_points
@@ -803,7 +802,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                   patchtype(npatch)  = patchtypes(np)
                   grid_patch_e(i,j)  = npatch
 
-                  IF (l.ne.i .OR. m.ne.j) THEN
+                  IF (l.ne.i .or. m.ne.j) THEN
                      l = i; m = j; grid_patch_s(i,j) = npatch
                   ENDIF
 
@@ -830,7 +829,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                            patchtype(npatch)  = patchtypes(np)
                            grid_patch_e(i,j)  = npatch
 
-                           IF (l.ne.i .OR. m.ne.j) THEN
+                           IF (l.ne.i .or. m.ne.j) THEN
                               l = i; m = j; grid_patch_s(i,j) = npatch
                            ENDIF
 
@@ -852,7 +851,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
                      patchtype(npatch)  = patchtypes(np)
                      grid_patch_e(i,j)  = npatch
 
-                     IF (l.ne.i .OR. m.ne.j) THEN
+                     IF (l.ne.i .or. m.ne.j) THEN
                         l = i; m = j; grid_patch_s(i,j) = npatch
                      ENDIF
 
@@ -925,8 +924,6 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
       CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata, lc_year)
 #endif
 
-!TODO: 单点模式，读取htop
-
 ! ................................
 ! 3.4 Initialize TUNABLE constants
 ! ................................
@@ -949,7 +946,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 ! 3.5 Write out as a restart file [histTimeConst]
 ! ...............................................
 
-      CALL WRITE_TimeInvariants (dir_restart_hist,casename)
+      CALL WRITE_TimeInvariants (lc_year,dir_restart_hist,casename)
 
       write (6,*)
       write (6,*) ('Successfully to Initialize the Land Time-Invariants')
@@ -997,7 +994,7 @@ SUBROUTINE initialize (casename,dir_model_landdata,dir_restart_hist,&
 !!! PLEASE CHANGE the root of directory when the soil T and W are ready !!!
      lusoil = 100
      fsoildat_name = trim(fsoildat)//'-'//trim(cdate)
-     OPEN(lusoil,file=fsoildat_name,status='old',form='unformatted',action='read')
+     open(lusoil,file=fsoildat_name,status='old',form='unformatted',action='read')
 
      read(lusoil) nl_soil_ini
 
@@ -1205,7 +1202,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 ! 4.6 Write out the model variables for restart run [histTimeVar]
 ! ...............................................................
 
-      CALL WRITE_TimeVariables (idate,dir_restart_hist,casename)
+      CALL WRITE_TimeVariables (idate,lc_year,dir_restart_hist,casename)
 
       write (6,*)
       write (6,*) ('Successfully to Initialize the Land Time-Vraying Variables')

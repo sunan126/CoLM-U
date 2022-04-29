@@ -21,6 +21,7 @@ OBJS =  precision.o                 \
 	MOD_PCTimeInvars.o          \
 	MOD_UrbanTimeInvars.o       \
 	MOD_TimeInvariants.o        \
+	MOD_LuLccTimeInvars.o       \
 	timemanager.o               \
 	user_specified_forcing.o    \
 	metdata.o                   \
@@ -28,6 +29,8 @@ OBJS =  precision.o                 \
 	MOD_PCTimeVars.o            \
 	MOD_UrbanTimeVars.o         \
 	MOD_TimeVariables.o         \
+	MOD_LuLccTimeVars.o         \
+	MOD_LuLccTMatrix.o          \
 	GETMET.o                    \
 	MOD_1D_PFTFluxes.o          \
 	MOD_1D_PCFluxes.o           \
@@ -85,6 +88,16 @@ OBJS =  precision.o                 \
 	UrbanAnthropogenic.o        \
 	UrbanHydrology.o            \
 	UrbanTHERMAL.o              \
+	UrbanIniTimeVar.o           \
+	Urban_readin_nc.o           \
+	IniTimeVar.o                \
+	lakedepth_readin.o          \
+	soil_parameters_readin.o    \
+	HTOP_readin_nc.o            \
+	LuLccInitialize.o           \
+	LuLccEnergyConserve.o       \
+	LuLccWaterConserve.o        \
+	LuLccDRIVER.o               \
 	UrbanCLMMAIN.o              \
 	UrbanCLMDRIVER.o            \
 	UrbanCLM.o

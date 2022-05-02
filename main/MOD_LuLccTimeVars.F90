@@ -480,7 +480,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 
            DO WHILE (np.le.grid_patch_e(i,j) .and. np_.le.grid_patch_e_(i,j))
 
-              ! if one patch is missing, CYCLE
+              ! if a patch is missing, CYCLE
               IF (patchclass(np) > patchclass_(np_)) THEN
                  np_= np_+ 1
                  CYCLE
@@ -518,26 +518,38 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
               t_lake      (:,np) = t_lake_      (:,np_)
               lake_icefrac(:,np) = lake_icefrac_(:,np_)
 
+              ! if a patch is added, CYCLE
+              IF (patchclass(np) < patchclass_(np_)) THEN
+                 np = np + 1
+                 CYCLE
+              ENDIF
+
 #ifdef PFT_CLASSIFICATION
+IF (patchtype(np)==0 .and. patchtype_(np_)==0) THEN
+
               ip = patch_pft_s (np )
               ip_= patch_pft_s_(np_)
 
               IF (ip.le.0 .or. ip_.le.0) THEN
-                 np = np + 1
-                 np_= np_+ 1
-                 CYCLE
+                 print *, "Error in REST_LuLccTimeVars PFT_CLASSIFICATION!"
+                 STOP
               ENDIF
 
               DO WHILE (ip.le.patch_pft_e(np) .and. ip_.le.patch_pft_e_(np_))
 
-                 ! some PFT is missing, CYCLE
+                 ! if a PFT is missing, CYCLE
                  IF (pftclass(ip) > pftclass_(ip_)) THEN
                     ip_= ip_+ 1
                     CYCLE
                  ENDIF
 
-                 ! otherwise, set PFT value
-                 ! include added PFT and the same PFT
+                 ! if a PFT is added, CYCLE
+                 IF (pftclass(ip) < pftclass_(ip_)) THEN
+                    ip = ip + 1
+                    CYCLE
+                 ENDIF
+
+                 ! for the same PFT, set PFT value
                  tleaf_p    (ip) = tleaf_p_    (ip_)
                  ldew_p     (ip) = ldew_p_     (ip_)
                  sigf_p     (ip) = sigf_p_     (ip_)
@@ -549,30 +561,25 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                  extkb_p    (ip) = extkb_p_    (ip_)
                  extkd_p    (ip) = extkd_p_    (ip_)
 
-                 ! one PFT is added
-                 IF (pftclass(ip) < pftclass_(ip_)) THEN
-                    ip = ip + 1
-                 ENDIF
-
-                 ! the same PFT
-                 IF (pftclass(ip) == pftclass_(ip_)) THEN
-                    ip = ip + 1
-                    ip_= ip_+ 1
-                 ENDIF
+                 ip = ip + 1
+                 ip_= ip_+ 1
 
               ENDDO
+ENDIF
 #endif
 
 #ifdef PC_CLASSIFICATION
+IF (patchtype(np)==0 .and. patchtype_(np_)==0) THEN
+
               pc = patch2pc (np )
               pc_= patch2pc_(np_)
 
               IF (pc.le.0 .or. pc_.le.0) THEN
-                 np = np + 1
-                 np_= np_+ 1
-                 CYCLE
+                 print *, "Error in REST_LuLccTimeVars PC_CLASSIFICATION!"
+                 STOP
               ENDIF
 
+              ! for the same patch TYPE
               tleaf_c    (:,pc) = tleaf_c_    (:,pc)
               ldew_c     (:,pc) = ldew_c_     (:,pc)
               sigf_c     (:,pc) = sigf_c_     (:,pc)
@@ -584,6 +591,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
               fshade_c   (:,pc) = fshade_c_   (:,pc)
               extkb_c    (:,pc) = extkb_c_    (:,pc)
               extkd_c    (:,pc) = extkd_c_    (:,pc)
+ENDIF
 #endif
 
 #ifdef URBAN_MODEL
@@ -597,7 +605,7 @@ IF (patchclass(np)==URBAN .and. patchclass_(np_)==URBAN) THEN
                  STOP
               ENDIF
 
-              ! some Urban TYPE is missing, CYCLE
+              ! if a Urban TYPE is missing, CYCLE
               IF (urbclass(u) > urbclass_(u_)) THEN
                  np_= np_+ 1
                  CYCLE
@@ -674,19 +682,13 @@ IF (patchclass(np)==URBAN .and. patchclass_(np_)==URBAN) THEN
               Fwst           (u) = Fwst_           (u_)
               Fach           (u) = Fach_           (u_)
 
-              ! one urban TYPE is added
+              ! if a urban TYPE is added, CYCLE
               IF (urbclass(u) < urbclass_(u_)) THEN
                  np = np + 1
                  CYCLE
               ENDIF
 ENDIF
 #endif
-              ! one patch is added
-              IF (patchclass(np) < patchclass_(np_)) THEN
-                 np = np + 1
-                 CYCLE
-              ENDIF
-
               np = np + 1
               np_= np_+ 1
 

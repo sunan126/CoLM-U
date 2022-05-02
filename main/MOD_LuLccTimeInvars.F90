@@ -12,6 +12,7 @@ MODULE MOD_LuLccTimeInvars
 ! -----------------------------------------------------------------
   ! for patch time invariant information
   INTEGER, allocatable :: patchclass_    (:)  !index of land cover type
+  INTEGER, allocatable :: patchtype_     (:)  !land water type
   INTEGER, allocatable :: grid_patch_s_(:,:)  !start patch number of grid
   INTEGER, allocatable :: grid_patch_e_(:,:)  !end patch number of grid
 
@@ -53,6 +54,7 @@ MODULE MOD_LuLccTimeInvars
      INTEGER, intent(in) :: lat_points
 
      allocate (patchclass_                (numpatch))
+     allocate (patchtype_                 (numpatch))
      allocate (grid_patch_s_ (lon_points,lat_points))
      allocate (grid_patch_e_ (lon_points,lat_points))
 
@@ -85,6 +87,7 @@ MODULE MOD_LuLccTimeInvars
      IMPLICIT NONE
 
      patchclass_    (:) = patchclass    (:)
+     patchtype_     (:) = patchtype     (:)
      grid_patch_s_(:,:) = grid_patch_s(:,:)
      grid_patch_e_(:,:) = grid_patch_e(:,:)
 
@@ -112,6 +115,7 @@ MODULE MOD_LuLccTimeInvars
 ! --------------------------------------------------
 
      deallocate (patchclass_   )
+     deallocate (patchtype_    )
      deallocate (grid_patch_s_ )
      deallocate (grid_patch_e_ )
 

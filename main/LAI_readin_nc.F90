@@ -1,7 +1,6 @@
 #include <define.h>
 
-SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
-           year, month, dir_model_landdata)
+SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
 
 ! ===========================================================
 ! Read in the LAI, the LAI dataset was created by Yuan et al. (2019)
@@ -23,24 +22,26 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
 
       IMPLICIT NONE
 
-      INTEGER, intent(in) :: lon_points
-      INTEGER, intent(in) :: lat_points
       INTEGER, intent(in) :: year
       INTEGER, intent(in) :: month
-      CHARACTER(LEN=256), intent(in) :: dir_model_landdata
+      CHARACTER(LEN=256), intent(in) :: dir_srfdata
+      CHARACTER(LEN=256), intent(in) :: nam_srfdata
 
       CHARACTER(LEN=256) :: c
       CHARACTER(LEN=256) :: lndname
       CHARACTER(len=256) :: cyear
       INTEGER :: ncid
+      INTEGER :: glai_vid,  gsai_vid
       INTEGER :: lclai_vid, lcsai_vid, pftlai_vid, pftsai_vid
       INTEGER :: pclai_vid, pcsai_vid, pctpc_vid
       INTEGER :: i, j, m, n, t, p, ps, pe, pc, npatch
 
-      REAL(r8), allocatable :: lclai(:,:,:)
-      REAL(r8), allocatable :: lcsai(:,:,:)
-      REAL(r8), allocatable :: pftlai(:,:,:)
-      REAL(r8), allocatable :: pftsai(:,:,:)
+      REAL(r8), allocatable :: glai     (:,:)
+      REAL(r8), allocatable :: gsai     (:,:)
+      REAL(r8), allocatable :: lclai  (:,:,:)
+      REAL(r8), allocatable :: lcsai  (:,:,:)
+      REAL(r8), allocatable :: pftlai (:,:,:)
+      REAL(r8), allocatable :: pftsai (:,:,:)
       REAL(r8), allocatable :: pclai(:,:,:,:)
       REAL(r8), allocatable :: pcsai(:,:,:,:)
       REAL(r8), allocatable :: pctpc(:,:,:,:)
@@ -48,21 +49,33 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
 ! READ in Leaf area index and stem area index
 
       write(cyear,'(i4.4)') year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_srfdata)
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
 #ifdef IGBP_CLASSIFICATION
+      allocate ( glai (1:lon_points,1:lat_points) )
+      allocate ( gsai (1:lon_points,1:lat_points) )
       allocate ( lclai(1:lon_points,1:lat_points,1:N_land_classification) )
       allocate ( lcsai(1:lon_points,1:lat_points,1:N_land_classification) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LAI",    glai_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_SAI",    gsai_vid ) )
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_LAI", lclai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_SAI", lcsai_vid) )
+
+      CALL nccheck( nf90_get_var(ncid, glai_vid, glai, &
+                    start=(/1,1,month/), &
+                    count=(/lon_points,lat_points,1/)) )
+      CALL nccheck( nf90_get_var(ncid, gsai_vid, gsai, &
+                    start=(/1,1,month/), &
+                    count=(/lon_points,lat_points,1/)) )
       CALL nccheck( nf90_get_var(ncid, lclai_vid, lclai, &
-           start=(/1,1,1,month/), &
-           count=(/lon_points,lat_points,N_land_classification,1/)) )
+                    start=(/1,1,1,month/), &
+                    count=(/lon_points,lat_points,N_land_classification,1/)) )
       CALL nccheck( nf90_get_var(ncid, lcsai_vid, lcsai, &
-           start=(/1,1,1,month/), &
-           count=(/lon_points,lat_points,N_land_classification,1/)) )
+                    start=(/1,1,1,month/), &
+                    count=(/lon_points,lat_points,N_land_classification,1/)) )
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
@@ -86,12 +99,18 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
          ELSE
              fveg(npatch)  = fveg0(m)           !fraction of veg. cover
              IF (fveg0(m) > 0) THEN
+! 05/19/2022, yuan: in case of land cover TYPE change
+#if(defined USE_POINT_DATA)
+                tlai(npatch)  = glai(i,j)             !leaf area index
+                tsai(npatch)  = gsai(i,j)             !stem area index
+#else
                 tlai(npatch)  = lclai(i,j,m)/fveg0(m) !leaf area index
-                tsai(npatch)  = lcsai(i,j,m)/fveg0(m) !stem are index
+                tsai(npatch)  = lcsai(i,j,m)/fveg0(m) !stem area index
+#endif
                 green(npatch) = 1.                    !fraction of green leaf
              ELSE
                 tlai(npatch)  = 0.       !leaf area index
-                tsai(npatch)  = 0.       !stem are index
+                tsai(npatch)  = 0.       !stem area index
                 green(npatch) = 0.       !fraction of green leaf
              ENDIF
          ENDIF
@@ -100,6 +119,8 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
 !$OMP END PARALLEL DO
 #endif
 
+      deallocate ( glai  )
+      deallocate ( gsai  )
       deallocate ( lclai )
       deallocate ( lcsai )
 
@@ -108,18 +129,13 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
 #ifdef PFT_CLASSIFICATION
       allocate ( pftlai(1:lon_points,1:lat_points,0:N_PFT-1) )
       allocate ( pftsai(1:lon_points,1:lat_points,0:N_PFT-1) )
-      allocate ( pclai(1:lon_points,1:lat_points, &
-                         0:N_PFT-1,1:N_land_classification) )
-      allocate ( pcsai(1:lon_points,1:lat_points, &
-                         0:N_PFT-1,1:N_land_classification) )
-      allocate ( pctpc(1:lon_points,1:lat_points, &
-                         0:N_PFT-1,1:N_land_classification) )
+      allocate ( lclai (1:lon_points,1:lat_points,1:N_land_classification) )
+      allocate ( lcsai (1:lon_points,1:lat_points,1:N_land_classification) )
 
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_LAI",  pftlai_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_SAI",  pftsai_vid) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_LAI",   pclai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PC_SAI",   pcsai_vid ) )
-      CALL nccheck( nf90_inq_varid(ncid, "PCT_PC",           pctpc_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_LAI", pftlai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_PFT_SAI", pftsai_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_LAI",  lclai_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "MONTHLY_LC_SAI",  lcsai_vid ) )
 
       CALL nccheck( nf90_get_var(ncid, pftlai_vid, pftlai, &
                     start=(/1,1,1,month/), &
@@ -127,13 +143,12 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
       CALL nccheck( nf90_get_var(ncid, pftsai_vid, pftsai, &
                     start=(/1,1,1,month/), &
                     count=(/lon_points,lat_points,N_PFT,1/)) )
-      CALL nccheck( nf90_get_var(ncid, pclai_vid, pclai, &
-                    start=(/1,1,1,1,month/), &
-                    count=(/lon_points,lat_points,N_PFT,N_land_classification,1/)) )
-      CALL nccheck( nf90_get_var(ncid, pcsai_vid, pcsai, &
-                    start=(/1,1,1,1,month/), &
-                    count=(/lon_points,lat_points,N_PFT,N_land_classification,1/)) )
-      CALL nccheck( nf90_get_var(ncid, pctpc_vid, pctpc ) )
+      CALL nccheck( nf90_get_var(ncid, lclai_vid, lclai, &
+                    start=(/1,1,1,month/), &
+                    count=(/lon_points,lat_points,N_land_classification,1/)) )
+      CALL nccheck( nf90_get_var(ncid, lcsai_vid, lcsai, &
+                    start=(/1,1,1,month/), &
+                    count=(/lon_points,lat_points,N_land_classification,1/)) )
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
@@ -164,10 +179,9 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
             tsai(npatch) = sum(tsai_p(ps:pe) * pftfrac(ps:pe))
 
          ELSE
-! 12/28/2019, yuan: Bug
-            ! pctpc from 1-100% -> 0-1
-            tlai(npatch)  = sum(pclai(i,j,:,m) * pctpc(i,j,:,m)/100.)
-            tsai(npatch)  = sum(pcsai(i,j,:,m) * pctpc(i,j,:,m)/100.)
+! 05/19/2022, yuan: change to lc lai/sai
+            tlai(npatch) = lclai(i,j,m)/fveg0(m) !leaf area index
+            tsai(npatch) = lcsai(i,j,m)/fveg0(m) !stem area index
          ENDIF
 
          green(npatch) = 1.
@@ -180,9 +194,8 @@ SUBROUTINE LAI_readin_nc (lon_points, lat_points, &
 
       deallocate ( pftlai )
       deallocate ( pftsai )
-      deallocate ( pclai  )
-      deallocate ( pcsai  )
-      deallocate ( pctpc  )
+      deallocate ( lclai  )
+      deallocate ( lcsai  )
 
 #endif
 

@@ -102,12 +102,21 @@ IMPLICIT NONE
       inquire(iolength=length) land_chr1
       allocate ( landtypes(nlon,nlat) )
 
+#ifdef USGS_CLASSIFICATION
+      suffix = ''
+#else
+      suffix = '.igbp'
+      write(cyear,'(i4.4)') lc_year
+#endif
+
+
 #if(defined USGS_CLASSIFICATION)
       ! GLCC USGS classification
       ! -------------------
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      write(cyear,'(i4.4)') lc_year
+     ! MODIS IGBP classification
+     ! -------------------
       lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-'//trim(cyear)//'.bin'
 #endif
 
@@ -118,12 +127,6 @@ IMPLICIT NONE
          landtypes(:,nrow) = ichar(land_chr1(:))
       enddo
       close (iunit)
-
-#ifdef USGS_CLASSIFICATION
-      suffix = ''
-#else
-      suffix = '.igbp'
-#endif
 
 ! .................................
 ! ... (6) global soil charateristics
@@ -428,84 +431,70 @@ print *, 'OPENMP enabled, threads num = ', OPENMP, "soil hydraulic parameters...
          inquire(iolength=length) theta_s_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/theta_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) theta_s_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) theta_s_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) theta_s_l(:,j)
+         enddo
          close(iunit)
 
 ! (2) Write out the matric potential at saturation [cm]
          inquire(iolength=length) psi_s_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/psi_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) psi_s_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) psi_s_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) psi_s_l(:,j)
+         enddo
          close(iunit)
 
 ! (3) Write out the pore size distribution index [dimensionless]
          inquire(iolength=length) lambda_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/lambda_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) lambda_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) lambda_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) lambda_l(:,j)
+         enddo
          close(iunit)
 
 ! (4) Write out the saturated hydraulic conductivity [cm/day]
          inquire(iolength=length) k_s_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/k_s_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) k_s_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) k_s_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) k_s_l(:,j)
+         enddo
          close(iunit)
 
 ! (5) Write out the heat capacity of soil solids [J/(m3 K)]
          inquire(iolength=length) csol_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/csol_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) csol_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) csol_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) csol_l(:,j)
+         enddo
          close(iunit)
 
 ! (6) Write out the thermal conductivity of saturated soil [W/m-K]
          inquire(iolength=length) tksatu_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tksatu_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) tksatu_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) tksatu_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) tksatu_l(:,j)
+         enddo
          close(iunit)
 
 ! (7) Write out the thermal conductivity for dry soil [W/(m-K)]
          inquire(iolength=length) tkdry_l(:,1)
          lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/tkdry_l'//trim(c)//trim(suffix)
          print*,lndname
-         !open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
-         !do j = 1, nlat
-         !   write(iunit,rec=j,err=101) tkdry_l(:,j)
-         !enddo
-         open(iunit,file=trim(lndname),form='unformatted',status='unknown',action='write')
-         write(iunit,err=101) tkdry_l(:,:)
+         open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='unknown')
+         do j = 1, nlat
+            write(iunit,rec=j,err=101) tkdry_l(:,j)
+         enddo
          close(iunit)
 
       ENDDO

@@ -36,7 +36,7 @@ ${EXECUTABLE} : ${OBJS}
 	${FF} ${FOPTS} ${OBJS} -o $@ ${LDFLAGS}
 	@echo 'making CLM surface data completed!'
 
-$(OBJS):%.o:%.F90
+$(OBJS):%.o:%.F90 ../include/define.h
 	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $< 
 
 clean :

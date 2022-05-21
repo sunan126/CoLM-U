@@ -157,7 +157,7 @@ MODULE MOD_LuLccTimeVars
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_LuLccTimeVars (lon_points, lat_points)
+  SUBROUTINE allocate_LuLccTimeVars
   ! --------------------------------------------------------------------
   ! Allocates memory for LuLcc time variant variables
   ! --------------------------------------------------------------------
@@ -165,9 +165,6 @@ MODULE MOD_LuLccTimeVars
      USE precision
      USE GlobalVars
      IMPLICIT NONE
-
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
      allocate (z_sno_             (maxsnl+1:0,numpatch))
      allocate (dz_sno_            (maxsnl+1:0,numpatch))
@@ -442,7 +439,7 @@ MODULE MOD_LuLccTimeVars
   END SUBROUTINE SAVE_LuLccTimeVars
 
 
-  SUBROUTINE REST_LuLccTimeVars (lon_points, lat_points)
+  SUBROUTINE REST_LuLccTimeVars
 
      USE precision
      USE GlobalVars
@@ -457,9 +454,6 @@ MODULE MOD_LuLccTimeVars
      USE MOD_UrbanTimeVars
 
      IMPLICIT NONE
-
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
      INTEGER i, j, np, np_, ip, ip_, pc, pc_, u, u_
      INTEGER ps, ps_, pe, pe_

@@ -1,7 +1,6 @@
 #include <define.h>
 
-SUBROUTINE UrbanLAI_readin_nc (lon_points, lat_points, &
-           year, month, dir_model_landdata)
+SUBROUTINE UrbanLAI_readin_nc (year, month, dir_srfdata, nam_urbdata)
 
 ! ===========================================================
 ! Read in urban LAI, SAI and urban tree cover data
@@ -18,11 +17,10 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points, lat_points, &
 
       IMPLICIT NONE
 
-      INTEGER, intent(in) :: lon_points
-      INTEGER, intent(in) :: lat_points
       INTEGER, intent(in) :: year
       INTEGER, intent(in) :: month
-      CHARACTER(LEN=256), intent(in) :: dir_model_landdata
+      CHARACTER(LEN=256), intent(in) :: dir_srfdata
+      CHARACTER(LEN=256), intent(in) :: nam_urbdata
 
       CHARACTER(LEN=256) :: lndname
       CHARACTER(len=256) :: cyear
@@ -35,7 +33,7 @@ SUBROUTINE UrbanLAI_readin_nc (lon_points, lat_points, &
 
 ! READ in Leaf area index and stem area index
       write(cyear,'(i4.4)') year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/urban_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

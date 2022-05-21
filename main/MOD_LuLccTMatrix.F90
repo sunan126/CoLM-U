@@ -25,7 +25,7 @@ MODULE MOD_LuLccTMatrix
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_LuLccTMatrix (lon_points, lat_points)
+  SUBROUTINE allocate_LuLccTMatrix
   ! --------------------------------------------------------------------
   ! Allocates memory for LuLcc time invariant variables
   ! --------------------------------------------------------------------
@@ -34,9 +34,6 @@ MODULE MOD_LuLccTMatrix
      USE GlobalVars
      IMPLICIT NONE
 !TODO: need coding below...
-
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
   END SUBROUTINE allocate_LuLccTMatrix
 

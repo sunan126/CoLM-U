@@ -1,7 +1,7 @@
 #include <define.h>
 
-SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
-                            idate,greenwich,lon_points,lat_points)
+SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
+                            nam_srfdata,nam_urbdata,idate,greenwich)
 
 ! ======================================================================
 !
@@ -30,12 +30,12 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
    IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
-   CHARACTER(LEN=256), intent(in) :: casename           !casename name
-   CHARACTER(LEN=256), intent(in) :: dir_model_landdata !surface data directory
-   CHARACTER(LEN=256), intent(in) :: dir_restart_hist   !case restart data directory
+   CHARACTER(LEN=256), intent(in) :: casename      !casename name
+   CHARACTER(LEN=256), intent(in) :: dir_srfdata   !surface data directory
+   CHARACTER(LEN=256), intent(in) :: dir_restart   !case restart data directory
+   CHARACTER(LEN=256), intent(in) :: nam_srfdata   !surface data filename
+   CHARACTER(LEN=256), intent(in) :: nam_urbdata   !urban data filename
    LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
-   INTEGER, intent(in)    :: lon_points  !number of longitude points on model grid
-   INTEGER, intent(in)    :: lat_points  !number of latitude points on model grid
    INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
 
 ! ------------------------ local variables -----------------------------
@@ -77,7 +77,6 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
   CHARACTER(len=256) :: lndname        !land surface data file name
   CHARACTER(LEN=256) :: finfolist      !file name of run information
   INTEGER iunit
-  INTEGER Julian_8day
 
   INTEGER npft, npc, nurb
   INTEGER ncid, landfrac_vid, pctlc_vid
@@ -108,7 +107,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 ! ----------------------------------------------------------------------
 ! Read in the coordinate of the center of the model grids and area of grid cells
       iunit = 100
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit) latixy
@@ -147,7 +146,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 
 ! Read in the patch fraction of the lantypes of the gridcells
       allocate (fraction_patches(0:N_land_classification,1:lon_points,1:lat_points))
-      lndname = trim(dir_model_landdata)//'model_landtypes.bin'
+      lndname = trim(dir_srfdata)//'model_landtypes.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit,err=100) fraction_patches
@@ -188,7 +187,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 ! 添加城市数据读取，目前仅支持MODIS IGBP数据
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/urban_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -204,7 +203,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (landfrac(1:lon_points,1:lat_points))
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_srfdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -275,7 +274,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctwetland(1:lon_points,1:lat_points))
       allocate (pctglacier(1:lon_points,1:lat_points))
       allocate (pctpft    (1:lon_points,1:lat_points,0:N_PFT-1))
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_srfdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -370,7 +369,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
       allocate (pctlc   (1:lon_points,1:lat_points,1:N_land_classification))
       allocate (pctpc   (1:lon_points,1:lat_points,0:N_PFT-1,1:N_land_classification))
       allocate (fraction_patches(1:lon_points,1:lat_points,1:N_land_classification))
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_srfdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -450,7 +449,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 ! Allocates memory for CLM 1d [numpatch] variables
 ! --------------------------------------------------------------------
 
-      CALL allocate_TimeInvariants (lon_points,lat_points)
+      CALL allocate_TimeInvariants
       CALL allocate_TimeVariables
 
 ! set the lat/lon values
@@ -878,13 +877,13 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
     ! ------------------------------------------
     ! Lake depth and layers' thickness
     ! ------------------------------------------
-      CALL lakedepth_readin (lon_points,lat_points,dir_model_landdata,year)
+      CALL lakedepth_readin (lon_points,lat_points,dir_srfdata,year)
 
 ! ...............................................................
 ! 3.2 Read in the soil parameters of the patches of the gridcells
 ! ...............................................................
 
-      CALL soil_parameters_readin (lon_points,lat_points,dir_model_landdata,year)
+      CALL soil_parameters_readin (lon_points,lat_points,dir_srfdata,year)
 
 ! ...............................................................
 ! 3.3 Plant time-invariant variables (based on the look-up tables or global map)
@@ -898,7 +897,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
       ENDDO
 #else
       ! read global tree top height from nc file
-      CALL HTOP_readin_nc (lon_points, lat_points, dir_model_landdata,year)
+      CALL HTOP_readin_nc (lon_points, lat_points, dir_srfdata, nam_srfdata, year)
 #endif
 
 ! ...............................................................
@@ -907,7 +906,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 ! ...............................................................
 
 #ifdef URBAN_MODEL
-      CALL Urban_readin_nc (lon_points, lat_points, dir_model_landdata, year)
+      CALL Urban_readin_nc (lon_points, lat_points, dir_srfdata, nam_urbdata, year)
 #endif
 
 ! ................................
@@ -932,7 +931,7 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 ! 3.5 Write out as a restart file [histTimeConst]
 ! ...............................................
 
-      CALL WRITE_TimeInvariants (year,dir_restart_hist,casename)
+      CALL WRITE_TimeInvariants (year,dir_restart,casename)
 
       write (6,*)
       write (6,*) ('Successfully to Initialize the Land Time-Invariants')
@@ -986,11 +985,11 @@ SUBROUTINE LuLccInitialize (casename,dir_model_landdata,dir_restart_hist,&
 
 ! yuan, 08/03/2019: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
-      CALL LAI_readin_nc (lon_points, lat_points, year, month, dir_model_landdata)
+      CALL LAI_readin_nc (lon_points, lat_points, year, month, dir_srfdata, nam_srfdata)
 
 #ifdef URBAN_MODEL
       ! 读取城市LAI/SAI数据
-      CALL UrbanLAI_readin_nc (lon_points, lat_points, year, month, dir_model_landdata)
+      CALL UrbanLAI_readin_nc (lon_points, lat_points, year, month, dir_srfdata, nam_urbdata)
 #endif
 
 #endif
@@ -1117,7 +1116,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
       write (6,*)
       write (6,*) ('Successfully to Initialize the Land Time-Vraying Variables')
 
-      finfolist = trim(dir_restart_hist)//'clmini.infolist'//'.lc'//trim(cyear)
+      finfolist = trim(dir_restart)//'clmini.infolist'//'.lc'//trim(cyear)
       open(100,file=trim(finfolist),form='formatted')
       write(100,*) 'numpatch  = ', numpatch   !1.1
       write(100,*) 'numpft    = ', numpft     !1.2

@@ -41,8 +41,6 @@
 ! ----------------local variables ---------------------------------
 
       character(LEN=256) :: casename  ! casename name
-      integer :: lon_points       ! number of longitude points on model grids
-      integer :: lat_points       ! number of latitude points on model grids
       integer :: lc_year          ! which year of land cover data used
       integer :: idate(3)         ! calendar (year, julian day, seconds)
       integer :: edate(3)         ! calendar (year, julian day, seconds)
@@ -51,10 +49,10 @@
       logical :: solarin_all_band ! downward solar in broad band
       logical :: greenwich        ! greenwich time
 
-      character(len=256) :: dir_model_landdata
-      character(len=256) :: dir_forcing
+      character(len=256) :: dir_srfdata
+      character(len=256) :: dir_atmdata
       character(len=256) :: dir_output
-      character(len=256) :: dir_restart_hist
+      character(len=256) :: dir_restart
 
       logical :: doalb            ! true => start up the surface albedo calculation
       logical :: dolai            ! true => start up the time-varying vegetation paramter
@@ -90,12 +88,10 @@
 #endif
 
       namelist /clmexp/ casename,               &!1
-                        dir_model_landdata,     &!2
-                        dir_forcing,            &!3
+                        dir_srfdata,            &!2
+                        dir_atmdata,            &!3
                         dir_output,             &!4
-                        dir_restart_hist,       &!5
-                        lon_points,             &!6
-                        lat_points,             &!7
+                        dir_restart,            &!5
                         deltim,                 &!8
                         solarin_all_band,       &!9
                         lc_year,                &!10
@@ -142,12 +138,12 @@
       etstamp = edate
       ptstamp = pdate
 
-      call allocate_TimeInvariants(lon_points,lat_points)
+      call allocate_TimeInvariants
       call allocate_TimeVariables
       call allocate_1D_Forcing
-      call allocate_2D_Forcing(lon_points,lat_points)
+      call allocate_2D_Forcing
       call allocate_1D_Fluxes
-      call allocate_2D_Fluxes(lon_points,lat_points)
+      call allocate_2D_Fluxes
 
       call FLUSH_2D_Fluxes
 
@@ -155,10 +151,10 @@
       allocate (nac_ln(lon_points,lat_points))
 ! ----------------------------------------------------------------------
     ! Read in the model time invariant constant data
-      CALL READ_TimeInvariants(dir_restart_hist,casename)
+      CALL READ_TimeInvariants(dir_restart,casename)
 
     ! Read in the model time varying data (model state variables)
-      CALL READ_TimeVariables (idate,dir_restart_hist,casename)
+      CALL READ_TimeVariables (idate,dir_restart,casename)
 
 
 !-----------------------
@@ -197,7 +193,7 @@
       oro(:) = 1.
 
     ! Initialize meteorological forcing data module
-      CALL GETMETINI(dir_forcing, deltim, lat_points, lon_points)
+      CALL GETMETINI(dir_atmdata, deltim)
 
 
 ! ======================================================================
@@ -216,7 +212,7 @@ print*, 'TIMELOOP = ', istep
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
+         CALL rd_forcing(idate,solarin_all_band,numpatch)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------
@@ -237,8 +233,7 @@ print*, 'TIMELOOP = ', istep
        ! READ in Leaf area index and stem area index
          Julian_8day = int(calendarday(idate)-1)/8*8 + 1
          if(Julian_8day /= Julian_8day_p)then
-            CALL LAI_readin (lon_points,lat_points,&
-                             Julian_8day,numpatch,dir_model_landdata)
+            CALL LAI_readin (Julian_8day,numpatch,dir_srfdata)
          endif
 
 #else
@@ -246,9 +241,9 @@ print*, 'TIMELOOP = ', istep
          CALL julian2monthday (idate(1), idate(2), month, mday)
          IF (month /= month_p) THEN
 #ifdef LAICHANGE
-            CALL LAI_readin_nc (lon_points, lat_points,    year, month, dir_model_landdata)
+            CALL LAI_readin_nc (   year, month, dir_srfdata)
 #else
-            CALL LAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
+            CALL LAI_readin_nc (lc_year, month, dir_srfdata)
 #endif
          END IF
 #endif
@@ -265,7 +260,7 @@ print*, 'TIMELOOP = ', istep
        ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average
        ! ----------------------------------------------------------------------
-         CALL vec2xy (lon_points,lat_points,nac,nac_ln,a_rnof)
+         CALL vec2xy (nac,nac_ln,a_rnof)
 
          do j = 1, lat_points
             do i = 1, lon_points
@@ -298,7 +293,7 @@ print*, 'TIMELOOP = ', istep
          if ( lwrite ) then
 
             if ( .NOT. (itstamp<=ptstamp) ) then
-               CALL flxwrite (idate,nac,nac_ln,lon_points,lat_points,dir_output,casename)
+               CALL flxwrite (idate,nac,nac_ln,dir_output,casename)
             endif
 
           ! Setting for next time step
@@ -310,7 +305,7 @@ print*, 'TIMELOOP = ', istep
          if ( rwrite ) then
             ! output restart file for the last timestep of spin-up
             if ( .NOT. (itstamp<ptstamp) ) then
-               CALL WRITE_TimeVariables (idate,dir_restart_hist,casename)
+               CALL WRITE_TimeVariables (idate,dir_restart,casename)
             endif
          endif
 

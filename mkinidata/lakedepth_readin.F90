@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata,lc_year)
+SUBROUTINE lakedepth_readin (dir_srfdata,lc_year)
 
    use precision
    use MOD_TimeInvariants
@@ -8,10 +8,8 @@ SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata,lc_year)
 
    IMPLICIT NONE
 
-   integer, INTENT(in) :: lon_points ! number of longitude points on model grid
-   integer, INTENT(in) :: lat_points ! number of latitude points on model grid
    INTEGER, intent(in) :: lc_year    ! which year of land cover data used
-   character(LEN=256), INTENT(in) :: dir_model_landdata
+   character(LEN=256), INTENT(in) :: dir_srfdata
 
    character(len=256) :: lndname
    CHARACTER(len=256) :: cyear
@@ -54,10 +52,10 @@ SUBROUTINE lakedepth_readin (lon_points,lat_points,dir_model_landdata,lc_year)
       iunit = 100
 #ifdef USGS_CLASSIFICATION
       cyear   = ''
-      lndname = trim(dir_model_landdata)//'model_GlobalLakeDepth.bin'
+      lndname = trim(dir_srfdata)//'model_GlobalLakeDepth.bin'
 #else
       write(cyear,'(i4.4)') lc_year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_GlobalLakeDepth.igbp.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/model_GlobalLakeDepth.igbp.bin'
 #endif
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')

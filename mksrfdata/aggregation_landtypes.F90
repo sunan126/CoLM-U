@@ -1,8 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE aggregation_landtypes ( dir_rawdata,dir_model_landdata, &
-                                   lon_points,lat_points, &
+SUBROUTINE aggregation_landtypes ( dir_rawdata,dir_srfdata, &
                                    nrow_start,nrow_end,ncol_start,ncol_end, &
                                    nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                                    sinn,sins,lonw_rad,lone_rad,sinn_i,sins_i,lonw_rad_i,lone_rad_i,&
@@ -25,10 +24,8 @@ USE GlobalVars
 IMPLICIT NONE
 
       character(LEN=256), intent(in) :: dir_rawdata
-      character(LEN=256), intent(in) :: dir_model_landdata
+      character(LEN=256), intent(in) :: dir_srfdata
 
-      integer, intent(in) :: lon_points ! number of model longitude grid points
-      integer, intent(in) :: lat_points ! model  of model latitude grid points
       integer, intent(in) :: nrow_start
       integer, intent(in) :: nrow_end
       integer, intent(in) :: ncol_start
@@ -255,7 +252,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #endif
 
 ! Write-out the fraction of the land types in the gridcells
-      lndname = trim(dir_model_landdata)//'model_landtypes.bin'
+      lndname = trim(dir_srfdata)//'model_landtypes.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) fraction_patches

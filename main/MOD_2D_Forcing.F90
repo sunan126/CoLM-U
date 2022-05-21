@@ -1,4 +1,4 @@
-#include <define.h> 
+#include <define.h>
 
 MODULE MOD_2D_Forcing
 ! -------------------------------
@@ -45,14 +45,12 @@ SAVE
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_2D_Forcing (lon_points,lat_points)
+  SUBROUTINE allocate_2D_Forcing
 ! ------------------------------------------------
 ! Allocates memory for CLM 2d [lon_points,lat_points] variables
 ! ------------------------------------------------
   use precision
   IMPLICIT NONE
-  integer, INTENT(in) :: lon_points
-  integer, INTENT(in) :: lat_points
 
       allocate ( forc_xy_pco2m  (lon_points,lat_points) ) ! CO2 concentration in atmos. (pascals)
       allocate ( forc_xy_po2m   (lon_points,lat_points) ) ! O2 concentration in atmos. (pascals)

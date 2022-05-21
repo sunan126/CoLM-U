@@ -1,7 +1,7 @@
 #include <define.h>
 
-SUBROUTINE crgrid(dir_model_landdata,edgen,edgee,edges,edgew,&
-                  lc_year,lon_points,lat_points,latn,lats,lonw,lone)
+SUBROUTINE crgrid(dir_srfdata,edgen,edgee,edges,edgew,&
+                  lc_year,latn,lats,lonw,lone)
 ! ----------------------------------------------------------------------
 ! generate land model grid when mode is offline.
 ! surface grid edges -- grids do not have to be global.
@@ -27,10 +27,8 @@ use precision
 IMPLICIT NONE
 
 ! arguments:
-      character(len=256), intent(in) :: dir_model_landdata
+      character(len=256), intent(in) :: dir_srfdata
       INTEGER,  intent(in) :: lc_year    ! which year of land cover data used
-      integer,  intent(in) :: lon_points ! input number of longitudes
-      integer,  intent(in) :: lat_points ! input number of latitudes
       real(r8), intent(in) :: edgen      ! northern edge of grid (degrees)
       real(r8), intent(in) :: edgee      ! eastern edge of grid (degrees)
       real(r8), intent(in) :: edges      ! southern edge of grid (degrees)
@@ -70,6 +68,7 @@ IMPLICIT NONE
       end do
       center_at_dateline = .false.
 
+#if(!defined USE_POINT_DATA)
     ! ------------------------------------------
     ! determine the model grid edges
     ! ------------------------------------------
@@ -104,6 +103,7 @@ IMPLICIT NONE
          lonw(i) = longxy(i-1,1) + dx2
          lone(i-1) = longxy(i-1,1) + dx2
       end do
+#endif
 
     ! ------------------------------------------
     ! get the model grid cell areas
@@ -112,7 +112,7 @@ IMPLICIT NONE
 #if(defined USE_POINT_DATA)
       area(lon_points,lat_points) = 1.
 #else
-      call cellarea (lat_points,lon_points,latn,lats,lonw,lone,&
+      call cellarea (latn,lats,lonw,lone,&
                      edgen,edgee,edges,edgew,area)
 #endif
 
@@ -121,7 +121,7 @@ IMPLICIT NONE
     ! ------------------------------------------
       iunit = 100
       write(cyear,'(i4.4)') lc_year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit) latixy

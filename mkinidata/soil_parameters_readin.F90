@@ -1,8 +1,8 @@
 #include <define.h>
 
-SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_year)
+SUBROUTINE soil_parameters_readin (dir_srfdata,lc_year)
 ! ======================================================================
-! Read in soil parameters in (patches,lon_points,lat_points) and
+! Read in soil parameters in (patches) and
 ! => 1d vector [numpatch]
 !
 ! Created by Yongjiu Dai, 03/2014
@@ -15,9 +15,7 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_y
    IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
-   character(LEN=256), INTENT(in) :: dir_model_landdata
-   integer, INTENT(in) :: lon_points ! number of longitude points on model grid
-   integer, INTENT(in) :: lat_points ! number of latitude points on model grid
+   character(LEN=256), INTENT(in) :: dir_srfdata
    INTEGER, intent(in) :: lc_year    ! which year of land cover data used
 
 ! ------------------------ local variables -----------------------------
@@ -69,49 +67,49 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_y
          allocate ( soil_tkdry_l   (0:N_land_classification,1:lon_points,1:lat_points) )
 
 ! (1) read in the saturated water content [cm3/cm3]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_theta_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_theta_s_l
          close(iunit)
 
 ! (2) read in the matric potential at saturation [cm]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_psi_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_psi_s_l
          close(iunit)
 
 ! (3) read in the pore size distribution index [dimensionless]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_lambda_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_lambda_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_lambda_l
          close(iunit)
 
 ! (4) read in the saturated hydraulic conductivity [cm/day]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_k_s_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_k_s_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_k_s_l
          close(iunit)
 
 ! (5) read in the heat capacity of soil solids [J/(m3 K)]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_csol_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_csol_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_csol_l
          close(iunit)
 
 ! (6) read in the thermal conductivity of saturated soil [W/m-K]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_tksatu_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_tksatu_l
          close(iunit)
 
 ! (7) read in the thermal conductivity for dry soil [W/(m-K)]
-         lndname = trim(dir_model_landdata)//trim(cyear)//'/model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
+         lndname = trim(dir_srfdata)//trim(cyear)//'/model_tkdry_l'//trim(c)//trim(suffix)//'.bin'
          print*,trim(lndname)
          OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
          READ(iunit,err=100) soil_tkdry_l
@@ -237,28 +235,28 @@ SUBROUTINE soil_parameters_readin (lon_points,lat_points,dir_model_landdata,lc_y
       allocate ( d_n_alb (0:N_land_classification,1:lon_points,1:lat_points) )
 
 ! (1) Read in the albedo of visible of the saturated soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_s_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) s_v_alb
       close(iunit)
 
 ! (1) Read in the albedo of visible of the dry soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_d_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) d_v_alb
       close(iunit)
 
 ! (3) Read in the albedo of near infrared of the saturated soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_s_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) s_n_alb
       close(iunit)
 
 ! (4) Read in the albedo of near infrared of the dry soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_d_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
       read(iunit,err=100) d_n_alb

@@ -1,6 +1,4 @@
-
-#define lon_points 720
-#define lat_points 360
+#include <define.h>
 
 PROGRAM bin2netcdf
 ! ================================================================
@@ -26,10 +24,6 @@ PROGRAM bin2netcdf
 
    IMPLICIT NONE
 
-   !INTEGER,  parameter :: nl_soil    = 10      ! number of soil layers
-   !INTEGER,  parameter :: nl_lake    = 10      ! number of lake layers
-   !INTEGER,  parameter :: maxsnl     = -5      ! max number of snow layers
-
    REAL(r4), parameter :: spval_r4   = -1.e36_r4 ! a special value for missing and filling use
 
    REAL(r8) :: lons_r8(lon_points)
@@ -43,7 +37,7 @@ PROGRAM bin2netcdf
 
  ! allocate memory
    print *, 'allocate memory...'
-   CALL allocate_2D_Fluxes(lon_points,lat_points)
+   CALL allocate_2D_Fluxes
 
  ! read in flux data
    print *, 'read in flux data...'
@@ -107,7 +101,6 @@ CONTAINS
 !---------------------------------------------------------------------
       read(11) f_t_grnd (:,:)   ! ground surface temperature [K]
       read(11) f_tleaf  (:,:)   ! sunlit leaf temperature [K]
-      !read(11) f_tlsha  (:,:)   ! shaded leaf temperature [K]
       read(11) f_ldew   (:,:)   ! depth of water on foliage [mm]
       read(11) f_scv    (:,:)   ! snow cover, water equivalent [mm]
       read(11) f_snowdp (:,:)   ! snow depth [meter]
@@ -452,13 +445,6 @@ CONTAINS
       CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
-
-      ! shaded leaf temperature [K]
-      !CALL sanity( nf90_def_var(ncid, 'f_tleafsha', nf90_double, (/xid,yid/), varid) )
-      !CALL sanity( nf90_put_att(ncid, varid, 'long_name','shaded leaf temperature [K]') )
-      !CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
-      !CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
-      !CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
       ! depth of water on foliage [mm]
       CALL sanity( nf90_def_var(ncid, 'f_ldew', nf90_double, (/xid,yid/), varid) )

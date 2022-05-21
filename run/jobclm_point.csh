@@ -4,10 +4,10 @@
 # [1] Define the JOB
 #-------------------------------------------------------
 
-set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
+set RUN_CLM_SRF="YES"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -19,14 +19,14 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 
 # case name and simulating time setting
 #-------------------------------------------------------
-set CASE_NAME   = IGBP           	# case name                                            <MARK #1>
-set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set LC_YEAR     = 2002          	# which year of land cover data used
-set START_YEAR  = 2000          	# model start year                                     <MARK #2>
+set CASE_NAME   = AU-Cpr           	# case name                                            <MARK #1>
+set GREENWICH   = .false.        	# 'true' for greenwich time, 'false' for local time
+set LC_YEAR     = 2005          	# which year of land cover data used
+set START_YEAR  = 2007          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
 set START_SEC   = 0             	# model start secs of day
-set END_YEAR    = 2004          	# model end year
+set END_YEAR    = 2018          	# model end year
 set END_MONTH   = 1             	# model end month, 10
 set END_DAY     = 1             	# model end Julian day
 set END_SEC     = 0               	# model end secs of day
@@ -41,18 +41,18 @@ set WRST_FREQ   = MONTHLY     		# write restart file frequency: HOURLY/DAILY/MON
 
 # model resolution and running scope setting
 #-------------------------------------------------------
-set LON_POINTS  =  720
-set LAT_POINTS  =  360
-set EDGE_N      =   90.
-set EDGE_E      =  180.
-set EDGE_S      =  -90.
-set EDGE_W      = -180.
+set LON_POINTS  =  1
+set LAT_POINTS  =  1
+set EDGE_N      =  -34.00206
+set EDGE_E      =  140.58913
+set EDGE_S      =  -34.00206
+set EDGE_W      =  140.58913
 
 # set forcing observational height (unit: m)
 #-------------------------------------------------------
-set HEIGHT_V    = 100.
-set HEIGHT_T    =  50.
-set HEIGHT_Q    =  50.
+set HEIGHT_V    =  20.0
+set HEIGHT_T    =  20.0
+set HEIGHT_Q    =  20.0
 
 
 #-------------------------------------------------------
@@ -71,14 +71,14 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
-setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
-setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
+setenv DAT_ATMDIR $DAT_ROOT/atm/point
+setenv DAT_SRFDIR $DAT_ROOT/srf/point/AU-Cpr
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
 # file name of forcing and surface data
-setenv DAT_SRFNAM global_0.5x0.5.MOD.nc                # surface data filename
+setenv DAT_SRFNAM AU-Cpr.MOD.nc                        # surface data filename
 setenv DAT_URBNAM urban-data-filename                  # only for urban model
-setenv DAT_ATMNAM point-atmdata-filename               # only for point case
+setenv DAT_ATMNAM AU-Cpr_2011-2017_OzFlux_Met.INT      # only for point case
 
 # case directory
 #-------------------------------------------------------
@@ -103,8 +103,15 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
-#define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
+#define	USE_POINT_DATA            ! QIAN/PRINCETON/CRUNCEP/POINT
+#define	IGBP_CLASSIFICATION    9  ! USGS/IGBP/PFT/PC
+#undef	LAICHANGE                 ! change LAI for each year
+#undef	LULCC                     ! Land use and land cover change
+#undef	URBAN_MODEL               ! run urban community model
+#undef	URBAN_TREE                ! run urban model with trees
+#undef	URBAN_WATER               ! run urban model with water
+#undef	URBAN_BEM                 ! run urban model with building energy model
+#undef	URBAN_ONLY                ! only for urban patch output
 #undef	RDGRID                    !
 #undef	RAWdata_update            !
 #undef	DYN_PHENOLOGY             !

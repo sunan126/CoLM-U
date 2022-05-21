@@ -44,7 +44,7 @@ MODULE MOD_1D_Forcing
   CONTAINS
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_1D_Forcing 
+  SUBROUTINE allocate_1D_Forcing
 ! ------------------------------------------------
 ! Allocates memory for CLM 1d [numpatch] variables
 ! ------------------------------------------------

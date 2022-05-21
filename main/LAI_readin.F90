@@ -1,7 +1,6 @@
 #include <define.h>
 
-SUBROUTINE LAI_readin (lon_points,lat_points,&
-                       Julian_8day,numpatch,dir_model_landdata)
+SUBROUTINE LAI_readin (Julian_8day,numpatch,dir_srfdata)
 ! ===========================================================
 ! Read in the LAI, the LAI dataset was created by Yuan et al. (2011)
 ! http://globalchange.bnu.edu.cn
@@ -16,11 +15,9 @@ SUBROUTINE LAI_readin (lon_points,lat_points,&
 
       IMPLICIT NONE
 
-      integer, INTENT(in) :: lon_points
-      integer, INTENT(in) :: lat_points
       integer, INTENT(in) :: Julian_8day
       integer, INTENT(in) :: numpatch
-      character(LEN=256), INTENT(in) :: dir_model_landdata
+      character(LEN=256), INTENT(in) :: dir_srfdata
 
       character(LEN=256) :: c
       character(LEN=256) :: lndname
@@ -56,7 +53,7 @@ SUBROUTINE LAI_readin (lon_points,lat_points,&
 
       iunit = 100
       write(c,'(i3.3)') Julian_8day
-      lndname = trim(dir_model_landdata)//'model_LAI_patches.'//trim(c)//'.bin'
+      lndname = trim(dir_srfdata)//'model_LAI_patches.'//trim(c)//'.bin'
       print*,trim(lndname)
 
       OPEN(iunit,file=trim(lndname),form='unformatted',status='old')
@@ -78,15 +75,15 @@ SUBROUTINE LAI_readin (lon_points,lat_points,&
              green(npatch) = 0.
          else
              fveg(npatch)  = vegc(m)    !fraction of veg. cover
-             IF (vegc(m) > 0) THEN 
+             IF (vegc(m) > 0) THEN
                 tlai(npatch)  = LAI_patches(m,i,j)/vegc(m) !leaf area index
                 tsai(npatch)  = sai0(m) !stem are index
                 green(npatch) = 1.      !fraction of green leaf
-             ELSE 
-                tlai(npatch)  = 0.  
-                tsai(npatch)  = 0.   
-                green(npatch) = 0.    
-             ENDIF 
+             ELSE
+                tlai(npatch)  = 0.
+                tsai(npatch)  = 0.
+                green(npatch) = 0.
+             ENDIF
          endif
       end do
 #ifdef OPENMP

@@ -21,6 +21,7 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = NOHWT           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
+set LC_YEAR     = 2002          	# which year of land cover data used
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
@@ -60,7 +61,7 @@ set HEIGHT_Q    =  50.
 
 # clm src directory
 #-------------------------------------------------------
-setenv CLM_ROOT   $HOME/github/CoLM-U                                 # <MARK #3>
+setenv CLM_ROOT   $HOME/github/CoLM-U                  # <MARK #3>
 setenv CLM_INCDIR $CLM_ROOT/include
 setenv CLM_SRFDIR $CLM_ROOT/mksrfdata
 setenv CLM_INIDIR $CLM_ROOT/mkinidata
@@ -68,15 +69,20 @@ setenv CLM_SRCDIR $CLM_ROOT/main
 setenv CLM_POSDIR $CLM_ROOT/postprocess
 
 # inputdata directory
-setenv DAT_ROOT   $HOME/data/inputdata                                # <MARK #4>
+setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
 setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
 setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
+# file name of forcing and surface data
+setenv DAT_SRFNAM global_0.5x0.5.MOD.nc                # surface data filename
+setenv DAT_URBNAM urban_0.5x0.5.MOD.nc                 # only for urban model
+setenv DAT_ATMNAM point-atmdata-filename               # only for point case
+
 # case directory
 #-------------------------------------------------------
-setenv CAS_ROOT   $HOME/tera02/cases                    # <MARK #5>
+setenv CAS_ROOT   $HOME/tera02/cases                   # <MARK #5>
 setenv CAS_RUNDIR $CAS_ROOT/$CASE_NAME
 setenv CAS_OUTDIR $CAS_RUNDIR/output
 setenv CAS_RSTDIR $CAS_RUNDIR/restart
@@ -97,6 +103,7 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
+#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
 #define	URBAN_MODEL               ! run urban community model
 #undef	URBAN_TREE                ! run urban model with trees
@@ -105,7 +112,7 @@ set nthread    = 92
 #define	URBAN_ONLY                ! only for urban patch output
 #undef	RDGRID                    !
 #undef	RAWdata_update            !
-#undef  DYN_PHENOLOGY             !
+#undef	DYN_PHENOLOGY             !
 #undef	SOILINI                   !
 #define	LANDONLY                  !
 #undef	LAND_SEA                  !
@@ -114,11 +121,18 @@ set nthread    = 92
 #define	WO_${WOUT_FREQ}           !
 #define	WR_${WRST_FREQ}           !
 #undef	CLMDEBUG                  !
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
 #define	HEIGHT_V $HEIGHT_V        !
 #define	HEIGHT_T $HEIGHT_T        !
 #define	HEIGHT_Q $HEIGHT_Q        !
+#define	lon_points $LON_POINTS    !
+#define	lat_points $LAT_POINTS    !
 EOF
+
+#-------------------------------------------------------#
+#              --- USER SETTING END ---                 #
+# DO NOT EDIT THE BELOW SCRIPTS UNLESS YOU KNOW EXACTLY #
+# WHAT YOU ARE DOING                                    #
+#-------------------------------------------------------#
 
 if ( $use_mpi == "YES" ) then
     echo "#define usempi" >> .tmp
@@ -128,23 +142,17 @@ if ( $use_openmp == "YES" ) then
     echo "#define OPENMP $nthread" >> .tmp
 endif
 
-#-------------------------------------------------------#
-#              --- USER SETTING END ---                 #
-# DO NOT EDIT THE BELOW SCRIPTS UNLESS YOU KNOW EXACTLY #
-# WHAT YOU ARE DOING                                    #
-#-------------------------------------------------------#
+if ( $RUN_CaMa == "YES" ) then
+  echo "#define CaMa_Flood" >> .tmp
+else
+  echo "#undef  CaMa_Flood" >> .tmp
+endif
 
 sed -i 's/\!.*//g' .tmp
 sed -i '/^ *$/d' .tmp
-mv -f .tmp $CLM_INCDIR/define.h
 
-if ( $RUN_CaMa == "YES" ) then
-  echo "#define CaMa_Flood" >> $CLM_INCDIR/define.h
-else
-  echo "#undef  CaMa_Flood" >> $CLM_INCDIR/define.h
-endif
-
-
+cmp --silent .tmp $CLM_INCDIR/define.h || mv -f .tmp $CLM_INCDIR/define.h
+cp -f $CLM_INCDIR/define.h $CAS_RUNDIR/define.h
 
 #-------------------------------------------------------
 # [4] compling and executing CoLM surface data making
@@ -152,17 +160,17 @@ endif
 if ( $RUN_CLM_SRF == "YES" ) then
 
 # Compile
+echo ''
+echo '>>> Start Making the CoLM surface data...'
 cd $CLM_SRFDIR
-make clean
 make >& $CAS_RUNDIR/compile.mksrf.log || exit 5
 
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/mksrf.stdin << EOF
 &mksrfexp
 dir_rawdata        = '$DAT_RAWDIR/'
-dir_model_landdata = '$DAT_SRFDIR/'
-lon_points         = $LON_POINTS
-lat_points         = $LAT_POINTS
+dir_srfdata        = '$DAT_SRFDIR/'
+lc_year            = $LC_YEAR
 edgen              = $EDGE_N
 edgee              = $EDGE_E
 edges              = $EDGE_S
@@ -171,7 +179,6 @@ edgew              = $EDGE_W
 EOF
 
 # Executing CoLM initialization'
-#ln -snf $CLM_SRFDIR/srf.x $CAS_RUNDIR/
 cp -vf $CLM_SRFDIR/srf.x $CAS_RUNDIR/
 #$CLM_SRFDIR/srf.x < $CAS_RUNDIR/mksrf.stdin > $CAS_RUNDIR/exe.mksrf.log || exit 4
 
@@ -191,12 +198,12 @@ cd $CLM_INIDIR
 \cat >! $CAS_RUNDIR/mkini.stdin << EOF
 &clminiexp
 casename = '$CASE_NAME'
-dir_model_landdata = '$DAT_SRFDIR/'
-dir_restart_hist   = '$CAS_RSTDIR/'
-dir_infolist       = '$CAS_RUNDIR/'
-lon_points         = $LON_POINTS
-lat_points         = $LAT_POINTS
+dir_srfdata        = '$DAT_SRFDIR/'
+dir_restart        = '$CAS_RSTDIR/'
+nam_srfdata        = '$DAT_SRFNAM'
+nam_urbdata        = '$DAT_URBNAM'
 greenwich          = $GREENWICH
+lc_year            = $LC_YEAR
 s_year             = $START_YEAR
 s_month            = $START_MONTH
 s_day              = $START_DAY
@@ -208,10 +215,10 @@ if ( $RUN_CLM_INI == "YES" ) then
 
 # CoLM initialization for startup run
 #-------------------------------------------------------
-make clean
+echo ''
+echo '>>> Start Making the CoLM initialization...'
 make >& $CAS_RUNDIR/compile.mkini.log || exit 5
 
-#ln -snf $CLM_INIDIR/initial.x $CAS_RUNDIR/.
 cp -vf $CLM_INIDIR/initial.x $CAS_RUNDIR/.
 #$CLM_INIDIR/initial.x < $CAS_RUNDIR/mkini.stdin > $CAS_RUNDIR/exe.mkini.log || exit 4
 echo 'CoLM initialization completed'
@@ -221,17 +228,17 @@ else if ( $RUN_CLM == "YES" ) then
 # for restart run
 #-------------------------------------------------------
 echo $CAS_RUNDIR
-if (! -e $CAS_RUNDIR/clmini.infolist ) then
+if (! -e $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR ) then
   echo 'ERROR: no initial run detected, please run clm initialization first!'; exit
 endif
 
 sed -e    "s/s_year *=.*/s_year    = ${START_YEAR}/"  \
-    -e   "s/s_month *=.*/s_month   = ${START_MONTH}/"   \
+    -e   "s/s_month *=.*/s_month   = ${START_MONTH}/" \
     -e     "s/s_day *=.*/s_day     = ${START_DAY}/"   \
     -e "s/s_seconds *=.*/s_seconds = ${START_SEC}/"   \
-< $CAS_RUNDIR/clmini.infolist > .tmp
+< $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR > .tmp
 
-mv -f .tmp $CAS_RUNDIR/clmini.infolist
+mv -f .tmp $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR
 
 echo 'CoLM initialization for restart run completed'
 
@@ -290,10 +297,16 @@ if ( $RUN_CLM == "YES" ) then
 
 # Compile
 cd $CLM_SRCDIR
-make clean
 rm -f $CAS_RUNDIR/compile.main.log
 
+echo ''
+echo '>>> Start Making the CoLM...'
 make >& $CAS_RUNDIR/compile.main.log || exit 5
+cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
+
+cd $CLM_POSDIR
+make >& $CAS_RUNDIR/compile.post.log || exit 5
+cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
 
 echo 'Compiling CoLM completed'
 
@@ -301,14 +314,16 @@ echo 'Compiling CoLM completed'
 \cat >! $CAS_RUNDIR/timeloop.stdin << EOF
 &clmexp
 casename = '$CASE_NAME'
-dir_model_landdata = '$DAT_SRFDIR/'
-dir_forcing        = '$DAT_ATMDIR/'
+dir_srfdata        = '$DAT_SRFDIR/'
+dir_atmdata        = '$DAT_ATMDIR/'
 dir_output         = '$CAS_OUTDIR/'
-dir_restart_hist   = '$CAS_RSTDIR/'
-lon_points         = $LON_POINTS
-lat_points         = $LAT_POINTS
+dir_restart        = '$CAS_RSTDIR/'
+nam_atmdata        = '$DAT_ATMNAM'
+nam_srfdata        = '$DAT_SRFNAM'
+nam_urbdata        = '$DAT_URBNAM'
 deltim             = $TIMESTEP
 solarin_all_band   = .true.
+lc_year            = $LC_YEAR
 e_year             = $END_YEAR
 e_month            = $END_MONTH
 e_day              = $END_DAY
@@ -319,18 +334,16 @@ p_day              = $SPIN_DAY
 p_seconds          = $SPIN_SEC
 EOF
 
-\cat $CAS_RUNDIR/clmini.infolist >> $CAS_RUNDIR/timeloop.stdin
-
-# Executing the CoLM
-echo 'Executing CoLM...'
+\cat $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR >> $CAS_RUNDIR/timeloop.stdin
 
 #----------------------------------------------------------------------
+# Executing the CoLM
+
 cd $CAS_RUNDIR
-
 rm -f $CAS_RUNDIR/exe.timeloop.log
-#ln -snf $CLM_SRCDIR/clm.x $CAS_RUNDIR/.
-cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
 
+echo ''
+echo 'Executing CoLM...'
 #/usr/bin/time ./clm.x < $CAS_RUNDIR/timeloop.stdin > $CAS_RUNDIR/exe.timeloop.log || exit 4
 
 #if ( $use_mpi == "YES" ) then
@@ -339,20 +352,11 @@ cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
 #    ./clm.x < $CAS_RUNDIR/timeloop.stdin
 #endif
 
-#----------------------------------------------------------------------
-cd $CLM_POSDIR
-make clean
-make >& $CLM_POSDIR/compile.post.log || exit 5
-
-if ( -f $CLM_POSDIR/bin2netcdf ) then
-   #ln -snf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
-   cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
-endif
-
 echo 'CoLM Execution Completed'
 
 endif
 
+echo ''
 echo '-----------------------------------------------------------------'
-echo ' End of c-shell script                                           '
+echo ' End of CoLM job c-shell script                                  '
 echo '-----------------------------------------------------------------'

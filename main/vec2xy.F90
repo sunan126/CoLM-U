@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE vec2xy (lon_points,lat_points,nac,nac_ln,nac_dt,nac_nt,a_rnof)
+SUBROUTINE vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
 ! ----------------------------------------------------------------------
 ! perfrom the grid average mapping: average a subgrid input 1d vector
 ! of length numpatch to a output 2d array of length [lon_points,lat_points]
@@ -24,8 +24,6 @@ USE omp_lib
 
 IMPLICIT NONE
 
-INTEGER, intent(in) :: lon_points
-INTEGER, intent(in) :: lat_points
 INTEGER, intent(inout) :: nac
 INTEGER, intent(inout) :: nac_ln(lon_points,lat_points)
 INTEGER, intent(inout) :: nac_dt(lon_points,lat_points)
@@ -386,10 +384,12 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   CALL acc(olrg   (np), patchfrac(np), a_olrgdt  (i,j))
                   CALL acc(t_grnd (np), patchfrac(np), a_t_grnddt(i,j))
                   CALL acc(tref   (np), patchfrac(np), a_trefdt  (i,j))
+#ifdef URBAN_MODEL
+                  u = patch2urb(np)
                   IF (u > 0) THEN
                      CALL acc(tafu(u ), patchfrac(np), a_tafudt  (i,j))
                   ENDIF
-
+#endif
                   IF (a_rnetdt(i,j) /= spval) THEN
                      a_rnetdt(i,j) = a_rnetdt(i,j) + patchfrac(np)*(sabg(np)+sabvsun(np)+sabvsha(np)-olrg(np))
                   ELSE
@@ -403,10 +403,12 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
                   CALL acc(olrg   (np), patchfrac(np), a_olrgnt  (i,j))
                   CALL acc(t_grnd (np), patchfrac(np), a_t_grndnt(i,j))
                   CALL acc(tref   (np), patchfrac(np), a_trefnt  (i,j))
+#ifdef URBAN_MODEL
+                  u = patch2urb(np)
                   IF (u > 0) THEN
                      CALL acc(tafu(u ), patchfrac(np), a_tafunt  (i,j))
                   ENDIF
-
+#endif
                   IF (a_rnetnt(i,j) /= spval) THEN
                      a_rnetnt(i,j) = a_rnetnt(i,j) + patchfrac(np)*(sabg(np)+sabvsun(np)+sabvsha(np)-olrg(np))
                   ELSE

@@ -46,12 +46,12 @@ OBJS =  precision.o              \
 
 all: ${EXECUTABLE}
 
-${EXECUTABLE} : ${OBJS} 
+${EXECUTABLE} : ${OBJS}
 	${FF} ${FOPTS} ${OBJS} -o $@ ${LDFLAGS}
 	@echo 'making CLM initial data completed!'
 
-$(OBJS):%.o:%.F90
-	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $< 
+$(OBJS):%.o:%.F90 ../include/define.h
+	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $<
 
 clean :
 	${RM} -f *.o *.mod

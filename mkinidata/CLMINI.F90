@@ -25,9 +25,10 @@ PROGRAM CLMINI
 
 ! ----------------local variables ---------------------------------
       CHARACTER(LEN=256) :: casename ! case name
-      CHARACTER(LEN=256) :: dir_model_landdata
-      CHARACTER(LEN=256) :: dir_restart_hist
-      CHARACTER(LEN=256) :: dir_infolist
+      CHARACTER(LEN=256) :: dir_srfdata
+      CHARACTER(LEN=256) :: dir_restart
+      CHARACTER(LEN=256) :: nam_srfdata
+      CHARACTER(LEN=256) :: nam_urbdata
       INTEGER :: s_year      ! starting date for run in year
       INTEGER :: s_julian    ! starting date for run in julian day
       INTEGER :: s_month     ! starting month for run
@@ -36,8 +37,6 @@ PROGRAM CLMINI
       INTEGER :: idate(3)    ! starting date
       LOGICAL :: greenwich   ! true: greenwich time, false: local time
 
-      INTEGER :: lon_points  ! number of longitude points on model grid
-      INTEGER :: lat_points  ! number of latitude points on model grid
       INTEGER :: lc_year     ! which year of land cover data used
 
       CHARACTER(len=256) :: cyear          ! character for year
@@ -55,10 +54,9 @@ PROGRAM CLMINI
       REAL(r8), allocatable :: fh_xy   (:,:)
       REAL(r8), allocatable :: fq_xy   (:,:)
 
-      namelist /clminiexp/ casename,dir_model_landdata,&
-                           dir_restart_hist,dir_infolist,&
-                           lon_points,lat_points,greenwich,&
-                           lc_year,s_year,s_month,s_day,s_seconds
+      namelist /clminiexp/ casename,dir_srfdata,dir_restart,&
+                           nam_srfdata,nam_urbdata,&
+                           greenwich,lc_year,s_year,s_month,s_day,s_seconds
 ! ----------------------------------------------------------------------
       read (5,clminiexp)
 
@@ -85,13 +83,13 @@ PROGRAM CLMINI
       allocate ( fh_xy   (lon_points,lat_points) )
       allocate ( fq_xy   (lon_points,lat_points) )
 
-      CALL initialize (casename,dir_model_landdata,dir_restart_hist,&
-                       lc_year,idate,greenwich,lon_points,lat_points,&
+      CALL initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,&
+                       lc_year,idate,greenwich,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
 
       write(cyear,'(i4.4)') lc_year
-      finfolist = trim(dir_restart_hist)//'clmini.infolist'//'.lc'//trim(cyear)
+      finfolist = trim(dir_restart)//'clmini.infolist'//'.lc'//trim(cyear)
       open(100,file=trim(finfolist),form='formatted')
       write(100,*) 'numpatch  = ', numpatch   !1.1
       write(100,*) 'numpft    = ', numpft     !1.2

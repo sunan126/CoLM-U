@@ -111,7 +111,7 @@ ${EXECUTABLE} : ${OBJS}
 	${FF} ${FOPTS} ${OBJS} -o $@ ${LDFLAGS}
 	@echo 'making CLM completed!'
 
-$(OBJS):%.o:%.F90
+$(OBJS):%.o:%.F90 ../include/define.h
 	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $<
 
 else
@@ -132,11 +132,11 @@ CaMa_LIBS = $(CaMa_DIR)/src/srcs.a \
 
 #--------------------------------------------
 
-${EXECUTABLE} : ${OBJS} 
+${EXECUTABLE} : ${OBJS}
 	${FF} ${FOPTS} ${OBJS} ${CaMa_LIBS} -o $@ ${LDFLAGS}
 	@echo 'making CLM with CaMa Flood Model completed!'
 
-$(OBJS):%.o:%.F90
+$(OBJS):%.o:%.F90 ../include/define.h
 	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $< ${CaMa_MODS}
 
 endif

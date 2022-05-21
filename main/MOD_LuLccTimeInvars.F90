@@ -41,7 +41,7 @@ MODULE MOD_LuLccTimeInvars
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_LuLccTimeInvars (lon_points, lat_points)
+  SUBROUTINE allocate_LuLccTimeInvars
   ! --------------------------------------------------------------------
   ! Allocates memory for LuLcc time invariant variables
   ! --------------------------------------------------------------------
@@ -49,9 +49,6 @@ MODULE MOD_LuLccTimeInvars
      USE precision
      USE GlobalVars
      IMPLICIT NONE
-
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
      allocate (patchclass_                (numpatch))
      allocate (patchtype_                 (numpatch))

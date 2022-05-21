@@ -1,8 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE aggregation_soil_brightness ( dir_rawdata,dir_model_landdata, &
-                                         lc_year,lon_points,lat_points, &
+SUBROUTINE aggregation_soil_brightness ( dir_rawdata,dir_srfdata,lc_year,&
                                          nrow_start,nrow_end,ncol_start,ncol_end, &
                                          nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                                          READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
@@ -19,11 +18,9 @@ IMPLICIT NONE
 
 ! arguments:
       character(LEN=256), intent(in) :: dir_rawdata
-      character(LEN=256), intent(in) :: dir_model_landdata
+      character(LEN=256), intent(in) :: dir_srfdata
 
       INTEGER, intent(in) :: lc_year    ! which year of land cover data used
-      integer, intent(in) :: lon_points ! number of model longitude grid points
-      integer, intent(in) :: lat_points ! model  of model latitude grid points
       integer, intent(in) :: nrow_start
       integer, intent(in) :: nrow_end
       integer, intent(in) :: ncol_start
@@ -103,6 +100,23 @@ IMPLICIT NONE
       inquire(iolength=length) land_chr1
       allocate (landtypes(nlon,nlat))
 
+#ifdef USGS_CLASSIFICATION
+      nrow30s_start = nrow_start
+      nrow30s_end   = nrow_end
+      ncol30s_start = ncol_start
+      ncol30s_end   = ncol_end
+      suffix        = ''
+      cyear         = ''
+#else
+      nrow30s_start = int((nrow_start+1)/2)
+      nrow30s_end   = int((nrow_end+1)/2)
+      ncol30s_start = int((ncol_start+1)/2)
+      ncol30s_end   = int((ncol_end+1)/2)
+      suffix        = '.igbp'
+      write(cyear,'(i4.4)') lc_year
+#endif
+
+
 #if(defined USE_POINT_DATA)
 
 #if(defined USGS_CLASSIFICATION)
@@ -113,15 +127,23 @@ IMPLICIT NONE
       landtypes(ncol_start,nrow_start) = IGBP_CLASSIFICATION
 #endif
 
+#if(defined PFT_CLASSIFICATION)
+      landtypes(ncol_start,nrow_start) = PFT_CLASSIFICATION
+#endif
+
+#if(defined PC_CLASSIFICATION)
+      landtypes(ncol_start,nrow_start) = PC_CLASSIFICATION
+#endif
+
 #else
 
 #if(defined USGS_CLASSIFICATION)
      ! GLCC USGS classification
      ! -------------------
-      cyear   = ''
       lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
 #else
-      write(cyear,'(i4.4)') lc_year
+     ! MODIS IGBP classification
+     ! -------------------
       lndname = trim(dir_rawdata)//'landtypes/landtypes-modis-igbp-'//trim(cyear)//'.bin'
 #endif
 
@@ -135,19 +157,6 @@ IMPLICIT NONE
 
 #endif
 
-#ifdef USGS_CLASSIFICATION
-      nrow30s_start = nrow_start
-      nrow30s_end   = nrow_end
-      ncol30s_start = ncol_start
-      ncol30s_end   = ncol_end
-      suffix        = ''
-#else
-      nrow30s_start = int((nrow_start+1)/2)
-      nrow30s_end   = int((nrow_end+1)/2)
-      ncol30s_start = int((ncol_start+1)/2)
-      ncol30s_end   = int((ncol_end+1)/2)
-      suffix        = '.igbp'
-#endif
 
 ! ........................................
 ! ... [2] aggregate the soil parameters from the resolution of raw data to modelling resolution
@@ -293,28 +302,28 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                           maxval(soil_d_n_alb, mask = soil_d_n_alb .gt. -1.e30)
 
 ! (1) Write-out the albedo of visible of the saturated soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_s_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) soil_s_v_alb
       close(iunit)
 
 ! (1) Write-out the albedo of visible of the dry soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_v_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_d_v_alb'//trim(suffix)//'.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) soil_d_v_alb
       close(iunit)
 
 ! (3) Write-out the albedo of near infrared of the saturated soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_s_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_s_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) soil_s_n_alb
       close(iunit)
 
 ! (4) Write-out the albedo of near infrared of the dry soil
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/soil_d_n_alb'//trim(suffix)//'.bin'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/soil_d_n_alb'//trim(suffix)//'.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) soil_d_n_alb

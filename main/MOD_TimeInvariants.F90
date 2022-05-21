@@ -71,7 +71,7 @@ MODULE MOD_TimeInvariants
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_TimeInvariants (lon_points, lat_points)
+  SUBROUTINE allocate_TimeInvariants
   ! --------------------------------------------------------------------
   ! Allocates memory for CLM 1d [numpatch] variables
   ! --------------------------------------------------------------------
@@ -82,9 +82,6 @@ MODULE MOD_TimeInvariants
      USE MOD_PCTimeInvars
      USE MOD_UrbanTimeInvars
      IMPLICIT NONE
-
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
      allocate (patch2lon                 (numpatch))
      allocate (patch2lat                 (numpatch))
@@ -133,7 +130,7 @@ MODULE MOD_TimeInvariants
   END SUBROUTINE allocate_TimeInvariants
 
 
-  SUBROUTINE READ_TimeInvariants(lc_year,dir_restart_hist,casename)
+  SUBROUTINE READ_TimeInvariants(lc_year,dir_restart,casename)
 ! --------------------------------------------------------------------
 ! Write out as a restart file [histTimeConst]
 ! ...............................................
@@ -146,7 +143,7 @@ MODULE MOD_TimeInvariants
 
      INTEGER, intent(in) :: lc_year      !year of land cover type data
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
-     CHARACTER(LEN=256), intent(in) :: dir_restart_hist
+     CHARACTER(LEN=256), intent(in) :: dir_restart
 
      CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeConst
@@ -156,7 +153,7 @@ MODULE MOD_TimeInvariants
      write(cyear,'(i4.4)') lc_year
 
      lhistTimeConst = 100
-     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
+     fhistTimeConst = trim(dir_restart)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
      open(unit=lhistTimeConst,file=trim(fhistTimeConst),status='unknown',&
                               form='unformatted',action='read')
 
@@ -268,7 +265,7 @@ MODULE MOD_TimeInvariants
   END SUBROUTINE READ_TimeInvariants
 
 
-  SUBROUTINE WRITE_TimeInvariants(lc_year,dir_restart_hist,casename)
+  SUBROUTINE WRITE_TimeInvariants(lc_year,dir_restart,casename)
 ! --------------------------------------------------------------------
 ! Write out as a restart file [histTimeConst]
 ! ...............................................
@@ -281,7 +278,7 @@ MODULE MOD_TimeInvariants
 
      INTEGER, intent(in) :: lc_year      !year of land cover type data
      CHARACTER(LEN=256), intent(in) :: casename           !casename name
-     CHARACTER(LEN=256), intent(in) :: dir_restart_hist
+     CHARACTER(LEN=256), intent(in) :: dir_restart
 
      CHARACTER(len=256) :: cyear         !character for lc_year
      CHARACTER(LEN=256) :: fhistTimeConst
@@ -291,7 +288,7 @@ MODULE MOD_TimeInvariants
      write(cyear,'(i4.4)') lc_year
 
      lhistTimeConst = 100
-     fhistTimeConst = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
+     fhistTimeConst = trim(dir_restart)//trim(casename)//'-'//'rstTimeConst'//'.lc'//trim(cyear)
      open(unit=lhistTimeConst,file=trim(fhistTimeConst),status='unknown',&
                               form='unformatted',action='write')
 

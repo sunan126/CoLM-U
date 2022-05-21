@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
+SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
 
 ! ===========================================================
 ! Read in the Urban dataset
@@ -17,10 +17,9 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
 
       IMPLICIT NONE
 
-      INTEGER, intent(in) :: lon_points
-      INTEGER, intent(in) :: lat_points
       INTEGER, intent(in) :: lc_year    ! which year of land cover data used
-      CHARACTER(LEN=256), intent(in) :: dir_model_landdata
+      CHARACTER(LEN=256), intent(in) :: dir_srfdata
+      CHARACTER(LEN=256), intent(in) :: nam_urbdata
 
       CHARACTER(LEN=256) :: lndname
       CHARACTER(len=256) :: cyear
@@ -82,7 +81,7 @@ SUBROUTINE Urban_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
 
 ! READ in urban data
       write(cyear,'(i4.4)') lc_year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/urban_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

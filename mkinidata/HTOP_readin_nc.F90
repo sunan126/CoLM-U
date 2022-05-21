@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
+SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
 
 ! ===========================================================
 ! Read in the canopy tree top height
@@ -20,10 +20,9 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
 
       IMPLICIT NONE
 
-      integer, INTENT(in) :: lon_points
-      integer, INTENT(in) :: lat_points
       INTEGER, intent(in) :: lc_year    ! which year of land cover data used
-      character(LEN=256), INTENT(in) :: dir_model_landdata
+      character(LEN=256), INTENT(in) :: dir_srfdata
+      character(LEN=256), INTENT(in) :: nam_srfdata
 
       character(LEN=256) :: c
       character(LEN=256) :: lndname
@@ -36,7 +35,7 @@ SUBROUTINE HTOP_readin_nc (lon_points,lat_points,dir_model_landdata,lc_year)
       REAL(r8), allocatable :: htoppft(:,:,:)
 
       write(cyear,'(i4.4)') lc_year
-      lndname = trim(dir_model_landdata)//trim(cyear)//'/global_0.5x0.5.MOD'//trim(cyear)//'_v5.nc'
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_srfdata)
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 

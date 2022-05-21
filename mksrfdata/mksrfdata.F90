@@ -53,10 +53,8 @@ USE omp_lib
 IMPLICIT NONE
 
       character(LEN=256) :: dir_rawdata
-      character(LEN=256) :: dir_model_landdata
+      character(LEN=256) :: dir_srfdata
       INTEGER :: lc_year     ! which year of land cover data used
-      integer :: lon_points  ! number of input data longitudes
-      integer :: lat_points  ! number of input data latitudes
       real(r8) :: edgen      ! northern edge of grid (degrees)
       real(r8) :: edgee      ! eastern edge of grid (degrees)
       real(r8) :: edges      ! southern edge of grid (degrees)
@@ -88,8 +86,8 @@ IMPLICIT NONE
 
       real(r8), allocatable :: area_fine_gridcell(:,:) ! rwadata fine cell area (km**2)
 
-      namelist /mksrfexp/ dir_rawdata,dir_model_landdata,lc_year,&
-                          lon_points,lat_points,edgen,edgee,edges,edgew
+      namelist /mksrfexp/ dir_rawdata,dir_srfdata,lc_year,&
+                          edgen,edgee,edges,edgew
 
       read(5,mksrfexp)
 
@@ -112,11 +110,11 @@ IMPLICIT NONE
 ! ...........................................................................
 
 #if(defined USER_GRID)
-      CALL rdgrid (dir_model_landdata,edgen,edgee,edges,edgew,&
-                   lon_points,lat_points,latn,lats,lonw,lone)
+      CALL rdgrid (dir_srfdata,edgen,edgee,edges,edgew,&
+                   lc_year,latn,lats,lonw,lone)
 #else
-      CALL crgrid (dir_model_landdata,edgen,edgee,edges,edgew,&
-                   lc_year,lon_points,lat_points,latn,lats,lonw,lone)
+      CALL crgrid (dir_srfdata,edgen,edgee,edges,edgew,&
+                   lc_year,latn,lats,lonw,lone)
 #endif
 
 ! ...................................................................
@@ -137,7 +135,7 @@ IMPLICIT NONE
 ! 3. Mapping land characteristic parameters to the model grids
 ! ................................................................
 
-      CALL info_gridcell ( lon_points,lat_points,edgen,edgee,edges,edgew, &
+      CALL info_gridcell ( edgen,edgee,edges,edgew, &
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,latn,lats,lonw,lone,&
                            sinn,sins,lonw_rad,lone_rad,sinn_i,sins_i,lonw_rad_i,lone_rad_i,&
@@ -145,22 +143,19 @@ IMPLICIT NONE
 
 ! read sub-grid structure data
 #ifdef USGS_CLASSIFICATION
-      CALL aggregation_landtypes ( dir_rawdata,dir_model_landdata, &
-                           lon_points,lat_points, &
+      CALL aggregation_landtypes ( dir_rawdata,dir_srfdata, &
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            sinn,sins,lonw_rad,lone_rad,sinn_i,sins_i,lonw_rad_i,lone_rad_i,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 
-      CALL aggregation_LAI ( dir_rawdata,dir_model_landdata, &
-                           lon_points,lat_points, &
+      CALL aggregation_LAI ( dir_rawdata,dir_srfdata, &
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            sinn,sins,lonw_rad,lone_rad,sinn_i,sins_i,lonw_rad_i,lone_rad_i,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 
-      CALL aggregation_forest_height ( dir_rawdata,dir_model_landdata, &
-                           lon_points,lat_points, &
+      CALL aggregation_forest_height ( dir_rawdata,dir_srfdata, &
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
@@ -172,20 +167,17 @@ IMPLICIT NONE
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-      CALL aggregation_soil_parameters ( dir_rawdata,dir_model_landdata, &
-                           lc_year,lon_points,lat_points, &
+      CALL aggregation_soil_parameters ( dir_rawdata,dir_srfdata,lc_year,&
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 
-      CALL aggregation_soil_brightness ( dir_rawdata,dir_model_landdata, &
-                           lc_year,lon_points,lat_points, &
+      CALL aggregation_soil_brightness ( dir_rawdata,dir_srfdata,lc_year,&
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 
-      CALL aggregation_lakedepth( dir_rawdata,dir_model_landdata, &
-                           lc_year,lon_points,lat_points, &
+      CALL aggregation_lakedepth( dir_rawdata,dir_srfdata,lc_year,&
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )

@@ -1,7 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
+SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
 
   use precision
   use PhysicalConstants, only: rgas, grav
@@ -14,8 +14,6 @@ SUBROUTINE rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
 
       IMPLICIT NONE
       integer,  INTENT(in) :: idate(3)
-      integer,  INTENT(in) :: lon_points
-      integer,  INTENT(in) :: lat_points
       integer,  INTENT(in) :: numpatch
 
       logical,  INTENT(in) :: solarin_all_band

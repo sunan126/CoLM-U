@@ -1,7 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE info_gridcell ( lon_points,lat_points,edgen,edgee,edges,edgew, &
+SUBROUTINE info_gridcell ( edgen,edgee,edges,edgew, &
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            latn,lats,lonw,lone,&
@@ -27,8 +27,6 @@ USE GlobalVars
 IMPLICIT NONE
 ! arguments:
 
-      integer,  intent(in) :: lon_points ! number of model longitude grid points
-      integer,  intent(in) :: lat_points ! model  of model latitude grid points
       real(r8), intent(in) :: edgen ! northern edge of grid (degrees)
       real(r8), intent(in) :: edgee ! eastern edge of grid (degrees)
       real(r8), intent(in) :: edges ! southern edge of grid (degrees)

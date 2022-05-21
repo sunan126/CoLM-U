@@ -1,7 +1,6 @@
 #include <define.h>
 
- SUBROUTINE flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,&
-                      lon_points,lat_points,dir_output,casename)
+ SUBROUTINE flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,dir_output,casename)
 
 !=======================================================================
 ! Original version: Yongjiu Dai, September 15, 1999, 03/2014
@@ -19,8 +18,6 @@
   INTEGER, intent(in) :: nac_ln(lon_points,lat_points)
   INTEGER, intent(in) :: nac_dt(lon_points,lat_points)
   INTEGER, intent(in) :: nac_nt(lon_points,lat_points)
-  INTEGER, intent(in) :: lon_points
-  INTEGER, intent(in) :: lat_points
 
   CHARACTER(LEN=256) :: dir_output
   CHARACTER(LEN=256) :: casename

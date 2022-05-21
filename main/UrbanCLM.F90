@@ -41,8 +41,6 @@
 ! ----------------local variables ---------------------------------
 
       CHARACTER(LEN=256) :: casename  !casename name
-      INTEGER :: lon_points       !number of longitude points on model grids
-      INTEGER :: lat_points       !number of latitude points on model grids
       INTEGER :: lc_year          !which year of land cover data used
       INTEGER :: idate(3)         !calendar (year, julian day, seconds)
       INTEGER :: edate(3)         !calendar (year, julian day, seconds)
@@ -52,11 +50,14 @@
       LOGICAL :: solarin_all_band !downward solar in broad band
       LOGICAL :: greenwich        !greenwich time
 
-      CHARACTER(len=256) :: dir_model_landdata
-      CHARACTER(len=256) :: dir_forcing
-      CHARACTER(len=256) :: dir_output
-      CHARACTER(len=256) :: dir_restart_hist
-      CHARACTER(len=256) :: cdate
+      CHARACTER(len=256) :: dir_srfdata   !surface data directory
+      CHARACTER(len=256) :: dir_atmdata   !forcing data directory
+      CHARACTER(len=256) :: dir_output    !output data directory
+      CHARACTER(len=256) :: dir_restart   !restart data directory
+      CHARACTER(len=256) :: nam_atmdata   !forcing data filename
+      CHARACTER(len=256) :: nam_srfdata   !surface data filename
+      CHARACTER(len=256) :: nam_urbdata   !urban data filename
+      CHARACTER(len=256) :: cdate         !string date format
 
       LOGICAL :: doalb            !true => start up the surface albedo calculation
       LOGICAL :: dolai            !true => start up the time-varying vegetation paramter
@@ -93,33 +94,34 @@
 #endif
 #endif
 
-      namelist /clmexp/ casename,               &!1
-                        dir_model_landdata,     &!2
-                        dir_forcing,            &!3
-                        dir_output,             &!4
-                        dir_restart_hist,       &!5
-                        lon_points,             &!6
-                        lat_points,             &!7
-                        deltim,                 &!8
-                        solarin_all_band,       &!9
-                        lc_year,                &!10
-                        e_year,                 &!11
-                        e_month,                &!12
-                        e_day,                  &!13
-                        e_seconds,              &!14
-                        p_year,                 &!15
-                        p_month,                &!16
-                        p_day,                  &!17
-                        p_seconds,              &!18
-                        numpatch,               &!19
-                        numpft,                 &!10
-                        numpc,                  &!21
-                        numurban,               &!22
-                        greenwich,              &!23
-                        s_year,                 &!24
-                        s_month,                &!25
-                        s_day,                  &!26
-                        s_seconds                !27
+      namelist /clmexp/ casename,               &! 1
+                        dir_srfdata,            &! 2.1
+                        dir_atmdata,            &! 2.2
+                        dir_output,             &! 2.3
+                        dir_restart,            &! 2.4
+                        nam_atmdata,            &! 3.1
+                        nam_srfdata,            &! 3.2
+                        nam_urbdata,            &! 3.3
+                        deltim,                 &! 5
+                        solarin_all_band,       &! 6
+                        lc_year,                &! 7
+                        e_year,                 &! 8.1
+                        e_month,                &! 8.2
+                        e_day,                  &! 8.3
+                        e_seconds,              &! 8.4
+                        p_year,                 &! 9.1
+                        p_month,                &! 9.2
+                        p_day,                  &! 9.3
+                        p_seconds,              &! 9.4
+                        numpatch,               &!10.1
+                        numpft,                 &!10.2
+                        numpc,                  &!10.3
+                        numurban,               &!10.4
+                        greenwich,              &!11
+                        s_year,                 &!12.1
+                        s_month,                &!12.2
+                        s_day,                  &!12.3
+                        s_seconds                !12.4
 ! ======================================================================
 !     define the run and open files (for off-line use)
 
@@ -147,12 +149,12 @@
       etstamp = edate
       ptstamp = pdate
 
-      CALL allocate_TimeInvariants(lon_points,lat_points)
+      CALL allocate_TimeInvariants
       CALL allocate_TimeVariables
       CALL allocate_1D_Forcing
-      CALL allocate_2D_Forcing(lon_points,lat_points)
+      CALL allocate_2D_Forcing
       CALL allocate_1D_Fluxes
-      CALL allocate_2D_Fluxes(lon_points,lat_points)
+      CALL allocate_2D_Fluxes
 
       CALL FLUSH_2D_Fluxes
 
@@ -162,10 +164,10 @@
       allocate (nac_nt(lon_points,lat_points))
 ! ----------------------------------------------------------------------
     ! Read in the model time invariant constant data
-      CALL READ_TimeInvariants(lc_year,dir_restart_hist,casename)
+      CALL READ_TimeInvariants(lc_year,dir_restart,casename)
 
     ! Read in the model time varying data (model state variables)
-      CALL READ_TimeVariables (idate,lc_year,dir_restart_hist,casename)
+      CALL READ_TimeVariables (idate,lc_year,dir_restart,casename)
 
 
 !-----------------------
@@ -204,7 +206,7 @@
       oro(:) = 1.
 
     ! Initialize meteorological forcing data module
-      CALL GETMETINI(dir_forcing, deltim, lat_points, lon_points)
+      CALL GETMETINI(dir_atmdata, nam_atmdata, deltim)
 
 
 ! ======================================================================
@@ -231,7 +233,7 @@
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,lon_points,lat_points,solarin_all_band,numpatch)
+         CALL rd_forcing(idate,solarin_all_band,numpatch)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------
@@ -254,8 +256,7 @@
        ! READ in Leaf area index and stem area index
          Julian_8day = int(calendarday(ldate)-1)/8*8 + 1
          IF (Julian_8day /= Julian_8day_p) THEN
-            CALL LAI_readin (lon_points,lat_points,&
-                             Julian_8day,numpatch,dir_model_landdata)
+            CALL LAI_readin (Julian_8day,numpatch,dir_srfdata)
          ENDIF
 
 #else
@@ -264,11 +265,15 @@
          year = ldate(1)
          IF (month /= month_p) THEN
 #ifdef LAICHANGE
-            CALL LAI_readin_nc      (lon_points, lat_points,    year, month, dir_model_landdata)
-            CALL UrbanLAI_readin_nc (lon_points, lat_points,    year, month, dir_model_landdata)
+            CALL LAI_readin_nc      (   year, month, dir_srfdata, nam_srfdata)
+#ifdef URBAN_MODEL
+            CALL UrbanLAI_readin_nc (   year, month, dir_srfdata, nam_urbdata)
+#endif
 #else
-            CALL LAI_readin_nc      (lon_points, lat_points, lc_year, month, dir_model_landdata)
-            CALL UrbanLAI_readin_nc (lon_points, lat_points, lc_year, month, dir_model_landdata)
+            CALL LAI_readin_nc      (lc_year, month, dir_srfdata, nam_srfdata)
+#ifdef URBAN_MODEL
+            CALL UrbanLAI_readin_nc (lc_year, month, dir_srfdata, nam_urbdata)
+#endif
 #endif
          ENDIF
 #endif
@@ -285,7 +290,7 @@
        ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average
        ! ----------------------------------------------------------------------
-         CALL vec2xy (lon_points,lat_points,nac,nac_ln,nac_dt,nac_nt,a_rnof)
+         CALL vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
 
          DO j = 1, lat_points
             DO i = 1, lon_points
@@ -318,8 +323,7 @@
          IF ( lwrite ) THEN
 
             IF ( .not. (itstamp<=ptstamp) ) THEN
-               CALL flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,&
-                              lon_points,lat_points,dir_output,casename)
+               CALL flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,dir_output,casename)
             ENDIF
 
           ! Setting for next time step
@@ -332,8 +336,8 @@
 #ifdef LULCC
          ! DO land use and land cover change simulation
          IF ( isendofyear(idate, deltim) ) THEN
-            CALL LuLccDRIVER (casename,dir_model_landdata,dir_restart_hist,&
-                              idate,greenwich,lon_points,lat_points)
+            CALL LuLccDRIVER (casename,dir_srfdata,dir_restart,&
+                              nam_srfdata,nam_urbdata,idate,greenwich)
          ENDIF
 #endif
 
@@ -341,9 +345,9 @@
             ! output restart file for the last timestep of spin-up
             IF ( .not. (itstamp<ptstamp) ) THEN
 #ifdef LULCC
-               CALL WRITE_TimeVariables (idate,   year,dir_restart_hist,casename)
+               CALL WRITE_TimeVariables (idate,   year,dir_restart,casename)
 #else
-               CALL WRITE_TimeVariables (idate,lc_year,dir_restart_hist,casename)
+               CALL WRITE_TimeVariables (idate,lc_year,dir_restart,casename)
 #endif
             ENDIF
          ENDIF

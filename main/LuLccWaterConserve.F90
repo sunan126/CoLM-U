@@ -1,6 +1,6 @@
 #include <define.h>
 
-  SUBROUTINE LuLccWaterConserve (lon_points, lat_points)
+  SUBROUTINE LuLccWaterConserve
 ! -------------------------------
 ! Created by Hua Yuan, 04/2022
 ! -------------------------------
@@ -21,8 +21,6 @@
      IMPLICIT NONE
 
 !TODO: need coding below...
-     INTEGER, intent(in) :: lon_points
-     INTEGER, intent(in) :: lat_points
 
   END SUBROUTINE LuLccWaterConserve
 ! ---------- EOP ------------

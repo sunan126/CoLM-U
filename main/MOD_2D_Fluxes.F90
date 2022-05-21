@@ -167,16 +167,13 @@ REAL(r8), allocatable :: f_xy_snow(:,:)  ! snow [mm/s]
 
 !-----------------------------------------------------------------------
 
-SUBROUTINE allocate_2D_Fluxes(lon_points,lat_points)
+SUBROUTINE allocate_2D_Fluxes
 ! --------------------------------------------------------------------
 ! Allocates memory for CLM 2d [lon_points,lat_points] variables
 ! --------------------------------------------------------------------
 
 USE precision
 IMPLICIT NONE
-
-Integer, intent(in) :: lon_points
-Integer, intent(in) :: lat_points
 
 allocate ( mask     (lon_points,lat_points) )  ! grid mask
 allocate ( frac     (lon_points,lat_points) )  ! grid total fraction

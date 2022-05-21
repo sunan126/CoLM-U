@@ -160,7 +160,7 @@ MODULE MOD_TimeVariables
   END SUBROUTINE allocate_TimeVariables
 
 
-  SUBROUTINE READ_TimeVariables (idate,lc_year,dir_restart_hist,casename)
+  SUBROUTINE READ_TimeVariables (idate,lc_year,dir_restart,casename)
 ! --------------------------------------------------------------------
 ! Read the model variables for restart run [histTimeVar]
 ! ...............................................................
@@ -171,7 +171,7 @@ MODULE MOD_TimeVariables
      USE MOD_UrbanTimeVars
      IMPLICIT NONE
 
-     CHARACTER(LEN=255), intent(in) :: dir_restart_hist
+     CHARACTER(LEN=255), intent(in) :: dir_restart
      CHARACTER(LEN=256), intent(in) :: casename
      INTEGER, intent(in) :: idate(3)     !calendar (year, julian day, seconds)
      INTEGER, intent(in) :: lc_year      !year of land cover type data
@@ -189,7 +189,7 @@ MODULE MOD_TimeVariables
      write(cyear,'(i4.4)') lc_year
 
      lhistTimeVar = 100
-     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
+     fhistTimeVar = trim(dir_restart)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
      print*,trim(fhistTimeVar)
      open(unit=lhistTimeVar,file=trim(fhistTimeVar),status='unknown',&
                             form='unformatted',action='read')
@@ -350,7 +350,7 @@ MODULE MOD_TimeVariables
   END SUBROUTINE READ_TimeVariables
 
 
-  SUBROUTINE WRITE_TimeVariables (idate,lc_year,dir_restart_hist,casename)
+  SUBROUTINE WRITE_TimeVariables (idate,lc_year,dir_restart,casename)
 ! --------------------------------------------------------------------
 ! Write out the model variables for restart run [histTimeVar]
 ! --------------------------------------------------------------------
@@ -363,7 +363,7 @@ MODULE MOD_TimeVariables
 
      INTEGER, intent(in) :: idate(3)     !calendar (year, julian day, seconds)
      INTEGER, intent(in) :: lc_year      !year of land cover type data
-     CHARACTER(LEN=255), intent(in) :: dir_restart_hist
+     CHARACTER(LEN=255), intent(in) :: dir_restart
      CHARACTER(LEN=256), intent(in) :: casename
 
      INTEGER :: lhistTimeVar             !logical unit number of restart time-varying file
@@ -384,7 +384,7 @@ MODULE MOD_TimeVariables
      write(cyear,'(i4.4)') lc_year
 
      lhistTimeVar = 100
-     fhistTimeVar = trim(dir_restart_hist)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
+     fhistTimeVar = trim(dir_restart)//trim(casename)//'-'//'rstTimeVar'//'-'//trim(cdate)//'.lc'//trim(cyear)
      print*,trim(fhistTimeVar)
      open(unit=lhistTimeVar,file=trim(fhistTimeVar),status='unknown',&
                             form='unformatted',action='write')

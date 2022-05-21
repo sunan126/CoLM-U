@@ -1,7 +1,7 @@
 #include <define.h>
 
 MODULE GETMETMOD
-   
+
    use precision
    use timemanager
    use omp_lib
@@ -16,9 +16,9 @@ MODULE GETMETMOD
    integer :: lon_i                                 ! start index of longitude
    integer :: lat_n                                 ! number of latitudes
    integer :: lon_n                                 ! number of longitudes
-   real(r8), allocatable :: forcn(:,:,:)            ! forcing data 
+   real(r8), allocatable :: forcn(:,:,:)            ! forcing data
    real(r8), allocatable :: forcn_LB(:,:,:)         ! forcing data at lower bondary
-   real(r8), allocatable :: forcn_UB(:,:,:)         ! forcing data at upper bondary   
+   real(r8), allocatable :: forcn_UB(:,:,:)         ! forcing data at upper bondary
    real(r8), external    :: orb_coszen              ! cosine of solar zenith angle
 
    INTERFACE GETMETINI
@@ -29,20 +29,19 @@ MODULE GETMETMOD
    public GETMET, GETMETINI, GETMETFINAL
 
 CONTAINS
-   
-   SUBROUTINE GETMETINI(fmetdat, deltim, lat_points, lon_points, lat_start, lon_start)
+
+   SUBROUTINE GETMETINI(fmetdat, fmetnam, deltim, lat_start, lon_start)
 
       implicit none
       character(len=256), intent(in) :: fmetdat     ! directory of forcing data
+      character(len=256), intent(in) :: fmetnam     ! filename of forcing data
       real(r8), intent(in) :: deltim                ! model time step
-      integer,  intent(in) :: lat_points            ! model latitude points
-      integer,  intent(in) :: lon_points            ! model longitude points
       integer,  optional   :: lat_start             ! model latitude start index
       integer,  optional   :: lon_start             ! model longitude start index
-    
+
     ! initialization of forcing data
-      call metinit(fmetdat, deltim)
-      
+      call metinit(fmetdat, fmetnam, deltim)
+
     ! initialize the region
     ! number of points
       lat_n = lat_points
@@ -50,13 +49,13 @@ CONTAINS
 
     ! start points
       if (.NOT. present(lat_start)) then
-         lat_i = 1 
+         lat_i = 1
       else
          lat_i = lat_start
       end if
 
       if (.NOT. present(lon_start)) then
-         lon_i = 1 
+         lon_i = 1
       else
          lon_i = lon_start
       end if
@@ -68,7 +67,7 @@ CONTAINS
       allocate(forcn_UB(lon_n, lat_n, NVAR))
 
    END SUBROUTINE GETMETINI
-   
+
    SUBROUTINE GETMETFINAL
 
     ! finalization of forcing data
@@ -84,7 +83,7 @@ CONTAINS
  ! ------------------------------------------------------------
  ! FUNCTION NAME:
  !    GETMET
- ! 
+ !
  ! PURPOSE:
  !    major interface for getting forcing data
  ! ------------------------------------------------------------
@@ -113,12 +112,12 @@ CONTAINS
 
       implicit none
       integer,  intent(in) :: idate(3)
-   
-      type(timestamp) :: mtstamp 
+
+      type(timestamp) :: mtstamp
       integer  :: id(3)
       integer  :: i, j, k, dtLB, dtUB
       real(r8) :: calday, cosz
-      
+
     ! read lower and upper boundary forcing data
       CALL metreadLBUB(idate, lat_i, lon_i, lat_n, lon_n, forcn_LB, forcn_UB)
 
@@ -126,18 +125,18 @@ CONTAINS
       id(:) = idate(:)
       call adj2end(id)
       mtstamp = id
-      
+
     ! loop for variables
       do i = 1, NVAR
 
          if (tintalgo(i) == 'NULL') cycle
 
-       ! to make sure the forcing data calculated is in the range of time 
+       ! to make sure the forcing data calculated is in the range of time
        ! interval [LB, UB]
          if ( .NOT. (tstamp_LB(i)<=mtstamp .AND. mtstamp<=tstamp_UB(i)) ) then
             write(6, *) "the data required is out of range! stop!"; stop
          end if
-         
+
        ! calcualte distance to lower/upper boundary
          dtLB = mtstamp - tstamp_LB(i)
          dtUB = tstamp_UB(i) - mtstamp
@@ -150,18 +149,18 @@ CONTAINS
                forcn(:,:,i) = forcn_UB(:,:,i)
             end if
          end if
-         
+
        ! linear method, for T, Pres, Q, W, LW
          if (tintalgo(i) == 'linear') then
             if ( (dtLB+dtUB) > 0 ) then
-               forcn(:,:,i) = & 
+               forcn(:,:,i) = &
                   real(dtUB)/real(dtLB+dtUB)*forcn_LB(:,:,i) + &
-                  real(dtLB)/real(dtLB+dtUB)*forcn_UB(:,:,i) 
+                  real(dtLB)/real(dtLB+dtUB)*forcn_UB(:,:,i)
             else
                forcn(:,:,i) = forcn_LB(:,:,i)
             end if
          end if
-         
+
        ! coszen method, for SW
          if (tintalgo(i) == 'coszen') then
             calday = calendarday(mtstamp)
@@ -183,7 +182,7 @@ CONTAINS
          end if
 
       end do
-    
+
     ! preprocess for forcing data, only for QIAN data right now?
       CALL metpreprocess(forcn)
 

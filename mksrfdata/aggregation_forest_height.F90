@@ -1,8 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE aggregation_forest_height ( dir_rawdata,dir_model_landdata, &
-                                       lon_points,lat_points, &
+SUBROUTINE aggregation_forest_height ( dir_rawdata,dir_srfdata, &
                                        nrow_start,nrow_end,ncol_start,ncol_end, &
                                        nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                                        READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
@@ -31,10 +30,8 @@ IMPLICIT NONE
       integer, parameter :: nlon = 43200  ! 360*(60*2)
 
       character(LEN=256), intent(in) :: dir_rawdata
-      character(LEN=256), intent(in) :: dir_model_landdata
+      character(LEN=256), intent(in) :: dir_srfdata
 
-      integer, intent(in) :: lon_points ! number of model longitude grid points
-      integer, intent(in) :: lat_points ! model  of model latitude grid points
       integer, intent(in) :: nrow_start
       integer, intent(in) :: nrow_end
       integer, intent(in) :: ncol_start
@@ -42,7 +39,7 @@ IMPLICIT NONE
       integer, intent(in) :: nx_fine_gridcell
       integer, intent(in) :: ny_fine_gridcell
       integer, intent(in) :: READ_row_UB(lat_points)  ! north boundary index for fine gird cell
-      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell  
+      integer, intent(in) :: READ_col_UB(lon_points)  ! west boundary index for fine gird cell
       integer, intent(in) :: READ_row_LB(lat_points)  ! south boundary index for fine gird cell
       integer, intent(in) :: READ_col_LB(lon_points)  ! east boundary index for fine gird cell
 
@@ -64,7 +61,7 @@ IMPLICIT NONE
       integer LL, np
       integer n_fine_gridcell
 
-      integer, allocatable :: landtypes(:,:) ! GLCC USGS / MODIS IGBP land cover types 
+      integer, allocatable :: landtypes(:,:) ! GLCC USGS / MODIS IGBP land cover types
       integer, allocatable :: num_patches(:)
       real(r8), allocatable :: tree_height(:,:)  ! forest canopy height (m)
       real(r8), allocatable :: a_tree_height_patches(:,:)
@@ -76,8 +73,8 @@ IMPLICIT NONE
 ! ... (1) gloabl land cover types
 ! ........................................
       iunit = 100
-      inquire(iolength=length) land_chr1 
-      allocate ( landtypes (nlon,nlat) ) 
+      inquire(iolength=length) land_chr1
+      allocate ( landtypes (nlon,nlat) )
 
 #if(defined USE_POINT_DATA)
 
@@ -94,13 +91,13 @@ IMPLICIT NONE
 #if(defined USGS_CLASSIFICATION)
      ! GLCC USGS classification
      ! -------------------
-      lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin' 
+      lndname = trim(dir_rawdata)//'RAW_DATA_updated_with_igbp/landtypes_usgs_update.bin'
       print*,lndname
-      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
+      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow_start, nrow_end
-         read(iunit,rec=nrow,err=100) land_chr1 
-         landtypes(:,nrow) = ichar(land_chr1(:)) 
-      enddo 
+         read(iunit,rec=nrow,err=100) land_chr1
+         landtypes(:,nrow) = ichar(land_chr1(:))
+      enddo
       close (iunit)
 #endif
 
@@ -115,7 +112,7 @@ IMPLICIT NONE
          landtypes(:,nrow) = ichar(land_chr1(:))
       enddo
       close (iunit)
-#endif 
+#endif
 
 #endif
 
@@ -129,11 +126,11 @@ IMPLICIT NONE
       lndname = trim(dir_rawdata)//'forest_height/Forest_Height.bin'
       print*,lndname
 
-      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old') 
+      open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow_start, nrow_end
          read(iunit,rec=nrow,err=100) land_chr1
          tree_height(:,nrow) = ichar(land_chr1(:))
-      enddo 
+      enddo
       close (iunit)
       print*, minval(tree_height(:,nrow_start:nrow_end)), maxval(tree_height(:,nrow_start:nrow_end))
 
@@ -149,7 +146,7 @@ IMPLICIT NONE
 print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) SCHEDULE(DYNAMIC,1) &
 !$OMP PRIVATE(i,j,i1,i2,j1,j2,nrow,ncol,ncol_mod,L,LL,num_patches,np) &
-!$OMP PRIVATE(a_tree_height_patches) 
+!$OMP PRIVATE(a_tree_height_patches)
 #endif
       do j = 1, lat_points
 
@@ -166,17 +163,17 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #if(defined USER_GRID)
             i1 = READ_col_UB(i)   ! read upper boundary of longitude
             i2 = READ_col_LB(i)   ! read lower boundary of longitude
-#else            
-            i1 = ncol_start + (i-1)*nx_fine_gridcell 
+#else
+            i1 = ncol_start + (i-1)*nx_fine_gridcell
             i2 = ncol_start -1 + i*nx_fine_gridcell
 #endif
             num_patches(:) = 0
 
-            do nrow = j1, j2            
-               if(i1 > i2) i2 = i2 + nlon   ! for coarse grid crosses the dateline    
+            do nrow = j1, j2
+               if(i1 > i2) i2 = i2 + nlon   ! for coarse grid crosses the dateline
                do ncol = i1, i2
                   ncol_mod = mod(ncol,nlon)
-                  if(ncol_mod == 0) ncol_mod = nlon  
+                  if(ncol_mod == 0) ncol_mod = nlon
                   L = landtypes(ncol_mod,nrow)
                   ! mapping forest canopy height from "raw data" resolution to modelling resolution
 
@@ -196,7 +193,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #endif
                enddo
             enddo
-            
+
             do L = 0, N_land_classification
 #if(defined USGS_CLASSIFICATION)
                if(L/=0 .and. L/=1 .and. L/=16 .and. L/=24)then   ! NOT OCEAN(0)/URBAN and BUILT-UP(1)/WATER BODIES(16)/ICE(24)
@@ -234,8 +231,8 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP END PARALLEL DO
 #endif
 
-! Write-out the forest height (m) 
-      lndname = trim(dir_model_landdata)//'model_forest_height.bin'
+! Write-out the forest height (m)
+      lndname = trim(dir_srfdata)//'model_forest_height.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')
       write(iunit,err=100) tree_height_patches

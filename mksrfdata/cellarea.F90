@@ -1,8 +1,8 @@
-  
+
 #include <define.h>
 
-subroutine cellarea(lat_points,lon_points,latn,lats,lonw,lone,&
-                                 edgen,edgee,edges,edgew,area)
+subroutine cellarea(latn,lats,lonw,lone,&
+                    edgen,edgee,edges,edgew,area)
 
 ! ----------------------------------------------------------------------
 ! Area of grid cells (square kilometers) - regional grid
@@ -13,9 +13,6 @@ use precision
 IMPLICIT NONE
 
 ! arguments
-      integer, intent(in) :: lat_points     ! number of latitude points
-      integer, intent(in) :: lon_points     ! number of longitude points
-
       real(r8), intent(in) :: latn(lat_points)! grid cell latitude, northern edge (deg)
       real(r8), intent(in) :: lats(lat_points)! grid cell latitude, sourthern edge (deg)
       real(r8), intent(in) :: lonw(lon_points)! grid cell longitude, western edge (deg)
@@ -65,7 +62,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
-            
+
       global = sum(area(:,:))
 
     ! make sure total area from grid cells is same as area of grid
@@ -80,13 +77,13 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
       end if
       return
   end subroutine cellarea
-  
-  
-  function find_min_area(edgee_rad_coarse_gridcell,edgew_rad_coarse_gridcell,edgee_rad_fine_gridcell, & 
-                         edgew_rad_fine_gridcell,edgen_sin_coarse_gridcell,edges_sin_coarse_gridcell, & 
+
+
+  function find_min_area(edgee_rad_coarse_gridcell,edgew_rad_coarse_gridcell,edgee_rad_fine_gridcell, &
+                         edgew_rad_fine_gridcell,edgen_sin_coarse_gridcell,edges_sin_coarse_gridcell, &
                          edgen_sin_fine_gridcell,edges_sin_fine_gridcell)
 !-------------------------------------------------------------------------------
-! FUNCTION to find out the minimum area for weighting. 
+! FUNCTION to find out the minimum area for weighting.
 !-------------------------------------------------------------------------------
 
   use precision
@@ -96,14 +93,14 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
   real(r8), intent(in) :: edgew_rad_coarse_gridcell  ! grid cell longitude, eastern edge (radian)
   real(r8), intent(in) :: edgee_rad_fine_gridcell    ! fine grid cell longitude, western edge (radian)
   real(r8), intent(in) :: edgew_rad_fine_gridcell    ! fine grid cell longitude, eastern edge (radian)
-  real(r8), intent(in) :: edgen_sin_coarse_gridcell  ! grid cell latitude, northern edge(sin)  
+  real(r8), intent(in) :: edgen_sin_coarse_gridcell  ! grid cell latitude, northern edge(sin)
   real(r8), intent(in) :: edges_sin_coarse_gridcell  ! grid cell latitude, northern edge(sin)
   real(r8), intent(in) :: edgen_sin_fine_gridcell    ! fine grid cell latitude, northern edge(sin)
   real(r8), intent(in) :: edges_sin_fine_gridcell    ! fine grid cell latitude, northern edge(sin)
   real(r8) :: find_min_area
 
 !  --- Local variables ---
-  real(r8) diff_lon1  ! interval of coarse grid cell                                                                     
+  real(r8) diff_lon1  ! interval of coarse grid cell
   real(r8) diff_lon2  ! interval of fine grid cell
   real(r8) diff_lon3  ! interval between eastern edge of fine grid cell and western edge of coarse grid cell
   real(r8) diff_lon4  ! interval between eastern edge of coarse grid cell and western edge of fine grid cell
@@ -122,9 +119,9 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
      diff_lon3 = edgee_rad_fine_gridcell - edgew_rad_coarse_gridcell
      diff_lon4 = edgee_rad_coarse_gridcell - edgew_rad_fine_gridcell
 
-     if(edgee_rad_coarse_gridcell < edgew_rad_coarse_gridcell) then   
+     if(edgee_rad_coarse_gridcell < edgew_rad_coarse_gridcell) then
         diff_lon1 = 2 * pi + diff_lon1
-        if(edgee_rad_fine_gridcell * edgew_rad_coarse_gridcell < 0 .and. & 
+        if(edgee_rad_fine_gridcell * edgew_rad_coarse_gridcell < 0 .and. &
            edgee_rad_fine_gridcell < edgew_rad_coarse_gridcell) then
            diff_lon3 = diff_lon3 + 2 * pi
         endif
@@ -139,7 +136,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
      dy = min(min(min(edgen_sin_coarse_gridcell - edges_sin_coarse_gridcell,edgen_sin_fine_gridcell &
           - edges_sin_fine_gridcell ), edgen_sin_fine_gridcell - edges_sin_coarse_gridcell), &
           edgen_sin_coarse_gridcell - edges_sin_fine_gridcell)
-      
+
      find_min_area = dx * dy * re * re
 
    end function find_min_area

@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -104,7 +104,7 @@ set nthread    = 92
 
 \cat >! .tmp << EOF
 #define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
-#define	PFT_CLASSIFICATION       ! USGS/IGBP/PFT/PC
+#define	PFT_CLASSIFICATION        ! USGS/IGBP/PFT/PC
 #undef	RDGRID                    !
 #undef	RAWdata_update            !
 #undef	DYN_PHENOLOGY             !

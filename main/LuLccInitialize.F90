@@ -456,6 +456,10 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       gridlatd(:) = latdeg(:)
       gridlond(:) = londeg(:)
 
+#if(defined URBAN_MODEL)
+      patch2urb(:) = -1
+#endif
+
 ! --------------------------------------------------------------------
 ! Build 1d land vector and 1d patch vector mapping components
 ! --------------------------------------------------------------------
@@ -515,7 +519,6 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       npatch = 0
       nurb = 0
       patchfrac(:) = 0.
-      patch2urb(:) = -1
       l = 0; m = 0
 
       DO j = 1, lat_points
@@ -606,7 +609,6 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       l = 0; m = 0
       patch_pft_s(:) = -1
       patch_pft_e(:) = -1
-      patch2urb(:)   = -1
 
       DO j = 1, lat_points
          DO i = 1, lon_points
@@ -765,7 +767,6 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       nurb = 0
       patchfrac(:) = 0.
       patch2pc(:)  = -1
-      patch2urb(:) = -1
       l = 0; m = 0
 
       DO j = 1, lat_points

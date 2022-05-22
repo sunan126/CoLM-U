@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood

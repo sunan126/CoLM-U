@@ -217,7 +217,6 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
       CALL nccheck( nf90_get_var(ncid, urbanpct_vid, urbanpct) )
       CALL nccheck( nf90_close(ncid) )
       urbanpct = urbanpct / 100.
-      patch2urb(:) = -1
 #endif
 
 ! yuan, 07/31/2019: read land grid info from nc file
@@ -478,6 +477,10 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 
       grid_patch_s(:,:) = -1
       grid_patch_e(:,:) = -1
+
+#if(defined URBAN_MODEL)
+      patch2urb(:) = -1
+#endif
 
 ! Determine land vector and patch vector mapping components
 

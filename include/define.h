@@ -1,12 +1,10 @@
 #define	USE_CRUNCEP_DATA          
 #define	IGBP_CLASSIFICATION       
-#define	LAICHANGE                 
-#define	LULCC                     
 #define	URBAN_MODEL               
 #define	URBAN_TREE                
 #define	URBAN_WATER               
 #define	URBAN_BEM                 
-#undef	URBAN_ONLY                
+#define	URBAN_ONLY                
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             

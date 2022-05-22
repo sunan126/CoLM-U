@@ -105,13 +105,14 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
                htop_p(p) = htop0_p(n)
                hbot_p(p) = hbot0_p(n)
 
+! 01/06/2020, yuan: adjust htop reading
+! 11/15/2021, yuan: adjust htop setting
+! 11/15/2021, yuan: hbot_p setting bug
                ! trees
-! yuan, 01/06/2020: adjust htop reading
-! yuan, 11/15/2021: adjust htop setting
                IF ( n>0 .and. n<9 ) THEN
                   htop_p(p) = max(2., htoppft(i,j,n))
                   hbot_p(p) = htop_p(p)*hbot0_p(n)/htop0_p(n)
-                  hbot_p(p) = max(1., hbot_p(n))
+                  hbot_p(p) = max(1., hbot_p(p))
                ENDIF
             ENDDO
 
@@ -155,12 +156,13 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
             hbot_c(:,p) = hbot0_p(:)
 
             DO n = 1, N_PFT-1
-! yuan, 01/06/2020: adjust htop reading
-! yuan, 11/15/2021: adjust htop setting
+! 01/06/2020, yuan: adjust htop reading
+! 11/15/2021, yuan: adjust htop setting
+! 11/15/2021, yuan: hbot_c setting bug
                IF (n < 9) THEN
                   htop_c(n,p) = max(2., htoplc(i,j,m))
                   hbot_c(n,p) = htop_c(n,p)*hbot0_p(n)/htop0_p(n)
-                  hbot_c(n,p) = max(1., hbot_p(n))
+                  hbot_c(n,p) = max(1., hbot_c(n,p))
                ENDIF
             ENDDO
 

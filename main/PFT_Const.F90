@@ -11,10 +11,10 @@ MODULE PFT_Const
    IMPLICIT NONE
    SAVE
 
-! Plant Functional Type classification 
+! Plant Functional Type classification
 !---------------------------
 ! 0  not vegetated
-! 1  needleleaf evergreen temperate tree 
+! 1  needleleaf evergreen temperate tree
 ! 2  needleleaf evergreen boreal tree
 ! 3  needleleaf deciduous boreal tree
 ! 4  broadleaf evergreen tropical tree
@@ -29,7 +29,7 @@ MODULE PFT_Const
 !13  c3 non-arctic grass
 !14  c4 grass
 !15  c3 crop
-   
+
    ! canopy layer number
    INTEGER , parameter :: canlay(0:15) &
       = (/0, 2, 2, 2, 2, 2, 2, 2, &
@@ -58,55 +58,55 @@ MODULE PFT_Const
          2.0, 0.5, 0.5, 0.5, 0.2, 0.2, 0.2, 0.2/)
 
    ! ratio to calculate roughness length z0m
-   REAL(r8), parameter :: z0mr_p(0:15) = 0.1 
-   
-   ! ratio to calculate displacement height d 
+   REAL(r8), parameter :: z0mr_p(0:15) = 0.1
+
+   ! ratio to calculate displacement height d
    REAL(r8), parameter :: displar_p(0:15) = 0.667
 
    ! inverse&sqrt leaf specific dimension size 4 cm
    REAL(r8), parameter :: sqrtdi_p(0:15) = 5.0
-      
+
    ! leaf angle distribution parameter
    REAL(r8), parameter :: chil_p(0:15) &
       = (/-0.300,  0.010,  0.010,  0.010,  0.100,  0.100,  0.010,  0.250,&
            0.250,  0.010,  0.250,  0.250, -0.300, -0.300, -0.300, -0.300/)
 
-   ! reflectance of green leaf in virsible band 
+   ! reflectance of green leaf in virsible band
    REAL(r8), parameter :: rhol_vis_p(0:15) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.100,  0.100,  0.100,&
           0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
 
-   ! reflectance of dead leaf in virsible band 
+   ! reflectance of dead leaf in virsible band
    REAL(r8), parameter :: rhos_vis_p(0:15) &
       = (/0.310,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,&
           0.160,  0.160,  0.160,  0.160,  0.310,  0.310,  0.310,  0.310/)
 
-   ! reflectance of green leaf in near infrared band 
+   ! reflectance of green leaf in near infrared band
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&
           0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 
-   ! reflectance of dead leaf in near infrared band 
+   ! reflectance of dead leaf in near infrared band
    REAL(r8), parameter :: rhos_nir_p(0:15) &
       = (/0.530,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,&
           0.390,  0.390,  0.390,  0.390,  0.530,  0.530,  0.530,  0.530/)
 
-   ! transmittance of green leaf in visible band 
+   ! transmittance of green leaf in visible band
    REAL(r8), parameter :: taul_vis_p(0:15) &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
 
-   ! transmittance of dead leaf in visible band 
+   ! transmittance of dead leaf in visible band
    REAL(r8), parameter :: taus_vis_p(0:15) &
       = (/0.120,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.001,  0.001,  0.001,  0.120,  0.120,  0.120,  0.120/)
 
-   ! transmittance of green leaf in near infrared band 
+   ! transmittance of green leaf in near infrared band
    REAL(r8), parameter :: taul_nir_p(0:15) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&
           0.250,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 
-   ! transmittance of dead leaf in near infrared band 
+   ! transmittance of dead leaf in near infrared band
    REAL(r8), parameter :: taus_nir_p(0:15) &
       = (/0.250,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.001,  0.001,  0.001,  0.250,  0.250,  0.250,  0.250/)
@@ -140,12 +140,12 @@ MODULE PFT_Const
    ! slope of high temperature inhibition FUNCTION (s1)
    REAL(r8), parameter :: shti_p(0:15) = 0.3
 
-   ! slope of low temperature inhibition FUNCTION (s3) 
+   ! slope of low temperature inhibition FUNCTION (s3)
    REAL(r8), parameter :: slti_p(0:15) = 0.2
 
    ! temperature coefficient in gs-a model (s5)
    REAL(r8), parameter :: trda_p(0:15) = 1.3
-   
+
    ! temperature coefficient in gs-a model (s6)
    REAL(r8), parameter :: trdm_p(0:15) = 328.0
 
@@ -179,24 +179,24 @@ MODULE PFT_Const
       =(/-2.051, -1.835, -1.880, -1.880, -1.632, -1.757, -1.681, -1.757,&
          -1.880, -1.623, -1.623, -1.623, -2.621, -1.176, -1.452, -1.796/)
 
-   !设定PFT的根分布参数 
+   !设定PFT的根分布参数
    REAL(r8), PRIVATE, parameter :: roota(0:15) &
       =(/  0.0,   7.0,   7.0,   7.0,   7.0,   7.0,   6.0,   6.0,&
            6.0,   7.0,   7.0,   7.0,  11.0,  11.0,  11.0,   6.0/)
-   
+
    REAL(r8), PRIVATE, parameter :: rootb(0:15) &
       =(/  0.0,   2.0,   2.0,   2.0,   1.0,   1.0,   2.0,   2.0,&
            2.0,   1.5,   1.5,   1.5,   2.0,   2.0,   2.0,   3.0/)
 
    ! scheme 1: Zeng 2001, 2: Schenk and Jackson, 2002
-   INTEGER, PRIVATE :: ROOTFR_SCHEME = 1 
-   
-   !fraction of roots in each soil layer 
+   INTEGER, PRIVATE :: ROOTFR_SCHEME = 1
+
+   !fraction of roots in each soil layer
    REAL(r8), dimension(nl_soil,16) :: &
-      rootfr_p(1:nl_soil, 0:15) 
+      rootfr_p(1:nl_soil, 0:15)
 
    INTEGER, PRIVATE :: i, nsl
-   
+
    ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: Init_PFT_Const
 
@@ -217,25 +217,25 @@ CONTAINS
 
 IF (ROOTFR_SCHEME == 1) THEN
       DO i = 0, N_PFT-1
-         rootfr_p(1,i)=1./(1.+(z_soih(1)*100./d50_p(i))**beta_p(i)) 
-         rootfr_p(nl_soil,i)=1.-1./(1.+(z_soih(nl_soil-1)*100./d50_p(i))**beta_p(i)) 
+         rootfr_p(1,i)=1./(1.+(z_soih(1)*100./d50_p(i))**beta_p(i))
+         rootfr_p(nl_soil,i)=1.-1./(1.+(z_soih(nl_soil-1)*100./d50_p(i))**beta_p(i))
 
          DO nsl=2,nl_soil-1
             rootfr_p(nsl,i)=1./(1.+(z_soih(nsl)*100./d50_p(i))**beta_p(i)) &
                -1./(1.+(z_soih(nsl-1)*100./d50_p(i))**beta_p(i))
          ENDDO
-      ENDDO 
+      ENDDO
 ELSE
       ! PFT rootfr_p (Zeng, 2001)
       DO i = 0, N_PFT-1
          rootfr_p(1,i) = 1. - 0.5*( &
               exp(-roota(i) * z_soih(1)) &
             + exp(-rootb(i) * z_soih(1)) )
-            
+
          rootfr_p(nl_soil,i) = 0.5*( &
               exp(-roota(i) * z_soih(nl_soil)) &
             + exp(-rootb(i) * z_soih(nl_soil)) )
-         
+
          DO nsl = 2, nl_soil-1
             rootfr_p(nsl,i) = 0.5*( &
                  exp(-roota(i) * z_soih(nsl-1)) &
@@ -245,7 +245,7 @@ ELSE
          ENDDO
       ENDDO
 ENDIF
-   
+
    END SUBROUTINE Init_PFT_Const
 
 END MODULE PFT_Const

@@ -265,14 +265,14 @@
          year = ldate(1)
          IF (month /= month_p) THEN
 #ifdef LAICHANGE
-            CALL LAI_readin_nc      (   year, month, dir_srfdata, nam_srfdata)
+            CALL LAI_readin_nc      (   year,month,dir_srfdata,nam_srfdata)
 #ifdef URBAN_MODEL
-            CALL UrbanLAI_readin_nc (   year, month, dir_srfdata, nam_urbdata)
+            CALL UrbanLAI_readin_nc (   year,month,dir_srfdata,nam_urbdata)
 #endif
 #else
-            CALL LAI_readin_nc      (lc_year, month, dir_srfdata, nam_srfdata)
+            CALL LAI_readin_nc      (lc_year,month,dir_srfdata,nam_srfdata)
 #ifdef URBAN_MODEL
-            CALL UrbanLAI_readin_nc (lc_year, month, dir_srfdata, nam_urbdata)
+            CALL UrbanLAI_readin_nc (lc_year,month,dir_srfdata,nam_urbdata)
 #endif
 #endif
          ENDIF
@@ -292,11 +292,7 @@
        ! ----------------------------------------------------------------------
          CALL vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
 
-         DO j = 1, lat_points
-            DO i = 1, lon_points
-               IF (a_rnof(i,j) < 1.e-10) a_rnof(i,j) = 0.
-            ENDDO
-         ENDDO
+         WHERE (a_rnof < 1.e-10) a_rnof = 0.
 
 #if(defined CaMa_Flood)
        ! Simulating the hydrodynamics in continental-scale rivers

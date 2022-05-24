@@ -9,6 +9,7 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
   use MOD_1D_Forcing
   use MOD_2D_Forcing
   use GETMETMOD, only: forcn, GETMET
+  USE co2_mlo
   use timemanager
   use omp_lib
 
@@ -20,13 +21,14 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
 
 ! local variables:
       integer  :: i, j, np
+      INTEGER  :: year, month, mday
 !added by yuan, 07/06/2016
       real(r8) :: pi      ! pie
       real(r8) :: coszen  ! cosine of solar zenith angle
       real(r8) :: calday  ! Julian cal day (1.xx to 365.xx)
       real(r8) :: sunang, cloud, difrat, vnrat
       real(r8) :: forc_xy_solarin(lon_points,lat_points)
-      real(r8) :: a, hsolar, ratio_rvrf
+      real(r8) :: a, hsolar, ratio_rvrf, pco2m
 
       real(r8), external :: orb_coszen
 
@@ -34,6 +36,12 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
 
 !added by yuan, 07/06/2016
       pi = 4.*atan(1.)
+
+!------------------------------------------------------------
+    ! GET ATMOSPHERE CO2 CONCENTRATION DATA
+      year  = idate(1)
+      CALL julian2monthday (idate(1), idate(2), month, mday)
+      pco2m = get_monthly_co2_mlo(year, month)*1.e-6
 
 !------------------------------------------------------------
     ! READ IN THE ATMOSPHERIC FORCING
@@ -177,7 +185,8 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
          j = patch2lat(np) ! latitude index
 
        ! [CO2 concentration = 398.03ppm On March 12, 2014, NOAA MLO recorded]
-         forc_pco2m (np) = forc_xy_pbot  (i,j)*398.03e-06
+         !forc_pco2m (np) = forc_xy_pbot  (i,j)*398.03e-06
+         forc_pco2m (np) = forc_xy_pbot  (i,j)*pco2m
          forc_po2m  (np) = forc_xy_pbot  (i,j)*0.209
          forc_us    (np) = forc_xy_us    (i,j)
          forc_vs    (np) = forc_xy_vs    (i,j)

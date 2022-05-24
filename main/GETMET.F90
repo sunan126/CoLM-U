@@ -4,6 +4,7 @@ MODULE GETMETMOD
 
    use precision
    use timemanager
+   USE co2_mlo
    use omp_lib
 
    use METDAT, only: NVAR, tstamp_LB, tstamp_UB, tintalgo, avgcos, rlats, rlons, &
@@ -65,6 +66,9 @@ CONTAINS
       allocate(forcn(lon_n, lat_n, NVAR))
       allocate(forcn_LB(lon_n, lat_n, NVAR))
       allocate(forcn_UB(lon_n, lat_n, NVAR))
+
+    ! CO2 data initialization
+      CALL init_monthly_co2_mlo
 
    END SUBROUTINE GETMETINI
 

@@ -107,7 +107,7 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
 
 ! 01/06/2020, yuan: adjust htop reading
 ! 11/15/2021, yuan: adjust htop setting
-! 11/15/2021, yuan: hbot_p setting bug
+! 05/22/2022, yuan: hbot_p setting bug
                ! trees
                IF ( n>0 .and. n<9 ) THEN
                   htop_p(p) = max(2., htoppft(i,j,n))
@@ -158,7 +158,7 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
             DO n = 1, N_PFT-1
 ! 01/06/2020, yuan: adjust htop reading
 ! 11/15/2021, yuan: adjust htop setting
-! 11/15/2021, yuan: hbot_c setting bug
+! 05/22/2022, yuan: hbot_c setting bug
                IF (n < 9) THEN
                   htop_c(n,p) = max(2., htoplc(i,j,m))
                   hbot_c(n,p) = htop_c(n,p)*hbot0_p(n)/htop0_p(n)

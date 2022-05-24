@@ -8,6 +8,7 @@ MODULE METDAT
    use netcdf
    use timemanager
    use user_specified_forcing
+   use omp_lib
 
    implicit none
 
@@ -589,6 +590,11 @@ CONTAINS
          tstamp = tstamp + deltim
          calday = calendarday(tstamp)
 
+! added by yuan, 05/23/2022
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) &
+!$OMP PRIVATE(i,j,cosz)
+#endif
          do i = lat_i, lat_i+lat_n-1
             do j = lon_i, lon_i+lon_n-1
                cosz = orb_coszen(calday, rlons(j), rlats(i))
@@ -596,6 +602,9 @@ CONTAINS
                avgcos(j, i) = avgcos(j, i) + cosz*real(deltim)
             end do
          end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
       end do
       avgcos = avgcos/real(dtime(7))
 
@@ -611,7 +620,7 @@ CONTAINS
       character(256) :: filename
       filename = trim(fmetdat)//trim(fmetnam)
 
-      if (fid(1) ==  -1) then
+      if (fid(1) == -1) then
          open(unit=11, file=filename, form='formatted', status='old', action='read')
          fid(1) = 11
       end if

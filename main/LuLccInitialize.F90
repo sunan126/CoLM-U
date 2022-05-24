@@ -986,11 +986,11 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 
 ! yuan, 08/03/2019: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
-      CALL LAI_readin_nc (lon_points, lat_points, year, month, dir_srfdata, nam_srfdata)
+      CALL LAI_readin_nc (lon_points,lat_points,year,month,dir_srfdata,nam_srfdata)
 
 #ifdef URBAN_MODEL
       ! 读取城市LAI/SAI数据
-      CALL UrbanLAI_readin_nc (lon_points, lat_points, year, month, dir_srfdata, nam_urbdata)
+      CALL UrbanLAI_readin_nc (lon_points,lat_points,year,month,dir_srfdata,nam_urbdata)
 #endif
 
 #endif

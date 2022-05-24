@@ -72,6 +72,7 @@ OBJS =  precision.o                 \
 	newsnow.o                   \
 	orb_coszen.o                \
 	qsadv.o                     \
+	monthly_in_situ_co2_mlo.o   \
 	rd_forcing.o                \
 	snowage.o                   \
 	snowfraction.o              \

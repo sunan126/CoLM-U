@@ -160,9 +160,10 @@ MODULE co2_mlo
       ENDIF
 
       get_monthly_co2_mlo = co2mlo(year, month)
-      print *, "Set CO2 data [value,year,month]:",get_monthly_co2_mlo,year,month
+      !print *, "Set CO2 value [ppm,year,month]:",get_monthly_co2_mlo,year,month
       RETURN
 
    END FUNCTION get_monthly_co2_mlo
 
 END MODULE co2_mlo
+! ---------- EOP ------------

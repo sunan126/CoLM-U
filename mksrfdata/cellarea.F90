@@ -1,7 +1,7 @@
 
 #include <define.h>
 
-subroutine cellarea(latn,lats,lonw,lone,&
+subroutine cellarea(lat_point,lon_point,latn,lats,lonw,lone,&
                     edgen,edgee,edges,edgew,area)
 
 ! ----------------------------------------------------------------------
@@ -13,16 +13,19 @@ use precision
 IMPLICIT NONE
 
 ! arguments
-      real(r8), intent(in) :: latn(lat_points)! grid cell latitude, northern edge (deg)
-      real(r8), intent(in) :: lats(lat_points)! grid cell latitude, sourthern edge (deg)
-      real(r8), intent(in) :: lonw(lon_points)! grid cell longitude, western edge (deg)
-      real(r8), intent(in) :: lone(lon_points)! grid cell longitude, eastern edge (deg)
+      INTEGER,  intent(in) :: lat_point      ! number of latitude points
+      INTEGER,  intent(in) :: lon_point      ! number of longitude points
+
+      real(r8), intent(in) :: latn(lat_point)! grid cell latitude, northern edge (deg)
+      real(r8), intent(in) :: lats(lat_point)! grid cell latitude, sourthern edge (deg)
+      real(r8), intent(in) :: lonw(lon_point)! grid cell longitude, western edge (deg)
+      real(r8), intent(in) :: lone(lon_point)! grid cell longitude, eastern edge (deg)
 
       real(r8), intent(in) :: edgen             ! northern edge of grid (deg)
       real(r8), intent(in) :: edges             ! southern edge of grid (deg)
       real(r8), intent(in) :: edgew             ! western edge of grid (deg)
       real(r8), intent(in) :: edgee             ! eastern edge of grid (deg)
-      real(r8), intent(out):: area(lon_points,lat_points) ! cell area (km**2)
+      real(r8), intent(out):: area(lon_point,lat_point) ! cell area (km**2)
 
 ! local variables
       integer i,j                               ! indices
@@ -44,8 +47,8 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE(i,j,dx,dy)
 #endif
-      do j = 1, lat_points
-         do i = 1, lon_points
+      do j = 1, lat_point
+         do i = 1, lon_point
             if(lone(i)*lonw(i)<0 .and. lone(i)<lonw(i))then   ! west edge is more western than data line
                dx = (lone(i)-lonw(i)+360.0)*deg2rad
             else

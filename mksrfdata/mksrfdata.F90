@@ -52,6 +52,7 @@ USE omp_lib
 
 IMPLICIT NONE
 
+      CHARACTER(LEN=256) :: casename
       character(LEN=256) :: dir_rawdata
       character(LEN=256) :: dir_srfdata
       INTEGER :: lc_year     ! which year of land cover data used
@@ -86,8 +87,8 @@ IMPLICIT NONE
 
       real(r8), allocatable :: area_fine_gridcell(:,:) ! rwadata fine cell area (km**2)
 
-      namelist /mksrfexp/ dir_rawdata,dir_srfdata,lc_year,&
-                          edgen,edgee,edges,edgew
+      namelist /mksrfexp/ casename,dir_rawdata,dir_srfdata,&
+                          lc_year,edgen,edgee,edges,edgew
 
       read(5,mksrfexp)
 
@@ -159,8 +160,14 @@ IMPLICIT NONE
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
-#endif
 
+! For other CLASSIFICATIONs, make NetCDF format surface data
+!NOTE: For regional/point cases, not efficient for the global case.
+!      For global cases, run separately. see MakeGlobalSurface.F90
+#else
+      CALL makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
+                             lc_year,edgen,edgee,edges,edgew )
+#endif
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! yuan, 07/30/2019: landtype, LAI, forest_height read from NC files in mkinidata

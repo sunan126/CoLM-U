@@ -10,6 +10,7 @@ EXECUTABLE = srf.x
 
 OBJS =  precision.o \
 	GlobalVars.o \
+	ncio.o \
 	mksrfdata.o \
 	rdgrid.o \
 	crgrid.o \
@@ -25,6 +26,7 @@ OBJS =  precision.o \
 	aggregation_soil_brightness.o \
 	aggregation_landwaters.o \
 	aggregation_wetland.o \
+	makesurfacedata.o \
 	soil_hydraulic_parameters.o \
 	soil_thermal_parameters.o \
 	array_sorting_mod.o \
@@ -32,12 +34,12 @@ OBJS =  precision.o \
 
 ####################################################################
 
-${EXECUTABLE} : ${OBJS} 
+${EXECUTABLE} : ${OBJS}
 	${FF} ${FOPTS} ${OBJS} -o $@ ${LDFLAGS}
 	@echo 'making CLM surface data completed!'
 
 $(OBJS):%.o:%.F90 ../include/define.h
-	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $< 
+	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o $@ $<
 
 clean :
 	${RM} -f *.o *.mod

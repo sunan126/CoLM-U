@@ -168,6 +168,7 @@ make >& $CAS_RUNDIR/compile.mksrf.log || exit 5
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/mksrf.stdin << EOF
 &mksrfexp
+casename = '$CASE_NAME'
 dir_rawdata        = '$DAT_RAWDIR/'
 dir_srfdata        = '$DAT_SRFDIR/'
 lc_year            = $LC_YEAR

@@ -112,7 +112,7 @@ IMPLICIT NONE
 #if(defined USE_POINT_DATA)
       area(lon_points,lat_points) = 1.
 #else
-      call cellarea (latn,lats,lonw,lone,&
+      call cellarea (lat_points,lon_points,latn,lats,lonw,lone,&
                      edgen,edgee,edges,edgew,area)
 #endif
 

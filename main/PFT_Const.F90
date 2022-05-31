@@ -72,9 +72,16 @@ MODULE PFT_Const
            0.250,  0.010,  0.250,  0.250, -0.300, -0.300, -0.300, -0.300/)
 
    ! reflectance of green leaf in virsible band
+#if(defined PC_CLASSIFICATION)
+   ! Leaf optical properties from measured data (Dong et al., 2021)
+   REAL(r8), parameter :: rhol_vis_p(0:15) &
+      = (/0.110,  0.050,  0.060,  0.060,  0.100,  0.110,  0.100,  0.080,&
+          0.090,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
+#else
    REAL(r8), parameter :: rhol_vis_p(0:15) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.100,  0.100,  0.100,&
           0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
+#endif
 
    ! reflectance of dead leaf in virsible band
    REAL(r8), parameter :: rhos_vis_p(0:15) &
@@ -82,9 +89,16 @@ MODULE PFT_Const
           0.160,  0.160,  0.160,  0.160,  0.310,  0.310,  0.310,  0.310/)
 
    ! reflectance of green leaf in near infrared band
+#if(defined PC_CLASSIFICATION)
+   ! Leaf optical properties from measured data (Dong et al., 2021)
+   REAL(r8), parameter :: rhol_nir_p(0:15) &
+      = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420,&
+          0.400,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
+#else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&
           0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
+#endif
 
    ! reflectance of dead leaf in near infrared band
    REAL(r8), parameter :: rhos_nir_p(0:15) &
@@ -92,9 +106,16 @@ MODULE PFT_Const
           0.390,  0.390,  0.390,  0.390,  0.530,  0.530,  0.530,  0.530/)
 
    ! transmittance of green leaf in visible band
+#if(defined PC_CLASSIFICATION)
+   ! Leaf optical properties from measured data (Dong et al., 2021)
+   REAL(r8), parameter :: taul_vis_p(0:15) &
+      = (/0.050,  0.030,  0.040,  0.040,  0.050,  0.060,  0.050,  0.060,&
+          0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
+#else
    REAL(r8), parameter :: taul_vis_p(0:15) &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
+#endif
 
    ! transmittance of dead leaf in visible band
    REAL(r8), parameter :: taus_vis_p(0:15) &
@@ -102,9 +123,16 @@ MODULE PFT_Const
           0.001,  0.001,  0.001,  0.001,  0.120,  0.120,  0.120,  0.120/)
 
    ! transmittance of green leaf in near infrared band
+#if(defined PC_CLASSIFICATION)
+   ! Leaf optical properties from measured data (Dong et al., 2021)
+   REAL(r8), parameter :: taul_nir_p(0:15) &
+      = (/0.340,  0.280,  0.290,  0.380,  0.250,  0.330,  0.250,  0.430,&
+          0.420,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
+#else
    REAL(r8), parameter :: taul_nir_p(0:15) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&
           0.250,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
+#endif
 
    ! transmittance of dead leaf in near infrared band
    REAL(r8), parameter :: taus_nir_p(0:15) &

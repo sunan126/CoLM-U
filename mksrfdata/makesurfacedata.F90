@@ -494,7 +494,9 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
          ENDIF
 
          ! land fractional cover
-         pct_land(jo,io) = pct_land(jo,io) / area(jo,io) * 100.
+         IF (area(jo,io) > 0) THEN
+            pct_land(jo,io) = pct_land(jo,io) / area(jo,io) * 100.
+         ENDIF
 
          ! nccheck
          sumpct = sum(pct_pft(jo,io,:))+ &

@@ -31,6 +31,7 @@ OBJS =  precision.o                 \
 	MOD_TimeVariables.o         \
 	MOD_LuLccTimeVars.o         \
 	MOD_LuLccTMatrix.o          \
+	monthly_in_situ_co2_mlo.o   \
 	GETMET.o                    \
 	MOD_1D_PFTFluxes.o          \
 	MOD_1D_PCFluxes.o           \
@@ -72,7 +73,6 @@ OBJS =  precision.o                 \
 	newsnow.o                   \
 	orb_coszen.o                \
 	qsadv.o                     \
-	monthly_in_situ_co2_mlo.o   \
 	rd_forcing.o                \
 	snowage.o                   \
 	snowfraction.o              \

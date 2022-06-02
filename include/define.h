@@ -1,5 +1,5 @@
-#define	USE_GSWP3_DATA            
-#define	PFT_CLASSIFICATION        
+#define	USE_CRUNCEP_DATA          
+#define	IGBP_CLASSIFICATION       
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             

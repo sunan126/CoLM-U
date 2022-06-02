@@ -21,7 +21,7 @@ set RUN_CLM="NO"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = MKSRF           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set LC_YEAR     = 2005          	# which year of land cover data used
+set LC_YEAR     = 2020          	# which year of land cover data used
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day
@@ -106,7 +106,7 @@ set nthread    = 92
 #define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
 #undef	RDGRID                    ! read user defined grid
-#define	RAWdata_update            ! update raw data
+#undef	RAWdata_update            ! update raw data
 #undef	DYN_PHENOLOGY             ! empirical LAI f(soil T, root frac)
 #undef	SOILINI                   ! soil initial stat from files
 #define	LANDONLY                  ! land only. o/w. include sea

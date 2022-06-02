@@ -21,7 +21,7 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = PC            	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set LC_YEAR     = 2002          	# which year of land cover data used
+set LC_YEAR     = 2000          	# which year of land cover data used
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start Julian day

@@ -1,10 +1,10 @@
 
 #include <define.h>
 
-SUBROUTINE aggregation_soil_brightness ( dir_rawdata,dir_srfdata,lc_year,&
-                                         nrow_start,nrow_end,ncol_start,ncol_end, &
-                                         nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
-                                         READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
+SUBROUTINE aggregation_soil_color ( dir_rawdata,dir_srfdata,lc_year,&
+                                    nrow_start,nrow_end,ncol_start,ncol_end, &
+                                    nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
+                                    READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 ! ----------------------------------------------------------------------
 ! Creates land model surface dataset from original "raw" data files -
 !     data with 30 arc seconds resolution
@@ -93,6 +93,21 @@ IMPLICIT NONE
       soil_d_n_refl = (/ 0.63, 0.59, 0.55, 0.51, 0.49, 0.47, 0.45, 0.43, 0.41, 0.39, &
                          0.37, 0.35, 0.33, 0.31, 0.29, 0.27, 0.25, 0.23, 0.21, 0.19 /)
 
+! The soil color and reflectance from CLM5.0:
+! David Lawrence et al., 2018. (Table 3.3, version: Mar 23, 2020)
+! Technical Description of version 5.0 of the Community Land Model (CLM)
+      soil_s_v_refl = (/ 0.25, 0.23, 0.21, 0.20, 0.19, 0.18, 0.17, 0.16, 0.15, 0.14, &
+                         0.13, 0.12, 0.11, 0.10, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04 /)
+
+      soil_d_v_refl = (/ 0.36, 0.34, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, &
+                         0.24, 0.23, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08 /)
+
+      soil_s_n_refl = (/ 0.50, 0.46, 0.42, 0.40, 0.38, 0.36, 0.34, 0.32, 0.30, 0.28, &
+                         0.26, 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08 /)
+
+      soil_d_n_refl = (/ 0.61, 0.57, 0.53, 0.51, 0.49, 0.48, 0.45, 0.43, 0.41, 0.39, &
+                         0.37, 0.35, 0.33, 0.31, 0.29, 0.27, 0.25, 0.23, 0.21, 0.16 /)
+
 ! ........................................
 ! ... [1] gloabl land cover types
 ! ........................................
@@ -175,10 +190,10 @@ IMPLICIT NONE
       allocate ( soil_s_n_alb (0:N_land_classification,1:lon_points,1:lat_points) )
       allocate ( soil_d_n_alb (0:N_land_classification,1:lon_points,1:lat_points) )
 
-! Read in the index of soil brightness (color)
+! Read in the index of soil color (brightness)
       iunit = 100
       inquire(iolength=length) soil_chr1
-      lndname = trim(dir_rawdata)//'soil_brightness/soilcol_clm_30s.bin'
+      lndname = trim(dir_rawdata)//'soilcolor/soilcolor_clm_simyr2005_30s.bin'
       print*,lndname
       open(iunit,file=trim(lndname),access='direct',recl=length,form='unformatted',status='old')
       do nrow = nrow30s_start, nrow30s_end
@@ -234,6 +249,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                   nrow_mod = int((nrow+1)/2)
 #endif
                   ii = isc(ncol_mod,nrow_mod)
+                  IF (ii == 0) ii = 10  !for filled value, set to 10
 
                   a_s_v_refl (L,LL) = soil_s_v_refl( ii )
                   a_d_v_refl (L,LL) = soil_d_v_refl( ii )
@@ -258,14 +274,15 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 ! yuan, 12/29/2019: bug, inconsistant with land fraction and land cover data
                      ! set to color index 15 (for ocean fill value)
                      ! need to check with soil hydro/thermal paras
+! yuan, 02/06/2022: modified to 10 according to the new soil color data (CLM5.0)
                      !soil_s_v_alb (L,i,j) = -1.0e36
                      !soil_d_v_alb (L,i,j) = -1.0e36
                      !soil_s_n_alb (L,i,j) = -1.0e36
                      !soil_d_n_alb (L,i,j) = -1.0e36
-                     soil_s_v_alb (L,i,j) = soil_s_v_refl( 15 )
-                     soil_d_v_alb (L,i,j) = soil_s_v_refl( 15 )
-                     soil_s_n_alb (L,i,j) = soil_s_v_refl( 15 )
-                     soil_d_n_alb (L,i,j) = soil_s_v_refl( 15 )
+                     soil_s_v_alb (L,i,j) = soil_s_v_refl( 10 )
+                     soil_d_v_alb (L,i,j) = soil_s_v_refl( 10 )
+                     soil_s_n_alb (L,i,j) = soil_s_v_refl( 10 )
+                     soil_d_n_alb (L,i,j) = soil_s_v_refl( 10 )
                   else if(np == 1) then
                      soil_s_v_alb (L,i,j) = a_s_v_refl(L,1)
                      soil_d_v_alb (L,i,j) = a_d_v_refl(L,1)
@@ -350,6 +367,6 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 101   format(' record =',i8,',  error occured on file: ',a50)
 1000  continue
 
-END SUBROUTINE aggregation_soil_brightness
+END SUBROUTINE aggregation_soil_color
 !-----------------------------------------------------------------------
 !EOP

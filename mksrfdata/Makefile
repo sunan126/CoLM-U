@@ -23,7 +23,7 @@ OBJS =  precision.o \
 	aggregation_lakedepth.o \
 	aggregation_landtypes.o \
 	aggregation_soil_parameters.o \
-	aggregation_soil_brightness.o \
+	aggregation_soil_color.o \
 	aggregation_landwaters.o \
 	aggregation_wetland.o \
 	makesurfacedata.o \

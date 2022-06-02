@@ -179,7 +179,7 @@ IMPLICIT NONE
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )
 
-      CALL aggregation_soil_brightness ( dir_rawdata,dir_srfdata,lc_year,&
+      CALL aggregation_soil_color ( dir_rawdata,dir_srfdata,lc_year,&
                            nrow_start,nrow_end,ncol_start,ncol_end, &
                            nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                            READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB )

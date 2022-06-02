@@ -103,7 +103,7 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
+#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
 #define	LAICHANGE                 ! change LAI for each year
 #define	URBAN_MODEL               ! run urban community model

@@ -103,7 +103,7 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
+#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
 #undef	RDGRID                    ! read user defined grid
 #define	RAWdata_update            ! update raw data

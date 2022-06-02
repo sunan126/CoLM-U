@@ -71,7 +71,7 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
-setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
+setenv DAT_ATMDIR $DAT_ROOT/atm/gswp3_v1
 setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
@@ -103,7 +103,7 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
+#define	USE_GSWP3_DATA            ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	PFT_CLASSIFICATION        ! USGS/IGBP/PFT/PC
 #undef	RDGRID                    ! read user defined grid
 #undef	RAWdata_update            ! update raw data

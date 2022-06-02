@@ -1,4 +1,4 @@
-#define	USE_CRUNCEP_DATA          
+#define	USE_GSWP3_DATA            
 #define	PFT_CLASSIFICATION        
 #undef	RDGRID                    
 #undef	RAWdata_update            

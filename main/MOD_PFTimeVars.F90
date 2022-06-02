@@ -6,7 +6,6 @@ MODULE MOD_PFTimeVars
 ! -------------------------------
 
   USE precision
-  USE timemanager
 
   IMPLICIT NONE
   SAVE

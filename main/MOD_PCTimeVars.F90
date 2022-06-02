@@ -6,7 +6,6 @@ MODULE MOD_PCTimeVars
 ! -------------------------------
 
   USE precision
-  USE timemanager
   IMPLICIT NONE
   SAVE
 ! -----------------------------------------------------------------

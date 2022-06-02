@@ -23,15 +23,12 @@ OBJS =  precision.o                 \
 	MOD_TimeInvariants.o        \
 	MOD_LuLccTimeInvars.o       \
 	timemanager.o               \
-	user_specified_forcing.o    \
-	metdata.o                   \
 	MOD_PFTimeVars.o            \
 	MOD_PCTimeVars.o            \
 	MOD_UrbanTimeVars.o         \
 	MOD_TimeVariables.o         \
 	MOD_LuLccTimeVars.o         \
 	MOD_LuLccTMatrix.o          \
-	GETMET.o                    \
 	MOD_1D_PFTFluxes.o          \
 	MOD_1D_PCFluxes.o           \
 	MOD_1D_UrbanFluxes.o        \
@@ -39,6 +36,10 @@ OBJS =  precision.o                 \
 	MOD_1D_Forcing.o            \
 	MOD_2D_Fluxes.o             \
 	MOD_2D_Forcing.o            \
+	user_specified_forcing.o    \
+	monthly_in_situ_co2_mlo.o   \
+	metdata.o                   \
+	GETMET.o                    \
 	ThreeDCanopy.o              \
 	ALBEDO.o                    \
 	UrbanShortwave.o            \
@@ -72,7 +73,6 @@ OBJS =  precision.o                 \
 	newsnow.o                   \
 	orb_coszen.o                \
 	qsadv.o                     \
-	monthly_in_situ_co2_mlo.o   \
 	rd_forcing.o                \
 	snowage.o                   \
 	snowfraction.o              \
@@ -100,8 +100,8 @@ OBJS =  precision.o                 \
 	LuLccWaterConserve.o        \
 	LuLccDRIVER.o               \
 	UrbanCLMMAIN.o              \
-	UrbanCLMDRIVER.o            \
-	UrbanCLM.o
+	CLMDRIVER.o                 \
+	CLM.o
 
 ####################################################################
 

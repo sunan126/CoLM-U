@@ -224,11 +224,11 @@ SUBROUTINE soil_parameters_readin (dir_srfdata,lc_year)
 #endif
 
 ! Soil reflectance of broadband of visible(_v) and near-infrared(_n) of the sarurated(_s) and dry(_d) soil
-#if(defined SOIL_REFL_GUESSED)
+#if(!defined SOIL_REFL_READ)
       do i = 1, numpatch
          CALL soil_color_refl(mxy_patch(i),soil_s_v_alb(i),soil_d_v_alb(i),soil_s_n_alb(i),soil_d_n_alb(i))
       enddo
-#elif(defined SOIL_REFL_READ)
+#else
       allocate ( s_v_alb (0:N_land_classification,1:lon_points,1:lat_points) )
       allocate ( d_v_alb (0:N_land_classification,1:lon_points,1:lat_points) )
       allocate ( s_n_alb (0:N_land_classification,1:lon_points,1:lat_points) )

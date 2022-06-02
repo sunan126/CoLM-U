@@ -166,7 +166,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
                   numpatch_lat(j) = numpatch_lat(j) + 1
                ENDIF
             ENDDO
-#elif(defined LAND_SEA || defined USE_POINT_DATA)
+#else
             DO np = 0, N_land_classification
                IF (fraction_patches(np,i,j) > 0.) THEN
                   npatch = npatch+1 !subgrid patch number
@@ -481,7 +481,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 
 #if(defined LANDONLY)
             DO np = 1, N_land_classification
-#elif(defined LAND_SEA || defined USE_POINT_DATA)
+#else
             DO np = 0, N_land_classification
 #endif
                IF (fraction_patches(np,i,j) > 0.) THEN

@@ -105,22 +105,20 @@ set nthread    = 92
 \cat >! .tmp << EOF
 #define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
-#undef	RDGRID                    !
-#undef	RAWdata_update            !
-#undef	DYN_PHENOLOGY             !
-#undef	SOILINI                   !
-#define	LANDONLY                  !
-#undef	LAND_SEA                  !
-#undef	SOIL_REFL_GUESSED         !
-#define	SOIL_REFL_READ            !
-#define	WO_${WOUT_FREQ}           !
-#define	WR_${WRST_FREQ}           !
-#undef	CLMDEBUG                  !
-#define	HEIGHT_V $HEIGHT_V        !
-#define	HEIGHT_T $HEIGHT_T        !
-#define	HEIGHT_Q $HEIGHT_Q        !
-#define	lon_points $LON_POINTS    !
-#define	lat_points $LAT_POINTS    !
+#undef	RDGRID                    ! read user defined grid
+#undef	RAWdata_update            ! update raw data
+#undef	DYN_PHENOLOGY             ! empirical LAI f(soil T, root frac)
+#undef	SOILINI                   ! soil initial stat from files
+#define	LANDONLY                  ! land only. o/w. include sea
+#define	SOIL_REFL_READ            ! soil color mapping file. o/w. guessed
+#define	WO_${WOUT_FREQ}           ! output file frequency
+#define	WR_${WRST_FREQ}           ! restart file frequency
+#undef	CLMDEBUG                  ! model debug information
+#define	HEIGHT_V $HEIGHT_V        ! reference height of wind speed
+#define	HEIGHT_T $HEIGHT_T        ! reference height of temperature
+#define	HEIGHT_Q $HEIGHT_Q        ! reference height of humidity
+#define	lon_points $LON_POINTS    ! longitude points
+#define	lat_points $LAT_POINTS    ! latitude points
 EOF
 
 #-------------------------------------------------------#
@@ -146,7 +144,7 @@ endif
 sed -i 's/\!.*//g' .tmp
 sed -i '/^ *$/d' .tmp
 
-cmp --silent .tmp $CLM_INCDIR/define.h || mv -f .tmp $CLM_INCDIR/define.h
+cmp --silent .tmp $CLM_INCDIR/define.h && rm -f .tmp || mv -f .tmp $CLM_INCDIR/define.h
 cp -f $CLM_INCDIR/define.h $CAS_RUNDIR/define.h
 
 #-------------------------------------------------------
@@ -158,7 +156,8 @@ if ( $RUN_CLM_SRF == "YES" ) then
 echo ''
 echo '>>> Start Making the CoLM surface data...'
 cd $CLM_SRFDIR
-make >& $CAS_RUNDIR/compile.mksrf.log || exit 5
+make >& $CAS_RUNDIR/compile.mksrf.log || \
+echo "    Compiling Error! Please see $CAS_RUNDIR/compile.mksrf.log for details." && exit 5
 
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/mksrf.stdin << EOF
@@ -213,7 +212,8 @@ if ( $RUN_CLM_INI == "YES" ) then
 #-------------------------------------------------------
 echo ''
 echo '>>> Start Making the CoLM initialization...'
-make >& $CAS_RUNDIR/compile.mkini.log || exit 5
+make >& $CAS_RUNDIR/compile.mkini.log || \
+echo "    Compiling Error! Please see $CAS_RUNDIR/compile.mkini.log for details." && exit 5
 
 cp -vf $CLM_INIDIR/initial.x $CAS_RUNDIR/.
 #$CLM_INIDIR/initial.x < $CAS_RUNDIR/mkini.stdin > $CAS_RUNDIR/exe.mkini.log || exit 4
@@ -297,11 +297,13 @@ rm -f $CAS_RUNDIR/compile.main.log
 
 echo ''
 echo '>>> Start Making the CoLM...'
-make >& $CAS_RUNDIR/compile.main.log || exit 5
+make >& $CAS_RUNDIR/compile.main.log || \
+echo "    Compiling Error! Please see $CAS_RUNDIR/compile.main.log for details." && exit 5
 cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
 
 cd $CLM_POSDIR
-make >& $CAS_RUNDIR/compile.post.log || exit 5
+make >& $CAS_RUNDIR/compile.post.log || \
+echo "    Compiling Error! Please see $CAS_RUNDIR/compile.post.log for details." && exit 5
 cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
 
 echo 'Compiling CoLM completed'

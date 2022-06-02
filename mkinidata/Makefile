@@ -9,6 +9,7 @@ EXECUTABLE = initial.x
 
 OBJS =  precision.o              \
 	GlobalVars.o             \
+	PhysicalConstants.o      \
 	LC_Const.o               \
 	PFT_Const.o              \
 	ncio.o                   \
@@ -17,7 +18,6 @@ OBJS =  precision.o              \
 	MOD_UrbanTimeInvars.o    \
 	MOD_TimeInvariants.o     \
 	timemanager.o            \
-	PhysicalConstants.o      \
 	MOD_PFTimeVars.o         \
 	MOD_PCTimeVars.o         \
 	MOD_UrbanTimeVars.o      \

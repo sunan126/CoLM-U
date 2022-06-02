@@ -1,12 +1,10 @@
 #define	USE_CRUNCEP_DATA          
-#define	PC_CLASSIFICATION         
+#define	PFT_CLASSIFICATION        
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             
 #undef	SOILINI                   
 #define	LANDONLY                  
-#undef	LAND_SEA                  
-#undef	SOIL_REFL_GUESSED         
 #define	SOIL_REFL_READ            
 #define	WO_MONTHLY           
 #define	WR_MONTHLY           

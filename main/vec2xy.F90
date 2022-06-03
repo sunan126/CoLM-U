@@ -1,176 +1,189 @@
 #include <define.h>
 
-!TODO: 改成module,动态分配内存,SAVE
-SUBROUTINE vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
+MODULE MOD_vec2xy
 ! ----------------------------------------------------------------------
 ! perfrom the grid average mapping: average a subgrid input 1d vector
 ! of length numpatch to a output 2d array of length [lon_points,lat_points]
 !
 ! Created by Yongjiu Dai, 03/2014
-!---------------------------------------------------------------------
+! Modified by yuan, 06/2022: change to MODULE
+! ----------------------------------------------------------------------
 
-USE precision
-USE GlobalVars
-USE PhysicalConstants, only: vonkar, stefnc, cpair, rgas, grav
-USE MOD_TimeInvariants
-USE MOD_TimeVariables
-USE MOD_1D_Forcing
-USE MOD_2D_Forcing
-USE MOD_1D_Fluxes
-USE MOD_2D_Fluxes
-USE MOD_UrbanTimeVars
-USE MOD_UrbanTimeInvars
-USE FRICTION_VELOCITY
-USE omp_lib
+   USE precision
+   USE GlobalVars
 
-IMPLICIT NONE
+   IMPLICIT NONE
+   SAVE
 
-INTEGER, intent(inout) :: nac
-INTEGER, intent(inout) :: nac_ln(lon_points,lat_points)
-INTEGER, intent(inout) :: nac_dt(lon_points,lat_points)
-INTEGER, intent(inout) :: nac_nt(lon_points,lat_points)
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_xy_us  (:,:)    !wind in eastward direction [m/s]
+   REAL(r8), allocatable :: a_xy_vs  (:,:)    !wind in northward direction [m/s]
+   REAL(r8), allocatable :: a_xy_t   (:,:)    !temperature at reference height [kelvin]
+   REAL(r8), allocatable :: a_xy_q   (:,:)    !specific humidity at reference height [kg/kg]
+   REAL(r8), allocatable :: a_xy_prc (:,:)    !convective precipitation [mm/s]
+   REAL(r8), allocatable :: a_xy_prl (:,:)    !large scale precipitation [mm/s]
+   REAL(r8), allocatable :: a_xy_pbot(:,:)    !atmospheric pressure at the surface [pa]
+   REAL(r8), allocatable :: a_xy_frl (:,:)    !atmospheric infrared (longwave) radiation [W/m2]
+   REAL(r8), allocatable :: a_xy_solarin(:,:) !downward solar radiation at surface [W/m2]
+   REAL(r8), allocatable :: a_xy_rain(:,:)    !rain [mm/s]
+   REAL(r8), allocatable :: a_xy_snow(:,:)    !snow [mm/s]
 
-!---------------------------------------------------------------------
-REAL(r8) a_xy_us  (lon_points,lat_points)  ! wind in eastward direction [m/s]
-REAL(r8) a_xy_vs  (lon_points,lat_points)  ! wind in northward direction [m/s]
-REAL(r8) a_xy_t   (lon_points,lat_points)  ! temperature at reference height [kelvin]
-REAL(r8) a_xy_q   (lon_points,lat_points)  ! specific humidity at reference height [kg/kg]
-REAL(r8) a_xy_prc (lon_points,lat_points)  ! convective precipitation [mm/s]
-REAL(r8) a_xy_prl (lon_points,lat_points)  ! large scale precipitation [mm/s]
-REAL(r8) a_xy_pbot(lon_points,lat_points)  ! atmospheric pressure at the surface [pa]
-REAL(r8) a_xy_frl (lon_points,lat_points)  ! atmospheric infrared (longwave) radiation [W/m2]
-REAL(r8) a_xy_solarin(lon_points,lat_points)! downward solar radiation at surface [W/m2]
-REAL(r8) a_xy_rain(lon_points,lat_points)  ! rain [mm/s]
-REAL(r8) a_xy_snow(lon_points,lat_points)  ! snow [mm/s]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_taux   (:,:)    !wind stress: E-W [kg/m/s2]
+   REAL(r8), allocatable :: a_tauy   (:,:)    !wind stress: N-S [kg/m/s2]
+   REAL(r8), allocatable :: a_fsena  (:,:)    !sensible heat from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_lfevpa (:,:)    !latent heat flux from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_fevpa  (:,:)    !evapotranspiration from canopy to atmosphere [mm/s]
+   REAL(r8), allocatable :: a_fsenl  (:,:)    !sensible heat from leaves [W/m2]
+   REAL(r8), allocatable :: a_fevpl  (:,:)    !evaporation+transpiration from leaves [mm/s]
+   REAL(r8), allocatable :: a_etr    (:,:)    !transpiration rate [mm/s]
+   REAL(r8), allocatable :: a_fseng  (:,:)    !sensible heat flux from ground [W/m2]
+   REAL(r8), allocatable :: a_fevpg  (:,:)    !evaporation heat flux from ground [mm/s]
+   REAL(r8), allocatable :: a_fgrnd  (:,:)    !ground heat flux [W/m2]
+   REAL(r8), allocatable :: a_sabvsun(:,:)    !solar absorbed by sunlit canopy [W/m2]
+   REAL(r8), allocatable :: a_sabvsha(:,:)    !solar absorbed by shaded [W/m2]
+   REAL(r8), allocatable :: a_sabg   (:,:)    !solar absorbed by ground  [W/m2]
+   REAL(r8), allocatable :: a_olrg   (:,:)    !outgoing long-wave radiation from ground+canopy [W/m2]
+   REAL(r8), allocatable :: a_rnet   (:,:)    !net radiation [W/m2]
+   REAL(r8), allocatable :: a_xerr   (:,:)    !the error of water banace [mm/s]
+   REAL(r8), allocatable :: a_zerr   (:,:)    !the error of energy balance [W/m2]
+   REAL(r8), allocatable :: a_rsur   (:,:)    !surface runoff [mm/s]
+   REAL(r8), allocatable :: a_qintr  (:,:)    !interception [mm/s]
+   REAL(r8), allocatable :: a_qinfl  (:,:)    !inflitration [mm/s]
+   REAL(r8), allocatable :: a_qdrip  (:,:)    !throughfall [mm/s]
 
-!---------------------------------------------------------------------
-REAL(r8) a_taux   (lon_points,lat_points)  ! wind stress: E-W [kg/m/s2]
-REAL(r8) a_tauy   (lon_points,lat_points)  ! wind stress: N-S [kg/m/s2]
-REAL(r8) a_fsena  (lon_points,lat_points)  ! sensible heat from canopy height to atmosphere [W/m2]
-REAL(r8) a_lfevpa (lon_points,lat_points)  ! latent heat flux from canopy height to atmosphere [W/m2]
-REAL(r8) a_fevpa  (lon_points,lat_points)  ! evapotranspiration from canopy to atmosphere [mm/s]
-REAL(r8) a_fsenl  (lon_points,lat_points)  ! sensible heat from leaves [W/m2]
-REAL(r8) a_fevpl  (lon_points,lat_points)  ! evaporation+transpiration from leaves [mm/s]
-REAL(r8) a_etr    (lon_points,lat_points)  ! transpiration rate [mm/s]
-REAL(r8) a_fseng  (lon_points,lat_points)  ! sensible heat flux from ground [W/m2]
-REAL(r8) a_fevpg  (lon_points,lat_points)  ! evaporation heat flux from ground [mm/s]
-REAL(r8) a_fgrnd  (lon_points,lat_points)  ! ground heat flux [W/m2]
-REAL(r8) a_sabvsun(lon_points,lat_points)  ! solar absorbed by sunlit canopy [W/m2]
-REAL(r8) a_sabvsha(lon_points,lat_points)  ! solar absorbed by shaded [W/m2]
-REAL(r8) a_sabg   (lon_points,lat_points)  ! solar absorbed by ground  [W/m2]
-REAL(r8) a_olrg   (lon_points,lat_points)  ! outgoing long-wave radiation from ground+canopy [W/m2]
-REAL(r8) a_rnet   (lon_points,lat_points)  ! net radiation [W/m2]
-REAL(r8) a_xerr   (lon_points,lat_points)  ! the error of water banace [mm/s]
-REAL(r8) a_zerr   (lon_points,lat_points)  ! the error of energy balance [W/m2]
-REAL(r8) a_rsur   (lon_points,lat_points)  ! surface runoff [mm/s]
-REAL(r8) a_rnof   (lon_points,lat_points)  ! total runoff [mm/s]
-REAL(r8) a_qintr  (lon_points,lat_points)  ! interception [mm/s]
-REAL(r8) a_qinfl  (lon_points,lat_points)  ! inflitration [mm/s]
-REAL(r8) a_qdrip  (lon_points,lat_points)  ! throughfall [mm/s]
+   REAL(r8), allocatable :: a_assim  (:,:)    !canopy assimilation rate [mol m-2 s-1]
+   REAL(r8), allocatable :: a_respc  (:,:)    !respiration (plant+soil) [mol m-2 s-1]
+   REAL(r8), allocatable :: a_qcharge(:,:)    !groundwater recharge rate [mm/s]
 
-REAL(r8) a_assim  (lon_points,lat_points)  ! canopy assimilation rate [mol m-2 s-1]
-REAL(r8) a_respc  (lon_points,lat_points)  ! respiration (plant+soil) [mol m-2 s-1]
-REAL(r8) a_qcharge(lon_points,lat_points)  ! groundwater recharge rate [mm/s]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_t_grnd (:,:)    !ground surface temperature [K]
+   REAL(r8), allocatable :: a_tleaf  (:,:)    !sunlit leaf temperature [K]
+   REAL(r8), allocatable :: a_ldew   (:,:)    !depth of water on foliage [mm]
+   REAL(r8), allocatable :: a_scv    (:,:)    !snow cover, water equivalent [mm]
+   REAL(r8), allocatable :: a_snowdp (:,:)    !snow depth [meter]
+   REAL(r8), allocatable :: a_fsno   (:,:)    !fraction of snow cover on ground
+   REAL(r8), allocatable :: a_sigf   (:,:)    !fraction of veg cover, excluding snow-covered veg [-]
+   REAL(r8), allocatable :: a_green  (:,:)    !leaf greenness
+   REAL(r8), allocatable :: a_lai    (:,:)    !leaf area index
+   REAL(r8), allocatable :: a_laisun (:,:)    !sunlit leaf area index
+   REAL(r8), allocatable :: a_laisha (:,:)    !shaded leaf area index
+   REAL(r8), allocatable :: a_sai    (:,:)    !stem area index
+   REAL(r8), allocatable :: a_alb(:,:,:,:)    !averaged albedo [visible, direct; direct, diffuse]
+   REAL(r8), allocatable :: a_emis   (:,:)    !averaged bulk surface emissivity
+   REAL(r8), allocatable :: a_z0m    (:,:)    !effective roughness [m]
+   REAL(r8), allocatable :: a_trad   (:,:)    !radiative temperature of surface [K]
+   REAL(r8), allocatable :: a_tref   (:,:)    !2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_qref   (:,:)    !2 m height air specific humidity [kg/kg]
 
-!---------------------------------------------------------------------
-REAL(r8) a_t_grnd (lon_points,lat_points)  ! ground surface temperature [K]
-REAL(r8) a_tleaf  (lon_points,lat_points)  ! sunlit leaf temperature [K]
-REAL(r8) a_ldew   (lon_points,lat_points)  ! depth of water on foliage [mm]
-REAL(r8) a_scv    (lon_points,lat_points)  ! snow cover, water equivalent [mm]
-REAL(r8) a_snowdp (lon_points,lat_points)  ! snow depth [meter]
-REAL(r8) a_fsno   (lon_points,lat_points)  ! fraction of snow cover on ground
-REAL(r8) a_sigf   (lon_points,lat_points)  ! fraction of veg cover, excluding snow-covered veg [-]
-REAL(r8) a_green  (lon_points,lat_points)  ! leaf greenness
-REAL(r8) a_lai    (lon_points,lat_points)  ! leaf area index
-REAL(r8) a_laisun (lon_points,lat_points)  ! sunlit leaf area index
-REAL(r8) a_laisha (lon_points,lat_points)  ! shaded leaf area index
-REAL(r8) a_sai    (lon_points,lat_points)  ! stem area index
-REAL(r8) a_alb(2,2,lon_points,lat_points)  ! averaged albedo [visible, direct; direct, diffuse]
-REAL(r8) a_emis   (lon_points,lat_points)  ! averaged bulk surface emissivity
-REAL(r8) a_z0m    (lon_points,lat_points)  ! effective roughness [m]
-REAL(r8) a_trad   (lon_points,lat_points)  ! radiative temperature of surface [K]
-REAL(r8) a_tref   (lon_points,lat_points)  ! 2 m height air temperature [kelvin]
-REAL(r8) a_qref   (lon_points,lat_points)  ! 2 m height air specific humidity [kg/kg]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_t_room (:,:)    !temperature of inner building [K]
+   REAL(r8), allocatable :: a_tafu   (:,:)    !temperature of outer building [K]
+   REAL(r8), allocatable :: a_fhac   (:,:)    !sensible flux from heat or cool AC [W/m2]
+   REAL(r8), allocatable :: a_fwst   (:,:)    !waste heat flux from heat or cool AC [W/m2]
+   REAL(r8), allocatable :: a_fach   (:,:)    !flux from inner and outter air exchange [W/m2]
 
-!---------------------------------------------------------------------
-REAL(r8) a_t_room (lon_points,lat_points)  ! temperature of inner building [K]
-REAL(r8) a_tafu   (lon_points,lat_points)  ! temperature of outer building [K]
-REAL(r8) a_fhac   (lon_points,lat_points)  ! sensible flux from heat or cool AC [W/m2]
-REAL(r8) a_fwst   (lon_points,lat_points)  ! waste heat flux from heat or cool AC [W/m2]
-REAL(r8) a_fach   (lon_points,lat_points)  ! flux from inner and outter air exchange [W/m2]
+   REAL(r8), allocatable :: a_sabvdt  (:,:)   !solar absorbed by sunlit canopy [W/m2]
+   REAL(r8), allocatable :: a_sabgdt  (:,:)   !solar absorbed by ground [W/m2]
+   REAL(r8), allocatable :: a_srdt    (:,:)   !total reflected solar radiation (W/m2)
+   REAL(r8), allocatable :: a_fsenadt (:,:)   !sensible heat from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_lfevpadt(:,:)   !latent heat flux from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_fgrnddt (:,:)   !ground heat flux [W/m2]
+   REAL(r8), allocatable :: a_olrgdt  (:,:)   !outgoing long-wave radiation from ground+canopy [W/m2]
+   REAL(r8), allocatable :: a_rnetdt  (:,:)   !net radiation [W/m2]
+   REAL(r8), allocatable :: a_t_grnddt(:,:)   !ground surface temperature [K]
+   REAL(r8), allocatable :: a_traddt  (:,:)   !radiative temperature of surface [K]
+   REAL(r8), allocatable :: a_trefdt  (:,:)   !2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_tafudt  (:,:)   !temperature of outer building [K]
 
-REAL(r8) a_sabvdt  (lon_points,lat_points) ! solar absorbed by sunlit canopy [W/m2]
-REAL(r8) a_sabgdt  (lon_points,lat_points) ! solar absorbed by ground [W/m2]
-REAL(r8) a_srdt    (lon_points,lat_points) ! total reflected solar radiation (W/m2)
-REAL(r8) a_fsenadt (lon_points,lat_points) ! sensible heat from canopy height to atmosphere [W/m2]
-REAL(r8) a_lfevpadt(lon_points,lat_points) ! latent heat flux from canopy height to atmosphere [W/m2]
-REAL(r8) a_fgrnddt (lon_points,lat_points) ! ground heat flux [W/m2]
-REAL(r8) a_olrgdt  (lon_points,lat_points) ! outgoing long-wave radiation from ground+canopy [W/m2]
-REAL(r8) a_rnetdt  (lon_points,lat_points) ! net radiation [W/m2]
-REAL(r8) a_t_grnddt(lon_points,lat_points) ! ground surface temperature [K]
-REAL(r8) a_traddt  (lon_points,lat_points) ! radiative temperature of surface [K]
-REAL(r8) a_trefdt  (lon_points,lat_points) ! 2 m height air temperature [kelvin]
-REAL(r8) a_tafudt  (lon_points,lat_points) ! temperature of outer building [K]
+   REAL(r8), allocatable :: a_fsenant (:,:)   !sensible heat from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_lfevpant(:,:)   !latent heat flux from canopy height to atmosphere [W/m2]
+   REAL(r8), allocatable :: a_fgrndnt (:,:)   !ground heat flux [W/m2]
+   REAL(r8), allocatable :: a_olrgnt  (:,:)   !outgoing long-wave radiation from ground+canopy [W/m2]
+   REAL(r8), allocatable :: a_rnetnt  (:,:)   !net radiation [W/m2]
+   REAL(r8), allocatable :: a_t_grndnt(:,:)   !ground surface temperature [K]
+   REAL(r8), allocatable :: a_tradnt  (:,:)   !radiative temperature of surface [K]
+   REAL(r8), allocatable :: a_trefnt  (:,:)   !2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_tafunt  (:,:)   !temperature of outer building [K]
 
-REAL(r8) a_fsenant (lon_points,lat_points) ! sensible heat from canopy height to atmosphere [W/m2]
-REAL(r8) a_lfevpant(lon_points,lat_points) ! latent heat flux from canopy height to atmosphere [W/m2]
-REAL(r8) a_fgrndnt (lon_points,lat_points) ! ground heat flux [W/m2]
-REAL(r8) a_olrgnt  (lon_points,lat_points) ! outgoing long-wave radiation from ground+canopy [W/m2]
-REAL(r8) a_rnetnt  (lon_points,lat_points) ! net radiation [W/m2]
-REAL(r8) a_t_grndnt(lon_points,lat_points) ! ground surface temperature [K]
-REAL(r8) a_tradnt  (lon_points,lat_points) ! radiative temperature of surface [K]
-REAL(r8) a_trefnt  (lon_points,lat_points) ! 2 m height air temperature [kelvin]
-REAL(r8) a_tafunt  (lon_points,lat_points) ! temperature of outer building [K]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_t_soisno   (:,:,:)  !soil temperature [K]
+   REAL(r8), allocatable :: a_wliq_soisno(:,:,:)  !liquid water in soil layers [kg/m2]
+   REAL(r8), allocatable :: a_wice_soisno(:,:,:)  !ice lens in soil layers [kg/m2]
+   REAL(r8), allocatable :: a_h2osoi     (:,:,:)  !volumetric soil water in layers [m3/m3]
+   REAL(r8), allocatable :: a_rstfac     (:,:)    !factor of soil water stress
+   REAL(r8), allocatable :: a_zwt        (:,:)    !the depth to water table [m]
+   REAL(r8), allocatable :: a_wa         (:,:)    !water storage in aquifer [mm]
+   REAL(r8), allocatable :: a_wat        (:,:)    !total water storage [mm]
 
-!---------------------------------------------------------------------
-REAL(r8) a_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points)  ! soil temperature [K]
-REAL(r8) a_wliq_soisno(maxsnl+1:nl_soil,lon_points,lat_points)  ! liquid water in soil layers [kg/m2]
-REAL(r8) a_wice_soisno(maxsnl+1:nl_soil,lon_points,lat_points)  ! ice lens in soil layers [kg/m2]
-REAL(r8) a_h2osoi            (1:nl_soil,lon_points,lat_points)  ! volumetric soil water in layers [m3/m3]
-REAL(r8) a_rstfac                      (lon_points,lat_points)  ! factor of soil water stress
-REAL(r8) a_zwt                         (lon_points,lat_points)  ! the depth to water table [m]
-REAL(r8) a_wa                          (lon_points,lat_points)  ! water storage in aquifer [mm]
-REAL(r8) a_wat                         (lon_points,lat_points)  ! total water storage [mm]
+   REAL(r8), allocatable :: a_t_lake      (:,:,:) !lake temperature [K]
+   REAL(r8), allocatable :: a_lake_icefrac(:,:,:) !lake ice fraction cover [0-1]
 
-REAL(r8) a_t_lake      (nl_lake,lon_points,lat_points) ! lake temperature [K]
-REAL(r8) a_lake_icefrac(nl_lake,lon_points,lat_points) ! lake ice fraction cover [0-1]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_ustar  (:,:)    !u* in similarity theory [m/s]
+   REAL(r8), allocatable :: a_tstar  (:,:)    !t* in similarity theory [kg/kg]
+   REAL(r8), allocatable :: a_qstar  (:,:)    !q* in similarity theory [kg/kg]
+   REAL(r8), allocatable :: a_zol    (:,:)    !dimensionless height (z/L) used in Monin-Obukhov theory
+   REAL(r8), allocatable :: a_rib    (:,:)    !bulk Richardson number in surface layer
+   REAL(r8), allocatable :: a_fm     (:,:)    !integral of profile function for momentum
+   REAL(r8), allocatable :: a_fh     (:,:)    !integral of profile function for heat
+   REAL(r8), allocatable :: a_fq     (:,:)    !integral of profile function for moisture
 
-!---------------------------------------------------------------------
-REAL(r8) a_ustar  (lon_points,lat_points)  ! u* in similarity theory [m/s]
-REAL(r8) a_tstar  (lon_points,lat_points)  ! t* in similarity theory [kg/kg]
-REAL(r8) a_qstar  (lon_points,lat_points)  ! q* in similarity theory [kg/kg]
-REAL(r8) a_zol    (lon_points,lat_points)  ! dimensionless height (z/L) used in Monin-Obukhov theory
-REAL(r8) a_rib    (lon_points,lat_points)  ! bulk Richardson number in surface layer
-REAL(r8) a_fm     (lon_points,lat_points)  ! integral of profile function for momentum
-REAL(r8) a_fh     (lon_points,lat_points)  ! integral of profile function for heat
-REAL(r8) a_fq     (lon_points,lat_points)  ! integral of profile function for moisture
+   REAL(r8), allocatable :: a_us10m  (:,:)    !10m u-velocity [m/s]
+   REAL(r8), allocatable :: a_vs10m  (:,:)    !10m v-velocity [m/s]
+   REAL(r8), allocatable :: a_fm10m  (:,:)    !integral of profile function for momentum at 10m [-]
 
-REAL(r8) a_us10m  (lon_points,lat_points)  ! 10m u-velocity [m/s]
-REAL(r8) a_vs10m  (lon_points,lat_points)  ! 10m v-velocity [m/s]
-REAL(r8) a_fm10m  (lon_points,lat_points)  ! integral of profile function for momentum at 10m [-]
+   !---------------------------------------------------------------------
+   REAL(r8), allocatable :: a_sr     (:,:)    !total reflected solar radiation (W/m2)
+   REAL(r8), allocatable :: a_solvd  (:,:)    !incident direct beam vis solar radiation (W/m2)
+   REAL(r8), allocatable :: a_solvi  (:,:)    !incident diffuse beam vis solar radiation (W/m2)
+   REAL(r8), allocatable :: a_solnd  (:,:)    !incident direct beam nir solar radiation (W/m2)
+   REAL(r8), allocatable :: a_solni  (:,:)    !incident diffuse beam nir solar radiation (W/m2)
+   REAL(r8), allocatable :: a_srvd   (:,:)    !reflected direct beam vis solar radiation (W/m2)
+   REAL(r8), allocatable :: a_srvi   (:,:)    !reflected diffuse beam vis solar radiation (W/m2)
+   REAL(r8), allocatable :: a_srnd   (:,:)    !reflected direct beam nir solar radiation (W/m2)
+   REAL(r8), allocatable :: a_srni   (:,:)    !reflected diffuse beam nir solar radiation (W/m2)
+   REAL(r8), allocatable :: a_solvdln(:,:)    !incident direct beam vis solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_solviln(:,:)    !incident diffuse beam vis solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_solndln(:,:)    !incident direct beam nir solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_solniln(:,:)    !incident diffuse beam nir solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_srvdln (:,:)    !reflected direct beam vis solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_srviln (:,:)    !reflected diffuse beam vis solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_srndln (:,:)    !reflected direct beam nir solar radiation at local noon (W/m2)
+   REAL(r8), allocatable :: a_srniln (:,:)    !reflected diffuse beam nir solar radiation at local noon (W/m2)
 
-!---------------------------------------------------------------------
-REAL(r8) a_sr     (lon_points,lat_points)  ! total reflected solar radiation (W/m2)
-REAL(r8) a_solvd  (lon_points,lat_points)  ! incident direct beam vis solar radiation (W/m2)
-REAL(r8) a_solvi  (lon_points,lat_points)  ! incident diffuse beam vis solar radiation (W/m2)
-REAL(r8) a_solnd  (lon_points,lat_points)  ! incident direct beam nir solar radiation (W/m2)
-REAL(r8) a_solni  (lon_points,lat_points)  ! incident diffuse beam nir solar radiation (W/m2)
-REAL(r8) a_srvd   (lon_points,lat_points)  ! reflected direct beam vis solar radiation (W/m2)
-REAL(r8) a_srvi   (lon_points,lat_points)  ! reflected diffuse beam vis solar radiation (W/m2)
-REAL(r8) a_srnd   (lon_points,lat_points)  ! reflected direct beam nir solar radiation (W/m2)
-REAL(r8) a_srni   (lon_points,lat_points)  ! reflected diffuse beam nir solar radiation (W/m2)
-REAL(r8) a_solvdln(lon_points,lat_points)  ! incident direct beam vis solar radiation at local noon (W/m2)
-REAL(r8) a_solviln(lon_points,lat_points)  ! incident diffuse beam vis solar radiation at local noon (W/m2)
-REAL(r8) a_solndln(lon_points,lat_points)  ! incident direct beam nir solar radiation at local noon (W/m2)
-REAL(r8) a_solniln(lon_points,lat_points)  ! incident diffuse beam nir solar radiation at local noon (W/m2)
-REAL(r8) a_srvdln (lon_points,lat_points)  ! reflected direct beam vis solar radiation at local noon (W/m2)
-REAL(r8) a_srviln (lon_points,lat_points)  ! reflected diffuse beam vis solar radiation at local noon (W/m2)
-REAL(r8) a_srndln (lon_points,lat_points)  ! reflected direct beam nir solar radiation at local noon (W/m2)
-REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar radiation at local noon (W/m2)
+   PUBLIC  :: vec2xy
+   PUBLIC  :: allocate_vec2xy
+   PUBLIC  :: deallocate_vec2xy
+   PRIVATE :: acc
 
-!---------------------------------------------------------------------
-! local variables
+CONTAINS
 
+   SUBROUTINE vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
+
+      USE PhysicalConstants, only: vonkar, stefnc, cpair, rgas, grav
+      USE MOD_TimeInvariants
+      USE MOD_TimeVariables
+      USE MOD_1D_Forcing
+      USE MOD_2D_Forcing
+      USE MOD_1D_Fluxes
+      USE MOD_2D_Fluxes
+      USE MOD_UrbanTimeVars
+      USE MOD_UrbanTimeInvars
+      USE FRICTION_VELOCITY
+      USE omp_lib
+
+      IMPLICIT NONE
+
+      INTEGER, intent(inout) :: nac
+      INTEGER, intent(inout) :: nac_ln(lon_points,lat_points)
+      INTEGER, intent(inout) :: nac_dt(lon_points,lat_points)
+      INTEGER, intent(inout) :: nac_nt(lon_points,lat_points)
+
+      REAL(r8),intent(  out) :: a_rnof(lon_points,lat_points)  !total runoff [mm/s]
+
+    !---------------------------------------------------------------------
+    ! local variables
       INTEGER  i,j,np,u,l
       REAL(r8) sumwt(lon_points,lat_points)
       REAL(r8) urbwt(lon_points,lat_points)
@@ -179,123 +192,134 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       REAL(r8) obu,fh2m,fq2m
       REAL(r8) um,thvstar,beta,zii,wc,wc2
 
-! ---------------------------------------------------
-! Meteorological forcing
-! ---------------------------------------------------
-      a_xy_us     (:,:) = forc_xy_us     (:,:)
-      a_xy_vs     (:,:) = forc_xy_vs     (:,:)
-      a_xy_t      (:,:) = forc_xy_t      (:,:)
-      a_xy_q      (:,:) = forc_xy_q      (:,:)
-      a_xy_prc    (:,:) = forc_xy_prc    (:,:)
-      a_xy_prl    (:,:) = forc_xy_prl    (:,:)
-      a_xy_pbot   (:,:) = forc_xy_pbot   (:,:)
-      a_xy_frl    (:,:) = forc_xy_frl    (:,:)
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j)
+#endif
+      DO j = 1, lat_points
+         DO i = 1, lon_points
 
-      a_xy_solarin(:,:) = forc_xy_sols (:,:) + forc_xy_soll (:,:) &
-                        + forc_xy_solsd(:,:) + forc_xy_solld(:,:)
+          ! ---------------------------------------------------
+          ! Meteorological forcing
+          ! ---------------------------------------------------
+            a_xy_us     (i,j) = forc_xy_us     (i,j)
+            a_xy_vs     (i,j) = forc_xy_vs     (i,j)
+            a_xy_t      (i,j) = forc_xy_t      (i,j)
+            a_xy_q      (i,j) = forc_xy_q      (i,j)
+            a_xy_prc    (i,j) = forc_xy_prc    (i,j)
+            a_xy_prl    (i,j) = forc_xy_prl    (i,j)
+            a_xy_pbot   (i,j) = forc_xy_pbot   (i,j)
+            a_xy_frl    (i,j) = forc_xy_frl    (i,j)
 
-! ------------------------------------------------------------------------------------------
-! Mapping the fluxes and state variables at patch [numpatch] to grid [lon_points,lat_points]
-! ------------------------------------------------------------------------------------------
-      sumwt    (:,:) = 0.
-      urbwt    (:,:) = 0.
-      a_taux   (:,:) = 0.
-      a_tauy   (:,:) = 0.
-      a_fsena  (:,:) = 0.
-      a_lfevpa (:,:) = 0.
-      a_fevpa  (:,:) = 0.
-      a_fsenl  (:,:) = 0.
-      a_fevpl  (:,:) = 0.
-      a_etr    (:,:) = 0.
-      a_fseng  (:,:) = 0.
-      a_fevpg  (:,:) = 0.
-      a_fgrnd  (:,:) = 0.
-      a_sabvsun(:,:) = 0.
-      a_sabvsha(:,:) = 0.
-      a_sabg   (:,:) = 0.
-      a_olrg   (:,:) = 0.
-      a_rnet   (:,:) = 0.
-      a_xerr   (:,:) = 0.
-      a_zerr   (:,:) = 0.
-      a_rsur   (:,:) = 0.
-      a_rnof   (:,:) = 0.
-      a_qintr  (:,:) = 0.
-      a_qinfl  (:,:) = 0.
-      a_qdrip  (:,:) = 0.
-      a_wat    (:,:) = 0.
-      a_assim  (:,:) = 0.
-      a_respc  (:,:) = 0.
+            a_xy_solarin(i,j) = forc_xy_sols (i,j) + forc_xy_soll (i,j) &
+                              + forc_xy_solsd(i,j) + forc_xy_solld(i,j)
 
-      a_qcharge(:,:) = 0.
-      a_t_grnd (:,:) = 0.
-      a_tleaf  (:,:) = 0.
-      a_ldew   (:,:) = 0.
-      a_scv    (:,:) = 0.
-      a_snowdp (:,:) = 0.
-      a_fsno   (:,:) = 0.
-      a_sigf   (:,:) = 0.
-      a_green  (:,:) = 0.
-      a_lai    (:,:) = 0.
-      a_laisun (:,:) = 0.
-      a_laisha (:,:) = 0.
-      a_sai    (:,:) = 0.
-      a_alb(:,:,:,:) = 0.
-      a_emis   (:,:) = 0.
-      a_z0m    (:,:) = 0.
-      a_trad   (:,:) = 0.
-      a_tref   (:,:) = 0.
-      a_qref   (:,:) = 0.
-      a_xy_rain(:,:) = 0.
-      a_xy_snow(:,:) = 0.
+          ! ------------------------------------------------------------------------------------------
+          ! Mapping the fluxes and state variables at patch [numpatch] to grid [lon_points,lat_points]
+          ! ------------------------------------------------------------------------------------------
+            sumwt     (i,j) = 0.
+            urbwt     (i,j) = 0.
+            a_taux    (i,j) = 0.
+            a_tauy    (i,j) = 0.
+            a_fsena   (i,j) = 0.
+            a_lfevpa  (i,j) = 0.
+            a_fevpa   (i,j) = 0.
+            a_fsenl   (i,j) = 0.
+            a_fevpl   (i,j) = 0.
+            a_etr     (i,j) = 0.
+            a_fseng   (i,j) = 0.
+            a_fevpg   (i,j) = 0.
+            a_fgrnd   (i,j) = 0.
+            a_sabvsun (i,j) = 0.
+            a_sabvsha (i,j) = 0.
+            a_sabg    (i,j) = 0.
+            a_olrg    (i,j) = 0.
+            a_rnet    (i,j) = 0.
+            a_xerr    (i,j) = 0.
+            a_zerr    (i,j) = 0.
+            a_rsur    (i,j) = 0.
+            a_rnof    (i,j) = 0.
+            a_qintr   (i,j) = 0.
+            a_qinfl   (i,j) = 0.
+            a_qdrip   (i,j) = 0.
+            a_wat     (i,j) = 0.
+            a_assim   (i,j) = 0.
+            a_respc   (i,j) = 0.
 
-      a_t_room (:,:) = 0.
-      a_tafu   (:,:) = 0.
-      a_fhac   (:,:) = 0.
-      a_fwst   (:,:) = 0.
-      a_fach   (:,:) = 0.
+            a_qcharge (i,j) = 0.
+            a_t_grnd  (i,j) = 0.
+            a_tleaf   (i,j) = 0.
+            a_ldew    (i,j) = 0.
+            a_scv     (i,j) = 0.
+            a_snowdp  (i,j) = 0.
+            a_fsno    (i,j) = 0.
+            a_sigf    (i,j) = 0.
+            a_green   (i,j) = 0.
+            a_lai     (i,j) = 0.
+            a_laisun  (i,j) = 0.
+            a_laisha  (i,j) = 0.
+            a_sai     (i,j) = 0.
+            a_alb(:,: ,i,j) = 0.
+            a_emis    (i,j) = 0.
+            a_z0m     (i,j) = 0.
+            a_trad    (i,j) = 0.
+            a_tref    (i,j) = 0.
+            a_qref    (i,j) = 0.
+            a_xy_rain (i,j) = 0.
+            a_xy_snow (i,j) = 0.
+
+            a_t_room  (i,j) = 0.
+            a_tafu    (i,j) = 0.
+            a_fhac    (i,j) = 0.
+            a_fwst    (i,j) = 0.
+            a_fach    (i,j) = 0.
 
 !TODO: 添加a_tmax, a_tmin, a_tavg, a_tdtr
 
-      a_sabvdt  (:,:) = spval
-      a_sabgdt  (:,:) = spval
-      a_srdt    (:,:) = spval
-      a_fsenadt (:,:) = spval
-      a_lfevpadt(:,:) = spval
-      a_fgrnddt (:,:) = spval
-      a_olrgdt  (:,:) = spval
-      a_rnetdt  (:,:) = spval
-      a_t_grnddt(:,:) = spval
-      a_traddt  (:,:) = spval
-      a_trefdt  (:,:) = spval
-      a_tafudt  (:,:) = spval
+            a_sabvdt  (i,j) = spval
+            a_sabgdt  (i,j) = spval
+            a_srdt    (i,j) = spval
+            a_fsenadt (i,j) = spval
+            a_lfevpadt(i,j) = spval
+            a_fgrnddt (i,j) = spval
+            a_olrgdt  (i,j) = spval
+            a_rnetdt  (i,j) = spval
+            a_t_grnddt(i,j) = spval
+            a_traddt  (i,j) = spval
+            a_trefdt  (i,j) = spval
+            a_tafudt  (i,j) = spval
 
-      a_fsenant (:,:) = spval
-      a_lfevpant(:,:) = spval
-      a_fgrndnt (:,:) = spval
-      a_olrgnt  (:,:) = spval
-      a_rnetnt  (:,:) = spval
-      a_t_grndnt(:,:) = spval
-      a_tradnt  (:,:) = spval
-      a_trefnt  (:,:) = spval
-      a_tafunt  (:,:) = spval
+            a_fsenant (i,j) = spval
+            a_lfevpant(i,j) = spval
+            a_fgrndnt (i,j) = spval
+            a_olrgnt  (i,j) = spval
+            a_rnetnt  (i,j) = spval
+            a_t_grndnt(i,j) = spval
+            a_tradnt  (i,j) = spval
+            a_trefnt  (i,j) = spval
+            a_tafunt  (i,j) = spval
 
-      a_sr     (:,:) = spval
-      a_solvd  (:,:) = spval
-      a_solvi  (:,:) = spval
-      a_solnd  (:,:) = spval
-      a_solni  (:,:) = spval
-      a_srvd   (:,:) = spval
-      a_srvi   (:,:) = spval
-      a_srnd   (:,:) = spval
-      a_srni   (:,:) = spval
-      a_solvdln(:,:) = spval
-      a_solviln(:,:) = spval
-      a_solndln(:,:) = spval
-      a_solniln(:,:) = spval
-      a_srvdln (:,:) = spval
-      a_srviln (:,:) = spval
-      a_srndln (:,:) = spval
-      a_srniln (:,:) = spval
+            a_sr      (i,j) = spval
+            a_solvd   (i,j) = spval
+            a_solvi   (i,j) = spval
+            a_solnd   (i,j) = spval
+            a_solni   (i,j) = spval
+            a_srvd    (i,j) = spval
+            a_srvi    (i,j) = spval
+            a_srnd    (i,j) = spval
+            a_srni    (i,j) = spval
+            a_solvdln (i,j) = spval
+            a_solviln (i,j) = spval
+            a_solndln (i,j) = spval
+            a_solniln (i,j) = spval
+            a_srvdln  (i,j) = spval
+            a_srviln  (i,j) = spval
+            a_srndln  (i,j) = spval
+            a_srniln  (i,j) = spval
+         ENDDO
+      ENDDO
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,np,u)
@@ -304,14 +328,15 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
          DO i = 1, lon_points
 
             IF (grid_patch_s(i,j) .le. 0) cycle
-            DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
+            DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
                sumwt(i,j) = sumwt(i,j) + patchfrac(np)
-! Fluxes
+
+             ! Fluxes
                a_taux   (i,j) = a_taux   (i,j) + patchfrac(np)*taux   (np)
                a_tauy   (i,j) = a_tauy   (i,j) + patchfrac(np)*tauy   (np)
                a_fsena  (i,j) = a_fsena  (i,j) + patchfrac(np)*fsena  (np)
@@ -341,7 +366,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
                a_qcharge(i,j) = a_qcharge(i,j) + patchfrac(np)*qcharge(np)
 
-! State and other variables
+             ! State and other variables
                a_t_grnd (i,j) = a_t_grnd (i,j) + patchfrac(np)*t_grnd (np)
                a_tleaf  (i,j) = a_tleaf  (i,j) + patchfrac(np)*tleaf  (np)
                a_ldew   (i,j) = a_ldew   (i,j) + patchfrac(np)*ldew   (np)
@@ -676,10 +701,10 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 !$OMP END PARALLEL DO
 #endif
 
-! --------------------------------------------------------------------
-! Temperature and water (excluding land water bodies and ocean patches)
-! [soil => 0; urban and built-up => 1; wetland => 2; land ice => 3; land water bodies => 4; ocean => 99]
-! --------------------------------------------------------------------
+   ! --------------------------------------------------------------------
+   ! Temperature and water (excluding land water bodies and ocean patches)
+   ! [soil => 0; urban and built-up => 1; wetland => 2; land ice => 3; land water bodies => 4; ocean => 99]
+   ! --------------------------------------------------------------------
       sumwt(:,:) = 0.
       a_t_soisno   (:,:,:) = 0.
       a_wliq_soisno(:,:,:) = 0.
@@ -694,7 +719,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             IF (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
-! 10/05/2021, yuan: only for urban output
+   ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
@@ -742,10 +767,10 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 !$OMP END PARALLEL DO
 #endif
 
-! --------------------------------------------------------------------
-! additial diagnostic variables for output (vegetated land only <=2)
-! [soil => 0; urban and built-up => 1; wetland => 2; land ice => 3; land water bodies => 4; ocean => 99]
-! --------------------------------------------------------------------
+   ! --------------------------------------------------------------------
+   ! additial diagnostic variables for output (vegetated land only <=2)
+   ! [soil => 0; urban and built-up => 1; wetland => 2; land ice => 3; land water bodies => 4; ocean => 99]
+   ! --------------------------------------------------------------------
       sumwt(:,:) = 0.
       a_h2osoi (:,:,:) = 0.
       a_rstfac (:,:)   = 0.
@@ -761,7 +786,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             IF (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
-! 10/05/2021, yuan: only for urban output
+   ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
@@ -810,9 +835,9 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 !$OMP END PARALLEL DO
 #endif
 
-! -----------------------------------------------
-! Land water bodies' ice fraction and temperature
-! -----------------------------------------------
+   ! -----------------------------------------------
+   ! Land water bodies' ice fraction and temperature
+   ! -----------------------------------------------
       sumwt(:,:) = 0.
       a_t_lake(:,:,:) = 0.
       a_lake_icefrac(:,:,:) = 0.
@@ -826,7 +851,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             IF (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
-! 10/05/2021, yuan: only for urban output
+   ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_MODEL
                IF (patchclass(np) .ne. URBAN) THEN
                   cycle
@@ -877,9 +902,9 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 #endif
 
 
-! --------------------------------
-! Retrieve through averaged fluxes
-! --------------------------------
+   ! --------------------------------
+   ! Retrieve through averaged fluxes
+   ! --------------------------------
       sumwt(:,:) = 0.
 
 #ifdef OPENMP
@@ -891,7 +916,7 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             IF (grid_patch_s(i,j) .le. 0) cycle
             DO np = grid_patch_s(i,j), grid_patch_e(i,j)
 
-! 10/05/2021, yuan: only for urban output
+   ! 10/05/2021, yuan: only for urban output
 #ifdef URBAN_ONLY
                IF (patchclass(np) .ne. URBAN) cycle
 #endif
@@ -963,12 +988,12 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 
                obu = zldis/a_zol(i,j)
 
-!NOTE: for single point debug [注释下面]
+   !NOTE: for single point debug [注释下面]
                CALL moninobuk(hgt_u,hgt_t,hgt_q,displa_av,z0m_av,z0h_av,z0q_av,& ! fordebug
                     obu,um,a_ustar(i,j),fh2m,fq2m,&
                     a_fm10m(i,j),a_fm(i,j),a_fh(i,j),a_fq(i,j))
 
-! bug found by chen qiying 2013/07/01
+   ! bug found by chen qiying 2013/07/01
                a_rib(i,j) = a_zol(i,j)/vonkar*a_ustar(i,j)**2/(vonkar/a_fh(i,j)*um**2)
                a_rib(i,j) = min(5.,a_rib(i,j))
 
@@ -998,9 +1023,9 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 #endif
 
 
-! ---------------------------------------------------
-! ACCUMULATION in each time step
-! ---------------------------------------------------
+   ! ---------------------------------------------------
+   ! ACCUMULATION in each time step
+   ! ---------------------------------------------------
       nac = nac + 1
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,l)
@@ -1018,136 +1043,136 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
             CALL acc(a_xy_frl    (i,j), 1., f_xy_frl    (i,j))
             CALL acc(a_xy_solarin(i,j), 1., f_xy_solarin(i,j))
 
-            CALL acc(a_taux   (i,j), 1., f_taux   (i,j))
-            CALL acc(a_tauy   (i,j), 1., f_tauy   (i,j))
-            CALL acc(a_fsena  (i,j), 1., f_fsena  (i,j))
-            CALL acc(a_lfevpa (i,j), 1., f_lfevpa (i,j))
-            CALL acc(a_fevpa  (i,j), 1., f_fevpa  (i,j))
-            CALL acc(a_fsenl  (i,j), 1., f_fsenl  (i,j))
-            CALL acc(a_fevpl  (i,j), 1., f_fevpl  (i,j))
-            CALL acc(a_etr    (i,j), 1., f_etr    (i,j))
-            CALL acc(a_fseng  (i,j), 1., f_fseng  (i,j))
-            CALL acc(a_fevpg  (i,j), 1., f_fevpg  (i,j))
-            CALL acc(a_fgrnd  (i,j), 1., f_fgrnd  (i,j))
-            CALL acc(a_sabvsun(i,j), 1., f_sabvsun(i,j))
-            CALL acc(a_sabvsha(i,j), 1., f_sabvsha(i,j))
-            CALL acc(a_sabg   (i,j), 1., f_sabg   (i,j))
-            CALL acc(a_olrg   (i,j), 1., f_olrg   (i,j))
-            CALL acc(a_rnet   (i,j), 1., f_rnet   (i,j))
-            CALL acc(a_xerr   (i,j), 1., f_xerr   (i,j))
-            CALL acc(a_zerr   (i,j), 1., f_zerr   (i,j))
-            CALL acc(a_rsur   (i,j), 1., f_rsur   (i,j))
-            CALL acc(a_rnof   (i,j), 1., f_rnof   (i,j))
-            CALL acc(a_qintr  (i,j), 1., f_qintr  (i,j))
-            CALL acc(a_qinfl  (i,j), 1., f_qinfl  (i,j))
-            CALL acc(a_qdrip  (i,j), 1., f_qdrip  (i,j))
-            CALL acc(a_rstfac (i,j), 1., f_rstfac (i,j))
-            CALL acc(a_zwt    (i,j), 1., f_zwt    (i,j))
-            CALL acc(a_wa     (i,j), 1., f_wa     (i,j))
-            CALL acc(a_wat    (i,j), 1., f_wat    (i,j))
-            CALL acc(a_assim  (i,j), 1., f_assim  (i,j))
-            CALL acc(a_respc  (i,j), 1., f_respc  (i,j))
+            CALL acc(a_taux      (i,j), 1., f_taux      (i,j))
+            CALL acc(a_tauy      (i,j), 1., f_tauy      (i,j))
+            CALL acc(a_fsena     (i,j), 1., f_fsena     (i,j))
+            CALL acc(a_lfevpa    (i,j), 1., f_lfevpa    (i,j))
+            CALL acc(a_fevpa     (i,j), 1., f_fevpa     (i,j))
+            CALL acc(a_fsenl     (i,j), 1., f_fsenl     (i,j))
+            CALL acc(a_fevpl     (i,j), 1., f_fevpl     (i,j))
+            CALL acc(a_etr       (i,j), 1., f_etr       (i,j))
+            CALL acc(a_fseng     (i,j), 1., f_fseng     (i,j))
+            CALL acc(a_fevpg     (i,j), 1., f_fevpg     (i,j))
+            CALL acc(a_fgrnd     (i,j), 1., f_fgrnd     (i,j))
+            CALL acc(a_sabvsun   (i,j), 1., f_sabvsun   (i,j))
+            CALL acc(a_sabvsha   (i,j), 1., f_sabvsha   (i,j))
+            CALL acc(a_sabg      (i,j), 1., f_sabg      (i,j))
+            CALL acc(a_olrg      (i,j), 1., f_olrg      (i,j))
+            CALL acc(a_rnet      (i,j), 1., f_rnet      (i,j))
+            CALL acc(a_xerr      (i,j), 1., f_xerr      (i,j))
+            CALL acc(a_zerr      (i,j), 1., f_zerr      (i,j))
+            CALL acc(a_rsur      (i,j), 1., f_rsur      (i,j))
+            CALL acc(a_rnof      (i,j), 1., f_rnof      (i,j))
+            CALL acc(a_qintr     (i,j), 1., f_qintr     (i,j))
+            CALL acc(a_qinfl     (i,j), 1., f_qinfl     (i,j))
+            CALL acc(a_qdrip     (i,j), 1., f_qdrip     (i,j))
+            CALL acc(a_rstfac    (i,j), 1., f_rstfac    (i,j))
+            CALL acc(a_zwt       (i,j), 1., f_zwt       (i,j))
+            CALL acc(a_wa        (i,j), 1., f_wa        (i,j))
+            CALL acc(a_wat       (i,j), 1., f_wat       (i,j))
+            CALL acc(a_assim     (i,j), 1., f_assim     (i,j))
+            CALL acc(a_respc     (i,j), 1., f_respc     (i,j))
 
-            CALL acc(a_qcharge(i,j), 1., f_qcharge(i,j))
+            CALL acc(a_qcharge   (i,j), 1., f_qcharge   (i,j))
 
-            CALL acc(a_t_grnd (i,j), 1., f_t_grnd (i,j))
-            CALL acc(a_tleaf  (i,j), 1., f_tleaf  (i,j))
-            CALL acc(a_ldew   (i,j), 1., f_ldew   (i,j))
-            CALL acc(a_scv    (i,j), 1., f_scv    (i,j))
-            CALL acc(a_snowdp (i,j), 1., f_snowdp (i,j))
-            CALL acc(a_fsno   (i,j), 1., f_fsno   (i,j))
-            CALL acc(a_sigf   (i,j), 1., f_sigf   (i,j))
-            CALL acc(a_green  (i,j), 1., f_green  (i,j))
-            CALL acc(a_lai    (i,j), 1., f_lai    (i,j))
-            CALL acc(a_laisun (i,j), 1., f_laisun (i,j))
-            CALL acc(a_laisha (i,j), 1., f_laisha (i,j))
-            CALL acc(a_sai    (i,j), 1., f_sai    (i,j))
-            CALL acc(a_alb(1,1,i,j), 1., f_alb(1,1,i,j))
-            CALL acc(a_alb(2,1,i,j), 1., f_alb(2,1,i,j))
-            CALL acc(a_alb(1,2,i,j), 1., f_alb(1,2,i,j))
-            CALL acc(a_alb(2,2,i,j), 1., f_alb(2,2,i,j))
-            CALL acc(a_emis   (i,j), 1., f_emis   (i,j))
-            CALL acc(a_z0m    (i,j), 1., f_z0m    (i,j))
-            CALL acc(a_trad   (i,j), 1., f_trad   (i,j))
-            CALL acc(a_tref   (i,j), 1., f_tref   (i,j))
-            CALL acc(a_qref   (i,j), 1., f_qref   (i,j))
-            CALL acc(a_xy_rain(i,j), 1., f_xy_rain(i,j))
-            CALL acc(a_xy_snow(i,j), 1., f_xy_snow(i,j))
+            CALL acc(a_t_grnd    (i,j), 1., f_t_grnd    (i,j))
+            CALL acc(a_tleaf     (i,j), 1., f_tleaf     (i,j))
+            CALL acc(a_ldew      (i,j), 1., f_ldew      (i,j))
+            CALL acc(a_scv       (i,j), 1., f_scv       (i,j))
+            CALL acc(a_snowdp    (i,j), 1., f_snowdp    (i,j))
+            CALL acc(a_fsno      (i,j), 1., f_fsno      (i,j))
+            CALL acc(a_sigf      (i,j), 1., f_sigf      (i,j))
+            CALL acc(a_green     (i,j), 1., f_green     (i,j))
+            CALL acc(a_lai       (i,j), 1., f_lai       (i,j))
+            CALL acc(a_laisun    (i,j), 1., f_laisun    (i,j))
+            CALL acc(a_laisha    (i,j), 1., f_laisha    (i,j))
+            CALL acc(a_sai       (i,j), 1., f_sai       (i,j))
+            CALL acc(a_alb   (1,1,i,j), 1., f_alb   (1,1,i,j))
+            CALL acc(a_alb   (2,1,i,j), 1., f_alb   (2,1,i,j))
+            CALL acc(a_alb   (1,2,i,j), 1., f_alb   (1,2,i,j))
+            CALL acc(a_alb   (2,2,i,j), 1., f_alb   (2,2,i,j))
+            CALL acc(a_emis      (i,j), 1., f_emis      (i,j))
+            CALL acc(a_z0m       (i,j), 1., f_z0m       (i,j))
+            CALL acc(a_trad      (i,j), 1., f_trad      (i,j))
+            CALL acc(a_tref      (i,j), 1., f_tref      (i,j))
+            CALL acc(a_qref      (i,j), 1., f_qref      (i,j))
+            CALL acc(a_xy_rain   (i,j), 1., f_xy_rain   (i,j))
+            CALL acc(a_xy_snow   (i,j), 1., f_xy_snow   (i,j))
 
-            CALL acc(a_t_room (i,j), 1., f_t_room (i,j))
-            CALL acc(a_tafu   (i,j), 1., f_tafu   (i,j))
-            CALL acc(a_fhac   (i,j), 1., f_fhac   (i,j))
-            CALL acc(a_fwst   (i,j), 1., f_fwst   (i,j))
-            CALL acc(a_fach   (i,j), 1., f_fach   (i,j))
+            CALL acc(a_t_room    (i,j), 1., f_t_room    (i,j))
+            CALL acc(a_tafu      (i,j), 1., f_tafu      (i,j))
+            CALL acc(a_fhac      (i,j), 1., f_fhac      (i,j))
+            CALL acc(a_fwst      (i,j), 1., f_fwst      (i,j))
+            CALL acc(a_fach      (i,j), 1., f_fach      (i,j))
 
-            CALL acc(a_sabvdt  (i,j), 1., f_sabvdt  (i,j))
-            CALL acc(a_sabgdt  (i,j), 1., f_sabgdt  (i,j))
-            CALL acc(a_srdt    (i,j), 1., f_srdt    (i,j))
-            CALL acc(a_fsenadt (i,j), 1., f_fsenadt (i,j))
-            CALL acc(a_lfevpadt(i,j), 1., f_lfevpadt(i,j))
-            CALL acc(a_fgrnddt (i,j), 1., f_fgrnddt (i,j))
-            CALL acc(a_olrgdt  (i,j), 1., f_olrgdt  (i,j))
-            CALL acc(a_rnetdt  (i,j), 1., f_rnetdt  (i,j))
-            CALL acc(a_t_grnddt(i,j), 1., f_t_grnddt(i,j))
-            CALL acc(a_traddt  (i,j), 1., f_traddt  (i,j))
-            CALL acc(a_trefdt  (i,j), 1., f_trefdt  (i,j))
-            CALL acc(a_tafudt  (i,j), 1., f_tafudt  (i,j))
+            CALL acc(a_sabvdt    (i,j), 1., f_sabvdt    (i,j))
+            CALL acc(a_sabgdt    (i,j), 1., f_sabgdt    (i,j))
+            CALL acc(a_srdt      (i,j), 1., f_srdt      (i,j))
+            CALL acc(a_fsenadt   (i,j), 1., f_fsenadt   (i,j))
+            CALL acc(a_lfevpadt  (i,j), 1., f_lfevpadt  (i,j))
+            CALL acc(a_fgrnddt   (i,j), 1., f_fgrnddt   (i,j))
+            CALL acc(a_olrgdt    (i,j), 1., f_olrgdt    (i,j))
+            CALL acc(a_rnetdt    (i,j), 1., f_rnetdt    (i,j))
+            CALL acc(a_t_grnddt  (i,j), 1., f_t_grnddt  (i,j))
+            CALL acc(a_traddt    (i,j), 1., f_traddt    (i,j))
+            CALL acc(a_trefdt    (i,j), 1., f_trefdt    (i,j))
+            CALL acc(a_tafudt    (i,j), 1., f_tafudt    (i,j))
 
-            CALL acc(a_fsenant (i,j), 1., f_fsenant (i,j))
-            CALL acc(a_lfevpant(i,j), 1., f_lfevpant(i,j))
-            CALL acc(a_fgrndnt (i,j), 1., f_fgrndnt (i,j))
-            CALL acc(a_olrgnt  (i,j), 1., f_olrgnt  (i,j))
-            CALL acc(a_rnetnt  (i,j), 1., f_rnetnt  (i,j))
-            CALL acc(a_t_grndnt(i,j), 1., f_t_grndnt(i,j))
-            CALL acc(a_tradnt  (i,j), 1., f_tradnt  (i,j))
-            CALL acc(a_trefnt  (i,j), 1., f_trefnt  (i,j))
-            CALL acc(a_tafunt  (i,j), 1., f_tafunt  (i,j))
+            CALL acc(a_fsenant   (i,j), 1., f_fsenant   (i,j))
+            CALL acc(a_lfevpant  (i,j), 1., f_lfevpant  (i,j))
+            CALL acc(a_fgrndnt   (i,j), 1., f_fgrndnt   (i,j))
+            CALL acc(a_olrgnt    (i,j), 1., f_olrgnt    (i,j))
+            CALL acc(a_rnetnt    (i,j), 1., f_rnetnt    (i,j))
+            CALL acc(a_t_grndnt  (i,j), 1., f_t_grndnt  (i,j))
+            CALL acc(a_tradnt    (i,j), 1., f_tradnt    (i,j))
+            CALL acc(a_trefnt    (i,j), 1., f_trefnt    (i,j))
+            CALL acc(a_tafunt    (i,j), 1., f_tafunt    (i,j))
 
             DO l = maxsnl+1, nl_soil
-               CALL acc(a_t_soisno   (l,i,j), 1., f_t_soisno   (l,i,j))
-               CALL acc(a_wliq_soisno(l,i,j), 1., f_wliq_soisno(l,i,j))
-               CALL acc(a_wice_soisno(l,i,j), 1., f_wice_soisno(l,i,j))
+               CALL acc(a_t_soisno    (l,i,j), 1., f_t_soisno    (l,i,j))
+               CALL acc(a_wliq_soisno (l,i,j), 1., f_wliq_soisno (l,i,j))
+               CALL acc(a_wice_soisno (l,i,j), 1., f_wice_soisno (l,i,j))
             ENDDO
 
             DO l = 1, nl_soil
-               CALL acc(a_h2osoi     (l,i,j), 1., f_h2osoi     (l,i,j))
+               CALL acc(a_h2osoi      (l,i,j), 1., f_h2osoi      (l,i,j))
             ENDDO
 
             DO l = 1, nl_lake
-               CALL acc(a_t_lake(l,i,j), 1., f_t_lake(l,i,j))
+               CALL acc(a_t_lake      (l,i,j), 1., f_t_lake      (l,i,j))
                CALL acc(a_lake_icefrac(l,i,j), 1., f_lake_icefrac(l,i,j))
             ENDDO
 
-            CALL acc(a_ustar(i,j), 1., f_ustar(i,j))
-            CALL acc(a_tstar(i,j), 1., f_tstar(i,j))
-            CALL acc(a_qstar(i,j), 1., f_qstar(i,j))
-            CALL acc(a_zol  (i,j), 1., f_zol  (i,j))
-            CALL acc(a_rib  (i,j), 1., f_rib  (i,j))
-            CALL acc(a_fm   (i,j), 1., f_fm   (i,j))
-            CALL acc(a_fh   (i,j), 1., f_fh   (i,j))
-            CALL acc(a_fq   (i,j), 1., f_fq   (i,j))
+            CALL acc(a_ustar     (i,j), 1., f_ustar     (i,j))
+            CALL acc(a_tstar     (i,j), 1., f_tstar     (i,j))
+            CALL acc(a_qstar     (i,j), 1., f_qstar     (i,j))
+            CALL acc(a_zol       (i,j), 1., f_zol       (i,j))
+            CALL acc(a_rib       (i,j), 1., f_rib       (i,j))
+            CALL acc(a_fm        (i,j), 1., f_fm        (i,j))
+            CALL acc(a_fh        (i,j), 1., f_fh        (i,j))
+            CALL acc(a_fq        (i,j), 1., f_fq        (i,j))
 
-            CALL acc(a_us10m(i,j), 1., f_us10m(i,j))
-            CALL acc(a_vs10m(i,j), 1., f_vs10m(i,j))
-            CALL acc(a_fm10m(i,j), 1., f_fm10m(i,j))
+            CALL acc(a_us10m     (i,j), 1., f_us10m     (i,j))
+            CALL acc(a_vs10m     (i,j), 1., f_vs10m     (i,j))
+            CALL acc(a_fm10m     (i,j), 1., f_fm10m     (i,j))
 
-            CALL acc(a_sr     (i,j), 1., f_sr     (i,j))
-            CALL acc(a_solvd  (i,j), 1., f_solvd  (i,j))
-            CALL acc(a_solvi  (i,j), 1., f_solvi  (i,j))
-            CALL acc(a_solnd  (i,j), 1., f_solnd  (i,j))
-            CALL acc(a_solni  (i,j), 1., f_solni  (i,j))
-            CALL acc(a_srvd   (i,j), 1., f_srvd   (i,j))
-            CALL acc(a_srvi   (i,j), 1., f_srvi   (i,j))
-            CALL acc(a_srnd   (i,j), 1., f_srnd   (i,j))
-            CALL acc(a_srni   (i,j), 1., f_srni   (i,j))
-            CALL acc(a_solvdln(i,j), 1., f_solvdln(i,j))
-            CALL acc(a_solviln(i,j), 1., f_solviln(i,j))
-            CALL acc(a_solndln(i,j), 1., f_solndln(i,j))
-            CALL acc(a_solniln(i,j), 1., f_solniln(i,j))
-            CALL acc(a_srvdln (i,j), 1., f_srvdln (i,j))
-            CALL acc(a_srviln (i,j), 1., f_srviln (i,j))
-            CALL acc(a_srndln (i,j), 1., f_srndln (i,j))
-            CALL acc(a_srniln (i,j), 1., f_srniln (i,j))
+            CALL acc(a_sr        (i,j), 1., f_sr        (i,j))
+            CALL acc(a_solvd     (i,j), 1., f_solvd     (i,j))
+            CALL acc(a_solvi     (i,j), 1., f_solvi     (i,j))
+            CALL acc(a_solnd     (i,j), 1., f_solnd     (i,j))
+            CALL acc(a_solni     (i,j), 1., f_solni     (i,j))
+            CALL acc(a_srvd      (i,j), 1., f_srvd      (i,j))
+            CALL acc(a_srvi      (i,j), 1., f_srvi      (i,j))
+            CALL acc(a_srnd      (i,j), 1., f_srnd      (i,j))
+            CALL acc(a_srni      (i,j), 1., f_srni      (i,j))
+            CALL acc(a_solvdln   (i,j), 1., f_solvdln   (i,j))
+            CALL acc(a_solviln   (i,j), 1., f_solviln   (i,j))
+            CALL acc(a_solndln   (i,j), 1., f_solndln   (i,j))
+            CALL acc(a_solniln   (i,j), 1., f_solniln   (i,j))
+            CALL acc(a_srvdln    (i,j), 1., f_srvdln    (i,j))
+            CALL acc(a_srviln    (i,j), 1., f_srviln    (i,j))
+            CALL acc(a_srndln    (i,j), 1., f_srndln    (i,j))
+            CALL acc(a_srniln    (i,j), 1., f_srniln    (i,j))
 
             IF (a_solvdln(i,j) /= spval) nac_ln(i,j) = nac_ln(i,j) + 1
             IF (a_trefdt (i,j) /= spval) nac_dt(i,j) = nac_dt(i,j) + 1
@@ -1158,28 +1183,318 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
+   END SUBROUTINE vec2xy
 
-END SUBROUTINE vec2xy
 
-SUBROUTINE acc(var, wgt, s)
+   SUBROUTINE allocate_vec2xy
 
-   USE precision
-   USE GlobalVars
+      IMPLICIT NONE
 
-   IMPLICIT NONE
+      !---------------------------------------------------------------------
+      allocate (a_xy_us     (lon_points,lat_points))
+      allocate (a_xy_vs     (lon_points,lat_points))
+      allocate (a_xy_t      (lon_points,lat_points))
+      allocate (a_xy_q      (lon_points,lat_points))
+      allocate (a_xy_prc    (lon_points,lat_points))
+      allocate (a_xy_prl    (lon_points,lat_points))
+      allocate (a_xy_pbot   (lon_points,lat_points))
+      allocate (a_xy_frl    (lon_points,lat_points))
+      allocate (a_xy_solarin(lon_points,lat_points))
+      allocate (a_xy_rain   (lon_points,lat_points))
+      allocate (a_xy_snow   (lon_points,lat_points))
 
-   REAL(r8), intent(in)  :: var
-   REAL(r8), intent(in)  :: wgt
-   REAL(r8), intent(out) :: s
+      !---------------------------------------------------------------------
+      allocate (a_taux      (lon_points,lat_points))
+      allocate (a_tauy      (lon_points,lat_points))
+      allocate (a_fsena     (lon_points,lat_points))
+      allocate (a_lfevpa    (lon_points,lat_points))
+      allocate (a_fevpa     (lon_points,lat_points))
+      allocate (a_fsenl     (lon_points,lat_points))
+      allocate (a_fevpl     (lon_points,lat_points))
+      allocate (a_etr       (lon_points,lat_points))
+      allocate (a_fseng     (lon_points,lat_points))
+      allocate (a_fevpg     (lon_points,lat_points))
+      allocate (a_fgrnd     (lon_points,lat_points))
+      allocate (a_sabvsun   (lon_points,lat_points))
+      allocate (a_sabvsha   (lon_points,lat_points))
+      allocate (a_sabg      (lon_points,lat_points))
+      allocate (a_olrg      (lon_points,lat_points))
+      allocate (a_rnet      (lon_points,lat_points))
+      allocate (a_xerr      (lon_points,lat_points))
+      allocate (a_zerr      (lon_points,lat_points))
+      allocate (a_rsur      (lon_points,lat_points))
+      allocate (a_qintr     (lon_points,lat_points))
+      allocate (a_qinfl     (lon_points,lat_points))
+      allocate (a_qdrip     (lon_points,lat_points))
 
-   IF (var /= spval) THEN
-      IF (s /= spval) THEN
-         s = s + wgt*var
-      ELSE
-         s = wgt*var
+      allocate (a_assim     (lon_points,lat_points))
+      allocate (a_respc     (lon_points,lat_points))
+      allocate (a_qcharge   (lon_points,lat_points))
+
+      !---------------------------------------------------------------------
+      allocate (a_t_grnd    (lon_points,lat_points))
+      allocate (a_tleaf     (lon_points,lat_points))
+      allocate (a_ldew      (lon_points,lat_points))
+      allocate (a_scv       (lon_points,lat_points))
+      allocate (a_snowdp    (lon_points,lat_points))
+      allocate (a_fsno      (lon_points,lat_points))
+      allocate (a_sigf      (lon_points,lat_points))
+      allocate (a_green     (lon_points,lat_points))
+      allocate (a_lai       (lon_points,lat_points))
+      allocate (a_laisun    (lon_points,lat_points))
+      allocate (a_laisha    (lon_points,lat_points))
+      allocate (a_sai       (lon_points,lat_points))
+      allocate (a_alb   (2,2,lon_points,lat_points))
+      allocate (a_emis      (lon_points,lat_points))
+      allocate (a_z0m       (lon_points,lat_points))
+      allocate (a_trad      (lon_points,lat_points))
+      allocate (a_tref      (lon_points,lat_points))
+      allocate (a_qref      (lon_points,lat_points))
+
+      !---------------------------------------------------------------------
+      allocate (a_t_room    (lon_points,lat_points))
+      allocate (a_tafu      (lon_points,lat_points))
+      allocate (a_fhac      (lon_points,lat_points))
+      allocate (a_fwst      (lon_points,lat_points))
+      allocate (a_fach      (lon_points,lat_points))
+
+      allocate (a_sabvdt    (lon_points,lat_points))
+      allocate (a_sabgdt    (lon_points,lat_points))
+      allocate (a_srdt      (lon_points,lat_points))
+      allocate (a_fsenadt   (lon_points,lat_points))
+      allocate (a_lfevpadt  (lon_points,lat_points))
+      allocate (a_fgrnddt   (lon_points,lat_points))
+      allocate (a_olrgdt    (lon_points,lat_points))
+      allocate (a_rnetdt    (lon_points,lat_points))
+      allocate (a_t_grnddt  (lon_points,lat_points))
+      allocate (a_traddt    (lon_points,lat_points))
+      allocate (a_trefdt    (lon_points,lat_points))
+      allocate (a_tafudt    (lon_points,lat_points))
+
+      allocate (a_fsenant   (lon_points,lat_points))
+      allocate (a_lfevpant  (lon_points,lat_points))
+      allocate (a_fgrndnt   (lon_points,lat_points))
+      allocate (a_olrgnt    (lon_points,lat_points))
+      allocate (a_rnetnt    (lon_points,lat_points))
+      allocate (a_t_grndnt  (lon_points,lat_points))
+      allocate (a_tradnt    (lon_points,lat_points))
+      allocate (a_trefnt    (lon_points,lat_points))
+      allocate (a_tafunt    (lon_points,lat_points))
+
+      !---------------------------------------------------------------------
+      allocate (a_t_soisno   (maxsnl+1:nl_soil,lon_points,lat_points))
+      allocate (a_wliq_soisno(maxsnl+1:nl_soil,lon_points,lat_points))
+      allocate (a_wice_soisno(maxsnl+1:nl_soil,lon_points,lat_points))
+      allocate (a_h2osoi            (1:nl_soil,lon_points,lat_points))
+      allocate (a_rstfac                      (lon_points,lat_points))
+      allocate (a_zwt                         (lon_points,lat_points))
+      allocate (a_wa                          (lon_points,lat_points))
+      allocate (a_wat                         (lon_points,lat_points))
+
+      allocate (a_t_lake              (nl_lake,lon_points,lat_points))
+      allocate (a_lake_icefrac        (nl_lake,lon_points,lat_points))
+
+      !---------------------------------------------------------------------
+      allocate (a_ustar     (lon_points,lat_points))
+      allocate (a_tstar     (lon_points,lat_points))
+      allocate (a_qstar     (lon_points,lat_points))
+      allocate (a_zol       (lon_points,lat_points))
+      allocate (a_rib       (lon_points,lat_points))
+      allocate (a_fm        (lon_points,lat_points))
+      allocate (a_fh        (lon_points,lat_points))
+      allocate (a_fq        (lon_points,lat_points))
+
+      allocate (a_us10m     (lon_points,lat_points))
+      allocate (a_vs10m     (lon_points,lat_points))
+      allocate (a_fm10m     (lon_points,lat_points))
+
+      !---------------------------------------------------------------------
+      allocate (a_sr        (lon_points,lat_points))
+      allocate (a_solvd     (lon_points,lat_points))
+      allocate (a_solvi     (lon_points,lat_points))
+      allocate (a_solnd     (lon_points,lat_points))
+      allocate (a_solni     (lon_points,lat_points))
+      allocate (a_srvd      (lon_points,lat_points))
+      allocate (a_srvi      (lon_points,lat_points))
+      allocate (a_srnd      (lon_points,lat_points))
+      allocate (a_srni      (lon_points,lat_points))
+      allocate (a_solvdln   (lon_points,lat_points))
+      allocate (a_solviln   (lon_points,lat_points))
+      allocate (a_solndln   (lon_points,lat_points))
+      allocate (a_solniln   (lon_points,lat_points))
+      allocate (a_srvdln    (lon_points,lat_points))
+      allocate (a_srviln    (lon_points,lat_points))
+      allocate (a_srndln    (lon_points,lat_points))
+      allocate (a_srniln    (lon_points,lat_points))
+
+   END SUBROUTINE allocate_vec2xy
+
+
+   SUBROUTINE deallocate_vec2xy
+
+      IMPLICIT NONE
+
+      !---------------------------------------------------------------------
+      deallocate ( a_xy_us        )
+      deallocate ( a_xy_vs        )
+      deallocate ( a_xy_t         )
+      deallocate ( a_xy_q         )
+      deallocate ( a_xy_prc       )
+      deallocate ( a_xy_prl       )
+      deallocate ( a_xy_pbot      )
+      deallocate ( a_xy_frl       )
+      deallocate ( a_xy_solarin   )
+      deallocate ( a_xy_rain      )
+      deallocate ( a_xy_snow      )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_taux         )
+      deallocate ( a_tauy         )
+      deallocate ( a_fsena        )
+      deallocate ( a_lfevpa       )
+      deallocate ( a_fevpa        )
+      deallocate ( a_fsenl        )
+      deallocate ( a_fevpl        )
+      deallocate ( a_etr          )
+      deallocate ( a_fseng        )
+      deallocate ( a_fevpg        )
+      deallocate ( a_fgrnd        )
+      deallocate ( a_sabvsun      )
+      deallocate ( a_sabvsha      )
+      deallocate ( a_sabg         )
+      deallocate ( a_olrg         )
+      deallocate ( a_rnet         )
+      deallocate ( a_xerr         )
+      deallocate ( a_zerr         )
+      deallocate ( a_rsur         )
+      deallocate ( a_qintr        )
+      deallocate ( a_qinfl        )
+      deallocate ( a_qdrip        )
+
+      deallocate ( a_assim        )
+      deallocate ( a_respc        )
+      deallocate ( a_qcharge      )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_t_grnd       )
+      deallocate ( a_tleaf        )
+      deallocate ( a_ldew         )
+      deallocate ( a_scv          )
+      deallocate ( a_snowdp       )
+      deallocate ( a_fsno         )
+      deallocate ( a_sigf         )
+      deallocate ( a_green        )
+      deallocate ( a_lai          )
+      deallocate ( a_laisun       )
+      deallocate ( a_laisha       )
+      deallocate ( a_sai          )
+      deallocate ( a_alb          )
+      deallocate ( a_emis         )
+      deallocate ( a_z0m          )
+      deallocate ( a_trad         )
+      deallocate ( a_tref         )
+      deallocate ( a_qref         )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_t_room       )
+      deallocate ( a_tafu         )
+      deallocate ( a_fhac         )
+      deallocate ( a_fwst         )
+      deallocate ( a_fach         )
+
+      deallocate ( a_sabvdt       )
+      deallocate ( a_sabgdt       )
+      deallocate ( a_srdt         )
+      deallocate ( a_fsenadt      )
+      deallocate ( a_lfevpadt     )
+      deallocate ( a_fgrnddt      )
+      deallocate ( a_olrgdt       )
+      deallocate ( a_rnetdt       )
+      deallocate ( a_t_grnddt     )
+      deallocate ( a_traddt       )
+      deallocate ( a_trefdt       )
+      deallocate ( a_tafudt       )
+
+      deallocate ( a_fsenant      )
+      deallocate ( a_lfevpant     )
+      deallocate ( a_fgrndnt      )
+      deallocate ( a_olrgnt       )
+      deallocate ( a_rnetnt       )
+      deallocate ( a_t_grndnt     )
+      deallocate ( a_tradnt       )
+      deallocate ( a_trefnt       )
+      deallocate ( a_tafunt       )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_t_soisno     )
+      deallocate ( a_wliq_soisno  )
+      deallocate ( a_wice_soisno  )
+      deallocate ( a_h2osoi       )
+      deallocate ( a_rstfac       )
+      deallocate ( a_zwt          )
+      deallocate ( a_wa           )
+      deallocate ( a_wat          )
+
+      deallocate ( a_t_lake       )
+      deallocate ( a_lake_icefrac )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_ustar        )
+      deallocate ( a_tstar        )
+      deallocate ( a_qstar        )
+      deallocate ( a_zol          )
+      deallocate ( a_rib          )
+      deallocate ( a_fm           )
+      deallocate ( a_fh           )
+      deallocate ( a_fq           )
+
+      deallocate ( a_us10m        )
+      deallocate ( a_vs10m        )
+      deallocate ( a_fm10m        )
+
+      !---------------------------------------------------------------------
+      deallocate ( a_sr           )
+      deallocate ( a_solvd        )
+      deallocate ( a_solvi        )
+      deallocate ( a_solnd        )
+      deallocate ( a_solni        )
+      deallocate ( a_srvd         )
+      deallocate ( a_srvi         )
+      deallocate ( a_srnd         )
+      deallocate ( a_srni         )
+      deallocate ( a_solvdln      )
+      deallocate ( a_solviln      )
+      deallocate ( a_solndln      )
+      deallocate ( a_solniln      )
+      deallocate ( a_srvdln       )
+      deallocate ( a_srviln       )
+      deallocate ( a_srndln       )
+      deallocate ( a_srniln       )
+
+   END SUBROUTINE deallocate_vec2xy
+
+
+   SUBROUTINE acc(var, wgt, s)
+
+      USE precision
+      USE GlobalVars
+
+      IMPLICIT NONE
+
+      REAL(r8), intent(in)  :: var
+      REAL(r8), intent(in)  :: wgt
+      REAL(r8), intent(out) :: s
+
+      IF (var /= spval) THEN
+         IF (s /= spval) THEN
+            s = s + wgt*var
+         ELSE
+            s = wgt*var
+         ENDIF
       ENDIF
-   ENDIF
 
-END SUBROUTINE acc
+   END SUBROUTINE acc
 
-! ----- EOP ---------
+END MODULE MOD_vec2xy
+! ----------------------------------------------------------------------
+! EOP

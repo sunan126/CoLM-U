@@ -36,7 +36,7 @@ set SPIN_DAY    = $START_DAY      	# spin-up end day, set default to START_DAY
 set SPIN_SEC    = $START_SEC      	# spin-up end sec, set default to START_SEC
 set TIMESTEP    = 1800.         	# model time step
 
-set WOUT_FREQ   = MONTHLY         	# write output  file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+set WOUT_FREQ   = DAILY         	# write output  file frequency: HOURLY/DAILY/MONTHLY/YEARLY
 set WRST_FREQ   = MONTHLY     		# write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
 
 # model resolution and running scope setting

@@ -25,6 +25,7 @@
       USE MOD_2D_Forcing
       USE MOD_1D_Fluxes
       USE MOD_2D_Fluxes
+      USE MOD_vec2xy
       USE timemanager
       USE GETMETMOD
       USE omp_lib
@@ -155,6 +156,7 @@
       CALL allocate_2D_Forcing
       CALL allocate_1D_Fluxes
       CALL allocate_2D_Fluxes
+      CALL allocate_vec2xy
 
       CALL FLUSH_2D_Fluxes
 
@@ -233,7 +235,7 @@
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,solarin_all_band,numpatch)
+         CALL rd_forcing(idate,solarin_all_band)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------
@@ -358,6 +360,7 @@
       CALL deallocate_2D_Forcing
       CALL deallocate_1D_Fluxes
       CALL deallocate_2D_Fluxes
+      CALL deallocate_vec2xy
 
       CALL GETMETFINAL
 

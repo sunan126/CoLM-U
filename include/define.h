@@ -1,12 +1,18 @@
 #define	USE_CRUNCEP_DATA          
 #define	IGBP_CLASSIFICATION       
+#define	LAICHANGE                 
+#define	URBAN_MODEL               
+#define	URBAN_TREE                
+#define	URBAN_WATER               
+#define	URBAN_BEM                 
+#undef	URBAN_ONLY                
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             
 #undef	SOILINI                   
 #define	LANDONLY                  
 #define	SOIL_REFL_READ            
-#define	WO_MONTHLY           
+#define	WO_DAILY           
 #define	WR_MONTHLY           
 #undef	CLMDEBUG                  
 #define	HEIGHT_V 100.        

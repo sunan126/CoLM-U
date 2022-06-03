@@ -1,9 +1,10 @@
 
 #include <define.h>
 
-SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
+SUBROUTINE rd_forcing(idate,solarin_all_band)
 
   use precision
+  USE GlobalVars
   use PhysicalConstants, only: rgas, grav
   use MOD_TimeInvariants
   use MOD_1D_Forcing
@@ -15,15 +16,12 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
 
       IMPLICIT NONE
       integer,  INTENT(in) :: idate(3)
-      integer,  INTENT(in) :: numpatch
-
       logical,  INTENT(in) :: solarin_all_band
 
 ! local variables:
       integer  :: i, j, np
       INTEGER  :: year, month, mday
 !added by yuan, 07/06/2016
-      real(r8) :: pi      ! pie
       real(r8) :: coszen  ! cosine of solar zenith angle
       real(r8) :: calday  ! Julian cal day (1.xx to 365.xx)
       real(r8) :: sunang, cloud, difrat, vnrat
@@ -33,9 +31,6 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
       real(r8), external :: orb_coszen
 
       real solar, frl, prcp, tm, us, vs, pres, qm
-
-!added by yuan, 07/06/2016
-      pi = 4.*atan(1.)
 
 !------------------------------------------------------------
     ! GET ATMOSPHERE CO2 CONCENTRATION DATA
@@ -146,7 +141,7 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,numpatch)
                a = forc_xy_solarin(i,j)
 ! modified by yuan, 07/06/2016
                !sunang = orb_coszen(calday,dlon(np),dlat(np))
-               sunang = orb_coszen(calday,gridlond(i)*pi/180.,gridlatd(j)*pi/180.)
+               sunang = orb_coszen(calday,gridlond(i)*PI/180.,gridlatd(j)*PI/180.)
 
                cloud = (1160.*sunang-a)/(963.*sunang)
                cloud = max(cloud,0.)

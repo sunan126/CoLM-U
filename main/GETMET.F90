@@ -130,6 +130,7 @@ CONTAINS
       call adj2end(id)
       mtstamp = id
 
+!TODO: USE openmp
     ! loop for variables
       do i = 1, NVAR
 

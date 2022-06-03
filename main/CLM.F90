@@ -322,7 +322,7 @@
                CALL flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,dir_output,casename)
             ENDIF
 
-          ! Setting for next time step
+          ! Setting for next output
           ! ----------------------------------------------------------------------
             CALL FLUSH_2D_Fluxes
             nac = 0; nac_ln(:,:) = 0

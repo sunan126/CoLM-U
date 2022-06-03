@@ -66,6 +66,8 @@ MODULE MOD_TimeVariables
   REAL(r8), allocatable :: fh            (:) !integral of profile function for heat
   REAL(r8), allocatable :: fq            (:) !integral of profile function for moisture
 
+!TODO: 添加tmax, tmin, tavg, tdtr
+
 ! PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: allocate_TimeVariables
   PUBLIC :: READ_TimeVariables

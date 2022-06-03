@@ -89,6 +89,8 @@ REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
 
+!TODO: 添加f_tmax, f_tmin, f_tavg, f_tdtr
+
 !TODO: 分daytime(dt) and nighttime(nt)
 REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
 REAL(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]

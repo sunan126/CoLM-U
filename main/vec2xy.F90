@@ -1,5 +1,6 @@
 #include <define.h>
 
+!TODO: 改成module,动态分配内存,SAVE
 SUBROUTINE vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
 ! ----------------------------------------------------------------------
 ! perfrom the grid average mapping: average a subgrid input 1d vector
@@ -252,6 +253,8 @@ REAL(r8) a_srniln (lon_points,lat_points)  ! reflected diffuse beam nir solar ra
       a_fhac   (:,:) = 0.
       a_fwst   (:,:) = 0.
       a_fach   (:,:) = 0.
+
+!TODO: 添加a_tmax, a_tmin, a_tavg, a_tdtr
 
       a_sabvdt  (:,:) = spval
       a_sabgdt  (:,:) = spval

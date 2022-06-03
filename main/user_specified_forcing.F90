@@ -435,6 +435,7 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
+!TODO: USE openmp
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)

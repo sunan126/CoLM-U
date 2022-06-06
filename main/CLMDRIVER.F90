@@ -131,15 +131,15 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
         taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
         lfevpa(i)       ,fsenl(i)        ,fevpl(i)        ,etr(i)          ,&
         fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
-        trad(i)         ,tref(i)         ,qref(i)         ,rsur(i)         ,&
-        rnof(i)         ,qintr(i)        ,qinfl(i)        ,qdrip(i)        ,&
-        rst(i)          ,assim(i)        ,respc(i)        ,sabvsun(i)      ,&
-        sabvsha(i)      ,sabg(i)         ,sr(i)           ,solvd(i)        ,&
-        solvi(i)        ,solnd(i)        ,solni(i)        ,srvd(i)         ,&
-        srvi(i)         ,srnd(i)         ,srni(i)         ,solvdln(i)      ,&
-        solviln(i)      ,solndln(i)      ,solniln(i)      ,srvdln(i)       ,&
-        srviln(i)       ,srndln(i)       ,srniln(i)       ,qcharge(i)      ,&
-        xerr(i)         ,zerr(i)                                           ,&
+        trad(i)         ,tref(i)         ,tmax(i)         ,tmin(i)         ,&
+        qref(i)         ,rsur(i)         ,rnof(i)         ,qintr(i)        ,&
+        qinfl(i)        ,qdrip(i)        ,rst(i)          ,assim(i)        ,&
+        respc(i)        ,sabvsun(i)      ,sabvsha(i)      ,sabg(i)         ,&
+        sr(i)           ,solvd(i)        ,solvi(i)        ,solnd(i)        ,&
+        solni(i)        ,srvd(i)         ,srvi(i)         ,srnd(i)         ,&
+        srni(i)         ,solvdln(i)      ,solviln(i)      ,solndln(i)      ,&
+        solniln(i)      ,srvdln(i)       ,srviln(i)       ,srndln(i)       ,&
+        srniln(i)       ,qcharge(i)      ,xerr(i)         ,zerr(i)         ,&
 
       ! TUNABLE modle constants
         zlnd            ,zsno            ,csoilc          ,dewmx           ,&
@@ -203,15 +203,15 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
      taux(i),         tauy(i),         fsena(i),        fevpa(i),        &
      lfevpa(i),       fsenl(i),        fevpl(i),        etr(i),          &
      fseng(i),        fevpg(i),        olrg(i),         fgrnd(i),        &
-     trad(i),         tref(i),         qref(i),         rsur(i),         &
-     rnof(i),         qintr(i),        qinfl(i),        qdrip(i),        &
-     rst(i),          assim(i),        respc(i),        sabvsun(i),      &
-     sabvsha(i),      sabg(i),         sr(i),           solvd(i),        &
-     solvi(i),        solnd(i),        solni(i),        srvd(i),         &
-     srvi(i),         srnd(i),         srni(i),         solvdln(i),      &
-     solviln(i),      solndln(i),      solniln(i),      srvdln(i),       &
-     srviln(i),       srndln(i),       srniln(i),       qcharge(i),      &
-     xerr(i),         zerr(i),                                           &
+     trad(i),         tref(i),         tmax(i),         tmin(i),         &
+     qref(i),         rsur(i),         rnof(i),         qintr(i),        &
+     qinfl(i),        qdrip(i),        rst(i),          assim(i),        &
+     respc(i),        sabvsun(i),      sabvsha(i),      sabg(i),         &
+     sr(i),           solvd(i),        solvi(i),        solnd(i),        &
+     solni(i),        srvd(i),         srvi(i),         srnd(i),         &
+     srni(i),         solvdln(i),      solviln(i),      solndln(i),      &
+     solniln(i),      srvdln(i),       srviln(i),       srndln(i),       &
+     srniln(i),       qcharge(i),      xerr(i),         zerr(i),         &
 
    ! TUNABLE modle constants
      zlnd,            zsno,            csoilc,          dewmx,           &

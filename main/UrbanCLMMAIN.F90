@@ -69,15 +69,15 @@ SUBROUTINE UrbanCLMMAIN ( &
            taux         ,tauy         ,fsena        ,fevpa        ,&
            lfevpa       ,fsenl        ,fevpl        ,etr          ,&
            fseng        ,fevpg        ,olrg         ,fgrnd        ,&
-           trad         ,tref         ,qref         ,rsur         ,&
-           rnof         ,qintr        ,qinfl        ,qdrip        ,&
-           rst          ,assim        ,respc        ,sabvsun      ,&
-           sabvsha      ,sabg         ,sr           ,solvd        ,&
-           solvi        ,solnd        ,solni        ,srvd         ,&
-           srvi         ,srnd         ,srni         ,solvdln      ,&
-           solviln      ,solndln      ,solniln      ,srvdln       ,&
-           srviln       ,srndln       ,srniln       ,qcharge      ,&
-           xerr         ,zerr                                     ,&
+           trad         ,tref         ,tmax         ,tmin         ,&
+           qref         ,rsur         ,rnof         ,qintr        ,&
+           qinfl        ,qdrip        ,rst          ,assim        ,&
+           respc        ,sabvsun      ,sabvsha      ,sabg         ,&
+           sr           ,solvd        ,solvi        ,solnd        ,&
+           solni        ,srvd         ,srvi         ,srnd         ,&
+           srni         ,solvdln      ,solviln      ,solndln      ,&
+           solniln      ,srvdln       ,srviln       ,srndln       ,&
+           srniln       ,qcharge      ,xerr         ,zerr         ,&
 
          ! TUNABLE modle constants
            zlnd         ,zsno         ,csoilc       ,dewmx        ,&
@@ -256,6 +256,8 @@ SUBROUTINE UrbanCLMMAIN ( &
 
         t_grnd     ,&! ground surface temperature [k]
         tleaf      ,&! sunlit leaf temperature [K]
+        tmax       ,&! Diurnal Max 2 m height air temperature [kelvin]
+        tmin       ,&! Diurnal Min 2 m height air temperature [kelvin]
         ldew       ,&! depth of water on foliage [kg/m2/s]
         sag        ,&! non dimensional snow age [-]
         sag_roof   ,&! non dimensional snow age [-]
@@ -475,6 +477,12 @@ SUBROUTINE UrbanCLMMAIN ( &
         pgper_snow ,&! snowfall onto ground including canopy runoff [kg/(m2 s)]
         etrgper    ,&! etr for pervious ground
         fracveg      ! fraction of fveg/fgper
+
+   REAL(r8) :: &
+        ei,         &! vapor pressure on leaf surface [pa]
+        deidT,      &! derivative of "ei" on "tl" [pa/K]
+        qsatl,      &! leaf specific humidity [kg/kg]
+        qsatldT      ! derivative of "qsatl" on "tlef"
 
    INTEGER :: &
         snlr       ,&! number of snow layers
@@ -1051,6 +1059,14 @@ SUBROUTINE UrbanCLMMAIN ( &
       dz_sno(:) = dz_sno(:) + dz_sno_gimp(:)*(1-froof)*(1-fgper)
       dz_sno(:) = dz_sno(:)*(1-flake) + dz_sno_lake(:)*flake
 
-   END SUBROUTINE UrbanCLMMAIN
+! diagnostic diurnal temperature
+      IF (tref > tmax) tmax = tref
+      IF (tref < tmin) tmin = tref
+
+! 06/05/2022, yuan: RH for output to compare
+      CALL qsadv(tref,forc_psrf,ei,deiDT,qsatl,qsatlDT)
+      qref = qref/qsatl
+
+END SUBROUTINE UrbanCLMMAIN
 ! ----------------------------------------------------------------------
 ! EOP

@@ -80,6 +80,9 @@ REAL(r8), allocatable :: f_emis   (:,:)  ! averaged bulk surface emissivity
 REAL(r8), allocatable :: f_z0m    (:,:)  ! effective roughness [m]
 REAL(r8), allocatable :: f_trad   (:,:)  ! radiative temperature of surface [K]
 REAL(r8), allocatable :: f_tref   (:,:)  ! 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_tmax   (:,:)  ! Diurnal Max 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_tmin   (:,:)  ! Diurnal Min 2 m height air temperature [kelvin]
+REAL(r8), allocatable :: f_tdtr   (:,:)  ! DTR of 2 m height air temperature [kelvin]
 REAL(r8), allocatable :: f_qref   (:,:)  ! 2 m height air specific humidity [kg/kg]
 
 !---------------------------------------------------------------------
@@ -89,9 +92,7 @@ REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
 
-!TODO: 添加f_tmax, f_tmin, f_tavg, f_tdtr
-
-!TODO: 分daytime(dt) and nighttime(nt)
+! 分daytime(dt) and nighttime(nt)
 REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
 REAL(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
 REAL(r8), allocatable :: f_srdt    (:,:) ! total reflected solar radiation (W/m2)
@@ -242,6 +243,9 @@ allocate ( f_emis   (lon_points,lat_points) )  ! averaged bulk surface emissivit
 allocate ( f_z0m    (lon_points,lat_points) )  ! effective roughness [m]
 allocate ( f_trad   (lon_points,lat_points) )  ! radiative temperature of surface [K]
 allocate ( f_tref   (lon_points,lat_points) )  ! 2 m height air temperature [kelvin]
+allocate ( f_tmax   (lon_points,lat_points) )  ! Diurnal Max 2 m height air temperature [kelvin]
+allocate ( f_tmin   (lon_points,lat_points) )  ! Diurnal Min 2 m height air temperature [kelvin]
+allocate ( f_tdtr   (lon_points,lat_points) )  ! DTR of 2 m height air temperature [kelvin]
 allocate ( f_qref   (lon_points,lat_points) )  ! 2 m height air specific humidity [kg/kg]
 
 !---------------------------------------------------------------------
@@ -394,11 +398,14 @@ f_lai       (:,:) = spval
 f_laisun    (:,:) = spval
 f_laisha    (:,:) = spval
 f_sai       (:,:) = spval
-f_alb       (:,:,:,:) = spval
+f_alb   (:,:,:,:) = spval
 f_emis      (:,:) = spval
 f_z0m       (:,:) = spval
 f_trad      (:,:) = spval
 f_tref      (:,:) = spval
+f_tmax      (:,:) = spval
+f_tmin      (:,:) = spval
+f_tdtr      (:,:) = spval
 f_qref      (:,:) = spval
 
 f_t_room    (:,:) = spval
@@ -529,6 +536,9 @@ deallocate ( f_emis   )  ! averaged bulk surface emissivity
 deallocate ( f_z0m    )  ! effective roughness [m]
 deallocate ( f_trad   )  ! radiative temperature of surface [K]
 deallocate ( f_tref   )  ! 2 m height air temperature [kelvin]
+deallocate ( f_tmax   )  ! Diurnal Max 2 m height air temperature [kelvin]
+deallocate ( f_tmin   )  ! Diurnal Min 2 m height air temperature [kelvin]
+deallocate ( f_tdtr   )  ! DTR of 2 m height air temperature [kelvin]
 deallocate ( f_qref   )  ! 2 m height air specific humidity [kg/kg]
 
 !---------------------------------------------------------------------

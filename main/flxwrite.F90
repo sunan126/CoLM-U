@@ -1,6 +1,6 @@
 #include <define.h>
 
- SUBROUTINE flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,dir_output,casename)
+ SUBROUTINE flxwrite (idate,nac,nac_24,nac_ln,nac_dt,nac_nt,dir_output,casename)
 
 !=======================================================================
 ! Original version: Yongjiu Dai, September 15, 1999, 03/2014
@@ -15,6 +15,7 @@
 
   INTEGER, intent(in) :: idate(3)
   INTEGER, intent(in) :: nac
+  INTEGER, intent(in) :: nac_24
   INTEGER, intent(in) :: nac_ln(lon_points,lat_points)
   INTEGER, intent(in) :: nac_dt(lon_points,lat_points)
   INTEGER, intent(in) :: nac_nt(lon_points,lat_points)
@@ -102,6 +103,9 @@
            IF (f_z0m    (i,j) /= spval) f_z0m    (i,j) = f_z0m    (i,j) / a  ! effective roughness [m]
            IF (f_trad   (i,j) /= spval) f_trad   (i,j) = f_trad   (i,j) / a  ! radiative temperature of surface [K]
            IF (f_tref   (i,j) /= spval) f_tref   (i,j) = f_tref   (i,j) / a  ! 2 m height air temperature [kelvin]
+           IF (f_tmax   (i,j) /= spval) f_tmax   (i,j) = f_tmax   (i,j) / nac_24  ! Diurnal Max 2 m height air temperature [kelvin]
+           IF (f_tmin   (i,j) /= spval) f_tmin   (i,j) = f_tmin   (i,j) / nac_24  ! Diurnal Min 2 m height air temperature [kelvin]
+           IF (f_tdtr   (i,j) /= spval) f_tdtr   (i,j) = f_tdtr   (i,j) / nac_24  ! DTR of 2 m height air temperature [kelvin]
            IF (f_qref   (i,j) /= spval) f_qref   (i,j) = f_qref   (i,j) / a  ! 2 m height air specific humidity [kg/kg]
            IF (f_t_room (i,j) /= spval) f_t_room (i,j) = f_t_room (i,j) / a  ! temperature of inner building [K]
            IF (f_tafu   (i,j) /= spval) f_tafu   (i,j) = f_tafu   (i,j) / a  ! temperature of outer building [K]
@@ -247,6 +251,9 @@
      write(luout) f_z0m    (:,:)  ! effective roughness [m]
      write(luout) f_trad   (:,:)  ! radiative temperature of surface [K]
      write(luout) f_tref   (:,:)  ! 2 m height air temperature [kelvin]
+     write(luout) f_tmax   (:,:)  ! Diurnal Max 2 m height air temperature [kelvin]
+     write(luout) f_tmin   (:,:)  ! Diurnal Min 2 m height air temperature [kelvin]
+     write(luout) f_tdtr   (:,:)  ! DTR of 2 m height air temperature [kelvin]
      write(luout) f_qref   (:,:)  ! 2 m height air specific humidity [kg/kg]
      write(luout) f_xy_rain(:,:)  ! rain [mm/s]
      write(luout) f_xy_snow(:,:)  ! snow [mm/s]

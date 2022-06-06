@@ -52,6 +52,8 @@ MODULE MOD_TimeVariables
 
   REAL(r8), allocatable :: trad          (:) !radiative temperature of surface [K]
   REAL(r8), allocatable :: tref          (:) !2 m height air temperature [kelvin]
+  REAL(r8), allocatable :: tmax          (:) !Diurnal Max 2 m height air temperature [kelvin]
+  REAL(r8), allocatable :: tmin          (:) !Diurnal Min 2 m height air temperature [kelvin]
   REAL(r8), allocatable :: qref          (:) !2 m height air specific humidity
   REAL(r8), allocatable :: rst           (:) !canopy stomatal resistance (s/m)
   REAL(r8), allocatable :: emis          (:) !averaged bulk surface emissivity
@@ -65,8 +67,6 @@ MODULE MOD_TimeVariables
   REAL(r8), allocatable :: fm            (:) !integral of profile function for momentum
   REAL(r8), allocatable :: fh            (:) !integral of profile function for heat
   REAL(r8), allocatable :: fq            (:) !integral of profile function for moisture
-
-!TODO: 添加tmax, tmin, tavg, tdtr
 
 ! PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: allocate_TimeVariables
@@ -133,6 +133,8 @@ CONTAINS
 
      allocate (trad                         (numpatch))
      allocate (tref                         (numpatch))
+     allocate (tmax                         (numpatch))
+     allocate (tmin                         (numpatch))
      allocate (qref                         (numpatch))
      allocate (rst                          (numpatch))
      allocate (emis                         (numpatch))
@@ -588,6 +590,8 @@ CONTAINS
 
      deallocate (trad         )
      deallocate (tref         )
+     deallocate (tmax         )
+     deallocate (tmin         )
      deallocate (qref         )
      deallocate (rst          )
      deallocate (emis         )

@@ -116,6 +116,9 @@ CONTAINS
       read(11) f_z0m    (:,:)   ! effective roughness [m]
       read(11) f_trad   (:,:)   ! radiative temperature of surface [K]
       read(11) f_tref   (:,:)   ! 2 m height air temperature [kelvin]
+      read(11) f_tmax   (:,:)   ! Diurnal Max 2 m height air temperature [kelvin]
+      read(11) f_tmin   (:,:)   ! Diurnal Min 2 m height air temperature [kelvin]
+      read(11) f_tdtr   (:,:)   ! DTR of 2 m height air temperature [kelvin]
       read(11) f_qref   (:,:)   ! 2 m height air specific humidity [kg/kg]
       read(11) f_xy_rain(:,:)   ! rain [mm/s]
       read(11) f_xy_snow(:,:)   ! snow[mm/s]
@@ -540,6 +543,27 @@ CONTAINS
       ! 2 m height air temperature [kelvin]
       CALL sanity( nf90_def_var(ncid, 'f_tref', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','2 m height air temperature [kelvin]') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! Diurnal Max 2 m height air temperature [kelvin]
+      CALL sanity( nf90_def_var(ncid, 'f_tmax', nf90_double, (/xid,yid/), varid) )
+      CALL sanity( nf90_put_att(ncid, varid, 'long_name','Diurnal Max 2 m height air temperature [kelvin]') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! Diurnal Min 2 m height air temperature [kelvin]
+      CALL sanity( nf90_def_var(ncid, 'f_tmin', nf90_double, (/xid,yid/), varid) )
+      CALL sanity( nf90_put_att(ncid, varid, 'long_name','Diurnal Min 2 m height air temperature [kelvin]') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! DTR of 2 m height air temperature [kelvin]
+      CALL sanity( nf90_def_var(ncid, 'f_tdtr', nf90_double, (/xid,yid/), varid) )
+      CALL sanity( nf90_put_att(ncid, varid, 'long_name','DTR of 2 m height air temperature [kelvin]') )
       CALL sanity( nf90_put_att(ncid, varid, 'units','kelvin') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
@@ -1251,6 +1275,18 @@ CONTAINS
       ! 2 m height air temperature [kelvin]
       CALL sanity( nf90_inq_varid(ncid,'f_tref',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_tref) )
+
+      ! Diurnal Max 2 m height air temperature [kelvin]
+      CALL sanity( nf90_inq_varid(ncid,'f_tmax',varid) )
+      CALL sanity( nf90_put_var(ncid,varid,f_tmax) )
+
+      ! Dirnal 2 m height air temperature [kelvin]
+      CALL sanity( nf90_inq_varid(ncid,'f_tmin',varid) )
+      CALL sanity( nf90_put_var(ncid,varid,f_tmin) )
+
+      ! DTR of 2 m height air temperature [kelvin]
+      CALL sanity( nf90_inq_varid(ncid,'f_tdtr',varid) )
+      CALL sanity( nf90_put_var(ncid,varid,f_tdtr) )
 
       ! 2 m height air specific humidity [kg/kg]
       CALL sanity( nf90_inq_varid(ncid,'f_qref',varid) )

@@ -68,6 +68,7 @@
 
       INTEGER :: istep            !looping step
       INTEGER :: nac              !number of accumulation
+      INTEGER :: nac_24           !number of accumulation of days (24h)
       INTEGER,  allocatable :: nac_ln(:,:)      !number of accumulation for local noon time virable
       INTEGER,  allocatable :: nac_dt(:,:)      !number of accumulation for daytime virable
       INTEGER,  allocatable :: nac_nt(:,:)      !number of accumulation for night-time virable
@@ -215,23 +216,23 @@
 ! begin time stepping loop
 ! ======================================================================
 
-      nac = 0; nac_ln(:,:) = 0
+      nac = 0; nac_24 = 0; nac_ln(:,:) = 0
       nac_dt(:,:) = 0; nac_nt(:,:) = 0
+      tmax(:) = 0.; tmin(:) = 330.
       istep = 1
 
-      ! for lai date record
+      ! date in beginning style
       ldate = idate
       CALL adj2begin(ldate)
 
       TIMELOOP : DO while (itstamp < etstamp)
 
-         CALL julian2monthday (idate(1), idate(2), month, mday)
-         write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') idate(1),month,mday,idate(3)
+         CALL julian2monthday (ldate(1), ldate(2), month_p, mday_p)
+         write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') ldate(1),month_p,mday_p,ldate(3)
          print*, 'TIMELOOP: ', istep, "| DATE: ", trim(cdate)
 
          Julian_1day_p = int(calendarday(ldate)-1)/1*1 + 1
          Julian_8day_p = int(calendarday(ldate)-1)/8*8 + 1
-         CALL julian2monthday (ldate(1), ldate(2), month_p, mday_p)
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
@@ -292,7 +293,7 @@
        ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average
        ! ----------------------------------------------------------------------
-         CALL vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
+         CALL vec2xy (istep,deltim,nac,nac_24,nac_ln,nac_dt,nac_nt,a_rnof)
 
          WHERE (a_rnof < 1.e-10) a_rnof = 0.
 
@@ -321,13 +322,13 @@
          IF ( lwrite ) THEN
 
             IF ( .not. (itstamp<=ptstamp) ) THEN
-               CALL flxwrite (idate,nac,nac_ln,nac_dt,nac_nt,dir_output,casename)
+               CALL flxwrite (idate,nac,nac_24,nac_ln,nac_dt,nac_nt,dir_output,casename)
             ENDIF
 
           ! Setting for next output
           ! ----------------------------------------------------------------------
             CALL FLUSH_2D_Fluxes
-            nac = 0; nac_ln(:,:) = 0
+            nac = 0; nac_24 = 0; nac_ln(:,:) = 0
             nac_dt(:,:) = 0; nac_nt(:,:) = 0
          ENDIF
 

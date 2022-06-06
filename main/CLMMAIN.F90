@@ -3,70 +3,70 @@
 SUBROUTINE CLMMAIN ( &
 
          ! 模型运行信息
-           ipatch,       idate,        coszen,       deltim,        &
-           patchlonr,    patchlatr,    patchclass,   patchtype,     &
-           doalb,        dolai,        dosst,        oro,           &
+           ipatch,       idate,        coszen,       deltim,       &
+           patchlonr,    patchlatr,    patchclass,   patchtype,    &
+           doalb,        dolai,        dosst,        oro,          &
 
          ! soil information and lake depth
-           soil_s_v_alb, soil_d_v_alb, soil_s_n_alb, soil_d_n_alb,  &
-           porsl,        psi0,         bsw,          hksati,        &
-           csol,         dksatu,       dkdry,        rootfr,        &
-           lakedepth,    dz_lake,                                   &
+           soil_s_v_alb, soil_d_v_alb, soil_s_n_alb, soil_d_n_alb, &
+           porsl,        psi0,         bsw,          hksati,       &
+           csol,         dksatu,       dkdry,        rootfr,       &
+           lakedepth,    dz_lake,                                  &
 
          ! vegetation information
-           htop,         hbot,         sqrtdi,                      &
-           effcon,       vmax25,       slti,         hlti,          &
-           shti,         hhti,         trda,         trdm,          &
-           trop,         gradm,        binter,       extkn,         &
-           chil,         rho,          tau,                         &
+           htop,         hbot,         sqrtdi,                     &
+           effcon,       vmax25,       slti,         hlti,         &
+           shti,         hhti,         trda,         trdm,         &
+           trop,         gradm,        binter,       extkn,        &
+           chil,         rho,          tau,                        &
 
          ! atmospheric forcing
-           forc_pco2m,   forc_po2m,    forc_us,      forc_vs,       &
-           forc_t,       forc_q,       forc_prc,     forc_prl,      &
-           forc_rain,    forc_snow,    forc_psrf,    forc_pbot,     &
-           forc_sols,    forc_soll,    forc_solsd,   forc_solld,    &
-           forc_frl,     forc_hgt_u,   forc_hgt_t,   forc_hgt_q,    &
-           forc_rhoair,                                             &
+           forc_pco2m,   forc_po2m,    forc_us,      forc_vs,      &
+           forc_t,       forc_q,       forc_prc,     forc_prl,     &
+           forc_rain,    forc_snow,    forc_psrf,    forc_pbot,    &
+           forc_sols,    forc_soll,    forc_solsd,   forc_solld,   &
+           forc_frl,     forc_hgt_u,   forc_hgt_t,   forc_hgt_q,   &
+           forc_rhoair,                                            &
 
          ! land surface variables required for restart
-           z_sno,        dz_sno,       t_soisno,     wliq_soisno,   &
-           wice_soisno,  t_grnd,       tleaf,        ldew,          &
-           sag,          scv,          snowdp,       fveg,          &
-           fsno,         sigf,         green,        lai,           &
-           sai,          alb,          ssun,         ssha,          &
-           thermk,       extkb,        extkd,                       &
+           z_sno,        dz_sno,       t_soisno,     wliq_soisno,  &
+           wice_soisno,  t_grnd,       tleaf,        ldew,         &
+           sag,          scv,          snowdp,       fveg,         &
+           fsno,         sigf,         green,        lai,          &
+           sai,          alb,          ssun,         ssha,         &
+           thermk,       extkb,        extkd,                      &
 
-           zwt,          wa,                                        &
-           t_lake,       lake_icefrac,                              &
+           zwt,          wa,                                       &
+           t_lake,       lake_icefrac,                             &
 
          ! additional diagnostic variables for output
-           laisun,       laisha,                                    &
-           rstfac,       h2osoi,       wat,                         &
+           laisun,       laisha,                                   &
+           rstfac,       h2osoi,       wat,                        &
 
          ! FLUXES
-           taux,         tauy,         fsena,        fevpa,         &
-           lfevpa,       fsenl,        fevpl,        etr,           &
-           fseng,        fevpg,        olrg,         fgrnd,         &
-           trad,         tref,         qref,         rsur,          &
-           rnof,         qintr,        qinfl,        qdrip,         &
-           rst,          assim,        respc,        sabvsun,       &
-           sabvsha,      sabg,         sr,           solvd,         &
-           solvi,        solnd,        solni,        srvd,          &
-           srvi,         srnd,         srni,         solvdln,       &
-           solviln,      solndln,      solniln,      srvdln,        &
-           srviln,       srndln,       srniln,       qcharge,       &
-           xerr,         zerr,                                      &
+           taux,         tauy,         fsena,        fevpa,        &
+           lfevpa,       fsenl,        fevpl,        etr,          &
+           fseng,        fevpg,        olrg,         fgrnd,        &
+           trad,         tref,         tmax,         tmin,         &
+           qref,         rsur,         rnof,         qintr,        &
+           qinfl,        qdrip,        rst,          assim,        &
+           respc,        sabvsun,      sabvsha,      sabg,         &
+           sr,           solvd,        solvi,        solnd,        &
+           solni,        srvd,         srvi,         srnd,         &
+           srni,         solvdln,      solviln,      solndln,      &
+           solniln,      srvdln,       srviln,       srndln,       &
+           srniln,       qcharge,      xerr,         zerr,         &
 
          ! TUNABLE modle constants
-           zlnd,         zsno,         csoilc,       dewmx,         &
-           wtfact,       capr,         cnfac,        ssi,           &
-           wimp,         pondmx,       smpmax,       smpmin,        &
-           trsmx0,       tcrit,                                     &
+           zlnd,         zsno,         csoilc,       dewmx,        &
+           wtfact,       capr,         cnfac,        ssi,          &
+           wimp,         pondmx,       smpmax,       smpmin,       &
+           trsmx0,       tcrit,                                    &
 
          ! additional variables required by coupling with WRF model
-           emis,         z0m,          zol,          rib,           &
-           ustar,        qstar,        tstar,        fm,            &
-           fh,           fq                                         )
+           emis,         z0m,          zol,          rib,          &
+           ustar,        qstar,        tstar,        fm,           &
+           fh,           fq                                        )
 
 !=======================================================================
 !
@@ -255,8 +255,10 @@ SUBROUTINE CLMMAIN ( &
         ssha(2,2)   ,&! shaded canopy absorption for solar radiation
         thermk      ,&! canopy gap fraction for tir radiation
         extkb       ,&! (k, g(mu)/mu) direct solar extinction coefficient
-        extkd         ! diffuse and scattered diffuse PAR extinction coefficient
+        extkd       ,&! diffuse and scattered diffuse PAR extinction coefficient
 
+        tmax        ,&! Diurnal Max 2 m height air temperature [kelvin]
+        tmin          ! Diurnal Min 2 m height air temperature [kelvin]
 
 ! additional diagnostic variables for output
   REAL(r8), intent(out) :: &
@@ -334,7 +336,7 @@ SUBROUTINE CLMMAIN ( &
         fq            ! integral of profile function for moisture
 
 ! ----------------------- Local  Variables -----------------------------
-   REAL(r8) :: &
+  REAL(r8) :: &
         calday      ,&! Julian cal day (1.xx to 365.xx)
         endwb       ,&! water mass at the end of time step
         errore      ,&! energy balnce errore (Wm-2)
@@ -361,7 +363,7 @@ SUBROUTINE CLMMAIN ( &
         dz_soisno(maxsnl+1:nl_soil), &! layer thickness (m)
         zi_soisno(maxsnl  :nl_soil)   ! interface level below a "z" level (m)
 
-   REAL(r8) :: &
+  REAL(r8) :: &
         prc_rain    ,&! convective rainfall [kg/(m2 s)]
         prc_snow    ,&! convective snowfall [kg/(m2 s)]
         prl_rain    ,&! large scale rainfall [kg/(m2 s)]
@@ -371,13 +373,19 @@ SUBROUTINE CLMMAIN ( &
         pg_rain     ,&! rainfall onto ground including canopy runoff [kg/(m2 s)]
         pg_snow       ! snowfall onto ground including canopy runoff [kg/(m2 s)]
 
+  REAL(r8) :: &
+        ei,         &! vapor pressure on leaf surface [pa]
+        deidT,      &! derivative of "ei" on "tl" [pa/K]
+        qsatl,      &! leaf specific humidity [kg/kg]
+        qsatldT      ! derivative of "qsatl" on "tlef"
+
   INTEGER snl       ,&! number of snow layers
         imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         lb          ,&! lower bound of arrays
         j             ! do looping index
 
-     REAL(r8) :: a, aa
-     INTEGER ps, pe, pc
+      REAL(r8) :: a, aa
+      INTEGER ps, pe, pc
 
 !======================================================================
 !  [1] Solar absorbed by vegetation and ground
@@ -928,6 +936,14 @@ ENDIF
 
     z_sno (maxsnl+1:0) = z_soisno (maxsnl+1:0)
     dz_sno(maxsnl+1:0) = dz_soisno(maxsnl+1:0)
+
+! diagnostic diurnal temperature
+    IF (tref > tmax) tmax = tref
+    IF (tref < tmin) tmin = tref
+
+! 06/05/2022, yuan: RH for output to compare
+    CALL qsadv(tref,forc_psrf,ei,deiDT,qsatl,qsatlDT)
+    qref = qref/qsatl
 
 !----------------------------------------------------------------------
 

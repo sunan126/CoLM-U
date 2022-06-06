@@ -74,6 +74,9 @@ MODULE MOD_vec2xy
    REAL(r8), allocatable :: a_z0m    (:,:)    !effective roughness [m]
    REAL(r8), allocatable :: a_trad   (:,:)    !radiative temperature of surface [K]
    REAL(r8), allocatable :: a_tref   (:,:)    !2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_tmax   (:,:)    !Diurnal Max 2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_tmin   (:,:)    !Diurnal Min 2 m height air temperature [kelvin]
+   REAL(r8), allocatable :: a_tdtr   (:,:)    !DTR of 2 m height air temperature [kelvin]
    REAL(r8), allocatable :: a_qref   (:,:)    !2 m height air specific humidity [kg/kg]
 
    !---------------------------------------------------------------------
@@ -159,7 +162,7 @@ MODULE MOD_vec2xy
 
 CONTAINS
 
-   SUBROUTINE vec2xy (nac,nac_ln,nac_dt,nac_nt,a_rnof)
+   SUBROUTINE vec2xy (istep,deltim,nac,nac_24,nac_ln,nac_dt,nac_nt,a_rnof)
 
       USE PhysicalConstants, only: vonkar, stefnc, cpair, rgas, grav
       USE MOD_TimeInvariants
@@ -175,22 +178,27 @@ CONTAINS
 
       IMPLICIT NONE
 
+      INTEGER, intent(in)    :: istep
       INTEGER, intent(inout) :: nac
+      INTEGER, intent(inout) :: nac_24
       INTEGER, intent(inout) :: nac_ln(lon_points,lat_points)
       INTEGER, intent(inout) :: nac_dt(lon_points,lat_points)
       INTEGER, intent(inout) :: nac_nt(lon_points,lat_points)
 
-      REAL(r8),intent(  out) :: a_rnof(lon_points,lat_points)  !total runoff [mm/s]
+      REAL(r8),intent(in ) :: deltim   !seconds in a time-step
+      REAL(r8),intent(out) :: a_rnof(lon_points,lat_points)  !total runoff [mm/s]
 
     !---------------------------------------------------------------------
     ! local variables
-      INTEGER  i,j,np,u,l
+      INTEGER  i,j,np,u,l,daystep
       REAL(r8) sumwt(lon_points,lat_points)
       REAL(r8) urbwt(lon_points,lat_points)
       REAL(r8) rhoair,thm,th,thv,ur,displa_av,zldis,hgt_u,hgt_t,hgt_q
       REAL(r8) z0m_av,z0h_av,z0q_av,us,vs,tm,qm,psrf
       REAL(r8) obu,fh2m,fq2m
       REAL(r8) um,thvstar,beta,zii,wc,wc2
+
+      daystep = int(86400/deltim)
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j)
@@ -263,6 +271,9 @@ CONTAINS
             a_z0m     (i,j) = 0.
             a_trad    (i,j) = 0.
             a_tref    (i,j) = 0.
+            a_tmax    (i,j) = 0.
+            a_tmin    (i,j) = 0.
+            a_tdtr    (i,j) = 0.
             a_qref    (i,j) = 0.
             a_xy_rain (i,j) = 0.
             a_xy_snow (i,j) = 0.
@@ -389,6 +400,13 @@ CONTAINS
                a_qref   (i,j) = a_qref   (i,j) + patchfrac(np)*qref   (np)
                a_xy_rain(i,j) = a_xy_rain(i,j) + patchfrac(np)*forc_rain(np)
                a_xy_snow(i,j) = a_xy_snow(i,j) + patchfrac(np)*forc_snow(np)
+
+               IF (mod(istep,daystep) == 0) THEN
+                  a_tmax(i,j) = a_tmax   (i,j) + patchfrac(np)*tmax   (np)
+                  a_tmin(i,j) = a_tmin   (i,j) + patchfrac(np)*tmin   (np)
+                  a_tdtr(i,j) = a_tdtr   (i,j) + patchfrac(np)*(tmax(np)-tmin(np))
+                  tmax(np) = 0.; tmin(np) = 330.
+               ENDIF
 
 #ifdef URBAN_MODEL
                u = patch2urb(np)
@@ -536,6 +554,12 @@ CONTAINS
                a_xy_rain(i,j) = a_xy_rain(i,j) / sumwt(i,j)
                a_xy_snow(i,j) = a_xy_snow(i,j) / sumwt(i,j)
 
+               IF (mod(istep,daystep) == 0) THEN
+                  a_tmax(i,j) = a_tmax   (i,j) / sumwt(i,j)
+                  a_tmin(i,j) = a_tmin   (i,j) / sumwt(i,j)
+                  a_tdtr(i,j) = a_tdtr   (i,j) / sumwt(i,j)
+               ENDIF
+
 #ifdef URBAN_MODEL
                IF(urbwt(i,j).gt.0.00001)THEN
                   a_t_room (i,j) = a_t_room (i,j) / urbwt(i,j)
@@ -646,6 +670,9 @@ CONTAINS
                a_z0m    (i,j) = spval
                a_trad   (i,j) = spval
                a_tref   (i,j) = spval
+               a_tmax   (i,j) = spval
+               a_tmin   (i,j) = spval
+               a_tdtr   (i,j) = spval
                a_qref   (i,j) = spval
                a_xy_rain(i,j) = spval
                a_xy_snow(i,j) = spval
@@ -1026,7 +1053,10 @@ CONTAINS
    ! ---------------------------------------------------
    ! ACCUMULATION in each time step
    ! ---------------------------------------------------
+
       nac = nac + 1
+      IF (mod(istep,daystep) == 0) nac_24 = nac_24 + 1
+
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,l)
 #endif
@@ -1095,6 +1125,9 @@ CONTAINS
             CALL acc(a_z0m       (i,j), 1., f_z0m       (i,j))
             CALL acc(a_trad      (i,j), 1., f_trad      (i,j))
             CALL acc(a_tref      (i,j), 1., f_tref      (i,j))
+            CALL acc(a_tmax      (i,j), 1., f_tmax      (i,j))
+            CALL acc(a_tmin      (i,j), 1., f_tmin      (i,j))
+            CALL acc(a_tdtr      (i,j), 1., f_tdtr      (i,j))
             CALL acc(a_qref      (i,j), 1., f_qref      (i,j))
             CALL acc(a_xy_rain   (i,j), 1., f_xy_rain   (i,j))
             CALL acc(a_xy_snow   (i,j), 1., f_xy_snow   (i,j))
@@ -1249,6 +1282,9 @@ CONTAINS
       allocate (a_z0m       (lon_points,lat_points))
       allocate (a_trad      (lon_points,lat_points))
       allocate (a_tref      (lon_points,lat_points))
+      allocate (a_tmax      (lon_points,lat_points))
+      allocate (a_tmin      (lon_points,lat_points))
+      allocate (a_tdtr      (lon_points,lat_points))
       allocate (a_qref      (lon_points,lat_points))
 
       !---------------------------------------------------------------------
@@ -1393,6 +1429,9 @@ CONTAINS
       deallocate ( a_z0m          )
       deallocate ( a_trad         )
       deallocate ( a_tref         )
+      deallocate ( a_tmax         )
+      deallocate ( a_tmin         )
+      deallocate ( a_tdtr         )
       deallocate ( a_qref         )
 
       !---------------------------------------------------------------------

@@ -15,10 +15,12 @@ MODULE user_specified_forcing
 !     metpreprocess modified by siguang & weinan for forc_q calibration
 ! ------------------------------------------------------------
 
-#if (defined USE_PRINCETON_DATA)
+   USE precision
+   USE PhysicalConstants
+   USE omp_lib
+   IMPLICIT NONE
 
-   use precision
-   implicit none
+#if (defined USE_PRINCETON_DATA)
 
  ! parameter setting
  ! ------------------------------------------------------------
@@ -101,6 +103,9 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
@@ -109,6 +114,9 @@ CONTAINS
             endif
          end do
       end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
    END SUBROUTINE metpreprocess
 
@@ -117,9 +125,6 @@ CONTAINS
 
 
 #if(defined USE_GSWP2_DATA)
-
-   use precision
-   implicit none
 
  ! parameter setting
  ! ------------------------------------------------------------
@@ -204,6 +209,9 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
@@ -212,6 +220,9 @@ CONTAINS
             endif
          end do
       end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
    END SUBROUTINE metpreprocess
 
@@ -220,10 +231,6 @@ CONTAINS
 
 
 #if(defined USE_QIAN_DATA)
-
-   use precision
-   use PhysicalConstants
-   implicit none
 
  ! parameter setting
  ! ------------------------------------------------------------
@@ -316,22 +323,25 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) &
+!$OMP PRIVATE(i,j,e,ea,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
             if (qsat_tmp < forcn(j,i,2)) then
                forcn(j,i,2) = qsat_tmp
             endif
-         end do
-      end do
 
-      do i = 1, nlats
-         do j = 1, nlons
             e  = forcn(j,i,3) * forcn(j,i,2) / (0.622_R8 + 0.378_R8 * forcn(j,i,2))
             ea = 0.70_R8 + 5.95e-05_R8 * 0.01_R8 * e * exp(1500.0_R8/forcn(j,i,1))
             forcn(j,i,8) = ea * stefnc * forcn(j,i,1)**4
          end do
       end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
    END SUBROUTINE metpreprocess
 
@@ -340,10 +350,6 @@ CONTAINS
 
 
 #if(defined USE_CRUNCEP_DATA)
-
-   use precision
-   use PhysicalConstants
-   implicit none
 
  ! parameter setting
  ! ------------------------------------------------------------
@@ -435,7 +441,9 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
-!TODO: USE openmp
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
@@ -444,6 +452,9 @@ CONTAINS
             endif
          end do
       end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
    END SUBROUTINE metpreprocess
 
@@ -452,9 +463,6 @@ CONTAINS
 
 
 #if(defined USE_GSWP3_DATA)
-
-   use precision
-   implicit none
 
  ! parameter setting
  ! ------------------------------------------------------------
@@ -546,6 +554,9 @@ CONTAINS
 ! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
 ! required to convert relative humidity to specific humidity
 !----------------------------------------------------------------------------
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
       do i = 1, nlats
          do j = 1, nlons
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
@@ -554,6 +565,9 @@ CONTAINS
             endif
          end do
       end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
 
    END SUBROUTINE metpreprocess
 
@@ -562,9 +576,6 @@ CONTAINS
 
 
 #if(defined USE_POINT_DATA)
-
-   use precision
-   implicit none
 
  ! parameter setting
  ! ------------------------------------------------------------

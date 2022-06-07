@@ -284,8 +284,6 @@ CONTAINS
             a_fwst    (i,j) = 0.
             a_fach    (i,j) = 0.
 
-!TODO: 添加a_tmax, a_tmin, a_tavg, a_tdtr
-
             a_sabvdt  (i,j) = spval
             a_sabgdt  (i,j) = spval
             a_srdt    (i,j) = spval
@@ -419,7 +417,7 @@ CONTAINS
                   a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
                ENDIF
 #endif
-               !TODO: 根据coszen(np)的正负->daytime or nighttime
+               ! 根据coszen(np)的正负->daytime or nighttime
                IF (coszen(np) > 0.) THEN
                   CALL acc(sabvsun(np), patchfrac(np), a_sabvdt  (i,j))
                   CALL acc(sabg   (np), patchfrac(np), a_sabgdt  (i,j))

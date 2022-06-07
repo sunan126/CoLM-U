@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/tcsh
 
 #-------------------------------------------------------
 # [1] Define the JOB
@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -34,7 +34,7 @@ set SPIN_YEAR   = $START_YEAR     	# spin-up end year, set default to SATRT_YEAR
 set SPIN_MONTH  = $START_MONTH    	# spin-up end month, set default to START_DAY
 set SPIN_DAY    = $START_DAY      	# spin-up end day, set default to START_DAY
 set SPIN_SEC    = $START_SEC      	# spin-up end sec, set default to START_SEC
-set TIMESTEP    = 1800.         	# model time step
+set TIMESTEP    = 1800          	# model time step [s]
 
 set WOUT_FREQ   = DAILY         	# write output  file frequency: HOURLY/DAILY/MONTHLY/YEARLY
 set WRST_FREQ   = MONTHLY     		# write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
@@ -153,17 +153,21 @@ sed -i '/^ *$/d' .tmp
 cmp --silent .tmp $CLM_INCDIR/define.h && rm -f .tmp || mv -f .tmp $CLM_INCDIR/define.h
 cp -f $CLM_INCDIR/define.h $CAS_RUNDIR/define.h
 
+set BRed   = '\033[1;31m'    # Bold Red
+set BGreen = '\033[1;32m'    # Bold Green
+set BWhite = '\033[1;37m'    # Bold White
+set BOff   = '\033[0m'       # Text Reset
+
 #-------------------------------------------------------
 # [4] compling and executing CoLM surface data making
 #-------------------------------------------------------
 if ( $RUN_CLM_SRF == "YES" ) then
 
 # Compile
-echo ''
-echo '>>> Start Making the CoLM surface data...'
+echo "\n${BWhite}>>> Start Making the CoLM surface data...${BOff}"
 cd $CLM_SRFDIR
-make >& $CAS_RUNDIR/compile.mksrf.log || \
-echo "    Compiling Error! Please see $CAS_RUNDIR/compile.mksrf.log for details." && exit 5
+make >& $CAS_RUNDIR/compile.mksrf.log || tail -n 10 $CAS_RUNDIR/compile.mksrf.log && \
+echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.mksrf.log for details.\n" && exit 5
 
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/mksrf.stdin << EOF
@@ -181,9 +185,10 @@ EOF
 
 # Executing CoLM initialization'
 cp -vf $CLM_SRFDIR/srf.x $CAS_RUNDIR/
-#$CLM_SRFDIR/srf.x < $CAS_RUNDIR/mksrf.stdin > $CAS_RUNDIR/exe.mksrf.log || exit 4
+$CLM_SRFDIR/srf.x < $CAS_RUNDIR/mksrf.stdin |& tee $CAS_RUNDIR/exe.mksrf.log || \
+echo "\n    ${BRed}Making surface data Error! ${BOff}Please see $CAS_RUNDIR/exe.mksrf.log for details.\n" && exit 4
 
-echo 'Making the CoLM surface data completed'
+echo "${BGreen}Making the CoLM surface data completed${BOff}"
 
 endif
 
@@ -216,14 +221,15 @@ if ( $RUN_CLM_INI == "YES" ) then
 
 # CoLM initialization for startup run
 #-------------------------------------------------------
-echo ''
-echo '>>> Start Making the CoLM initialization...'
-make >& $CAS_RUNDIR/compile.mkini.log || \
-echo "    Compiling Error! Please see $CAS_RUNDIR/compile.mkini.log for details." && exit 5
+echo "\n${BWhite}>>> Start Making the CoLM initialization...${BOff}"
+make >& $CAS_RUNDIR/compile.mkini.log || tail -n 10 $CAS_RUNDIR/compile.mkini.log && \
+echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.mkini.log for details.\n" && exit 5
 
 cp -vf $CLM_INIDIR/initial.x $CAS_RUNDIR/.
-#$CLM_INIDIR/initial.x < $CAS_RUNDIR/mkini.stdin > $CAS_RUNDIR/exe.mkini.log || exit 4
-echo 'CoLM initialization completed'
+$CLM_INIDIR/initial.x < $CAS_RUNDIR/mkini.stdin |& tee $CAS_RUNDIR/exe.mkini.log || \
+echo "\n    ${BRed}Making initialization Error! ${BOff}Please see $CAS_RUNDIR/exe.mkini.log for details.\n" && exit 4
+
+echo "${BGreen}CoLM initialization completed${BOff}"
 
 else if ( $RUN_CLM == "YES" ) then
 
@@ -231,7 +237,7 @@ else if ( $RUN_CLM == "YES" ) then
 #-------------------------------------------------------
 echo $CAS_RUNDIR
 if (! -e $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR ) then
-  echo 'ERROR: no initial run detected, please run clm initialization first!'; exit
+  echo "${BRed}ERROR: ${BOff}no initial run detected, please run clm initialization first!\n"; exit
 endif
 
 sed -e    "s/s_year *=.*/s_year    = ${START_YEAR}/"  \
@@ -242,7 +248,7 @@ sed -e    "s/s_year *=.*/s_year    = ${START_YEAR}/"  \
 
 mv -f .tmp $CAS_RSTDIR/clmini.infolist.lc$LC_YEAR
 
-echo 'CoLM initialization for restart run completed'
+echo "${BGreen}CoLM initialization for restart run completed${BOff}"
 
 endif
 
@@ -301,18 +307,17 @@ if ( $RUN_CLM == "YES" ) then
 cd $CLM_SRCDIR
 rm -f $CAS_RUNDIR/compile.main.log
 
-echo ''
-echo '>>> Start Making the CoLM...'
-make >& $CAS_RUNDIR/compile.main.log || \
-echo "    Compiling Error! Please see $CAS_RUNDIR/compile.main.log for details." && exit 5
+echo "\n${BWhite}>>> Start Making the CoLM...${BOff}"
+make >& $CAS_RUNDIR/compile.main.log || tail -n 10 $CAS_RUNDIR/compile.main.log && \
+echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.main.log for details.\n" && exit 5
 cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
 
 cd $CLM_POSDIR
-make >& $CAS_RUNDIR/compile.post.log || \
-echo "    Compiling Error! Please see $CAS_RUNDIR/compile.post.log for details." && exit 5
+make >& $CAS_RUNDIR/compile.post.log || tail -n 10 $CAS_RUNDIR/compile.post.log && \
+echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.post.log for details.\n" && exit 5
 cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
 
-echo 'Compiling CoLM completed'
+echo "${BGreen}CoLM Compiling completed${BOff}"
 
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/timeloop.stdin << EOF
@@ -343,12 +348,9 @@ EOF
 #----------------------------------------------------------------------
 # Executing the CoLM
 
-cd $CAS_RUNDIR
-rm -f $CAS_RUNDIR/exe.timeloop.log
-
-echo ''
-echo 'Executing CoLM...'
-#/usr/bin/time ./clm.x < $CAS_RUNDIR/timeloop.stdin > $CAS_RUNDIR/exe.timeloop.log || exit 4
+echo "\n${BWhite}>>> Start Executing CoLM...${BOff}"
+$CAS_RUNDIR/clmu.x < $CAS_RUNDIR/timeloop.stdin |& tee $CAS_RUNDIR/exe.timeloop.log || \
+echo "\n    ${BRed}Executing Error! ${BOff}Please see $CAS_RUNDIR/exe.timeloop.log for details.\n" && exit 4
 
 #if ( $use_mpi == "YES" ) then
 #    /usr/bin/time -p /usr/bin/mpirun -np $nproc ./clm.x < $CAS_RUNDIR/timeloop.stdin
@@ -356,7 +358,7 @@ echo 'Executing CoLM...'
 #    ./clm.x < $CAS_RUNDIR/timeloop.stdin
 #endif
 
-echo 'CoLM Execution Completed'
+echo "${BGreen}CoLM Execution Completed${BOff}"
 
 endif
 

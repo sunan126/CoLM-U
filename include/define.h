@@ -1,12 +1,5 @@
-#define	USE_POINT_DATA            
-#define	IGBP_CLASSIFICATION    9  
-#undef	LAICHANGE                 
-#undef	LULCC                     
-#undef	URBAN_MODEL               
-#undef	URBAN_TREE                
-#undef	URBAN_WATER               
-#undef	URBAN_BEM                 
-#undef	URBAN_ONLY                
+#define	USE_GSWP3_DATA            
+#define	PC_CLASSIFICATION         
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             
@@ -16,10 +9,10 @@
 #define	WO_MONTHLY           
 #define	WR_MONTHLY           
 #undef	CLMDEBUG                  
-#define	HEIGHT_V 20.0        
-#define	HEIGHT_T 20.0        
-#define	HEIGHT_Q 20.0        
-#define	lon_points 1    
-#define	lat_points 1    
+#define	HEIGHT_V 100.        
+#define	HEIGHT_T 50.        
+#define	HEIGHT_Q 50.        
+#define	lon_points 720    
+#define	lat_points 360    
 #define OPENMP 92
 #undef  CaMa_Flood

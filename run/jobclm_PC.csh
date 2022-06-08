@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -194,6 +194,14 @@ endif
 
 cd $CLM_INIDIR
 
+if ( $RUN_CLM_INI == "YES" ) then
+
+# CoLM initialization for startup run
+#-------------------------------------------------------
+echo "\n${BWhite}>>> Start Making the CoLM initialization...${BOff}"
+make >& $CAS_RUNDIR/compile.mkini.log || tail -n 10 $CAS_RUNDIR/compile.mkini.log && \
+echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.mkini.log for details.\n" && exit 5
+
 # Create an input parameter namelist file
 \cat >! $CAS_RUNDIR/mkini.stdin << EOF
 &clminiexp
@@ -211,15 +219,7 @@ s_seconds          = $START_SEC
 /
 EOF
 
-if ( $RUN_CLM_INI == "YES" ) then
-
-# CoLM initialization for startup run
-#-------------------------------------------------------
-echo "\n${BWhite}>>> Start Making the CoLM initialization...${BOff}"
-make >& $CAS_RUNDIR/compile.mkini.log || tail -n 10 $CAS_RUNDIR/compile.mkini.log && \
-echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.mkini.log for details.\n" && exit 5
-
-cp -vf $CLM_INIDIR/initial.x $CAS_RUNDIR/.
+cp -vf $CLM_INIDIR/initial.x $CAS_RUNDIR/
 $CLM_INIDIR/initial.x < $CAS_RUNDIR/mkini.stdin |& tee $CAS_RUNDIR/exe.mkini.log || \
 echo "\n    ${BRed}Making initialization Error! ${BOff}Please see $CAS_RUNDIR/exe.mkini.log for details.\n" && exit 4
 
@@ -304,12 +304,12 @@ rm -f $CAS_RUNDIR/compile.main.log
 echo "\n${BWhite}>>> Start Making the CoLM...${BOff}"
 make >& $CAS_RUNDIR/compile.main.log || tail -n 10 $CAS_RUNDIR/compile.main.log && \
 echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.main.log for details.\n" && exit 5
-cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/.
+cp -vf $CLM_SRCDIR/clmu.x $CAS_RUNDIR/
 
 cd $CLM_POSDIR
 make >& $CAS_RUNDIR/compile.post.log || tail -n 10 $CAS_RUNDIR/compile.post.log && \
 echo "\n    ${BRed}Compiling Error! ${BOff}Please see $CAS_RUNDIR/compile.post.log for details.\n" && exit 5
-cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/.
+cp -vf $CLM_POSDIR/bin2netcdf $CAS_RUNDIR/output/
 
 echo "${BGreen}CoLM Compiling completed${BOff}"
 

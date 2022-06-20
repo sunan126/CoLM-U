@@ -1,13 +1,16 @@
 #define	USE_GSWP3_DATA            
-#define	PC_CLASSIFICATION         
+#define	IGBP_CLASSIFICATION       
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             
 #undef	SOILINI                   
 #define	LANDONLY                  
 #define	SOIL_REFL_READ            
-#define	WO_MONTHLY           
-#define	WR_MONTHLY           
+#define	SOILPAR_UPS_MEDIAN        
+#define	THERMAL_CONDUCTIVITY_SCHEME_4  
+#define	Campbell_SOIL_MODEL       
+#define	WO_DAILY           
+#define	WR_DAILY           
 #undef	CLMDEBUG                  
 #define	HEIGHT_V 100.        
 #define	HEIGHT_T 50.        

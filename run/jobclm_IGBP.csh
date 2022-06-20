@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -21,7 +21,7 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 #-------------------------------------------------------
 set CASE_NAME   = IGBP           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set LC_YEAR     = 2010          	# which year of land cover data used
+set LC_YEAR     = 2005          	# which year of land cover data used
 set START_YEAR  = 2000          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start day
@@ -37,7 +37,7 @@ set SPIN_SEC    = $START_SEC      	# spin-up end sec, set default to START_SEC
 set TIMESTEP    = 1800          	# model time step [s]
 
 set WOUT_FREQ   = DAILY         	# write output  file frequency: HOURLY/DAILY/MONTHLY/YEARLY
-set WRST_FREQ   = MONTHLY     		# write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
+set WRST_FREQ   = DAILY     		# write restart file frequency: HOURLY/DAILY/MONTHLY/YEARLY
 
 # model resolution and running scope setting
 #-------------------------------------------------------
@@ -71,7 +71,7 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
-setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
+setenv DAT_ATMDIR $DAT_ROOT/atm/gswp3_v1
 setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
@@ -103,7 +103,7 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_CRUNCEP_DATA          ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
+#define	USE_GSWP3_DATA            ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
 #undef	RDGRID                    ! read user defined grid
 #undef	RAWdata_update            ! update raw data
@@ -111,6 +111,9 @@ set nthread    = 92
 #undef	SOILINI                   ! soil initial stat from files
 #define	LANDONLY                  ! land only. o/w. include sea
 #define	SOIL_REFL_READ            ! soil color mapping file. o/w. guessed
+#define	SOILPAR_UPS_MEDIAN        ! FIT/ARITHMETIC/GEOMETRIC/MEDIAN/AAVW
+#define	THERMAL_CONDUCTIVITY_SCHEME_4  !
+#define	Campbell_SOIL_MODEL       !
 #define	WO_${WOUT_FREQ}           ! output file frequency
 #define	WR_${WRST_FREQ}           ! restart file frequency
 #undef	CLMDEBUG                  ! model debug information
@@ -343,8 +346,8 @@ EOF
 # Executing the CoLM
 
 echo "\n${BWhite}>>> Start Executing CoLM...${BOff}"
-$CAS_RUNDIR/clmu.x < $CAS_RUNDIR/timeloop.stdin |& tee $CAS_RUNDIR/exe.timeloop.log || \
-echo "\n    ${BRed}Executing Error! ${BOff}Please see $CAS_RUNDIR/exe.timeloop.log for details.\n" && exit 4
+#$CAS_RUNDIR/clmu.x < $CAS_RUNDIR/timeloop.stdin |& tee $CAS_RUNDIR/exe.timeloop.log || \
+#echo "\n    ${BRed}Executing Error! ${BOff}Please see $CAS_RUNDIR/exe.timeloop.log for details.\n" && exit 4
 
 #if ( $use_mpi == "YES" ) then
 #    /usr/bin/time -p /usr/bin/mpirun -np $nproc ./clm.x < $CAS_RUNDIR/timeloop.stdin

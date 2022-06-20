@@ -8,7 +8,7 @@
 !                   mixing ratio with respect to temperature
 !
 !        Reference: polynomial approximations from:
-!                   Piotr J. Flatau,et al,1992: polynomial fits to saturation 
+!                   Piotr J. Flatau,et al,1992: polynomial fits to saturation
 !                   vapor pressure. Journal of Applied meteorology,31,1507-1513.
 !
 !-----------------------------------------------------------------------
@@ -42,12 +42,12 @@
    ,b3/ 0.121211669e-04/,b4/ 0.103354611e-06/,b5/ 0.404125005e-09/ &
    ,b6/-0.788037859e-12/,b7/-0.114596802e-13/,b8/ 0.381294516e-16/
 
-! for ice (temperature range -75C-0C) 
+! for ice (temperature range -75C-0C)
   data c0/6.11123516     /,c1/0.503109514    /,c2/0.188369801e-01/ &
       ,c3/0.420547422e-03/,c4/0.614396778e-05/,c5/0.602780717e-07/ &
       ,c6/0.387940929e-09/,c7/0.149436277e-11/,c8/0.262655803e-14/
 
-! for derivative:ice  
+! for derivative:ice
   data d0/0.503277922    /,d1/0.377289173e-01/,d2/0.126801703e-02/ &
       ,d3/0.249468427e-04/,d4/0.313703411e-06/,d5/0.257180651e-08/ &
       ,d6/0.133268878e-10/,d7/0.394116744e-13/,d8/0.498070196e-16/
@@ -56,12 +56,12 @@
 
       td = T-273.16
 
-      IF (td < -75.0 .or. td > 100.0) THEN
+      IF (td < -75.0 .or. td > 75.0) THEN
       !* print *, "qsadv: abnormal temperature", T
       ENDIF
 
       IF (td < -75.0) td = -75.0
-      IF (td > 100.0) td = 100.0
+      IF (td >  75.0) td =  75.0
 
       IF (td >= 0.0)THEN
         es   = a0 + td*(a1 + td*(a2 + td*(a3 + td*(a4 &

@@ -766,6 +766,7 @@ ELSE IF(patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and 
       ! (i.e.,constant capacity), all excess liquid water are put into the runoff,
       ! this unreasonable assumption should be updated in the future version
       a = (sum(wliq_soisno(snl+1:))-w_old)/deltim
+      !TODO: bug may exist below
       aa = qseva-(qsubl-qsdew)
       rsur = max(0., pg_rain - aa - a)
       rnof = rsur

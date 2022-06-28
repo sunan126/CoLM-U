@@ -1,6 +1,6 @@
 #include <define.h>
 
-MODULE UrbanAnthropogenic
+MODULE UrbanBEM
 
   USE precision
   USE GlobalVars
@@ -153,4 +153,4 @@ CONTAINS
 
   END SUBROUTINE
 
-END MODULE UrbanAnthropogenic
+END MODULE UrbanBEM

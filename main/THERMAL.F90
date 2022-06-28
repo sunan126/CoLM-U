@@ -660,6 +660,7 @@ IF (patchtype == 0) THEN
       fsenl_c (:,pc) = 0.
       fevpl_c (:,pc) = 0.
       etr_c   (:,pc) = 0.
+      z0m_c   (:,pc) = (1.-fsno)*zlnd + fsno*zsno
 
       IF (lai+sai > 1e-6) THEN
          !print *, "CALL LeafTempPC 表层温度t_grnd:", t_grnd  !fordebug
@@ -875,16 +876,6 @@ ENDIF
          fm    = fm_g
          fh    = fh_g
          fq    = fq_g
-      ELSE
-         ustar = ustar
-         tstar = tstar
-         qstar = qstar
-         rib   = rib
-         zol   = zol
-         z0m   = z0m
-         fm    = fm
-         fh    = fh
-         fq    = fq
       ENDIF
 
 !=======================================================================

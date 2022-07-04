@@ -138,7 +138,6 @@
 !     zh2osfc=1.0e-3*(0.5*h2osfc(c)) !convert to [m] from [mm]
 !     tk(1)= tkwat*thk(1)*(z(1)+zh2osfc) &
 !             /(tkwat*z(1)+thk(1)*zh2osfc)
-!     ENDDO
 
 ! net ground heat flux into the roof surface and its temperature derivative
       hs = sabroof + lroof - (fsenroof+fevproof*htvp)

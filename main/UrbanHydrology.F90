@@ -141,20 +141,20 @@
 !-----------------------Local Variables------------------------------
 !
   REAL(r8) :: &
-       fg                ,&! ground fractional cover [-]
-       gwat              ,&! net water input from top (mm/s)
-       rnof_roof         ,&! total runoff (mm h2o/s)
-       rnof_gimp         ,&! total runoff (mm h2o/s)
-       rnof_gper         ,&! total runoff (mm h2o/s)
-       rnof_lake         ,&! total runoff (mm h2o/s)
-       rsur_roof         ,&! surface runoff (mm h2o/s)
-       rsur_gimp         ,&! surface runoff (mm h2o/s)
-       rsur_gper         ,&! surface runoff (mm h2o/s)
-       rsur_lake         ,&! surface runoff (mm h2o/s)
-       dfseng            ,&! change of lake sensible heat [W/m2]
-       dfgrnd              ! change of lake ground heat flux [W/m2]
+        fg               ,&! ground fractional cover [-]
+        gwat             ,&! net water input from top (mm/s)
+        rnof_roof        ,&! total runoff (mm h2o/s)
+        rnof_gimp        ,&! total runoff (mm h2o/s)
+        rnof_gper        ,&! total runoff (mm h2o/s)
+        rnof_lake        ,&! total runoff (mm h2o/s)
+        rsur_roof        ,&! surface runoff (mm h2o/s)
+        rsur_gimp        ,&! surface runoff (mm h2o/s)
+        rsur_gper        ,&! surface runoff (mm h2o/s)
+        rsur_lake        ,&! surface runoff (mm h2o/s)
+        dfseng           ,&! change of lake sensible heat [W/m2]
+        dfgrnd             ! change of lake ground heat flux [W/m2]
 
-  REAL(r8) :: a, aa, xs1 
+  REAL(r8) :: a, aa, xs1
 
       fg = 1 - froof
       dfseng = 0.
@@ -188,11 +188,11 @@
       wliq_roofsno(1) = wliq_roofsno(1) + gwat*deltim
 
       ! Renew the ice and liquid mass due to condensation
-      if(lbr >= 1)then
+      IF (lbr >= 1) THEN
          ! make consistent with how evap_grnd removed in infiltration
          wliq_roofsno(1) = max(0., wliq_roofsno(1) + qsdew_roof * deltim)
          wice_roofsno(1) = max(0., wice_roofsno(1) + (qfros_roof-qsubl_roof) * deltim)
-      end if
+      ENDIF
 
       ! only consider ponding and surface runoff
       xs1 = wliq_roofsno(1) - pondmx
@@ -218,11 +218,11 @@
       wliq_gimpsno(1) = wliq_gimpsno(1) + gwat*deltim
 
       ! Renew the ice and liquid mass due to condensation
-      if(lbi >= 1)then
+      IF (lbi >= 1) THEN
          ! make consistent with how evap_grnd removed in infiltration
          wliq_gimpsno(1) = max(0., wliq_gimpsno(1) + qsdew_gimp * deltim)
          wice_gimpsno(1) = max(0., wice_gimpsno(1) + (qfros_gimp-qsubl_gimp) * deltim)
-      end if
+      ENDIF
 
       ! only consider ponding and surface runoff
       xs1 = wliq_gimpsno(1) - pondmx

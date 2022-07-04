@@ -12,8 +12,6 @@
 
   USE precision
   USE PhysicalConstants, only: cpair,vonkar,grav
-! 05/19/2021, yuan: removed
-  !USE UrbanFlux, only: dewfraction
   USE FRICTION_VELOCITY
   IMPLICIT NONE
 
@@ -69,8 +67,6 @@
         fg,       &! ground fractional cover [-]
         fgh,      &! weight for thermal resistance to lower layer
         fgw,      &! weight for moisture resistance to lower layer
-! 05/19/2021, yuan: removed
-        !fwetg,    &! wet fraction of ground
         dth,      &! diff of virtual temp. between ref. height and surface
         dqh,      &! diff of humidity between ref. height and surface
         dthv,     &! diff of vir. poten. temp. between ref. height and surface

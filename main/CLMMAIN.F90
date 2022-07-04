@@ -589,7 +589,7 @@ ENDIF
 
 !======================================================================
 
-ELSE IF(patchtype == 3)THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtype = 3)
+ELSE IF (patchtype == 3) THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtype = 3)
 
 !======================================================================
                             !initial set
@@ -672,7 +672,7 @@ ELSE IF(patchtype == 3)THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtype 
 
 !======================================================================
 
-ELSE IF(patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and river) (patchtype = 4)
+ELSE IF (patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and river) (patchtype = 4)
 
 !======================================================================
 

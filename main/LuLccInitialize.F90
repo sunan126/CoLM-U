@@ -878,13 +878,13 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
     ! ------------------------------------------
     ! Lake depth and layers' thickness
     ! ------------------------------------------
-      CALL lakedepth_readin (lon_points,lat_points,dir_srfdata,year)
+      CALL lakedepth_readin (dir_srfdata,year)
 
 ! ...............................................................
 ! 3.2 Read in the soil parameters of the patches of the gridcells
 ! ...............................................................
 
-      CALL soil_parameters_readin (lon_points,lat_points,dir_srfdata,year)
+      CALL soil_parameters_readin (dir_srfdata,year)
 
 ! ...............................................................
 ! 3.3 Plant time-invariant variables (based on the look-up tables or global map)
@@ -898,7 +898,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       ENDDO
 #else
       ! read global tree top height from nc file
-      CALL HTOP_readin_nc (lon_points, lat_points, dir_srfdata, nam_srfdata, year)
+      CALL HTOP_readin_nc (dir_srfdata, nam_srfdata, year)
 #endif
 
 ! ...............................................................
@@ -907,7 +907,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 ! ...............................................................
 
 #ifdef URBAN_MODEL
-      CALL Urban_readin_nc (lon_points, lat_points, dir_srfdata, nam_urbdata, year)
+      CALL Urban_readin_nc (dir_srfdata, nam_urbdata, year)
 #endif
 
 ! ................................
@@ -986,11 +986,11 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 
 ! yuan, 08/03/2019: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
-      CALL LAI_readin_nc (lon_points,lat_points,year,month,dir_srfdata,nam_srfdata)
+      CALL LAI_readin_nc (year,month,dir_srfdata,nam_srfdata)
 
 #ifdef URBAN_MODEL
       ! 读取城市LAI/SAI数据
-      CALL UrbanLAI_readin_nc (lon_points,lat_points,year,month,dir_srfdata,nam_urbdata)
+      CALL UrbanLAI_readin_nc (year,month,dir_srfdata,nam_urbdata)
 #endif
 
 #endif

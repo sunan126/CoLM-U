@@ -6,9 +6,9 @@
 !=======================================================================
 ! Wall temperatures
 ! o Boundary conditions:
-!   F = Rnet - Hg - LEg (top),  
+!   F = Rnet - Hg - LEg (top),
 !   For urban sunwall, shadewall, and wall columns, there is a non-zero heat flux across
-!   the bottom "building inner surface" layer and the equations are derived assuming 
+!   the bottom "building inner surface" layer and the equations are derived assuming
 !   a prescribed or adjusted internal building temperature.
 !   T = T_wall_inner (at the wall inner surface).
 ! o Wall temperature is predicted from heat conduction
@@ -18,8 +18,8 @@
 !   is equal to that from the node j to the interface and the flux from the
 !   interface to the node j+1. The equation is solved using the Crank-Nicholson
 !   method and resulted in a tridiagonal system equation.
-! o no Phase change 
-! 
+! o no Phase change
+!
 ! Original author : Yongjiu Dai, 05/2020
 !=======================================================================
 
@@ -29,7 +29,6 @@
 
   IMPLICIT NONE
 
-  !INTEGER , intent(in) :: nl_wall  !upper bound of array
   REAL(r8), intent(in) :: deltim   !seconds in a time step [second]
   REAL(r8), intent(in) :: capr     !tuning factor to turn first layer T into surface T
   REAL(r8), intent(in) :: cnfac    !Crank Nicholson factor between 0 and 1
@@ -49,7 +48,7 @@
   REAL(r8), intent(in) :: cwalls   !deriv. of wall energy flux wrt to wall temp [w/m2/k]
 
   REAL(r8), intent(inout) :: t_wall(1:nl_wall) !wall layers' temperature [K]
-  REAL(r8), intent(inout) :: tkdz_wall           !inner wall heat flux [w/m2/k]
+  REAL(r8), intent(inout) :: tkdz_wall         !inner wall heat flux [w/m2/k]
 
 !------------------------ local variables ------------------------------
   REAL(r8) wice_wall(1:nl_wall) !ice lens [kg/m2]
@@ -133,7 +132,7 @@
 
 ! solve for t_wall
       i = size(at)
-      CALL tridia (i ,at ,bt ,ct ,rt ,t_wall) 
+      CALL tridia (i ,at ,bt ,ct ,rt ,t_wall)
 
       j = nl_wall
       fn1(j) = tk(j)*(twall_inner - cnfac*t_wall(j))/(zi_wall(j)-z_wall(j))

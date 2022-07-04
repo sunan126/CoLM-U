@@ -1131,11 +1131,11 @@
       ENDIF
 
 #if (defined CLMDEBUG)
-     IF (abs(errore)>.5) THEN
-     write(6,*) 'THERMAL.F90: energy balance violation'
-     write(6,*) ipatch,errore,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa,xmf
-     ENDIF
-100  format(10(f15.3))
+      IF (abs(errore)>.5) THEN
+      write(6,*) 'THERMAL.F90: energy balance violation'
+      write(6,*) ipatch,errore,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa,xmf
+      ENDIF
+100   format(10(f15.3))
 #endif
 
       ! diagnostic sabg only for pervious and impervious ground

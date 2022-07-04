@@ -3,10 +3,10 @@ MODULE UrbanShortwave
 
   USE precision
   USE GlobalVars
-  
+
   IMPLICIT NONE
   SAVE
-  PRIVATE 
+  PRIVATE
 
   PUBLIC :: UrbanOnlyShortwave      !Radiation transfer for shortwave radiation without trees
   PUBLIC :: UrbanVegShortwave       !Radiation transfer for shortwave radiation with trees
@@ -25,7 +25,7 @@ CONTAINS
         aroof, awall, agimp, agper, fwsun, sroof, swsun, swsha, sgimp, sgper, albu)
 
      IMPLICIT NONE
-     
+
      REAL(r8), intent(in) :: &
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
@@ -40,7 +40,7 @@ CONTAINS
         agper        ! albedo of pervious road [-]
 
      REAL(r8), intent(out) :: &
-        fwsun,      &! Fraction of sunlit wall [-] 
+        fwsun,      &! Fraction of sunlit wall [-]
         sroof(2),   &! Urban building roof absorption [-]
         swsun(2),   &! Urban sunlit wall absorption [-]
         swsha(2),   &! Urban shaded wall absorption [-]
@@ -73,13 +73,13 @@ CONTAINS
         Egimp,      &! Incident radiation on impervious ground [-]
         Egper,      &! Incident radiation on pervious ground [-]
 
-        A(4,4),     &! Radiation transfer matrix    
+        A(4,4),     &! Radiation transfer matrix
         Ainv(4,4),  &! Inverse of Radiation transfer matrix
         B(4),       &! Vectors of incident radition on each surface
         X(4)         ! Radiation emit from each surface in balance condition
 
      ! Temporal
-     REAL(r8) :: fac1, fac2, eb         
+     REAL(r8) :: fac1, fac2, eb
 
      ! Claculate urban structure parameters
      !-------------------------------------------------
@@ -89,7 +89,7 @@ CONTAINS
      fg = 1. - fb
 
      fgimp = 1. - fgper
-     
+
      ! Calculate view factors
      !-------------------------------------------------
 
@@ -112,7 +112,7 @@ CONTAINS
 
      ! Calculate sunlit wall fraction
      !-------------------------------------------------
- 
+
      ! Building wall shadow on the ground
      Sw = ShadowWall_dir(fb/fg, HL, theta)
 
@@ -137,9 +137,9 @@ CONTAINS
      ! Radiation transfer for incident direct case
      !-------------------------------------------------
 
-     ! Incident radiation on sunlit/shaded wall and 
+     ! Incident radiation on sunlit/shaded wall and
      ! impervious/pervious ground
-     Ewsun = Sw 
+     Ewsun = Sw
      Ewsha = 0.
      Eg    = 1.-Ewsun
      Egimp = Eg*fgimp
@@ -154,7 +154,7 @@ CONTAINS
      !-------------------------------------------------
      ! SAVE results for output
      !-------------------------------------------------
-     
+
      ! Radiation absorption by each surface
      !NOTE: for 3D, 单位面积辐射吸收: 4*HL*fb/fg
      !      for canyon: 单位面积辐射吸收: 2*HW
@@ -168,14 +168,14 @@ CONTAINS
 
      ! Energy balance check
      eb = swsun(1) + swsha(1) + sgimp(1) + sgper(1) + albu(1)
-     IF (abs(eb-1) > 1e-6) THEN 
+     IF (abs(eb-1) > 1e-6) THEN
         print *, "Direct - Energy Balance Check error!", eb-1
      ENDIF
 
      ! Radiation transfer for incident diffuse case
      !-------------------------------------------------
-     
-     ! Incident radiation on sunlit/shaded wall and 
+
+     ! Incident radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Ewsun = Fsw*fwsun
      Ewsha = Fsw*fwsha
@@ -202,7 +202,7 @@ CONTAINS
 
      ! energy balance check
      eb = swsun(2) + swsha(2) + sgimp(2) + sgper(2) + albu(2)
-     IF (abs(eb-1) > 1e-6) THEN 
+     IF (abs(eb-1) > 1e-6) THEN
         print *, "Diffuse - Energy Balance Check error!", eb-1
      ENDIF
 
@@ -210,7 +210,7 @@ CONTAINS
      IF (fb > 0.) THEN
         swsun = swsun/(4*fwsun*HL*fb)*fg
         swsha = swsha/(4*fwsha*HL*fb)*fg
-     ENDIF 
+     ENDIF
      IF (fgimp > 0.) sgimp = sgimp/fgimp
      IF (fgper > 0.) sgper = sgper/fgper
 
@@ -228,7 +228,7 @@ CONTAINS
         fwsun, sroof, swsun, swsha, sgimp, sgper, sveg, albu )
 
      IMPLICIT NONE
-     
+
      REAL(r8), intent(in) :: &
         theta,      &! Sun zenith angle [radian]
         HW,         &! Ratio of building height to ground width [-]
@@ -247,23 +247,23 @@ CONTAINS
         sai,        &! stem area index
         fv,         &! Fraction of tree cover [-]
         hv,         &! Central height of vegetation crown
-        rho,        &! effective rho (lai + sai) 
+        rho,        &! effective rho (lai + sai)
         tau          ! effective tau (lai + sai)
-     
+
      REAL(r8), intent(out) :: &
-        fwsun,      &! Fraction of sunlit wall [-] 
+        fwsun,      &! Fraction of sunlit wall [-]
         sroof(2),   &! Urban building roof absorption [-]
         swsun(2),   &! Urban sunlit wall absorption [-]
         swsha(2),   &! Urban shaded wall absorption [-]
         sgimp(2),   &! Urban impervious ground absorption [-]
         sgper(2),   &! Urban pervious gournd absorption [-]
         sveg(2),    &! Urban building tree absorption [-]
-        albu(2)      ! Urban overall albedo [-] 
+        albu(2)      ! Urban overall albedo [-]
 
      ! Local variables
      !-------------------------------------------------
      REAL(r16),parameter:: DD1=1.0_r16 !quad accuracy REAL number
-     
+
      REAL(r8) ::    &
         W,          &! Urban ground average width
         L,          &! Urban building average length
@@ -280,27 +280,27 @@ CONTAINS
         Fws,        &! View factor from wall to sky [-]
 
         Fvg,        &! View factor from tree to ground [-]
-        Fvs,        &! View factor from tree to sky [-] 
+        Fvs,        &! View factor from tree to sky [-]
         Fvw,        &! View factor from tree to walls (sunlit+shaded) [-]
         Fwv,        &! View factor from wall to tree [-]
         Fgv,        &! View factor from ground to tree [-]
-        Fsv,        &! View factor from sky to tree [-] 
+        Fsv,        &! View factor from sky to tree [-]
 
         Fgvs,       &! View factor from ground->|tree|-> to sky [-]
         Fgvw,       &! View factor from ground->|tree|-> to walls [-]
-        Fsvg,       &! View factor from sky->|tree|-> to ground [-] 
+        Fsvg,       &! View factor from sky->|tree|-> to ground [-]
         Fsvw,       &! View factor from sky->|tree|-> to walls [-]
         Fwvw,       &! View factor from walls->|tree|-> to walls [-]
         Fwvs,       &! View factor from walls->|tree|-> to sky [-]
         Fwvg,       &! View factor from walls->|tree|-> to ground [-]
 
-        Fsw_,       &! Fsw - Fsvw + Fsvw*Td [-] 
-        Fsg_,       &! Fsg - Fsvg + Fsvg*Td [-] 
-        Fgw_,       &! Fgw - Fgvw + Fgvw*Td [-] 
-        Fgs_,       &! Fgs - Fgvs + Fgvs*Td [-] 
-        Fwg_,       &! Fwg - Fwvg + Fwvg*Td [-] 
-        Fww_,       &! Fww - Fwvw + Fwvw*Td [-] 
-        Fws_,       &! Fws - Fwvs + Fwvs*Td [-] 
+        Fsw_,       &! Fsw - Fsvw + Fsvw*Td [-]
+        Fsg_,       &! Fsg - Fsvg + Fsvg*Td [-]
+        Fgw_,       &! Fgw - Fgvw + Fgvw*Td [-]
+        Fgs_,       &! Fgs - Fgvs + Fgvs*Td [-]
+        Fwg_,       &! Fwg - Fwvg + Fwvg*Td [-]
+        Fww_,       &! Fww - Fwvw + Fwvw*Td [-]
+        Fws_,       &! Fws - Fwvs + Fwvs*Td [-]
 
         Sw,         &! Shadow of wall [-]
         Sw_,        &! Shadow of wall [-]
@@ -319,14 +319,14 @@ CONTAINS
 
      ! Radiation transfer matrix and vectors
      !-------------------------------------------------
-     REAL(r8) :: A(5,5)     !Radiation transfer matrix    
+     REAL(r8) :: A(5,5)     !Radiation transfer matrix
      REAL(r8) :: Ainv(5,5)  !Inverse of Radiation transfer matrix
      REAL(r8) :: B(5)       !Vectors of incident radition on each surface
      REAL(r8) :: X(5)       !Radiation emit from each surface in balance condition
-     
+
      ! Temporal
-     REAL(r8) :: fac1, fac2, eb, sumw, ws, wg, ww         
-     
+     REAL(r8) :: fac1, fac2, eb, sumw, ws, wg, ww
+
      REAL(r8) :: phi_tot    !albedo of a single tree
      REAL(r8) :: phi_dif    !Temporal
      REAL(r8) :: pa2        !Temporal
@@ -339,7 +339,7 @@ CONTAINS
      fg = 1. - fb
 
      fgimp = 1. - fgper
-     
+
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------
      Td = tee(DD1*3/8.*(lai+sai))
@@ -365,7 +365,7 @@ CONTAINS
      Fws = Fsw*fg/fb/(2*HL)*0.75
      Fwg = Fsw*fg/fb/(2*HL)*0.25
      Fww = 1 - Fws - Fwg
-  
+
      ! View factor from tree to walls, ground and sky
      !-------------------------------------------------
 
@@ -386,7 +386,7 @@ CONTAINS
      ! robust check
      IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
-     ENDIF 
+     ENDIF
 
      ! Calibrated building ground shadow
      Fsv  = Sv
@@ -405,9 +405,9 @@ CONTAINS
      Sv  = min(1., Sv/fg)
 
      ! robust check
-     IF (Sw+Sv-Swv > 1) THEN 
+     IF (Sw+Sv-Swv > 1) THEN
         Swv = Sw+Sv-1
-     ENDIF 
+     ENDIF
 
      ! Calibrated building ground shadow
      Fgv  = Sv
@@ -417,7 +417,7 @@ CONTAINS
      Fvs = Fsv*fg/(4*fv)
      Fvg = Fgv*fg/(4*fv)
      Fvw = 1 - Fvs - Fvg
-     
+
      ws  = (phi_tot - phi_dif)/2
      wg  = (phi_tot + phi_dif)/2
      ww  = (phi_tot + phi_dif)/2
@@ -474,7 +474,7 @@ CONTAINS
      Sw = Sw - Swv
 
      ! Sunlit/shaded wall fraction
-     fwsun = 0.5 * (Sw*fg+fb) / (4/PI*fb*HL*tan(theta) + fb) 
+     fwsun = 0.5 * (Sw*fg+fb) / (4/PI*fb*HL*tan(theta) + fb)
      fwsha = 1. - fwsun
 
      ! Calculate radiation transfer matrix
@@ -492,7 +492,7 @@ CONTAINS
      ! Radiation transfer for incident direct case
      !-------------------------------------------------
 
-     ! Incident radiation on sunlit/shaded wall and 
+     ! Incident radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Ewsun = Sw
      Ewsha = Swv*Td
@@ -510,7 +510,7 @@ CONTAINS
      !-------------------------------------------------
      ! SAVE results for output
      !-------------------------------------------------
-     
+
      ! Radiation absorption by each surface
      !NOTE: for 3D, 单位面积辐射吸收: 4*HL*fb/fg
      !      for canyon: 单位面积辐射吸收: 2*HW
@@ -518,21 +518,21 @@ CONTAINS
      swsha(1) = X(2)/awall*(1-awall)!/(4*fwsha*HL*fb/fg)
      sgimp(1) = X(3)/agimp*(1-agimp)!/fgimp
      sgper(1) = X(4)/agper*(1-agper)!/fgper
-     sveg (1) = X(5)/av   *(1-av-Td)!/(fv/fg)   
+     sveg (1) = X(5)/av   *(1-av-Td)!/(fv/fg)
 
      ! albedo of urban canopy
      albu(1) = X(1)*Fws_ + X(2)*Fws_ + X(3)*Fgs_ + X(4)*Fgs_ + X(5)*Fvs
 
      ! Energy balance check
      eb = swsun(1) + swsha(1) + sgimp(1) + sgper(1) + sveg(1) + albu(1)
-     IF (abs(eb-1) > 1e-6) THEN 
+     IF (abs(eb-1) > 1e-6) THEN
         print *, "Direct tree - Energy Balance Check error!", eb-1
      ENDIF
 
      ! Radiation transfer for incident diffuse case
      !-------------------------------------------------
-     
-     ! Incident radiation on sunlit/shaded wall and 
+
+     ! Incident radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Ewsun = Fsw_*fwsun
      Ewsha = Fsw_*fwsha
@@ -561,22 +561,22 @@ CONTAINS
 
      ! Energy balance check
      eb = swsun(2) + swsha(2) + sgimp(2) + sgper(2) + sveg(2) + albu(2)
-     IF (abs(eb-1) > 1e-6) THEN 
+     IF (abs(eb-1) > 1e-6) THEN
         print *, "Diffuse tree - Energy Balance Check error!", eb-1
      ENDIF
-     
+
      ! 转成单位面积吸收
      IF (fb > 0.) THEN
         swsun = swsun/(4*fwsun*HL*fb)*fg
         swsha = swsha/(4*fwsha*HL*fb)*fg
-     ENDIF 
+     ENDIF
      IF (fgimp > 0.) sgimp = sgimp/fgimp
      IF (fgper > 0.) sgper = sgper/fgper
      IF (   fv > 0.) sveg  =  sveg/fv*fg
 
      ! 屋顶吸收
      sroof = 1. - aroof
-     
+
      ! 计算考虑屋顶的总体反照率
      albu = aroof*fb + albu*fg
 
@@ -585,15 +585,15 @@ CONTAINS
   !-------------------------------------------------
   ! claculate shadow of wall for incident direct radiation
   FUNCTION ShadowWall_dir(f, HL, theta) result(Sw)
-     
-     IMPLICIT NONE 
+
+     IMPLICIT NONE
 
      REAL(r8), intent(IN) :: f
      REAL(r8), intent(IN) :: HL
      REAL(r8), intent(IN) :: theta
 
      REAL(r8) :: Sw
-     
+
      Sw = 1 - exp( -4/PI*f*HL*tan(theta) )
 
   END FUNCTION ShadowWall_dir
@@ -601,23 +601,23 @@ CONTAINS
   !-------------------------------------------------
   ! claculate shadow of wall for incident diffuse radiation
   FUNCTION ShadowWall_dif(f, HL) result(Sw)
-     
-     IMPLICIT NONE 
+
+     IMPLICIT NONE
 
      REAL(r8), intent(IN) :: f
      REAL(r8), intent(IN) :: HL
 
      REAL(r8) :: Sw
-     
-     Sw = 1 - exp( -4/PI*f*HL*tan( (53-sqrt(f*HL*100))/180*PI ) ) 
+
+     Sw = 1 - exp( -4/PI*f*HL*tan( (53-sqrt(f*HL*100))/180*PI ) )
 
   END FUNCTION ShadowWall_dif
 
   !-------------------------------------------------
-  ! claculate shadow of tree 
+  ! claculate shadow of tree
   FUNCTION ShadowTree(f, theta) result(Sv)
-     
-     IMPLICIT NONE 
+
+     IMPLICIT NONE
 
      REAL(r8), intent(IN) :: f
      REAL(r8), intent(IN) :: theta
@@ -636,7 +636,7 @@ CONTAINS
   ! decomposition. Depends on LAPACK.
   FUNCTION MatrixInverse(A) result(Ainv)
 
-     IMPLICIT NONE 
+     IMPLICIT NONE
 
      REAL(r8), dimension(:,:), intent(in) :: A
      REAL(r8), dimension(size(A,1),size(A,2)) :: Ainv
@@ -651,14 +651,14 @@ CONTAINS
      ! Store A in Ainv to prevent it from being overwritten by LAPACK
      Ainv = A
      n = size(A,1)
-     
+
      ! DGETRF computes an LU factorization of a general M-by-N matrix A
      ! using partial pivoting with row interchanges.
      CALL DGETRF(n, n, Ainv, n, ipiv, info)
      IF (info /= 0) THEN
         stop 'Matrix is numerically singular!'
      ENDIF
-     
+
      ! DGETRI computes the inverse of a matrix using the LU factorization
      ! computed by DGETRF.
      CALL DGETRI(n, Ainv, n, ipiv, work, n, info)

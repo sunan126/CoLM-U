@@ -335,8 +335,14 @@
 #ifdef LULCC
          ! DO land use and land cover change simulation
          IF ( isendofyear(idate, deltim) ) THEN
+            CALL deallocate_1D_Forcing
+            CALL deallocate_1D_Fluxes
+
             CALL LuLccDRIVER (casename,dir_srfdata,dir_restart,&
                               nam_srfdata,nam_urbdata,idate,greenwich)
+
+            CALL allocate_1D_Forcing
+            CALL allocate_1D_Fluxes
          ENDIF
 #endif
 

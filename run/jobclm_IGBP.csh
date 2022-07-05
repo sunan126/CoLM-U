@@ -19,16 +19,16 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 
 # case name and simulating time setting
 #-------------------------------------------------------
-set CASE_NAME   = IGBP           	# case name                                            <MARK #1>
+set CASE_NAME   = IGBPCRU2000           	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
-set LC_YEAR     = 2005          	# which year of land cover data used
-set START_YEAR  = 2000          	# model start year                                     <MARK #2>
-set START_MONTH = 1             	# model start Month
-set START_DAY   = 1             	# model start day
+set LC_YEAR     = 2004          	# which year of land cover data used
+set START_YEAR  = 2004          	# model start year                                     <MARK #2>
+set START_MONTH = 12             	# model start Month
+set START_DAY   = 31             	# model start day
 set START_SEC   = 0             	# model start secs of day
-set END_YEAR    = 2004          	# model end year
+set END_YEAR    = 2005          	# model end year
 set END_MONTH   = 1             	# model end month
-set END_DAY     = 1             	# model end day
+set END_DAY     = 2             	# model end day
 set END_SEC     = 0               	# model end secs of day
 set SPIN_YEAR   = $START_YEAR     	# spin-up end year, set default to SATRT_YEAR
 set SPIN_MONTH  = $START_MONTH    	# spin-up end month, set default to START_DAY
@@ -71,7 +71,7 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
-setenv DAT_ATMDIR $DAT_ROOT/atm/gswp3_v1
+setenv DAT_ATMDIR $DAT_ROOT/atm/cruncep_v7
 setenv DAT_SRFDIR $DAT_ROOT/srf/global_0.5x0.5_igbp
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
@@ -103,8 +103,10 @@ set nthread    = 92
 #------------------------------------------------------
 
 \cat >! .tmp << EOF
-#define	USE_GSWP3_DATA            ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
+#define	USE_CRUNCEP_DATA            ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	IGBP_CLASSIFICATION       ! USGS/IGBP/PFT/PC
+#define	LAICHANGE                 ! change LAI for each year
+#define	LULCC                     ! Land use and land cover change
 #undef	RDGRID                    ! read user defined grid
 #undef	RAWdata_update            ! update raw data
 #undef	DYN_PHENOLOGY             ! empirical LAI f(soil T, root frac)

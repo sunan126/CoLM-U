@@ -480,6 +480,12 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                  CYCLE
               ENDIF
 
+              ! if a patch is added, CYCLE
+              IF (patchclass(np) < patchclass_(np_)) THEN
+                 np = np + 1
+                 CYCLE
+              ENDIF
+
               ! otherwise, set patch value
               ! include added patch and the same patch
               z_sno       (:,np) = z_sno_       (:,np_)
@@ -511,12 +517,6 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
 
               t_lake      (:,np) = t_lake_      (:,np_)
               lake_icefrac(:,np) = lake_icefrac_(:,np_)
-
-              ! if a patch is added, CYCLE
-              IF (patchclass(np) < patchclass_(np_)) THEN
-                 np = np + 1
-                 CYCLE
-              ENDIF
 
 #ifdef PFT_CLASSIFICATION
 IF (patchtype(np)==0 .and. patchtype_(np_)==0) THEN

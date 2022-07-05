@@ -1,5 +1,7 @@
-#define	USE_GSWP3_DATA            
+#define	USE_CRUNCEP_DATA            
 #define	IGBP_CLASSIFICATION       
+#define	LAICHANGE                 
+#define	LULCC                     
 #undef	RDGRID                    
 #undef	RAWdata_update            
 #undef	DYN_PHENOLOGY             

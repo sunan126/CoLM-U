@@ -487,7 +487,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
               ENDIF
 
               ! otherwise, set patch value
-              ! include added patch and the same patch
+              ! only for the same patch TYPE
               z_sno       (:,np) = z_sno_       (:,np_)
               dz_sno      (:,np) = dz_sno_      (:,np_)
               t_soisno    (:,np) = t_soisno_    (:,np_)

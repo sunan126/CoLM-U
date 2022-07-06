@@ -7,7 +7,7 @@
 set RUN_CLM_SRF="NO"     	# "YES" = MAKE CoLM surface characteristic data
                                 # "NO"  = NOT make CoLM surface characteristic data
 
-set RUN_CLM_INI="NO"    	# "YES' = MAKE CoLM initial data
+set RUN_CLM_INI="YES"    	# "YES' = MAKE CoLM initial data
                                 # "NO"  = Restart run
 
 set RUN_CaMa="NO"       	# "YES" = OPEN CaMa-Flood
@@ -22,7 +22,7 @@ set RUN_CLM="YES"        	# "YES" = RUN CoLM
 set CASE_NAME   = PC            	# case name                                            <MARK #1>
 set GREENWICH   = .true.        	# 'true' for greenwich time, 'false' for local time
 set LC_YEAR     = 2000          	# which year of land cover data used
-set START_YEAR  = 2000          	# model start year                                     <MARK #2>
+set START_YEAR  = 2001          	# model start year                                     <MARK #2>
 set START_MONTH = 1             	# model start Month
 set START_DAY   = 1             	# model start day
 set START_SEC   = 0             	# model start secs of day
@@ -105,6 +105,7 @@ set nthread    = 92
 \cat >! .tmp << EOF
 #define	USE_GSWP3_DATA            ! QIAN/PRINCETON/CRUNCEP/GSWP3/POINT
 #define	PC_CLASSIFICATION         ! USGS/IGBP/PFT/PC
+#define	LAICHANGE                 ! change LAI for each year
 #undef	RDGRID                    ! read user defined grid
 #undef	RAWdata_update            ! update raw data
 #undef	DYN_PHENOLOGY             ! empirical LAI f(soil T, root frac)

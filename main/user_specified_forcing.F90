@@ -559,6 +559,8 @@ CONTAINS
 #endif
       do i = 1, nlats
          do j = 1, nlons
+            if (forcn(j,i,1) < 212.0) forcn(j,i,1) = 212.0
+            if (forcn(j,i,4) < 0.0)   forcn(j,i,4) = 0.0
             call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
             if (qsat_tmp < forcn(j,i,2)) then
                forcn(j,i,2) = qsat_tmp

@@ -184,8 +184,8 @@ SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
             tsai(npatch) = lcsai(i,j,m)/fveg0(m) !stem area index
          ENDIF
 
-         green(npatch) = 1.
          fveg(npatch)  = fveg0(m)
+         green(npatch) = 1.
 
       ENDDO
 #ifdef OPENMP
@@ -237,12 +237,16 @@ SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
             pc = patch2pc(npatch)
             tlai_c(:,pc) = pclai(i,j,:,m)
             tsai_c(:,pc) = pcsai(i,j,:,m)
+! 07/06/2022, yuan: LAICHANGE bug
+            tlai(npatch) = sum(tlai_c(:,pc)*pcfrac(:,pc))
+            tsai(npatch) = sum(tsai_c(:,pc)*pcfrac(:,pc))
+         ELSE
+! 12/28/2019, yuan: Bug
+            ! pctpc from 1-100% -> 0-1
+            tlai(npatch) = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.)
+            tsai(npatch) = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.)
          ENDIF
 
-! 12/28/2019, yuan: Bug
-         ! pctpc from 1-100% -> 0-1
-         tlai(npatch)  = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.)
-         tsai(npatch)  = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.)
          fveg(npatch)  = fveg0(m)
          green(npatch) = 1.
 

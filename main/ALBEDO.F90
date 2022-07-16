@@ -729,12 +729,12 @@ ENDIF
       DO ic = 1, 2
 
       IF (ic == 2) THEN
-         cosz = max(0.001_r8, cosdif)
+         cosz  = max(0.001_r8, cosdif)
          theta = acos(cosz)
          theta = theta/3.14159*180
 
          theta = theta + chil*5._r8
-         cosz = cos(theta/180*3.14159)
+         cosz  = cos(theta/180*3.14159)
       ELSE
          cosz = coszen
       ENDIF

@@ -73,10 +73,10 @@ MODULE PFT_Const
 
    ! reflectance of green leaf in virsible band
 #if(defined PC_CLASSIFICATION)
-   ! Leaf optical properties from measured data (Dong et al., 2021)
+   ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_vis_p(0:15) &
-      = (/0.110,  0.050,  0.060,  0.060,  0.100,  0.110,  0.100,  0.080,&
-          0.090,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
+      = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.110,  0.100,  0.100,&
+          0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
 #else
    REAL(r8), parameter :: rhol_vis_p(0:15) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.100,  0.100,  0.100,&
@@ -107,9 +107,9 @@ MODULE PFT_Const
 
    ! transmittance of green leaf in visible band
 #if(defined PC_CLASSIFICATION)
-   ! Leaf optical properties from measured data (Dong et al., 2021)
+   ! Leaf optical properties adpated from measured data (Dong et al., 2021)
    REAL(r8), parameter :: taul_vis_p(0:15) &
-      = (/0.050,  0.030,  0.040,  0.040,  0.050,  0.060,  0.050,  0.060,&
+      = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.060,  0.050,  0.060,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
 #else
    REAL(r8), parameter :: taul_vis_p(0:15) &

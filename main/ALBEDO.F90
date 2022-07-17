@@ -261,7 +261,7 @@ ENDIF
 
 IF (patchtype == 0) THEN
 #if(defined USGS_CLASSIFICATION || defined IGBP_CLASSIFICATION)
-         CALL twostream_mod (chil,rho,tau,green,lai,sai,&
+         CALL twostream (chil,rho,tau,green,lai,sai,&
                          czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
 
          albv(:,:) = (1.-wt)*albv(:,:) + wt*albsno(:,:)

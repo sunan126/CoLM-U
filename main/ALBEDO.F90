@@ -260,7 +260,18 @@ ENDIF
       IF (lai+sai > 1e-6) THEN
 
 IF (patchtype == 0) THEN
-#if(defined USGS_CLASSIFICATION || defined IGBP_CLASSIFICATION)
+
+#if(defined USGS_CLASSIFICATION)
+         IF (lai > 1e-6) THEN
+            CALL twostream (chil,rho,tau,green,lai,sai,&
+                            czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
+
+            albv(:,:) = (1.-wt)*albv(:,:) + wt*albsno(:,:)
+            alb(:,:)  = (1.-fveg)*albg(:,:) + fveg*albv(:,:)
+         ENDIF
+#endif
+
+#if(defined IGBP_CLASSIFICATION)
          CALL twostream (chil,rho,tau,green,lai,sai,&
                          czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
 
@@ -278,7 +289,8 @@ IF (patchtype == 0) THEN
          CALL ThreeDCanopy_wrap (ipatch, czen, albg, albv, ssun, ssha)
          alb(:,:) = albv(:,:)
 #endif
-      ELSE
+
+ELSE
          CALL twostream_mod (chil,rho,tau,green,lai,sai,&
                          czen,albg,albv,tran,thermk,extkb,extkd,ssun,ssha)
 

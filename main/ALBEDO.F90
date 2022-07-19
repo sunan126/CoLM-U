@@ -422,7 +422,7 @@ ENDIF
 #endif
 
       lsai   = lai + sai_
-      power3 = lsai / zmu
+      power3 = (lai+sai) / zmu
       power3 = min( 50., power3 )
       power3 = max( 1.e-5, power3 )
       thermk = exp(-power3)

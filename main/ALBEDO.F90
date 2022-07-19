@@ -339,6 +339,7 @@ ENDIF
 !-------------------------- local -----------------------------------
   REAL(r8) :: &
            lsai,           &! lai+sai
+           sai_,           &! sai=0 for USGS, no stem
            phi1,           &! (phi-1)
            phi2,           &! (phi-2)
            scat,           &! (omega)
@@ -414,7 +415,13 @@ ENDIF
       ENDIF
       zmu2 = zmu * zmu
 
-      lsai   = lai + sai
+#if(defined USGS_CLASSIFICATION)
+      sai_ = 0.
+#else
+      sai_ = sai
+#endif
+
+      lsai   = lai + sai_
       power3 = lsai / zmu
       power3 = min( 50., power3 )
       power3 = max( 1.e-5, power3 )
@@ -429,14 +436,14 @@ ENDIF
 
 ! + stem optical properties
       scat = lai/lsai * ( tau(iw,1) + rho(iw,1) ) + &
-             sai/lsai * ( tau(iw,2) + rho(iw,2) )
+            sai_/lsai * ( tau(iw,2) + rho(iw,2) )
 
       as = scat / 2. * proj / ( proj + coszen * phi2 )
       as = as * ( 1. - coszen * phi1 / ( proj + coszen * phi2 ) * &
                log ( ( proj + coszen * phi2 + coszen * phi1 ) / ( coszen * phi1 ) ) )
 
 ! + stem optical properties
-      upscat = lai/lsai*tau(iw,1) + sai/lsai*tau(iw,2)
+      upscat = lai/lsai*tau(iw,1) + sai_/lsai*tau(iw,2)
       upscat = 0.5 * ( scat + ( scat - 2. * upscat ) * &
                (( 1. + chil ) / 2. ) ** 2 )
       betao = ( 1. + zmu * extkb ) / ( scat * zmu * extkb ) * as

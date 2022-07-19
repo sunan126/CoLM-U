@@ -305,7 +305,7 @@ CONTAINS
         Sw,         &! Shadow of wall [-]
         Sw_,        &! Shadow of wall [-]
         Sv,         &! Shadow of trees [-]
-        Swv,        &! Overlapped shadow between wall and trees [-]
+        Svw,        &! Overlapped shadow between wall and trees [-]
         fv_,        &! Fraction of trees [-]
         Td,         &! Transmission of tree [-]
         av,         &! albedo of tree [-]
@@ -378,19 +378,19 @@ CONTAINS
 
      ! Overlapped shadow between tree and building
      ! (to groud only)
-     Swv = (Sw-Sw_) * Sv
+     Svw = Sv * (Sw-Sw_)
 
      ! convert Sv to ground ratio
      Sv  = min(1., Sv/fg)
 
      ! robust check
-     IF (Sw+Sv-Swv > 1) THEN
-        Swv = Sw+Sv-1
+     IF (Sv+Sw-Svw > 1) THEN
+        Svw = Sv+Sw-1
      ENDIF
 
      ! Calibrated building ground shadow
      Fsv  = Sv
-     Fsvw = Swv
+     Fsvw = Svw
      Fsvg = Fsv - Fsvw
 
      Sw_ = ShadowWall_dif(fb/fg, hv/L)
@@ -399,19 +399,19 @@ CONTAINS
 
      ! Overlapped shadow between tree and building
      ! (to groud only)
-     Swv = (Sw-Sw_) * Sv
+     Svw = Sv * (Sw-Sw_)
 
      ! convert Sv to ground ratio
      Sv  = min(1., Sv/fg)
 
      ! robust check
-     IF (Sw+Sv-Swv > 1) THEN
-        Swv = Sw+Sv-1
+     IF (Sv+Sw-Svw > 1) THEN
+        Svw = Sv+Sw-1
      ENDIF
 
      ! Calibrated building ground shadow
      Fgv  = Sv
-     Fgvw = Swv
+     Fgvw = Svw
      Fgvs = Fgv - Fgvw
 
      Fvs = Fsv*fg/(4*fv)
@@ -460,21 +460,21 @@ CONTAINS
 
      ! Overlapped shadow between tree and building
      ! (to groud only)
-     Swv = (Sw-Sw_) * Sv
+     Svw = (Sw-Sw_) * Sv
 
      ! convert Sv to ground ratio
      Sv = min(1., Sv/fg)
 
      ! robust check
-     IF (Sw+Sv-Swv > 1) THEN
-        Swv = Sw+Sv-1
+     IF (Sv+Sw-Svw > 1) THEN
+        Svw = Sv+Sw-1
      ENDIF
 
      ! Calibrated building ground shadow
-     Sw = Sw - Swv
+     Sw = Sw - Svw
 
      ! Sunlit/shaded wall fraction
-     fwsun = 0.5 * (Sw*fg+fb) / (4/PI*fb*HL*tan(theta) + fb)
+     fwsun = 0.5 * (Sw*fg + fb) / (4/PI*fb*HL*tan(theta) + fb)
      fwsha = 1. - fwsun
 
      ! Calculate radiation transfer matrix
@@ -495,8 +495,8 @@ CONTAINS
      ! Incident radiation on sunlit/shaded wall and
      ! impervious/pervious ground
      Ewsun = Sw
-     Ewsha = Swv*Td
-     Eg    = 1-Sw-Sv+(Sv-Swv)*Td
+     Ewsha = Svw*Td
+     Eg    = 1-Sw-Sv+(Sv-Svw)*Td
      Egimp = Eg*fgimp
      Egper = Eg*fgper
      Ev    = Sv

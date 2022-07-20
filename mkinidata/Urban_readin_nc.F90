@@ -14,6 +14,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       USE MOD_UrbanTimeInvars
       USE ncio
       USE omp_lib
+      USE LCZ_Const
 
       IMPLICIT NONE
 
@@ -34,7 +35,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       INTEGER :: tbuildingmax_vid, tbuildingmin_vid
       INTEGER :: thickroof_vid, thickwall_vid
 
-      INTEGER :: i, j, u, t, l, m, npatch
+      INTEGER :: i, j, u, t, l, m, npatch, k
 
       REAL(r8) :: thick_roof, thick_wall
 
@@ -79,12 +80,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       REAL(r8), allocatable :: thickroof     (:,:,:)
       REAL(r8), allocatable :: thickwall     (:,:,:)
 
-! READ in urban data
-      write(cyear,'(i4.4)') lc_year
-      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
-      print*,trim(lndname)
-      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
-
+      print*, N_URB
       allocate ( wtlunitroof   (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( htroof        (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( canyonhwr     (1:lon_points,1:lat_points,1:N_URB) )
@@ -110,6 +106,57 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       allocate ( tbuildingmin  (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( thickroof     (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( thickwall     (1:lon_points,1:lat_points,1:N_URB) )
+
+#ifdef USE_LCZ
+      do i=1,360
+         do j=1,720
+            wtlunitroof (j,i,:) = rooffrac(:)
+            htroof      (j,i,:) = roofhgt (:)
+            canyonhwr   (j,i,:) = h2w     (:)
+            wtroadperv  (j,i,:) = perfrac (:) 
+            emroof      (j,i,:) = roofem  (:) 
+            emwall      (j,i,:) = wallem  (:)
+            emimproad   (j,i,:) = roadem  (:)
+            emperroad   (j,i,:) = perem   (:)
+            tbuildingmax(j,i,:) = 299.15
+            tbuildingmin(j,i,:) = 296.15
+            thickroof   (j,i,:) = rooftk  (:) 
+            thickwall   (j,i,:) = walltk  (:)
+            !thickroad   (j,i,:) = roadtk  (:)
+            
+            albroof     (j,i,:,1,1) = roofalb(:)
+            albroof     (j,i,:,1,2) = roofalb(:)
+            albroof     (j,i,:,2,1) = roofalb(:)
+            albroof     (j,i,:,2,2) = roofalb(:)
+            albwall     (j,i,:,1,1) = wallalb(:)
+            albwall     (j,i,:,1,2) = wallalb(:)
+            albwall     (j,i,:,2,1) = wallalb(:)
+            albwall     (j,i,:,2,2) = wallalb(:)
+            albimproad  (j,i,:,1,1) = roadalb(:)
+            albimproad  (j,i,:,1,2) = roadalb(:)
+            albimproad  (j,i,:,2,1) = roadalb(:)
+            albimproad  (j,i,:,2,2) = roadalb(:)
+            albperroad  (j,i,:,1,1) = peralb (:)
+            albperroad  (j,i,:,1,2) = peralb (:)
+            albperroad  (j,i,:,2,1) = peralb (:)
+            albperroad  (j,i,:,2,2) = peralb (:)
+
+            do k=1,10
+               cvroof   (j,i,k,:) = roofcv(k)
+               cvwall   (j,i,k,:) = wallcv(k)
+               cvimproad(j,i,k,:) = roadcv(k)
+               tkroof   (j,i,k,:) = throof(k)
+               tkwall   (j,i,k,:) = thwall(k)
+               tkimproad(j,i,k,:) = throad(k)
+            enddo
+         enddo
+      enddo
+#else
+! READ in urban data
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
+      print*,trim(lndname)
+      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
       CALL nccheck( nf90_inq_varid(ncid, "WTLUNIT_ROOF",    wtlunitroof_vid  ) )
       CALL nccheck( nf90_inq_varid(ncid, "HT_ROOF",         htroof_vid       ) )
@@ -163,6 +210,8 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       CALL nccheck( nf90_get_var(ncid, thickroof_vid,     thickroof    ) )
       CALL nccheck( nf90_get_var(ncid, thickwall_vid,     thickwall    ) )
 
+      CALL nccheck( nf90_close(ncid) )
+#endif
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE(i, j, u, t, l, m, npatch) &
@@ -292,6 +341,5 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       deallocate ( thickroof     )
       deallocate ( thickwall     )
 
-      CALL nccheck( nf90_close(ncid) )
-
+!      CALL nccheck( nf90_close(ncid) )
 END SUBROUTINE Urban_readin_nc

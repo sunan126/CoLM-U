@@ -10,6 +10,7 @@ EXECUTABLE = initial.x
 OBJS =  precision.o              \
 	GlobalVars.o             \
 	PhysicalConstants.o      \
+	LCZ_Const.o              \
 	LC_Const.o               \
 	PFT_Const.o              \
 	ncio.o                   \
@@ -33,7 +34,7 @@ OBJS =  precision.o              \
 	LAI_empirical.o          \
 	LAI_readin.o             \
 	LAI_readin_nc.o          \
-	Urban_readin_nc.o          \
+	Urban_readin_nc.o        \
 	UrbanLAI_readin_nc.o     \
 	HTOP_readin_nc.o         \
 	lakedepth_readin.o       \

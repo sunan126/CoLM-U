@@ -127,6 +127,7 @@ CONTAINS
       read(11) f_fhac   (:,:)   ! sensible flux from heat or cool AC [W/m2]
       read(11) f_fwst   (:,:)   ! waste heat flux from heat or cool AC [W/m2]
       read(11) f_fach   (:,:)   ! flux from inner and outter air exchange [W/m2]
+      read(11) f_fahe   (:,:)
 
       read(11) f_sabvdt  (:,:)  ! solar absorbed by sunlit canopy [w/m2]
       read(11) f_sabgdt  (:,:)  ! solar absorbed by ground [w/m2]
@@ -620,6 +621,12 @@ CONTAINS
       ! flux from inner and outter air exchange [W/m2]
       CALL sanity( nf90_def_var(ncid, 'f_fach', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','flux from inner and outter air exchange [W/m2]') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL sanity( nf90_def_var(ncid, 'f_fahe', nf90_double, (/xid,yid/), varid) )
+      CALL sanity( nf90_put_att(ncid, varid, 'long_name','flux from people and cars [W/m2]') )
       CALL sanity( nf90_put_att(ncid, varid, 'units','W/m2') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
@@ -1319,6 +1326,9 @@ CONTAINS
       ! flux from inner and outter air exchange [W/m2]
       CALL sanity( nf90_inq_varid(ncid,'f_fach',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_fach) )
+
+      CALL sanity( nf90_inq_varid(ncid,'f_fahe',varid) )
+      CALL sanity( nf90_put_var(ncid,varid,f_fahe) )
 
       ! solar absorbed by sunlit canopy in daytime [W/m2]
       CALL sanity( nf90_inq_varid(ncid,'f_sabvdt',varid) )

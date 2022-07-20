@@ -85,6 +85,7 @@ MODULE MOD_vec2xy
    REAL(r8), allocatable :: a_fhac   (:,:)    !sensible flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: a_fwst   (:,:)    !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: a_fach   (:,:)    !flux from inner and outter air exchange [W/m2]
+   REAL(r8), allocatable :: a_fahe   (:,:)
 
    REAL(r8), allocatable :: a_sabvdt  (:,:)   !solar absorbed by sunlit canopy [W/m2]
    REAL(r8), allocatable :: a_sabgdt  (:,:)   !solar absorbed by ground [W/m2]
@@ -283,6 +284,7 @@ CONTAINS
             a_fhac    (i,j) = 0.
             a_fwst    (i,j) = 0.
             a_fach    (i,j) = 0.
+            a_fahe    (i,j) = 0.
 
             a_sabvdt  (i,j) = spval
             a_sabgdt  (i,j) = spval
@@ -415,6 +417,7 @@ CONTAINS
                   a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac   (u)
                   a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst   (u)
                   a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
+                  a_fahe   (i,j) = a_fahe   (i,j) + patchfrac(np)*fahe   (u)
                ENDIF
 #endif
                ! 根据coszen(np)的正负->daytime or nighttime
@@ -565,12 +568,14 @@ CONTAINS
                   a_fhac   (i,j) = a_fhac   (i,j) / urbwt(i,j)
                   a_fwst   (i,j) = a_fwst   (i,j) / urbwt(i,j)
                   a_fach   (i,j) = a_fach   (i,j) / urbwt(i,j)
+                  a_fahe   (i,j) = a_fahe   (i,j) / urbwt(i,j)
                ELSE
                   a_t_room (i,j) = spval
                   a_tafu   (i,j) = spval
                   a_fhac   (i,j) = spval
                   a_fwst   (i,j) = spval
                   a_fach   (i,j) = spval
+                  a_fahe   (i,j) = spval
                ENDIF
 #endif
                IF (a_sabvdt  (i,j) /= spval) a_sabvdt  (i,j) = a_sabvdt  (i,j) / sumwt(i,j)
@@ -1135,6 +1140,7 @@ CONTAINS
             CALL acc(a_fhac      (i,j), 1., f_fhac      (i,j))
             CALL acc(a_fwst      (i,j), 1., f_fwst      (i,j))
             CALL acc(a_fach      (i,j), 1., f_fach      (i,j))
+            CALL acc(a_fahe      (i,j), 1., f_fahe      (i,j))
 
             CALL acc(a_sabvdt    (i,j), 1., f_sabvdt    (i,j))
             CALL acc(a_sabgdt    (i,j), 1., f_sabgdt    (i,j))
@@ -1291,6 +1297,7 @@ CONTAINS
       allocate (a_fhac      (lon_points,lat_points))
       allocate (a_fwst      (lon_points,lat_points))
       allocate (a_fach      (lon_points,lat_points))
+      allocate (a_fahe      (lon_points,lat_points))
 
       allocate (a_sabvdt    (lon_points,lat_points))
       allocate (a_sabgdt    (lon_points,lat_points))
@@ -1438,6 +1445,7 @@ CONTAINS
       deallocate ( a_fhac         )
       deallocate ( a_fwst         )
       deallocate ( a_fach         )
+      deallocate ( a_fahe         )
 
       deallocate ( a_sabvdt       )
       deallocate ( a_sabgdt       )

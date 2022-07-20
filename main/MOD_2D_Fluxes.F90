@@ -91,6 +91,7 @@ REAL(r8), allocatable :: f_tafu   (:,:)  ! temperature of outer building [K]
 REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+REAL(r8), allocatable :: f_fahe   (:,:)
 
 ! 分daytime(dt) and nighttime(nt)
 REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
@@ -254,6 +255,7 @@ allocate ( f_tafu   (lon_points,lat_points) )  ! temperature of outer building [
 allocate ( f_fhac   (lon_points,lat_points) )  ! sensible flux from heat or cool AC [W/m2]
 allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or cool AC [W/m2]
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
+allocate ( f_fahe   (lon_points,lat_points) )
 
 allocate ( f_sabvdt  (lon_points,lat_points) ) ! solar absorbed by sunlit canopy [W/m2]
 allocate ( f_sabgdt  (lon_points,lat_points) ) ! solar absorbed by ground [W/m2]
@@ -413,6 +415,7 @@ f_tafu      (:,:) = spval
 f_fhac      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
+f_fahe      (:,:) = spval
 
 f_sabvdt    (:,:) = spval
 f_sabgdt    (:,:) = spval
@@ -547,6 +550,7 @@ deallocate ( f_tafu   )  ! temperature of outer building [K]
 deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
+deallocate ( f_fahe   )  
 
 deallocate ( f_sabvdt   )! solar absorbed by sunlit canopy [W/m2]
 deallocate ( f_sabgdt   )! solar absorbed by ground [W/m2]

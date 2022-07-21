@@ -16,6 +16,7 @@ OBJS =  precision.o                 \
 	PhysicalConstants.o         \
 	LC_Const.o                  \
 	PFT_Const.o                 \
+	LCZ_Const.o                 \
 	ncio.o                      \
 	MOD_PFTimeInvars.o          \
 	MOD_PCTimeInvars.o          \
@@ -64,6 +65,7 @@ OBJS =  precision.o                 \
 	LAI_empirical.o             \
 	LAI_readin.o                \
 	LAI_readin_nc.o             \
+	LUCY_readin_nc.o            \
 	UrbanLAI_readin_nc.o        \
 	LEAF_interception.o         \
 	lpwrite.o                   \
@@ -88,6 +90,7 @@ OBJS =  precision.o                 \
 	UrbanImperviousTem.o        \
 	UrbanHydrology.o            \
 	UrbanBEM.o                  \
+	UrbanLUCY.o                 \
 	UrbanTHERMAL.o              \
 	UrbanIniTimeVar.o           \
 	Urban_readin_nc.o           \

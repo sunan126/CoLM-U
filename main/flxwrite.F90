@@ -112,6 +112,7 @@
            IF (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
            IF (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
            IF (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
+           IF (f_fahe   (i,j) /= spval) f_fahe   (i,j) = f_fahe   (i,j) / a
            IF (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
            IF (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
 
@@ -262,6 +263,7 @@
      write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
      write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
      write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
+     write(luout) f_fahe   (:,:)  ! flux from metabolism and vehicle
 
      write(luout) f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [w/m2]
      write(luout) f_sabgdt  (:,:) ! solar absorbed by ground [w/m2]

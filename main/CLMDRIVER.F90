@@ -145,7 +145,9 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
         tk_roof(:,u)    ,tk_wall(:,u)    ,tk_gimp(:,u)    ,z_roof(:,u)     ,&
         z_wall(:,u)     ,dz_roof(:,u)    ,dz_wall(:,u)                     ,&
         lakedepth(i)    ,dz_lake(1:,i)                                     ,&
-
+      ! LUCY输入变量
+        fix_holiday(u,:),week_holiday(u,:),hum_prof(u,:)  ,popcell(u)      ,&
+        vehicle(u,:)    ,weh_prof(u,:)   ,wdh_prof(u,:)   ,Fahe(u)         ,&
       ! SOIL INFORMATION AND LAKE DEPTH
         porsl(1:,i)     ,psi0(1:,i)      ,bsw(1:,i)       ,hksati(1:,i)    ,&
         csol(1:,i)      ,dksatu(1:,i)    ,dkdry(1:,i)     ,rootfr(1:,m)    ,&

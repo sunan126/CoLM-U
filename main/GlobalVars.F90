@@ -25,8 +25,13 @@ MODULE GlobalVars
    ! number of plant functional types
    INTEGER, parameter :: N_PFT    = 16
 
+#ifdef USE_LCZ
+   ! number of LCZ types: LCZ1-10
+   INTEGEr, parameter :: N_URB    = 10
+#else
    ! number of urban types, 1: TB, 2: HD, 3: MD
    INTEGER, parameter :: N_URB    = 3
+#endif
 
    ! vertical layer number
    INTEGER, parameter :: maxsnl   = -5

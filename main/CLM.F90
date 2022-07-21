@@ -211,7 +211,14 @@
     ! Initialize meteorological forcing data module
       CALL GETMETINI(dir_atmdata, nam_atmdata, deltim)
 
-
+    ! read LUCY data
+#ifdef URBAN_MODEL
+#ifndef USE_LCZ
+#ifdef USE_LUCY
+      CALL LUCY_readin_nc     (dir_srfdata)
+#endif
+#endif
+#endif
 ! ======================================================================
 ! begin time stepping loop
 ! ======================================================================
@@ -248,7 +255,7 @@
        ! Call clm driver
        ! ----------------------------------------------------------------------
          CALL CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
-
+       
        ! Get leaf area index
        ! ----------------------------------------------------------------------
 #if(!defined DYN_PHENOLOGY)

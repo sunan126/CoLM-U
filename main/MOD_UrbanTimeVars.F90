@@ -85,6 +85,7 @@ MODULE MOD_UrbanTimeVars
    REAL(r8), allocatable :: Fhac           (:) !sensible flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fwst           (:) !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fach           (:) !flux from inner and outter air exchange [W/m2]
+   REAL(r8), allocatable :: Fahe           (:) !flux from metabolism and vehicle
 
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_UrbanTimeVars
@@ -174,6 +175,7 @@ CONTAINS
       allocate (Fhac                          (numurban))
       allocate (Fwst                          (numurban))
       allocate (Fach                          (numurban))
+      allocate (Fahe                          (numurban))
 
    END SUBROUTINE allocate_UrbanTimeVars
 
@@ -247,7 +249,7 @@ CONTAINS
       deallocate (Fhac         )
       deallocate (Fwst         )
       deallocate (Fach         )
-
+      deallocate (Fahe         )
    END SUBROUTINE deallocate_UrbanTimeVars
 
 END MODULE MOD_UrbanTimeVars

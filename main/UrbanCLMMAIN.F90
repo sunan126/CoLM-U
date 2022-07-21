@@ -13,7 +13,9 @@ SUBROUTINE UrbanCLMMAIN ( &
            tk_roof      ,tk_wall      ,tk_gimp      ,z_roof       ,&
            z_wall       ,dz_roof      ,dz_wall                    ,&
            lakedepth    ,dz_lake                                  ,&
-
+         ! LUCY输入变量  
+           fix_holiday  ,week_holiday ,hum_prof     ,popcell      ,&
+           vehicle      ,weh_prof     ,wdh_prof     ,Fahe         ,&
          ! soil ground and wall information
            porsl        ,psi0         ,bsw          ,hksati       ,&
            csol         ,dksatu       ,dkdry        ,rootfr       ,&
@@ -99,6 +101,9 @@ SUBROUTINE UrbanCLMMAIN ( &
   USE UrbanALBEDO
   USE LAKE
   USE timemanager
+#ifdef USE_LUCY
+  USE UrbanAnthropogenic 
+#endif
 
   IMPLICIT NONE
 
@@ -121,6 +126,14 @@ SUBROUTINE UrbanCLMMAIN ( &
 ! Parameters
 ! ----------------------
 
+  REAL(r8), intent(in) :: &
+       fix_holiday(365), &
+       week_holiday(7) , &
+       hum_prof(24)    , &
+       weh_prof(24)    , &
+       wdh_prof(24)    , &
+       popcell         , &
+       vehicle(3)
   REAL(r8), intent(in) :: &
         froof      ,&! roof fractional cover [-]
         fgper      ,&! impervious fraction to ground area [-]
@@ -307,6 +320,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         Fhac       ,&! sensible flux from heat or cool AC [W/m2]
         Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
+        Fahe       ,&
 
         alb  (2,2) ,&! averaged albedo [-]
         ssun (2,2) ,&! sunlit canopy absorption for solar radiation
@@ -498,6 +512,9 @@ SUBROUTINE UrbanCLMMAIN ( &
         lbp        ,&! lower bound of arrays
         lbl        ,&! lower bound of arrays
         j            ! do looping index
+   REAL(r8) :: &
+        car_sp, &
+        f_fac
 
       theta = acos(max(coszen,0.001))
 
@@ -783,6 +800,14 @@ SUBROUTINE UrbanCLMMAIN ( &
          zol                  ,rib                  ,ustar                ,qstar                ,&
          tstar                ,fm                   ,fh                   ,fq                    )
 
+
+! 计算代谢热和交通热
+#ifdef USE_LUCY
+     f_fac  = 0.8
+     car_sp = 54
+     CALL LUCY(idate,deltim,fix_holiday,week_holiday,f_fac,car_sp,hum_prof, &
+              wdh_prof,weh_prof,popcell,vehicle,Fahe) !vehc_tot,ahf_flx,vehc_flx)
+#endif
 !----------------------------------------------------------------------
 ! [4] Urban hydrology
 !----------------------------------------------------------------------

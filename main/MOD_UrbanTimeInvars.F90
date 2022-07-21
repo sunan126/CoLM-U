@@ -14,6 +14,15 @@ MODULE MOD_UrbanTimeInvars
    INTEGER , allocatable :: patch2urb   (:)  !projection from patch to Urban
    INTEGER , allocatable :: urb2patch   (:)  !projection from Urban to patch
 
+   INTEGER , allocatable :: reg_id (:)       !urban region id of LUCY
+   REAL(r8), allocatable :: popcell(:)       !pop density
+   REAL(r8), allocatable :: vehicle(:,:)     !number of different vehicl
+   REAL(r8), allocatable :: week_holiday(:,:)!weekday or weekend day
+   REAL(r8), allocatable :: weh_prof(:,:)    !traffic profile of weekendday
+   REAL(r8), allocatable :: wdh_prof(:,:)    !traffic profile of weekday
+   REAL(r8), allocatable :: hum_prof(:,:)    !diurnal metabolism profile
+   REAL(r8), allocatable :: fix_holiday(:,:) !fix public holiday
+
    ! 城市形态结构参数
    REAL(r8), allocatable :: froof       (:)  !roof fractional cover [-]
    REAL(r8), allocatable :: fgper       (:)  !impervious fraction to ground area [-]
@@ -71,6 +80,16 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
+      allocate (reg_id       (numurban) ) 
+      allocate (popcell      (numurban) )
+
+      allocate (vehicle      (numurban,3  ) )
+      allocate (week_holiday (numurban,7  ) ) 
+      allocate (weh_prof     (numurban,24 ) ) 
+      allocate (wdh_prof     (numurban,24 ) )
+      allocate (hum_prof     (numurban,24 ) )
+      allocate (fix_holiday  (numurban,365) )
+      
       allocate (urbclass             (numurban))
       allocate (patch2urb            (numpatch))
       allocate (urb2patch            (numurban))
@@ -145,6 +164,14 @@ CONTAINS
       deallocate (t_roommax )
       deallocate (t_roommin )
 
+      deallocate (reg_id       )
+      deallocate (popcell      )
+      deallocate (vehicle      )
+      deallocate (week_holiday )
+      deallocate (weh_prof     )
+      deallocate (wdh_prof     )
+      deallocate (hum_prof     )
+      deallocate (fix_holiday  )
    END SUBROUTINE deallocate_UrbanTimeInvars
 
 END MODULE MOD_UrbanTimeInvars

@@ -66,10 +66,17 @@ MODULE PFT_Const
    ! inverse&sqrt leaf specific dimension size 4 cm
    REAL(r8), parameter :: sqrtdi_p(0:15) = 5.0
 
+!#if(defined PC_CLASSIFICATION)
+!   ! leaf angle distribution parameter adapted from Majasalmi and Bright (2019)
+!   REAL(r8), parameter :: chil_p(0:15) &
+!      = (/-0.300,  0.010,  0.010,  0.010,  0.250,  0.250,  0.200,  0.250,&
+!           0.250,  0.250,  0.250,  0.250, -0.300, -0.300, -0.300,  0.250/)
+!#else
    ! leaf angle distribution parameter
    REAL(r8), parameter :: chil_p(0:15) &
       = (/-0.300,  0.010,  0.010,  0.010,  0.100,  0.100,  0.010,  0.250,&
            0.250,  0.010,  0.250,  0.250, -0.300, -0.300, -0.300, -0.300/)
+!#endif
 
    ! reflectance of green leaf in virsible band
 #if(defined PC_CLASSIFICATION)

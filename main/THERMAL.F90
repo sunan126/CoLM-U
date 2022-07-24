@@ -214,6 +214,7 @@
        cgrnds,       &! deriv of soil latent heat flux wrt soil temp [w/m**2/k]
        degdT,        &! d(eg)/dT
        dqgdT,        &! d(qg)/dT
+       rsr,          &! bare soil resistance for evaporation
        dlrad,        &! downward longwave radiation blow the canopy [W/m2]
        eg,           &! water vapor pressure at temperature T [pa]
        egsmax,       &! max. evaporation which soil can provide at one time step
@@ -352,6 +353,19 @@
          psit = max( -1.e8, psit )
          hr   = exp(psit/roverg/t_grnd)
          qred = (1.-fsno)*hr + fsno
+
+         ! calculate soil resistance for evaporation
+         wx   = (sum(wliq_soisno(1:2))/denh2o + sum(wice_soisno(1:2))/denice)/sum(dz_soisno(1:2))
+         IF (sum(porsl(1:2)) < 1.e-6) THEN     !bed rock
+            fac  = 0.001
+         ELSE
+            fac  = min(1.,sum(dz_soisno(1:2))*wx/(dz_soisno(1)*porsl(1)+dz_soisno(2)*porsl(2)))
+            fac  = max( fac, 0.001 )
+         ENDIF
+
+         ! Sellers et al., 1992
+         rsr = exp(8.206-4.255*fac)
+
       ENDIF
 
       qg = qred*qsatg
@@ -373,7 +387,7 @@ IF (patchtype == 0) THEN
 #if(defined USGS_CLASSIFICATION || defined IGBP_CLASSIFICATION)
       CALL groundfluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q, &
                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                         ur,thm,th,thv,t_grnd,qg,dqgdT,htvp, &
+                         ur,thm,th,thv,t_grnd,qg,rsr,dqgdT,htvp, &
                          fsno,cgrnd,cgrndl,cgrnds, &
                          taux,tauy,fseng,fevpg,tref,qref, &
                          z0m_g,z0h_g,zol_g,rib_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
@@ -462,7 +476,7 @@ IF (patchtype == 0) THEN
       ! always DO CALL groundfluxes
       CALL groundfluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q, &
                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                         ur,thm,th,thv,t_grnd,qg,dqgdT,htvp, &
+                         ur,thm,th,thv,t_grnd,qg,rsr,dqgdT,htvp, &
                          fsno,cgrnd,cgrndl,cgrnds, &
                          taux,tauy,fseng,fevpg,tref,qref, &
                          z0m_g,z0h_g,zol_g,rib_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
@@ -503,7 +517,7 @@ IF (patchtype == 0) THEN
                  parsun_p(i),parsha_p(i),sabv_p(i)  ,frl        ,fsun_p(i)  ,&
                  thermk_p(i),rstfac_p(i),forc_po2m  ,forc_pco2m ,z0h_g      ,&
                  obu_g      ,ustar_g    ,zlnd       ,zsno       ,fsno       ,&
-                 sigf_p(i)  ,etrc_p(i)  ,t_grnd     ,qg         ,dqgdT      ,&
+                 sigf_p(i)  ,etrc_p(i)  ,t_grnd     ,qg,rsr     ,dqgdT      ,&
                  emg        ,tleaf_p(i) ,ldew_p(i)  ,taux_p(i)  ,tauy_p(i)  ,&
                  fseng_p(i) ,fevpg_p(i) ,cgrnd_p(i) ,cgrndl_p(i),cgrnds_p(i),&
                  tref_p(i)  ,qref_p(i)  ,rst_p(i)   ,assim_p(i) ,respc_p(i) ,&
@@ -515,7 +529,7 @@ IF (patchtype == 0) THEN
 
             CALL groundfluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q, &
                                forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                               ur,thm,th,thv,t_grnd,qg,dqgdT,htvp, &
+                               ur,thm,th,thv,t_grnd,qg,rsr,dqgdT,htvp, &
                                fsno,cgrnd_p(i),cgrndl_p(i),cgrnds_p(i), &
                                taux_p(i),tauy_p(i),fseng_p(i),fevpg_p(i),tref_p(i),qref_p(i), &
             z0m_p(i),z0h_g,zol_p(i),rib_p(i),ustar_p(i),qstar_p(i),tstar_p(i),fm_p(i),fh_p(i),fq_p(i))
@@ -607,7 +621,7 @@ IF (patchtype == 0) THEN
       ! always DO CALL groundfluxes
       CALL groundfluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q, &
                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                         ur,thm,th,thv,t_grnd,qg,dqgdT,htvp, &
+                         ur,thm,th,thv,t_grnd,qg,rsr,dqgdT,htvp, &
                          fsno,cgrnd,cgrndl,cgrnds, &
                          taux,tauy,fseng,fevpg,tref,qref, &
                          z0m_g,z0h_g,zol_g,rib_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
@@ -675,7 +689,7 @@ IF (patchtype == 0) THEN
            fsun_c(:)     ,sabv_c(:)     ,frl           ,thermk_c(:,pc),fshade_c(:,pc),&
            rstfac_c(:)   ,forc_po2m     ,forc_pco2m    ,z0h_g         ,obu_g         ,&
            ustar_g       ,zlnd          ,zsno          ,fsno          ,sigf_c(:,pc)  ,&
-           etrc_c(:)     ,t_grnd        ,qg            ,dqgdT         ,emg           ,&
+           etrc_c(:)     ,t_grnd        ,qg,rsr        ,dqgdT         ,emg           ,&
            z0m_c(:,pc)   ,tleaf_c(:,pc) ,ldew_c(:,pc)  ,taux          ,tauy          ,&
            fseng         ,fevpg         ,cgrnd         ,cgrndl        ,cgrnds        ,&
            tref          ,qref          ,rst_c(:,pc)   ,assim_c(:,pc) ,respc_c(:,pc) ,&
@@ -722,7 +736,7 @@ IF (patchtype == 0) THEN
 ELSE
       CALL groundfluxes (zlnd,zsno,forc_hgt_u,forc_hgt_t,forc_hgt_q, &
                          forc_us,forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                         ur,thm,th,thv,t_grnd,qg,dqgdT,htvp, &
+                         ur,thm,th,thv,t_grnd,qg,rsr,dqgdT,htvp, &
                          fsno,cgrnd,cgrndl,cgrnds, &
                          taux,tauy,fseng,fevpg,tref,qref, &
                          z0m_g,z0h_g,zol_g,rib_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
@@ -760,7 +774,7 @@ ELSE
                  parsun     ,parsha     ,sabv      ,frl        ,fsun       ,&
                  thermk     ,rstfac     ,forc_po2m ,forc_pco2m ,z0h_g      ,&
                  obu_g      ,ustar_g    ,zlnd      ,zsno       ,fsno       ,&
-                 sigf       ,etrc       ,t_grnd    ,qg         ,dqgdT      ,&
+                 sigf       ,etrc       ,t_grnd    ,qg,rsr     ,dqgdT      ,&
                  emg        ,tleaf      ,ldew      ,taux       ,tauy       ,&
                  fseng      ,fevpg      ,cgrnd     ,cgrndl     ,cgrnds     ,&
                  tref       ,qref       ,rst       ,assim      ,respc      ,&

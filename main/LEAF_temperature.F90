@@ -29,7 +29,7 @@ MODULE LEAF_temperature
               th      ,thv     ,qm      ,psrf    ,rhoair  ,parsun  ,&
               parsha  ,sabv    ,frl     ,fsun    ,thermk  ,rstfac  ,&
               po2m    ,pco2m   ,z0h_g   ,obug    ,ustarg  ,zlnd    ,&
-              zsno    ,fsno    ,sigf    ,etrc    ,tg      ,qg      ,&
+              zsno    ,fsno    ,sigf    ,etrc    ,tg      ,qg,rsr  ,&
               dqgdT   ,emg     ,tl      ,ldew    ,taux    ,tauy    ,&
               fseng   ,fevpg   ,cgrnd   ,cgrndl  ,cgrnds  ,tref    ,&
               qref    ,rst     ,assim   ,respc   ,fsenl   ,fevpl   ,&
@@ -133,6 +133,7 @@ MODULE LEAF_temperature
         tg,         &! ground surface temperature [K]
         qg,         &! specific humidity at ground surface [kg/kg]
         dqgdT,      &! temperature derivative of "qg"
+        rsr,        &! bare soil resistance for evaporation
         emg          ! vegetation emissivity
 
   REAL(r8), intent(inout) :: &
@@ -529,7 +530,7 @@ MODULE LEAF_temperature
          cfh = (lai + sai) / rb
 
          caw = 1. / raw
-         cgw = 1. / rd
+         cgw = 1. / (rd + rsr)
          cfw = (1.-delta*(1.-fwet))*(lai+sai)/rb + (1.-fwet)*delta* &
             ( laisun/(rb+rssun) + laisha/(rb+rssha) )
 
@@ -641,7 +642,7 @@ MODULE LEAF_temperature
 
 ! update co2 partial pressure within canopy air
          gah2o = 1.0/raw * tprcor/thm                     !mol m-2 s-1
-         gdh2o = 1.0/rd  * tprcor/thm                     !mol m-2 s-1
+         gdh2o = 1.0/(rd+rsr)  * tprcor/thm               !mol m-2 s-1
          pco2a = pco2m - 1.37*psrf/max(0.446,gah2o) * &
             (assimsun + assimsha  - respcsun -respcsha - rsoil)
 

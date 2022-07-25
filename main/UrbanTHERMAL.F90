@@ -657,7 +657,7 @@
       CALL UrbanGroundFlux (forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_us, &
                             forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
                             ur,thm,th,thv,zlnd,zsno,fsno_gper, &
-                            fcover,tgimp,tgper,qgimp,qgper, &
+                            fcover,tgimp,tgper,qgimp,qgper,tref,qref, &
                             z0m_g,z0h_g,zol_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
 
       ! SAVE variables for bareground case

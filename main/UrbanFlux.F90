@@ -709,8 +709,8 @@ MODULE UrbanFlux
 ! 2 m height air temperature above apparent sink height
 !-----------------------------------------------------------------------
 
-     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
-     qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
+     !tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
+     !qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
 
   END SUBROUTINE UrbanOnlyFlux
 
@@ -2012,8 +2012,8 @@ MODULE UrbanFlux
 ! 2 m height air temperature above apparent sink height
 !-----------------------------------------------------------------------
 
-     tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
-     qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
+     !tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
+     !qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
 
   END SUBROUTINE UrbanVegFlux
 !----------------------------------------------------------------------

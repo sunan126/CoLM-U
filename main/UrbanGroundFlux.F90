@@ -1,7 +1,7 @@
 
  SUBROUTINE UrbanGroundFlux (hu, ht, hq, us, vs, tm, qm, rhoair, psrf, &
                              ur, thm, th, thv, zlnd, zsno, fsno, &
-                             fcover, tgimp, tgper, qgimp, qgper, &
+                             fcover, tgimp, tgper, qgimp, qgper, tref, qref, &
                              z0m, z0hg, zol, ustar, qstar, tstar, fm, fh, fq)
 
 !=======================================================================
@@ -42,6 +42,10 @@
         tgper,    &! ground pervious temperature [K]
         qgimp,    &! ground impervious specific humidity [kg/kg]
         qgper      ! ground pervious specific humidity [kg/kg]
+
+  REAL(r8), intent(out) :: &
+        tref,     &! 2 m height air temperature [kelvin]
+        qref       ! 2 m height air humidity
 
   REAL(r8), intent(out) :: &
         z0m,      &! effective roughness [m]
@@ -169,5 +173,9 @@
 
       zol = zeta
       !rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
+
+! 2 m height air temperature
+      tref   = thm + vonkar/fh*dth * (fh2m/vonkar - fh/vonkar)
+      qref   =  qm + vonkar/fq*dqh * (fq2m/vonkar - fq/vonkar)
 
  END SUBROUTINE UrbanGroundFlux

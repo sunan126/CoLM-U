@@ -148,9 +148,14 @@ MODULE PFT_Const
 
    ! maximum carboxylation rate at 25 C at canopy top
    ! /06/03/2014/ based on Bonan et al., 2010 (Table 2)
+   !REAL(r8), parameter :: vmax25_p(0:15) &
+   !   = (/ 52.0, 61.0, 54.0, 57.0, 72.0, 72.0, 52.0, 52.0,&
+   !        52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 52.0, 57.0/) * 1.e-6
+
+   ! /07/25/2022/ based on CLM4.5 Tech Report (Table 8.1)
    REAL(r8), parameter :: vmax25_p(0:15) &
-      = (/ 52.0, 61.0, 54.0, 57.0, 72.0, 72.0, 52.0, 52.0,&
-           52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 52.0, 57.0/) * 1.e-6
+      = (/ 52.0, 62.5, 62.6, 39.1, 55.0, 61.5, 41.0, 57.7, &
+           57.7, 61.7, 54.0, 54.0, 78.2, 78.2, 51.6,100.7/) * 1.e-6
 
    ! quantum efficiency
    REAL(r8), parameter :: effcon_p(0:15) &

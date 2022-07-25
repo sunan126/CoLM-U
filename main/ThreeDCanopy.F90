@@ -312,6 +312,7 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    rho_lay  = D0
    tau_lay  = D0
    hgt_lay  = D0
+   bot_lay  = D0
    siz_lay  = D0
    lsai_lay = D0
    gdir_lay = D0

@@ -457,7 +457,7 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
 
 !=============================================================
 ! unscattered direct sunlight available at  each layer
-! 0:sky, 1:top 2:middle 3:bottom and 4:ground layer
+! 4:sky, 3:top 2:middle 1:bottom and 0:ground layer
 !=============================================================
 
    ftdd_col = D0

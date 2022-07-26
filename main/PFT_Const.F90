@@ -66,17 +66,17 @@ MODULE PFT_Const
    ! inverse&sqrt leaf specific dimension size 4 cm
    REAL(r8), parameter :: sqrtdi_p(0:15) = 5.0
 
-!#if(defined PC_CLASSIFICATION)
-!   ! leaf angle distribution parameter adapted from Majasalmi and Bright (2019)
-!   REAL(r8), parameter :: chil_p(0:15) &
-!      = (/-0.300,  0.010,  0.010,  0.010,  0.250,  0.250,  0.200,  0.250,&
-!           0.250,  0.250,  0.250,  0.250, -0.300, -0.300, -0.300,  0.250/)
-!#else
+#if(defined PC_CLASSIFICATION)
+   ! leaf angle distribution parameter adapted from Majasalmi and Bright (2019)
+   REAL(r8), parameter :: chil_p(0:15) &
+      = (/-0.300,  0.010,  0.010,  0.010,  0.250,  0.250,  0.200,  0.250,&
+           0.250,  0.250,  0.250,  0.250, -0.300, -0.300, -0.300,  0.250/)
+#else
    ! leaf angle distribution parameter
    REAL(r8), parameter :: chil_p(0:15) &
       = (/-0.300,  0.010,  0.010,  0.010,  0.100,  0.100,  0.010,  0.250,&
            0.250,  0.010,  0.250,  0.250, -0.300, -0.300, -0.300, -0.300/)
-!#endif
+#endif
 
    ! reflectance of green leaf in virsible band
 #if(defined PC_CLASSIFICATION)
@@ -99,7 +99,7 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_nir_p(0:15) &
-      = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.450,&
+      = (/0.350,  0.410,  0.420,  0.410,  0.490,  0.460,  0.450,  0.450,&
           0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
@@ -152,10 +152,9 @@ MODULE PFT_Const
    !   = (/ 52.0, 61.0, 54.0, 57.0, 72.0, 72.0, 52.0, 52.0,&
    !        52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 52.0, 57.0/) * 1.e-6
 
-   ! /07/25/2022/ based on CLM4.5 Tech Report (Table 8.1)
    REAL(r8), parameter :: vmax25_p(0:15) &
-      = (/ 52.0, 62.5, 62.6, 39.1, 55.0, 61.5, 41.0, 57.7,&
-           57.7, 61.7, 54.0, 54.0, 78.2, 78.2, 51.6,100.7/) * 1.e-6
+      = (/ 52.0, 61.0, 54.0, 57.0, 32.0, 61.5, 52.0, 50.0,&
+           52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 50.0, 57.0/) * 1.e-6
 
    ! quantum efficiency
    REAL(r8), parameter :: effcon_p(0:15) &

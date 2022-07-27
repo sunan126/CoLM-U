@@ -99,7 +99,7 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_nir_p(0:15) &
-      = (/0.350,  0.410,  0.420,  0.410,  0.490,  0.460,  0.450,  0.450,&
+      = (/0.350,  0.400,  0.410,  0.400,  0.450,  0.460,  0.450,  0.450,&
           0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
@@ -133,8 +133,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: taul_nir_p(0:15) &
-      = (/0.340,  0.280,  0.290,  0.380,  0.350,  0.340,  0.350,  0.400,&
-          0.400,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
+      = (/0.340,  0.350,  0.350,  0.380,  0.350,  0.340,  0.350,  0.400,&
+          0.400,  0.250,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 #else
    REAL(r8), parameter :: taul_nir_p(0:15) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&
@@ -147,14 +147,15 @@ MODULE PFT_Const
           0.001,  0.001,  0.001,  0.001,  0.250,  0.250,  0.250,  0.250/)
 
    ! maximum carboxylation rate at 25 C at canopy top
-   ! /06/03/2014/ based on Bonan et al., 2010 (Table 2)
+   ! /06/03/2014/ based on Bonan et al., 2011 (Table 2)
    !REAL(r8), parameter :: vmax25_p(0:15) &
    !   = (/ 52.0, 61.0, 54.0, 57.0, 72.0, 72.0, 52.0, 52.0,&
    !        52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 52.0, 57.0/) * 1.e-6
 
+   ! /07/27/2022/ based on Bonan et al., 2011 (Table 2, VmaxF(N))
    REAL(r8), parameter :: vmax25_p(0:15) &
-      = (/ 52.0, 57.0, 54.0, 57.0, 32.0, 61.5, 52.0, 50.0,&
-           52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 50.0, 57.0/) * 1.e-6
+      = (/ 52.0, 55.0, 42.0, 29.0, 41.0, 51.0, 36.0, 30.0,&
+           40.0, 36.0, 30.0, 19.0, 21.0, 26.0, 25.0, 57.0/) * 1.e-6
 
    ! quantum efficiency
    REAL(r8), parameter :: effcon_p(0:15) &

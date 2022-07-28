@@ -69,8 +69,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! leaf angle distribution parameter adapted from Majasalmi and Bright (2019)
    REAL(r8), parameter :: chil_p(0:15) &
-      = (/-0.300,  0.010,  0.010,  0.010,  0.250,  0.250,  0.200,  0.250,&
-           0.250,  0.250,  0.250,  0.250, -0.300, -0.300, -0.300,  0.250/)
+      = (/-0.300,  0.010,  0.010,  0.010,  0.320,  0.320,  0.200,  0.590,&
+           0.590,  0.320,  0.590,  0.590, -0.230, -0.230, -0.230,  0.250/)
 #else
    ! leaf angle distribution parameter
    REAL(r8), parameter :: chil_p(0:15) &
@@ -99,8 +99,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_nir_p(0:15) &
-      = (/0.350,  0.400,  0.410,  0.400,  0.450,  0.460,  0.450,  0.450,&
-          0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
+      = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420,&
+          0.400,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&
@@ -133,8 +133,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: taul_nir_p(0:15) &
-      = (/0.340,  0.350,  0.350,  0.380,  0.350,  0.340,  0.350,  0.400,&
-          0.400,  0.250,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
+      = (/0.340,  0.280,  0.290,  0.380,  0.250,  0.330,  0.250,  0.430,&
+          0.420,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 #else
    REAL(r8), parameter :: taul_nir_p(0:15) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&

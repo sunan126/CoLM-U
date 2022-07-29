@@ -379,11 +379,11 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    shadow_i = D0
    DO lev =1, 3
       IF ( fc0(lev)>D0 .and. cosz>D0 ) THEN
-         shadow_d(lev) = (D1 - exp(-D1*fc0(lev)^0.5/cosz))/&
-            (D1 - fc0(lev)^0.5*exp(-D1/cosz))*fc0(lev)^0.5
+         shadow_d(lev) = (D1 - exp(-D1*fc0(lev)**0.5/cosz))/&
+            (D1 - fc0(lev)**0.5*exp(-D1/cosz))*fc0(lev)**0.5
          shadow_d(lev) = max(fc0(lev), shadow_d(lev))
-         shadow_i(lev) = (D1 - exp(-D1*fc0(lev)^0.5/cosd))/&
-            (D1 - fc0(lev)^0.5*exp(-D1/cosd))*fc0(lev)^0.5
+         shadow_i(lev) = (D1 - exp(-D1*fc0(lev)**0.5/cosd))/&
+            (D1 - fc0(lev)**0.5*exp(-D1/cosd))*fc0(lev)**0.5
          shadow_i(lev) = max(fc0(lev), shadow_i(lev))
       ENDIF
    ENDDO

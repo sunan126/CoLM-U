@@ -100,7 +100,7 @@ MODULE PFT_Const
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420,&
-          0.400,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
+          0.400,  0.450,  0.450,  0.450,  0.450,  0.450,  0.450,  0.450/)
 #else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&

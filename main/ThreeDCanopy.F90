@@ -379,11 +379,11 @@ SUBROUTINE ThreeDCanopy(lbp, ubp, canlev, pwtcol, csiz, chgt, chil, coszen, &
    shadow_i = D0
    DO lev =1, 3
       IF ( fc0(lev)>D0 .and. cosz>D0 ) THEN
-         shadow_d(lev) = (D1 - exp(-D1*fc0(lev)**0.5/cosz))/&
-            (D1 - fc0(lev)**0.5*exp(-D1/cosz))*fc0(lev)**0.5
+         shadow_d(lev) = (D1 - exp(-D1*fc0(lev)/cosz))/&
+            (D1 - fc0(lev)*exp(-D1/cosz))
          shadow_d(lev) = max(fc0(lev), shadow_d(lev))
-         shadow_i(lev) = (D1 - exp(-D1*fc0(lev)**0.5/cosd))/&
-            (D1 - fc0(lev)**0.5*exp(-D1/cosd))*fc0(lev)**0.5
+         shadow_i(lev) = (D1 - exp(-D1*fc0(lev)/cosd))/&
+            (D1 - fc0(lev)*exp(-D1/cosd))
          shadow_i(lev) = max(fc0(lev), shadow_i(lev))
       ENDIF
    ENDDO
@@ -978,8 +978,8 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    frii = DH*(phi_tot_i - DH*cosd*phi_dif_i)
 
    IF (runmode) THEN
-      frid = frid + ald - DH*ac
-      frii = frii + ali - DH*ac
+      frid = frid + ald !- DH*ac
+      frii = frii + ali !- DH*ac
    ENDIF
 
    frid = max(min(frid,D1),D0)
@@ -992,8 +992,8 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    ftii = DH*(phi_tot_i + DH*cosd*phi_dif_i)+ftdi
 
    IF (runmode) THEN
-      ftid = ftid - DH*ald - DH*ac
-      ftii = ftii - DH*ali - DH*ac
+      ftid = ftid - ald - ac
+      ftii = ftii - ali - ac
    ENDIF
 
    ftid = max(min(ftid,D1),D0)

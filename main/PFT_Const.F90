@@ -82,8 +82,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_vis_p(0:15) &
-      = (/0.110,  0.070,  0.070,  0.070,  0.110,  0.110,  0.100,  0.100,&
-          0.100,  0.070,  0.100,  0.100,  0.040,  0.050,  0.070,  0.080/)
+      = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.110,  0.100,  0.100,&
+          0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
 #else
    REAL(r8), parameter :: rhol_vis_p(0:15) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.100,  0.100,  0.100,&
@@ -99,8 +99,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: rhol_nir_p(0:15) &
-      = (/0.350,  0.410,  0.410,  0.390,  0.460,  0.460,  0.460,  0.420,&
-          0.400,  0.450,  0.450,  0.450,  0.280,  0.280,  0.280,  0.420/)
+      = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420,&
+          0.400,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #else
    REAL(r8), parameter :: rhol_nir_p(0:15) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&
@@ -116,7 +116,7 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adpated from measured data (Dong et al., 2021)
    REAL(r8), parameter :: taul_vis_p(0:15) &
-      = (/0.050,  0.050,  0.050,  0.050,  0.060,  0.060,  0.050,  0.060,&
+      = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.060,  0.050,  0.060,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
 #else
    REAL(r8), parameter :: taul_vis_p(0:15) &
@@ -133,8 +133,8 @@ MODULE PFT_Const
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    REAL(r8), parameter :: taul_nir_p(0:15) &
-      = (/0.340,  0.310,  0.330,  0.420,  0.330,  0.330,  0.330,  0.430,&
-          0.420,  0.100,  0.250,  0.250,  0.400,  0.400,  0.400,  0.400/)
+      = (/0.340,  0.280,  0.290,  0.380,  0.250,  0.330,  0.250,  0.430,&
+          0.420,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 #else
    REAL(r8), parameter :: taul_nir_p(0:15) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&

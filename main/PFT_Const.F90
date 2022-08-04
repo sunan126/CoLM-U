@@ -228,7 +228,7 @@ MODULE PFT_Const
       =(/  0.0,   2.0,   2.0,   2.0,   1.0,   1.0,   2.0,   2.0,&
            2.0,   1.5,   1.5,   1.5,   2.0,   2.0,   2.0,   3.0/)
 
-   ! scheme 1: Zeng 2001, 2: Schenk and Jackson, 2002
+   ! scheme 1: Schenk and Jackson, 2002, 2: Zeng 2001
    INTEGER, PRIVATE :: ROOTFR_SCHEME = 1
 
    !fraction of roots in each soil layer

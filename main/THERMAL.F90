@@ -425,7 +425,7 @@ IF (patchtype == 0) THEN
                  parsun     ,parsha     ,sabv      ,frl        ,fsun       ,&
                  thermk     ,rstfac     ,forc_po2m ,forc_pco2m ,z0h_g      ,&
                  obu_g      ,ustar_g    ,zlnd      ,zsno       ,fsno       ,&
-                 sigf       ,etrc       ,t_grnd    ,qg         ,dqgdT      ,&
+                 sigf       ,etrc       ,t_grnd    ,qg,rsr     ,dqgdT      ,&
                  emg        ,tleaf      ,ldew      ,taux       ,tauy       ,&
                  fseng      ,fevpg      ,cgrnd     ,cgrndl     ,cgrnds     ,&
                  tref       ,qref       ,rst       ,assim      ,respc      ,&

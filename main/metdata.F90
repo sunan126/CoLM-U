@@ -616,19 +616,51 @@ CONTAINS
 
       implicit none
       real(r8), intent(inout) :: forcn(:,:,:)
+      
+      ! var ids
+      INTEGER  :: ncid, swid, lwid, prid, snid, taid, qaid, wvid, &
+                  wuid, psid
+      REAL(r8) :: rain, snow
 
       character(256) :: filename
       filename = trim(fmetdat)//trim(fmetnam)
 
-      if (fid(1) == -1) then
-         open(unit=11, file=filename, form='formatted', status='old', action='read')
-         fid(1) = 11
-      end if
+      print*, filename
 
-      read (fid(1), 10) forcn(1,1,7), forcn(1,1,8), forcn(1,1,4), forcn(1,1,1), &
-                        forcn(1,1,5), forcn(1,1,6), forcn(1,1,3), forcn(1,1,2)
+      ! if (fid(1) == -1) then
+      !   open(unit=11, file=filename, form='formatted', status='old', action='read')
+      !   fid(1) = 11
+      ! end if
 
-10    format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
+      !read (fid(1), 10) forcn(1,1,7), forcn(1,1,8), forcn(1,1,4), forcn(1,1,1), &
+      !                  forcn(1,1,5), forcn(1,1,6), forcn(1,1,3), forcn(1,1,2)
+
+!10    format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
+      CALL sanity( nf90_open(filename, nf90_nowrite, ncid) )
+
+      CALL sanity( nf90_inq_varid(ncid, "SWdown", swid) )
+      CALL sanity( nf90_inq_varid(ncid, "LWdown", lwid) )
+      CALL sanity( nf90_inq_varid(ncid, "Rainf" , prid) )
+      CALL sanity( nf90_inq_varid(ncid, "Snowf" , snid) )
+      CALL sanity( nf90_inq_varid(ncid, "Tair"  , taid) )
+      CALL sanity( nf90_inq_varid(ncid, "Qair"  , qaid) )
+      CALL sanity( nf90_inq_varid(ncid, "Wind_N", wvid) )
+      CALL sanity( nf90_inq_varid(ncid, "Wind_E", wuid) )
+      CALL sanity( nf90_inq_varid(ncid, "PSurf" , psid) )
+
+      CALL sanity( nf90_get_var  (ncid, swid, forcn(1,1,7)) )
+      CALL sanity( nf90_get_var  (ncid, lwid, forcn(1,1,8)) )
+      CALL sanity( nf90_get_var  (ncid, prid, rain        ) )
+      CALL sanity( nf90_get_var  (ncid, snid, snow        ) )
+      CALL sanity( nf90_get_var  (ncid, taid, forcn(1,1,1)) )
+      CALL sanity( nf90_get_var  (ncid, qaid, forcn(1,1,2)) )
+      CALL sanity( nf90_get_var  (ncid, wvid, forcn(1,1,5)) )
+      CALL sanity( nf90_get_var  (ncid, wuid, forcn(1,1,6)) )
+      CALL sanity( nf90_get_var  (ncid, psid, forcn(1,1,3)) )
+      
+      CALL sanity( nf90_close(ncid) )
+
+      forcn(1,1,4) = rain + snow
 
    END SUBROUTINE metreadpoint
 

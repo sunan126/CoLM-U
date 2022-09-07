@@ -32,6 +32,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
 #ifdef USE_LCZ
    INTEGER, parameter :: hxy  = 6000
+   INTEGER, parameter :: nlcz = 10
 #else
    INTEGER, parameter :: den_clss = 3
 #endif
@@ -148,7 +149,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8) :: pi, deg2rad, re, dx, dy, sumur
    REAL(r8) :: x_delta, y_delta
    
-   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, cont, sumth, p, inx
+   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, mm, cont, sumth, p, inx
    INTEGER  :: n_ns(2), n_nr(2), n_den(3), n_ulev(10), n_mon(12)
    INTEGER  :: XY2D(2), XY3D(3), XY4D(4), UR3D(3), UL3D(4), XY5D(5)
 
@@ -178,20 +179,20 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( hlai (hxy, hxy, mon) )
    allocate( hsai (hxy, hxy, mon) )
 
-   allocate( ur_dc     (nxo, nyo, nlcz ) )
-   allocate( pct_ur    (nxo, nyo, nlcz ) )
-   allocate( wgt_top   (nxo, nyo, nlcz ) )
-   allocate( tc        (nxo, nyo, nlcz ) )
-   allocate( urwt      (nxo, nyo, nlcz ) )
-   allocate( htop      (nxo, nyo, nlcz ) )
-   allocate( pct_tc    (nxo, nyo, nlcz ) )
-   allocate( pct_urwt  (nxo, nyo, nlcz ) )
-   allocate( htop_ur   (nxo, nyo, nlcz ) )
+   allocate( ur_dc     (lon_points, lat_points, nlcz ) )
+   allocate( pct_ur    (lon_points, lat_points, nlcz ) )
+   allocate( wgt_top   (lon_points, lat_points, nlcz ) )
+   allocate( tc        (lon_points, lat_points, nlcz ) )
+   allocate( urwt      (lon_points, lat_points, nlcz ) )
+   allocate( htop      (lon_points, lat_points, nlcz ) )
+   allocate( pct_tc    (lon_points, lat_points, nlcz ) )
+   allocate( pct_urwt  (lon_points, lat_points, nlcz ) )
+   allocate( htop_ur   (lon_points, lat_points, nlcz ) )
 
-   allocate( ur_sai    (nxo, nyo, nlcz, mon ) )
-   allocate( ur_lai    (nxo, nyo, nlcz, mon ) )
-   allocate( wgt_sai   (nxo, nyo, nlcz, mon ) )
-   allocate( wgt_lai   (nxo, nyo, nlcz, mon ) )
+   allocate( ur_sai    (lon_points, lat_points, nlcz, mon ) )
+   allocate( ur_lai    (lon_points, lat_points, nlcz, mon ) )
+   allocate( wgt_sai   (lon_points, lat_points, nlcz, mon ) )
+   allocate( wgt_lai   (lon_points, lat_points, nlcz, mon ) )
    ! ELSE
 #else
    allocate( hlat  (nxy) )
@@ -506,6 +507,9 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          IF (reglon == ereglon) ej = int((edgee-reg(2))*hxy/5)
          IF (ei < si) ei = si
          IF (ej < sj) ej = sj
+
+!$OMP PARALLEL DO NUM_THREADS(92) &
+!$OMP PRIVATE(i,j,io,jo,inx,mm,ii,jj)
          DO i = si, ei
             DO j = sj, ej
                ! calculate io, jo
@@ -562,6 +566,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                ENDIF
             ENDDO
          ENDDO
+!$OMP END PARALLEL DO
 #else
          ! read NCAR 1km urban class and region id
          lndname = TRIM(dir_rawdata)//'urban_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
@@ -841,7 +846,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
             ! 如果经过上一步仍没有树高数据
             ! 则将该点同纬度的所有树高求平均赋值城市树高
             IF (pct_tc(j,i,k) > 0 .and. htop_ur(j,i,k) == 0) THEN
-               DO p = 1, nxo
+               DO p = 1, lon_points
                   IF (hgt(p,i) > 0) THEN
                      sumth = sumth + hgt(p,i)
                      cont  = cont  + 1
@@ -865,11 +870,11 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    lndname = trim(dir_srfdata)//trim(cyear)//'/'//'urban_0.5x0.5.MOD.nc'
    print *, ">>> writing out surface data file ", trim(lndname)," ..."
 
-   CALL nccheck( nf90_create (trim(lndname)   , NF90_NETCDF4, ncid  ) )
-   CALL nccheck( nf90_def_dim(ncid, "lat"     , nyo     , lat_dimid ) )
-   CALL nccheck( nf90_def_dim(ncid, "lon"     , nxo     , lon_dimid ) )
-   CALL nccheck( nf90_def_dim(ncid, "LCZ_type", 10      , den_dimid ) )
-   CALL nccheck( nf90_def_dim(ncid, "mon"     , 12      , mon_dimid ) )
+   CALL nccheck( nf90_create (trim(lndname)   , NF90_NETCDF4, ncid      ) )
+   CALL nccheck( nf90_def_dim(ncid, "lat"     , lat_points  , lat_dimid ) )
+   CALL nccheck( nf90_def_dim(ncid, "lon"     , lon_points  , lon_dimid ) )
+   CALL nccheck( nf90_def_dim(ncid, "LCZ_type", nlcz        , den_dimid ) )
+   CALL nccheck( nf90_def_dim(ncid, "mon"     , mon         , mon_dimid ) )
 
    CALL nccheck( nf90_def_var(ncid, "lat"     , NF90_DOUBLE, lat_dimid , lat_vid ) )
    CALL nccheck( nf90_def_var(ncid, "lon"     , NF90_DOUBLE, lon_dimid , lon_vid ) )
@@ -882,8 +887,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_put_att(ncid, mon_vid , "long_name", "month"           ) )
    CALL nccheck( nf90_put_att(ncid, mon_vid , "units"    , "month"           ) )
 
-   XY3D = (/lon_dimid, lat_dimid, ns_dimid/)
-   XY4D = (/lon_dimid, lat_dimid, ns_dimid, mon_dimid/)
+   XY3D = (/lon_dimid, lat_dimid, den_dimid/)
+   XY4D = (/lon_dimid, lat_dimid, den_dimid, mon_dimid/)
 
    CALL nccheck( nf90_def_var(ncid, "LCZ_TREE_PCT"  , NF90_DOUBLE, XY3D, pct_tcvid  ) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_WATER_PCT" , NF90_DOUBLE, XY3D, pct_urwtvid) )
@@ -918,32 +923,32 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    CALL nccheck( nf90_enddef(ncid) )
 
-   CALL nccheck( nf90_inq_varid(ncid, "lat"            , urlat_vid) )
-   CALL nccheck( nf90_put_var  (ncid, urlat_vid        , latso    ) )
+   CALL nccheck( nf90_inq_varid(ncid, "lat"          , urlat_vid  ) )
+   CALL nccheck( nf90_put_var  (ncid, urlat_vid      , latso      ) )
 
-   CALL nccheck( nf90_inq_varid(ncid, "lon"            , urlon_vid) )
-   CALL nccheck( nf90_put_var  (ncid, urlon_vid        , lonso    ) )
+   CALL nccheck( nf90_inq_varid(ncid, "lon"          , urlon_vid  ) )
+   CALL nccheck( nf90_put_var  (ncid, urlon_vid      , lonso      ) )
 
-   CALL nccheck( nf90_inq_varid(ncid, "month"          , mon_vid  ) )
-   CALL nccheck( nf90_put_var  (ncid, mon_vid          , n_mon    ) )
+   CALL nccheck( nf90_inq_varid(ncid, "month"        , mon_vid    ) )
+   CALL nccheck( nf90_put_var  (ncid, mon_vid        , n_mon      ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_PCT" , pct_tcvid  ) )
-   CALL nccheck( nf90_put_var  (ncid, pct_tcvid        , pct_tc   ) )
+   CALL nccheck( nf90_put_var  (ncid, pct_tcvid      , pct_tc     ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_WATER_PCT", pct_urwtvid) )
-   CALL nccheck( nf90_put_var  (ncid, pct_urwtvid      , pct_urwt ) )
+   CALL nccheck( nf90_put_var  (ncid, pct_urwtvid    , pct_urwt   ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_TOP" , htop_urvid ) )
-   CALL nccheck( nf90_put_var  (ncid, htop_urvid       , htop_ur  ) )
+   CALL nccheck( nf90_put_var  (ncid, htop_urvid     , htop_ur    ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_LAI" , ur_laivid  ) )
-   CALL nccheck( nf90_put_var  (ncid, ur_laivid        , ur_lai   ) )
+   CALL nccheck( nf90_put_var  (ncid, ur_laivid      , ur_lai     ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_SAI" , ur_saivid  ) )
-   CALL nccheck( nf90_put_var  (ncid, ur_saivid        , ur_sai   ) )
+   CALL nccheck( nf90_put_var  (ncid, ur_saivid      , ur_sai     ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_PCT"      , pct_urvid  ) )
-   CALL nccheck( nf90_put_var  (ncid, pct_urvid        , pct_ur   ) )
+   CALL nccheck( nf90_put_var  (ncid, pct_urvid      , pct_ur     ) )
 
    CALL nccheck( nf90_close(ncid) )
 #else

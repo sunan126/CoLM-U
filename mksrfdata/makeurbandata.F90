@@ -95,7 +95,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: em_perd
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: ht_rf
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: w_hc
-   REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: ulev_imrd
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: th_rf
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: th_wl
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: tb_min
@@ -129,35 +128,31 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    INTEGER :: reg(4)
    ! variable ids
-   INTEGER :: ncid, uhd_vid, umd_vid, utbd_vid, htop_urvid
-   INTEGER :: lat_vid, lon_vid, lat_dimid, lon_dimid, &
-              ns_dimid, nr_dimid, ulev_dimid
-   INTEGER :: ns_vid, nr_vid, pct_tcvid, pct_urvid, pct_urwtvid, ulev_vid, lev_vid
-   INTEGER :: pftvid, laivid, maskid, umaskid, t_pftvid, ur_laivid, htop_pftvid
-   INTEGER :: lcvid, pcropvid, pwetlandvid, pwatervid, pglaciervid, ppftvid
-   INTEGER :: hlat_vid, hlon_vid, gfcc_tcvid, gedi_thvid, gl30_wtvid
-   INTEGER :: urlat_vid, urlon_vid, ur_clssvid, ur_rgvid, hwr_canvid
-   INTEGER :: wt_rfvid, wt_rdvid, em_rfvid, em_wlvid, em_imrdvid, em_perdvid
-   INTEGER :: ht_rfvid, whcvid, cv_rfvid, cv_wlvid, cv_imrdvid, ulev_imrdvid
+   INTEGER :: lat_dimid, lon_dimid, mon_dimid, den_dimid
+   INTEGER :: ncid, lat_vid, lon_vid, urlat_vid, urlon_vid, mon_vid, den_vid, &
+              pct_tcvid, pct_urvid, pct_urwtvid, ur_laivid, ur_saivid, htop_urvid
+   INTEGER :: upftvid, gedi_thvid, gfcc_tcvid, gl30_wtvid, ur_clssvid, &
+              laivid, saivid  
+#ifndef USE_LCZ
+   INTEGER :: ns_dimid, nr_dimid, ulev_dimid
+   INTEGER :: ns_vid, nr_vid, lev_vid
+   INTEGER :: ur_rgvid, hwr_canvid, wt_rfvid, wt_rdvid, em_rfvid, em_wlvid, em_imrdvid, em_perdvid
+   INTEGER :: ht_rfvid, whcvid, cv_rfvid, cv_wlvid, cv_imrdvid
    INTEGER :: th_rfvid, th_wlvid, tbminvid, tbmaxvid
    INTEGER :: tk_rfvid, tk_wlvid, tk_imrdvid
    INTEGER :: alb_rfvid, alb_imrdvid, alb_perdvid, alb_wlvid
-   INTEGER :: uxid, uyid, upftvid, mon_dimid, den_dimid
-   INTEGER :: den_vid, mon_vid, ur_landvid, saivid, ur_saivid, ur_denvid
+   INTEGER :: uxid
+#endif
 
    REAL(r8) :: ldelta
-   REAL(r8) :: pi, deg2rad, re, dx, dy, sumarea, sumur, sumpct
-   REAL(r8) :: dll, ur_dll, dllo, x_delta, y_delta, wgt, nlat, nlon, ulat, ulon
-   REAL(r8) :: lone1(lon_points), lonw1(lon_points), latn1(lat_points), lats1(lon_points)
+   REAL(r8) :: pi, deg2rad, re, dx, dy, sumur
+   REAL(r8) :: x_delta, y_delta
    
-   INTEGER(kind=2):: lc
-   
-   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, ir, jr, cont, sumth, p, ip, inx
-   INTEGER  :: argn
+   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, cont, sumth, p, inx
    INTEGER  :: n_ns(2), n_nr(2), n_den(3), n_ulev(10), n_mon(12)
    INTEGER  :: XY2D(2), XY3D(3), XY4D(4), UR3D(3), UL3D(4), XY5D(5)
 
-   INTEGER  :: eei, eej, ssi, ssj, ei, ej, si, sj
+   INTEGER  :: ei, ej, si, sj
    INTEGER  :: reglat,reglon,reglon_,sreglat,sreglon,ereglat,ereglon
    LOGICAL  :: fileExists
 
@@ -232,7 +227,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( em_perd   (lon_points, lat_points, den_clss ) )
    allocate( ht_rf     (lon_points, lat_points, den_clss ) )
    allocate( w_hc      (lon_points, lat_points, den_clss ) )
-   allocate( ulev_imrd (lon_points, lat_points, den_clss ) )
    allocate( th_rf     (lon_points, lat_points, den_clss ) )
    allocate( th_wl     (lon_points, lat_points, den_clss ) )
    allocate( tb_min    (lon_points, lat_points, den_clss ) )
@@ -276,7 +270,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    em_perd  (:,:,:) = 0.
    ht_rf    (:,:,:) = 0.
    w_hc     (:,:,:) = 0.
-   ulev_imrd(:,:,:) = 0.
    th_rf    (:,:,:) = 0.
    th_wl    (:,:,:) = 0.
    tb_min   (:,:,:) = 0.
@@ -378,7 +371,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_inq_varid(ncid, "CV_ROOF"            , cv_rfvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "CV_WALL"            , cv_wlvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "CV_IMPROAD"         , cv_imrdvid  ) )
-   CALL nccheck( nf90_inq_varid(ncid, "NLEV_IMPROAD"       , ulev_imrdvid) )
    CALL nccheck( nf90_inq_varid(ncid, "THICK_ROOF"         , th_rfvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "THICK_WALL"         , th_wlvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "T_BUILDING_MIN"     , tbminvid    ) )
@@ -403,7 +395,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_get_var(ncid, cv_rfvid    , cvrf    ) )
    CALL nccheck( nf90_get_var(ncid, cv_wlvid    , cvwl    ) )
    CALL nccheck( nf90_get_var(ncid, cv_imrdvid  , cvimrd  ) )
-   CALL nccheck( nf90_get_var(ncid, ulev_imrdvid, ulevimrd) )
    CALL nccheck( nf90_get_var(ncid, th_rfvid    , thrf    ) )
    CALL nccheck( nf90_get_var(ncid, th_wlvid    , thwl    ) )
    CALL nccheck( nf90_get_var(ncid, tbminvid    , tbmin   ) )
@@ -874,15 +865,15 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    lndname = trim(dir_srfdata)//trim(cyear)//'/'//'urban_0.5x0.5.MOD.nc'
    print *, ">>> writing out surface data file ", trim(lndname)," ..."
 
-   CALL nccheck( nf90_create (trim(lndname)   , NF90_NETCDF4, ncid) )
+   CALL nccheck( nf90_create (trim(lndname)   , NF90_NETCDF4, ncid  ) )
    CALL nccheck( nf90_def_dim(ncid, "lat"     , nyo     , lat_dimid ) )
    CALL nccheck( nf90_def_dim(ncid, "lon"     , nxo     , lon_dimid ) )
-   CALL nccheck( nf90_def_dim(ncid, "LCZ_type", 10      , ns_dimid  ) )
+   CALL nccheck( nf90_def_dim(ncid, "LCZ_type", 10      , den_dimid ) )
    CALL nccheck( nf90_def_dim(ncid, "mon"     , 12      , mon_dimid ) )
 
    CALL nccheck( nf90_def_var(ncid, "lat"     , NF90_DOUBLE, lat_dimid , lat_vid ) )
    CALL nccheck( nf90_def_var(ncid, "lon"     , NF90_DOUBLE, lon_dimid , lon_vid ) )
-   CALL nccheck( nf90_def_var(ncid, "month"   , NF90_INT  , mon_dimid , mon_vid ) )
+   CALL nccheck( nf90_def_var(ncid, "month"   , NF90_INT   , mon_dimid , mon_vid ) )
 
    CALL nccheck( nf90_put_att(ncid, lat_vid , "long_name", "Latitude"        ) )
    CALL nccheck( nf90_put_att(ncid, lat_vid , "units"    , "degrees_north"   ) )
@@ -1413,7 +1404,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    deallocate( em_perd   )
    deallocate( ht_rf     )
    deallocate( w_hc      )
-   deallocate( ulev_imrd )
    deallocate( th_rf     )
    deallocate( th_wl     )
    deallocate( tb_min    )

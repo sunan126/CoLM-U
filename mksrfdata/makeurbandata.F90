@@ -67,7 +67,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
 #ifndef USE_LCZ
    REAL(r8), DIMENSION(den_clss,rid)  :: hwrcan, wtrf, wtrd, emrf, emwl
-   REAL(r8), DIMENSION(den_clss,rid)  :: emimrd, emperd, htrf, whc, ulevimrd 
+   REAL(r8), DIMENSION(den_clss,rid)  :: emimrd, emperd, htrf 
    REAL(r8), DIMENSION(den_clss,rid)  :: thrf, thwl, tbmin, tbmax
    
    REAL(r8), DIMENSION(den_clss,rid,ulev ):: cvrf, cvwl, cvimrd, &
@@ -138,7 +138,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    INTEGER :: ns_dimid, nr_dimid, ulev_dimid
    INTEGER :: ns_vid, nr_vid, lev_vid
    INTEGER :: ur_rgvid, hwr_canvid, wt_rfvid, wt_rdvid, em_rfvid, em_wlvid, em_imrdvid, em_perdvid
-   INTEGER :: ht_rfvid, whcvid, cv_rfvid, cv_wlvid, cv_imrdvid
+   INTEGER :: ht_rfvid, cv_rfvid, cv_wlvid, cv_imrdvid
    INTEGER :: th_rfvid, th_wlvid, tbminvid, tbmaxvid
    INTEGER :: tk_rfvid, tk_wlvid, tk_imrdvid
    INTEGER :: alb_rfvid, alb_imrdvid, alb_perdvid, alb_wlvid
@@ -255,8 +255,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    emimrd  (:,:) = 0.
    emperd  (:,:) = 0.
    htrf    (:,:) = 0.
-   whc     (:,:) = 0.
-   ulevimrd(:,:) = 0.
    thrf    (:,:) = 0.
    thwl    (:,:) = 0.
    tbmin   (:,:) = 0.
@@ -365,7 +363,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_inq_varid(ncid, "ALB_IMPROAD"        , alb_imrdvid ) )
    CALL nccheck( nf90_inq_varid(ncid, "ALB_PERROAD"        , alb_perdvid ) )
    CALL nccheck( nf90_inq_varid(ncid, "HT_ROOF"            , ht_rfvid    ) )
-   CALL nccheck( nf90_inq_varid(ncid, "WIND_HGT_CANYON"    , whcvid      ) )
    CALL nccheck( nf90_inq_varid(ncid, "TK_ROOF"            , tk_rfvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "TK_WALL"            , tk_wlvid    ) )
    CALL nccheck( nf90_inq_varid(ncid, "TK_IMPROAD"         , tk_imrdvid  ) )
@@ -389,7 +386,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_get_var(ncid, alb_imrdvid , albimrd ) )
    CALL nccheck( nf90_get_var(ncid, alb_perdvid , albperd ) )
    CALL nccheck( nf90_get_var(ncid, ht_rfvid    , htrf    ) )
-   CALL nccheck( nf90_get_var(ncid, whcvid      , whc     ) )
    CALL nccheck( nf90_get_var(ncid, tk_rfvid    , tkrf    ) )
    CALL nccheck( nf90_get_var(ncid, tk_wlvid    , tkwl    ) )
    CALL nccheck( nf90_get_var(ncid, tk_imrdvid  , tkimrd  ) )
@@ -508,8 +504,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          IF (ei < si) ei = si
          IF (ej < sj) ej = sj
 
-!$OMP PARALLEL DO NUM_THREADS(92) &
-!$OMP PRIVATE(i,j,io,jo,inx,mm,ii,jj)
          DO i = si, ei
             DO j = sj, ej
                ! calculate io, jo
@@ -566,7 +560,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                ENDIF
             ENDDO
          ENDDO
-!$OMP END PARALLEL DO
 #else
          ! read NCAR 1km urban class and region id
          lndname = TRIM(dir_rawdata)//'urban_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
@@ -628,6 +621,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                   io = NINT((90.-(hlats(i)+ldelta/2))/y_delta+0.5)
                   jo = NINT((hlonw(j)+ldelta/2+180.)/x_delta+0.5)
                ELSE
+                  print*, 'Site point is ', (hlats(i)+ldelta/2), (hlonw(j)+ldelta/2)  ! for debug
                   io = 1
                   jo = 1
                ENDIF
@@ -1327,9 +1321,6 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    CALL nccheck( nf90_inq_varid(ncid, "HT_ROOF"        , ht_rfvid   ) )
    CALL nccheck( nf90_put_var  (ncid, ht_rfvid         , ht_rf     ) )
-
-   ! CALL nccheck( nf90_inq_varid(ncid, "WIND_HGT_CANYON",whcvid   ) )
-   ! CALL nccheck( nf90_put_var(ncid,whcvid,w_hc                   ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "THICK_ROOF"     , th_rfvid   ) )
    CALL nccheck( nf90_put_var  (ncid, th_rfvid         , th_rf     ) )

@@ -26,6 +26,7 @@ OBJS =  precision.o \
 	aggregation_soil_color.o \
 	aggregation_landwaters.o \
 	aggregation_wetland.o \
+	makeurbandata.o \
 	makesurfacedata.o \
 	soil_hydraulic_parameters.o \
 	soil_thermal_parameters.o \

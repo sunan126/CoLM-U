@@ -97,7 +97,7 @@ CONTAINS
       integer,  intent(in) :: idate(3)
 
 #if(defined USE_POINT_DATA)
-      CALL metreadpoint(forcn)
+      CALL metreadpoint(idate, forcn)
 #else
       CALL GETMET_NC(idate)
 #endif

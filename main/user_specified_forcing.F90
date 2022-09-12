@@ -585,11 +585,12 @@ CONTAINS
  ! not applied for POINT
    integer, parameter :: nlats   = 2              ! number of latitudes
    integer, parameter :: nlons   = 2              ! number of longitudes
-   integer, parameter :: startyr = 1948           ! start year of forcing data
+   integer, parameter :: startyr = 2006           ! start year of forcing data
+   integer, parameter :: startsec= 32400 
    integer, parameter :: startmo = 7              ! start month of forcing data
-   integer, parameter :: endyr   = 2006           ! end year of forcing data
+   integer, parameter :: endyr   = 2020           ! end year of forcing data
    integer, parameter :: endmo   = 12             ! end month of forcing data
-   integer, parameter :: dtime(NVAR)  = 1800      ! temporal resolution
+   integer, parameter :: dtime(NVAR)  = 3600      ! temporal resolution
    integer, parameter :: offset(NVAR) = 0         ! time offset (seconds)
    integer, parameter :: nlands  = 1              ! land grid number in 1d
 
@@ -612,8 +613,8 @@ CONTAINS
    character(len=256), parameter :: fprefix(NVAR) = 'VAL.DAT.CTRL.INT'
 
  ! not applied for POINT
-   character(len=256), parameter :: vname(NVAR) = 'NULL'
-
+   character(len=256), parameter :: vname(NVAR) = [character(len=256) :: &
+      'Tair', 'Qair', 'PSurf', 'Rainf', 'Wind_N', 'Wind_E', 'SWdown', 'LWdown']
  ! not applied for POINT
    character(len=256), parameter :: tintalgo(NVAR) = 'NULL'
 

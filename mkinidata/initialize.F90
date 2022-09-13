@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,&
+SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,nam_urbdata,nam_atmdata,&
                        lc_year,idate,greenwich,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
@@ -39,6 +39,9 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
    CHARACTER(LEN=256), intent(in) :: dir_restart   !case restart data directory
    CHARACTER(LEN=256), intent(in) :: nam_srfdata   !surface data filename
    CHARACTER(LEN=256), intent(in) :: nam_urbdata   !urban data filename
+   CHARACTER(LEN=256), intent(in) :: dir_atmdata
+   CHARACTER(LEN=256), intent(in) :: nam_atmdata
+   
    LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
    INTEGER, intent(in)    :: lc_year     !which year of land cover data used
    INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
@@ -934,7 +937,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 ! ...............................................................
 
 #ifdef URBAN_MODEL
-      CALL Urban_readin_nc (dir_srfdata, nam_urbdata, lc_year)
+      CALL Urban_readin_nc (dir_srfdata, dir_atmdata, nam_urbdata, nam_atmdata, lc_year)
 #endif
 
 ! ................................
@@ -1166,6 +1169,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
          snowdp_roof   (u) = 0.   !snow depth [m]
          snowdp_gimp   (u) = 0.   !snow depth [m]
          snowdp_gper   (u) = 0.   !snow depth [m]
+         snowdp_lake   (u) = 0.   !snow depth [m]
 
          z_sno_roof  (:,u) = 0.   !node depth of roof [m]
          z_sno_gimp  (:,u) = 0.   !node depth of impervious [m]

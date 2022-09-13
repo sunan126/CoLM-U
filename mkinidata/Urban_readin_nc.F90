@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
+SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_year)
 
 ! ===========================================================
 ! Read in the Urban dataset
@@ -21,6 +21,8 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       INTEGER, intent(in) :: lc_year    ! which year of land cover data used
       CHARACTER(LEN=256), intent(in) :: dir_srfdata
       CHARACTER(LEN=256), intent(in) :: nam_urbdata
+      CHARACTER(LEN=256), intent(in) :: dir_atmdata
+      CHARACTER(LEN=256), intent(in) :: nam_atmdata
 
       CHARACTER(LEN=256) :: lndname
       CHARACTER(len=256) :: cyear
@@ -42,6 +44,11 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       ! define variables for reading in
       ! -------------------------------------------
       ! 城市形态结构参数
+#ifdef USE_POINT_DATA
+#ifdef USE_OBS_PARA
+      REAL(r8) :: rfwt, rfht, tpct, wpct, hw_point, htop_point, prwt
+#endif
+#endif
       REAL(r8), allocatable :: wtlunitroof   (:,:,:)
       REAL(r8), allocatable :: htroof        (:,:,:)
       REAL(r8), allocatable :: canyonhwr     (:,:,:)
@@ -211,7 +218,43 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,nam_urbdata,lc_year)
       CALL nccheck( nf90_get_var(ncid, thickwall_vid,     thickwall    ) )
 
       CALL nccheck( nf90_close(ncid) )
+
+#ifdef USE_POINT_DATA
+#ifdef USE_OBS_PARA
+
+      lndname = trim(dir_atmdata)//'/'//trim(nam_atmdata)
+      print*, lndname
+      CALL nccheck( nf90_open(lndname, nf90_nowrite, ncid) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "impervious_area_fraction" , wtroadperv_vid   ) ) ! imperivous area fraciton
+      CALL nccheck( nf90_inq_varid(ncid, "tree_area_fraction"       , urbantreepct_vid ) ) ! tree area fraction
+      CALL nccheck( nf90_inq_varid(ncid, "water_area_fraction"      , urbanwaterpct_vid) ) ! water area fraction
+      CALL nccheck( nf90_inq_varid(ncid, "roof_area_fraction"       , wtlunitroof_vid  ) ) ! roof area fraction
+      CALL nccheck( nf90_inq_varid(ncid, "building_mean_height"     , htroof_vid       ) ) ! building mean height
+      CALL nccheck( nf90_inq_varid(ncid, "tree_mean_height"         , urbantreetop_vid ) ) ! tree mean height
+      CALL nccheck( nf90_inq_varid(ncid, "canyon_height_width_ratio", canyonhwr_vid    ) ) ! H2W
+
+      CALL nccheck( nf90_get_var(ncid, wtroadperv_vid,    prwt      ) )
+      CALL nccheck( nf90_get_var(ncid, urbantreepct_vid,  tpct      ) )
+      CALL nccheck( nf90_get_var(ncid, urbanwaterpct_vid, wpct      ) )
+      CALL nccheck( nf90_get_var(ncid, wtlunitroof_vid,   rfwt      ) )
+      CALL nccheck( nf90_get_var(ncid, htroof_vid,        rfht      ) )
+      CALL nccheck( nf90_get_var(ncid, urbantreetop_vid,  htop_point) )
+      CALL nccheck( nf90_get_var(ncid, canyonhwr_vid,     hw_point  ) )
+
+      CALL nccheck( nf90_close(ncid) )
+
+      wtroadperv   (1,1,:) = 1. - prwt
+      urbantreepct (1,1,:) = tpct
+      urbanwaterpct(1,1,:) = wpct
+      wtlunitroof  (1,1,:) = rfwt
+      htroof       (1,1,:) = rfht
+      urbantreetop (1,1,:) = htop_point
+      canyonhwr    (1,1,:) = hw_point
 #endif
+#endif
+#endif
+
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
 !$OMP PRIVATE(i, j, u, t, l, m, npatch) &

@@ -27,8 +27,10 @@ PROGRAM CLMINI
       CHARACTER(LEN=256) :: casename ! case name
       CHARACTER(LEN=256) :: dir_srfdata
       CHARACTER(LEN=256) :: dir_restart
+      CHARACTER(LEN=256) :: dir_atmdata
       CHARACTER(LEN=256) :: nam_srfdata
       CHARACTER(LEN=256) :: nam_urbdata
+      CHARACTER(LEN=256) :: nam_atmdata
       INTEGER :: s_year      ! starting date for run in year
       INTEGER :: s_julian    ! starting date for run in julian day
       INTEGER :: s_month     ! starting month for run
@@ -54,8 +56,8 @@ PROGRAM CLMINI
       REAL(r8), allocatable :: fh_xy   (:,:)
       REAL(r8), allocatable :: fq_xy   (:,:)
 
-      namelist /clminiexp/ casename,dir_srfdata,dir_restart,&
-                           nam_srfdata,nam_urbdata,&
+      namelist /clminiexp/ casename,dir_srfdata,dir_restart, dir_atmdata, &
+                           nam_atmdata, nam_srfdata,nam_urbdata,&
                            greenwich,lc_year,s_year,s_month,s_day,s_seconds
 ! ----------------------------------------------------------------------
       read (5,clminiexp)
@@ -82,8 +84,8 @@ PROGRAM CLMINI
       allocate ( fm_xy   (lon_points,lat_points) )
       allocate ( fh_xy   (lon_points,lat_points) )
       allocate ( fq_xy   (lon_points,lat_points) )
-
-      CALL initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,&
+#
+      CALL initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,nam_urbdata,nam_atmdata,&
                        lc_year,idate,greenwich,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)

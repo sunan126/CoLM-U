@@ -15,7 +15,7 @@
 
   INTEGER, intent(in) :: idate(3)
   INTEGER, intent(in) :: nac
-  INTEGER, intent(in) :: nac_24
+  INTEGER, intent(inout) :: nac_24
   INTEGER, intent(in) :: nac_ln(lon_points,lat_points)
   INTEGER, intent(in) :: nac_dt(lon_points,lat_points)
   INTEGER, intent(in) :: nac_nt(lon_points,lat_points)
@@ -83,6 +83,7 @@
            IF (f_qcharge(i,j) /= spval) f_qcharge(i,j) = f_qcharge(i,j) / a  ! groundwater recharge rate [mm/s]
 
 !---------------------------------------------------------------------
+           IF (nac_24 == 0) nac_24 = 1
            IF (f_t_grnd (i,j) /= spval) f_t_grnd (i,j) = f_t_grnd (i,j) / a  ! ground surface temperature [K]
            IF (f_tleaf  (i,j) /= spval) f_tleaf  (i,j) = f_tleaf  (i,j) / a  ! sunlit leaf temperature [K]
            IF (f_ldew   (i,j) /= spval) f_ldew   (i,j) = f_ldew   (i,j) / a  ! depth of water on foliage [mm]

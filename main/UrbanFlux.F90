@@ -16,6 +16,12 @@ MODULE UrbanFlux
 ! PRIVATE MEMBER FUNCTIONS:
   PRIVATE :: cal_z0_displa
 
+! Exponential extinction factor (alpha) options:
+!   1. Masson, 2000; Oleson et al., 2008
+!   2. Swaid, 1993; Kusaka, 2001; Lee and Park, 2008
+!   3. Macdonald, 2000
+  INTEGER, parameter :: alpha_opt = 1
+
 !-----------------------------------------------------------------------
 
   CONTAINS
@@ -223,7 +229,7 @@ MODULE UrbanFlux
         fai,      &! frontal area index
         fwet,     &! fractional wet area
         delta,    &! 0 or 1
-        alpha      ! exponential extinction factor for u/k decline within canopy
+        alpha      ! exponential extinction factor for u/k decline within urban
 
      REAL(r8), dimension(0:nurb) :: &
         tu,       &! termperature array
@@ -370,8 +376,14 @@ MODULE UrbanFlux
      ! Kondo, 1971
      !alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
 
-     ! Masson 2000; Oleson et al., 2008
-     alpha = 0.5*hwr
+     ! Masson, 2000; Oleson et al., 2008
+     IF (alpha_opt == 1) alpha = 0.5*hwr
+
+     ! Swaid, 1993; Kusaka, 2001; Lee and Park, 2008
+     IF (alpha_opt == 2) alpha = 0.772*hwr
+
+     ! Macdonald, 2000
+     IF (alpha_opt == 3) alpha = 9.6*fai
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -497,6 +509,13 @@ MODULE UrbanFlux
 
         rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
+
+        ! Masson, 2000: Account for different canyon orientations
+        ! 2/PI is a factor derived from 0-360deg integration
+        IF (alpha_opt == 1) THEN
+           ueff_lay(2) = 2/PI*ueff_lay(2)
+           rd(:)       = PI/2*rd(:)
+        ENDIF
 
 !-----------------------------------------------------------------------
 ! Bulk boundary layer resistance of leaves
@@ -1026,11 +1045,13 @@ MODULE UrbanFlux
         hlr,      &! average building height to their length of edge [-]
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
-        fai,      &! frontal area index
+        fai,      &! frontal area index for urban
+        faiv,     &! frontal area index for trees
         lsai,     &! lai+sai
         fwet,     &! fractional wet area
         delta,    &! 0 or 1
-        alpha      ! exponential extinction factor for u/k decline within canopy
+        alpha,    &! exponential extinction factor for u/k decline within urban
+        alphav     ! exponential extinction factor for u/k decline within trees
 
      REAL(r8) ::  &
         lwsun_bef,&! change of lw for the last time
@@ -1218,15 +1239,21 @@ MODULE UrbanFlux
 ! calculate layer decay coefficient
 !-----------------------------------------------------------------------
 
-     !NOTE: 引文研究对象为植被，对城市计算结果偏大
      ! Raupach, 1992
-     !sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
+     faiv = fc(3)*(1. - exp(-0.5*lsai))
+     sqrtdragc = min( (0.003+0.3*faiv)**0.5, 0.3 )
 
      ! Kondo, 1971
-     !alpha = hroof/(hroof-displa)/(vonkar/sqrtdragc)
+     alphav = htop/(htop-displav_lay)/(vonkar/sqrtdragc)
 
-     ! Masson 2000; Oleson et al., 2008
-     alpha = 0.5*hwr
+     ! Masson, 2000; Oleson et al., 2008 plus tree (+)
+     IF (alpha_opt == 1) alpha = 0.5*hwr + alphav
+
+     ! Swaid, 1993; Kusaka, 2001; Lee and Park, 2008. plus tree (+)
+     IF (alpha_opt == 2) alpha = 0.772*hwr + alphav
+
+     ! Macdonald, 2000 plus tree (+)
+     IF (alpha_opt == 3) alpha = 9.6*fai + alphav
 
 !-----------------------------------------------------------------------
 ! first guess for taf and qaf for each layer
@@ -1401,6 +1428,14 @@ MODULE UrbanFlux
 
         !ueff_lay_(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
         ueff_veg = ueffect(utop, hroof, 0., htop, hbot, z0mg, alpha, bee, 1.)
+
+        ! Masson, 2000: Account for different canyon orientations
+        ! 2/PI is a factor derived from 0-360deg integration
+        IF (alpha_opt == 1) THEN
+           ueff_lay(2) = 2/PI*ueff_lay(2)
+           ueff_veg    = 2/PI*ueff_veg
+           rd(:)       = PI/2*rd(:)
+        ENDIF
 
         !print *, "ueff_lay :", ueff_lay
         !print *, "ueff_lay_:", ueff_lay_

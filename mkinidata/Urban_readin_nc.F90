@@ -115,10 +115,23 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       allocate ( thickwall     (1:lon_points,1:lat_points,1:N_URB) )
 
 #ifdef USE_LCZ
+
+      write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
+      print*,trim(lndname)
+      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "LCZ_WT_ROOF"  , wtlunitroof_vid) )
+      CALL nccheck( nf90_get_var  (ncid, wtlunitroof_vid, wtlunitroof    ) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "LCZ_HT_ROOF"  , htroof_vid     ) )
+      CALL nccheck( nf90_get_var  (ncid, htroof_vid     , htroof_vid     ) )
+
+      CALL nccheck( nf90_close(ncid) )
       do i=1,360
          do j=1,720
-            wtlunitroof (j,i,:) = rooffrac(:)
-            htroof      (j,i,:) = roofhgt (:)
+            !wtlunitroof (j,i,:) = rooffrac(:)
+            !htroof      (j,i,:) = roofhgt (:)
             canyonhwr   (j,i,:) = h2w     (:)
             wtroadperv  (j,i,:) = perfrac (:) 
             emroof      (j,i,:) = roofem  (:) 
@@ -244,13 +257,14 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
       CALL nccheck( nf90_close(ncid) )
 
-      wtroadperv   (1,1,:) = 1. - prwt
-      urbantreepct (1,1,:) = tpct
-      urbanwaterpct(1,1,:) = wpct
+      wtroadperv   (1,1,:) = 1 - (prwt-rfwt)/(1-rfwt-wpct) !1. - prwt
+      urbantreepct (1,1,:) = tpct*100
+      urbanwaterpct(1,1,:) = wpct*100
       wtlunitroof  (1,1,:) = rfwt
       htroof       (1,1,:) = rfht
       urbantreetop (1,1,:) = htop_point
       canyonhwr    (1,1,:) = hw_point
+      !albroof(:,:,:,:,:) = 0.4
 #endif
 #endif
 #endif
@@ -358,6 +372,15 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
+      print*,'froof = ', froof
+      print*,'hroof = ', hroof
+      print*,'fgper = ', fgper
+      print*,'hwr   = ', hwr
+      print*,'fveg  = ', fveg
+      print*,'flake = ', flake
+      print*,'htop  = ', htop  
+      print*,'albroof= ', alb_roof
+      print*,'albwall= ', alb_wall
 
       deallocate ( wtlunitroof   )
       deallocate ( htroof        )

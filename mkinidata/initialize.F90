@@ -213,8 +213,8 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
 #ifdef USE_LCZ
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-      !lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
-      lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
+      !lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -251,7 +251,13 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       CALL nccheck( nf90_close(ncid) )
 
       landfrac = landfrac / 100.
+!#if(defined URBAN_MODEL && defined USE_POINT_DATA)
+!      pctlc(:,:,:) = 0.
+!      pctlc(:,:,13)= 1.
+!      landfrac(:,:) = 1.
+!#else
       pctlc    = pctlc / 100.
+!#endif
 
       DO np = 1, N_land_classification
          ! sum(pctlc) = 100%, landfrac: land%

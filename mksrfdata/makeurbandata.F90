@@ -311,8 +311,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( avg       (lon_points, lat_points) )
    ! initialization
    hgt      (:,:)   = 0.
-   wt_rf    (:,:)   = 0.
-   ht_rf    (:,:)   = 0.
+   wtrf     (:,:)   = 0.
+   htrf     (:,:)   = 0.
    avg      (:,:)   = 0.
    tc       (:,:,:) = 0.
    urwt     (:,:,:) = 0.

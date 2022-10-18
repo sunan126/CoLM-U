@@ -249,13 +249,13 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( alb_perd  (lon_points, lat_points, den_clss, nr, ns) )
 
    hwrcan  (:,:) = 0.
-   wtrf    (:,:) = 0.
+   !wtrf    (:,:) = 0.
    wtrd    (:,:) = 0.
    emrf    (:,:) = 0.
    emwl    (:,:) = 0.
    emimrd  (:,:) = 0.
    emperd  (:,:) = 0.
-   htrf    (:,:) = 0.
+   !htrf    (:,:) = 0.
    thrf    (:,:) = 0.
    thwl    (:,:) = 0.
    tbmin   (:,:) = 0.
@@ -311,6 +311,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( avg       (lon_points, lat_points) )
    ! initialization
    hgt      (:,:)   = 0.
+   wt_rf    (:,:)   = 0.
+   ht_rf    (:,:)   = 0.
    avg      (:,:)   = 0.
    tc       (:,:,:) = 0.
    urwt     (:,:,:) = 0.

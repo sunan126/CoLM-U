@@ -71,14 +71,14 @@ setenv CLM_POSDIR $CLM_ROOT/postprocess
 # inputdata directory
 setenv DAT_ROOT   $HOME/data/inputdata                 # <MARK #4>
 setenv DAT_RAWDIR $HOME/data/CLMrawdata
-setenv DAT_ATMDIR $DAT_ROOT/single_point/urban_flux/v0.9
+setenv DAT_ATMDIR $DAT_ROOT/single_point/urban_flux/v1
 setenv DAT_SRFDIR $DAT_ROOT/srf/nomod_np/AU-Preston
 setenv DAT_RTMDIR $DAT_ROOT/rtm/global_15min
 
 # file name of forcing and surface data
 setenv DAT_SRFNAM AU-Preston_ts_nf_np.MOD.nc                # surface data filename
 setenv DAT_URBNAM urban_0.5x0.5.MOD.nc                 # only for urban model
-setenv DAT_ATMNAM AU-Preston_metforcing_v0.9.nc #point-atmdata-filename               # only for point case
+setenv DAT_ATMNAM AU-Preston_metforcing_v1.nc #point-atmdata-filename               # only for point case
 
 # case directory
 #-------------------------------------------------------

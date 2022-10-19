@@ -530,7 +530,11 @@ MODULE LEAF_temperature
          cfh = (lai + sai) / rb
 
          caw = 1. / raw
-         cgw = 1. / (rd + rsr)
+         IF (qg < qaf) THEN
+            cgw = 1. / rd  !dew case. no soil resistance
+         ELSE
+            cgw = 1. / (rd + rsr)
+         ENDIF
          cfw = (1.-delta*(1.-fwet))*(lai+sai)/rb + (1.-fwet)*delta* &
             ( laisun/(rb+rssun) + laisha/(rb+rssha) )
 

@@ -1012,7 +1012,11 @@ MODULE LEAF_temperature_PC
 
                 cgh(i) = 1. / rd(i)
                 IF (i == botlay) THEN
-                   cgw(i) = 1. / (rd(i) + rsr)
+                   IF (qg <  qaf(botlay)) THEN
+                      cgw(i) = 1. / rd(i) !dew case. no soil resistance
+                   ELSE
+                      cgw(i) = 1. / (rd(i) + rsr)
+                   ENDIF
                 ELSE
                    cgw(i) = 1. / rd(i)
                 ENDIF

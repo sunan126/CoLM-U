@@ -354,17 +354,22 @@
          hr   = exp(psit/roverg/t_grnd)
          qred = (1.-fsno)*hr + fsno
 
+         rsr = 0. !initialization
+
+         IF (lb == 1) THEN !no snow layer exist
+
          ! calculate soil resistance for evaporation
-         wx   = (sum(wliq_soisno(1:2))/denh2o + sum(wice_soisno(1:2))/denice)/sum(dz_soisno(1:2))
-         IF (sum(porsl(1:2)) < 1.e-6) THEN     !bed rock
-            fac  = 0.001
-         ELSE
-            fac  = min(1.,sum(dz_soisno(1:2))*wx/(dz_soisno(1)*porsl(1)+dz_soisno(2)*porsl(2)))
-            fac  = max( fac, 0.001 )
-         ENDIF
+            wx   = (sum(wliq_soisno(1:2))/denh2o + sum(wice_soisno(1:2))/denice)/sum(dz_soisno(1:2))
+            IF (sum(porsl(1:2)) < 1.e-6) THEN     !bed rock
+               fac  = 0.001
+            ELSE
+               fac  = min(1.,sum(dz_soisno(1:2))*wx/(dz_soisno(1)*porsl(1)+dz_soisno(2)*porsl(2)))
+               fac  = max( fac, 0.001 )
+            ENDIF
 
          ! Sellers et al., 1992
-         rsr = exp(8.206-4.255*fac)
+            rsr = (1-fsno)*exp(8.206-4.255*fac)
+         ENDIF
 
       ENDIF
 
@@ -667,7 +672,7 @@ IF (patchtype == 0) THEN
       ENDDO
 
       ! initialization
-      tleaf_c (:,pc) = forc_t
+      tleaf_c (:,pc) = forc_t  !???
       rst_c   (:,pc) = 2.0e4
       assim_c (:,pc) = 0.
       respc_c (:,pc) = 0.
@@ -700,7 +705,7 @@ IF (patchtype == 0) THEN
       ELSE
          laisun_c(:)    = 0.
          laisha_c(:)    = 0.
-         ldew_c  (:,pc) = 0.
+         ldew_c  (:,pc) = 0.   !??
          tleaf_c (:,pc) = forc_t
          rst_c   (:,pc) = 2.0e4
          assim_c (:,pc) = 0.

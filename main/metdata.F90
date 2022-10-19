@@ -95,7 +95,8 @@ CONTAINS
     ! close POINT data file
 #ifdef USE_POINT_DATA
       if (fid(1) > 0) then
-         close(fid(1))
+         ! close(fid(1))
+         call sanity( nf90_close(fid(1)) )
          fid(1) = -1
       end if
 #endif
@@ -612,23 +613,120 @@ CONTAINS
 
  ! read point forcing data
  ! ------------------------------------------------------------
-   SUBROUTINE metreadpoint(forcn)
+   SUBROUTINE metreadpoint(idate,forcn,s_year,s_month,s_day,s_seconds,deltim,s_julian)
 
       implicit none
+
+      integer , intent(in)    :: s_year, s_month, s_day, s_seconds, s_julian
+      integer , intent(in)    :: idate(3)
+      real(r8), intent(in)    :: deltim
       real(r8), intent(inout) :: forcn(:,:,:)
+      
+      ! var ids
+      INTEGER  :: ncid, varid, swid, lwid, prid, snid, taid, qaid, wvid, &
+                  wuid, psid
+      INTEGER  :: days, time_i, time_s, i
+      INTEGER  :: months(0:12)
+      REAL(r8) :: rain(1), snow(1)
+      REAL(r8) :: rtime
+      REAL(r8) :: metadata(1)
+      LOGICAL  :: firstread
+
+      save time_i, firstread
 
       character(256) :: filename
+
       filename = trim(fmetdat)//trim(fmetnam)
 
-      if (fid(1) == -1) then
-         open(unit=11, file=filename, form='formatted', status='old', action='read')
-         fid(1) = 11
-      end if
+      rtime = deltim !dtime(1)
+      
+      IF(time_i <= 0) THEN
+         IF (s_year==startyr .and. s_month==startmo .and. s_day==startday .and. s_seconds==startsec) THEN
+            IF (idate(1) == s_year) THEN
+               IF (idate(2) == s_julian) THEN
+                  time_i = (idate(3)-s_seconds)/rtime+1
+               ELSE
+                  time_i = ((86400-s_seconds)/rtime+1)+(idate(2)-1-s_julian)*(86400/rtime)+((idate(3)/rtime))
+               ENDIF
+            ELSE
+               IF (isleapyear(s_year)) THEN
+                  months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
+               ELSE
+                  months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
+               ENDIF
 
-      read (fid(1), 10) forcn(1,1,7), forcn(1,1,8), forcn(1,1,4), forcn(1,1,1), &
-                        forcn(1,1,5), forcn(1,1,6), forcn(1,1,3), forcn(1,1,2)
+               time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))+ &
+                        ((86400-s_seconds)/rtime)+(months(12)-months(s_month-1)-s_day)*(86400/rtime)
+               
+               DO i = s_year+1, idate(1)
+                  IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
+                     time_i = time_i+(86400/rtime)*366
+                  ENDIF
 
-10    format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
+                  IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
+                     time_i = time_i+(86400/rtime)*365
+                  ENDIF
+               ENDDO
+            ENDIF
+         ELSE
+            ! restart case
+            print*, idate(:)
+            IF (s_year==startyr) THEN
+               time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1)) - startsec/rtime
+            ELSE
+               IF (isleapyear(startyr)) THEN
+                  months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
+                  time_i = (86400/rtime)*366 - ((months(startmo-1)+startday-1)*(86400/rtime)+startsec/rtime)
+               ELSE
+                  months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
+                  time_i = (86400/rtime)*365 - ((months(startmo-1)+startday-1)*(86400/rtime)+startsec/rtime)
+               ENDIF
+               ! print*, time_i, ((months(startmo)+startday-1)*(86400/rtime)+startsec/rtime)
+               time_i = time_i + (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))
+
+               DO i = startyr+1, idate(1)
+
+                  IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
+                     time_i = time_i+(86400/rtime)*366
+                  ENDIF
+
+                  IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
+                     time_i = time_i+(86400/rtime)*365
+                  ENDIF
+               ENDDO
+            ENDIF
+         ENDIF
+         firstread = .True.
+      ELSE
+         time_i = time_i + 1
+         firstread = .False.
+      ENDIF
+
+      print*, time_i
+
+      IF (firstread) THEN
+         CALL sanity( nf90_open(filename, nf90_nowrite, fid(1)) )
+         firstread = .False.
+      ENDIF
+
+      DO i = 1, NVAR
+
+         IF (vname(i)=='Rainf') THEN
+            CALL sanity( nf90_inq_varid(fid(1), 'Rainf', prid) )
+            CALL sanity( nf90_inq_varid(fid(1), 'Snowf', snid) )
+            CALL sanity( nf90_get_var  (fid(1), prid, rain(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+            CALL sanity( nf90_get_var  (fid(1), snid, snow(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+            
+            forcn(1,1,4) = rain(1) + snow(1)
+         ELSE
+            CALL sanity( nf90_inq_varid(fid(1), vname(i), varid) )
+            CALL sanity( nf90_get_var  (fid(1), varid   , metadata(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+
+            forcn(1,1,i) = metadata(1)
+         ENDIF
+      ENDDO
+      ! close in metfina     
+      ! CALL sanity( nf90_close(ncid) )
 
    END SUBROUTINE metreadpoint
 

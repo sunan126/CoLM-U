@@ -243,7 +243,7 @@
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,solarin_all_band)
+         CALL rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------

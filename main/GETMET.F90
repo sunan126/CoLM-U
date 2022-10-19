@@ -91,13 +91,15 @@ CONTAINS
  ! PURPOSE:
  !    major interface for getting forcing data
  ! ------------------------------------------------------------
-   SUBROUTINE GETMET(idate)
+   SUBROUTINE GETMET(idate,s_year,s_month,s_day,s_seconds,deltim,s_julian)
 
       implicit none
       integer,  intent(in) :: idate(3)
+      integer,  intent(in) :: s_year, s_month,s_day,s_seconds, s_julian
+      real(r8), intent(in) :: deltim
 
 #if(defined USE_POINT_DATA)
-      CALL metreadpoint(forcn)
+      CALL metreadpoint(idate, forcn, s_year, s_month, s_day, s_seconds, deltim, s_julian)
 #else
       CALL GETMET_NC(idate)
 #endif

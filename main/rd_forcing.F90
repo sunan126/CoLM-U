@@ -1,7 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE rd_forcing(idate,solarin_all_band)
+SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian)
 
   use precision
   USE GlobalVars
@@ -15,6 +15,8 @@ SUBROUTINE rd_forcing(idate,solarin_all_band)
   use omp_lib
 
       IMPLICIT NONE
+      real(r8), INTENT(in) :: deltim
+      integer,  INTENT(in) :: s_year, s_month, s_day, s_seconds, s_julian
       integer,  INTENT(in) :: idate(3)
       logical,  INTENT(in) :: solarin_all_band
 
@@ -41,7 +43,7 @@ SUBROUTINE rd_forcing(idate,solarin_all_band)
 !------------------------------------------------------------
     ! READ IN THE ATMOSPHERIC FORCING
 
-      CALL GETMET(idate)
+      CALL GETMET(idate,s_year,s_month,s_day,s_seconds,deltim,s_julian)
 
       forc_xy_t      (:,:) = forcn(:,:,1)
       forc_xy_q      (:,:) = forcn(:,:,2)

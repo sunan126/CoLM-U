@@ -167,6 +167,12 @@ IMPLICIT NONE
 #else
       CALL makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
                              lc_year,edgen,edgee,edges,edgew )
+#ifdef URBAN_MODEL
+!#ifndef USE_POINT
+      CALL makeurbandata ( casename,dir_rawdata,dir_srfdata, &
+                             lc_year,edgen,edgee,edges,edgew )
+!#endif
+#endif
 #endif
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

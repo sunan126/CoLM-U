@@ -1,6 +1,6 @@
 #include <define.h>
 
-SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,&
+SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,nam_urbdata,nam_atmdata,&
                        lc_year,idate,greenwich,&
                        tg_xy,albvb_xy,albvd_xy,albnb_xy,albnd_xy,&
                        trad_xy,rib_xy,fm_xy,fh_xy,fq_xy)
@@ -39,6 +39,9 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
    CHARACTER(LEN=256), intent(in) :: dir_restart   !case restart data directory
    CHARACTER(LEN=256), intent(in) :: nam_srfdata   !surface data filename
    CHARACTER(LEN=256), intent(in) :: nam_urbdata   !urban data filename
+   CHARACTER(LEN=256), intent(in) :: dir_atmdata
+   CHARACTER(LEN=256), intent(in) :: nam_atmdata
+   
    LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
    INTEGER, intent(in)    :: lc_year     !which year of land cover data used
    INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
@@ -211,8 +214,8 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
 #ifdef USE_LCZ
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-      !lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
-      lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
+      !lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
       print*,trim(lndname)
 
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -249,7 +252,13 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
       CALL nccheck( nf90_close(ncid) )
 
       landfrac = landfrac / 100.
+!#if(defined URBAN_MODEL && defined USE_POINT_DATA)
+!      pctlc(:,:,:) = 0.
+!      pctlc(:,:,13)= 1.
+!      landfrac(:,:) = 1.
+!#else
       pctlc    = pctlc / 100.
+!#endif
 
       DO np = 1, N_land_classification
          ! sum(pctlc) = 100%, landfrac: land%
@@ -935,7 +944,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 ! ...............................................................
 
 #ifdef URBAN_MODEL
-      CALL Urban_readin_nc (dir_srfdata, nam_urbdata, lc_year)
+      CALL Urban_readin_nc (dir_srfdata, dir_atmdata, nam_urbdata, nam_atmdata, lc_year)
 #endif
 
 ! ................................

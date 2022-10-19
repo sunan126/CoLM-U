@@ -690,7 +690,7 @@ SUBROUTINE UrbanCLMMAIN ( &
 
       ! for urban hydrology input, only for pervious ground
       fracveg = fveg/((1-froof)*fgper)
-      fracveg = max(fracveg, 1.)
+      fracveg = min(fracveg, 1.)
       pgper_rain = pgper_rain*fracveg + pg_rain*(1-fracveg)
       pgper_snow = pgper_snow*fracveg + pg_snow*(1-fracveg)
 

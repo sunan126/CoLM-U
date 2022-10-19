@@ -20,7 +20,7 @@ MODULE UrbanFlux
 !   1. Masson, 2000; Oleson et al., 2008
 !   2. Swaid, 1993; Kusaka, 2001; Lee and Park, 2008
 !   3. Macdonald, 2000
-  INTEGER, parameter :: alpha_opt = 1
+  INTEGER, parameter :: alpha_opt = 3
 
 !-----------------------------------------------------------------------
 
@@ -1246,6 +1246,8 @@ MODULE UrbanFlux
      fc(:)  = fcover(0:nurb)
      fc(3)  = fcover(5)
      fg     = 1 - fcover(0)
+     fgimp  = fcover(3)/fg
+     fgper  = fcover(4)/fg
      hlr    = hwr*(1-sqrt(fcover(0)))/sqrt(fcover(0))
      canlev = (/3, 2, 2, 1/)
 

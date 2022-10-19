@@ -60,10 +60,15 @@ IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
 
-      iunit = 100
 #ifdef USER_GRID
       lndname = USER_GRID
       print*,lndname
+#endif
+
+#ifdef USGS_CLASSIFICATION
+      cyear = ''
+#else
+      write(cyear,'(i4.4)') lc_year
 #endif
 
       print*, 'Attempting to read land grid data .....'
@@ -110,8 +115,8 @@ IMPLICIT NONE
     ! ------------------------------------------
     ! write out the model grid coordinate and area
     ! ------------------------------------------
+
       iunit = 100
-      write(cyear,'(i4.4)') lc_year
       lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,lndname
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')

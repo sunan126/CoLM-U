@@ -119,8 +119,10 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 
 #ifdef USGS_CLASSIFICATION
       cyear = ''
+      lndname = trim(dir_srfdata)//'model_lonlat_gridcell.bin'
 #else
       write(cyear,'(i4.4)') lc_year
+      lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
 #endif
 
 ! ----------------------------------------------------------------------
@@ -129,7 +131,6 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,nam_srfdata,nam_urbdata,
 ! ----------------------------------------------------------------------
 ! Read in the coordinate of the center of the model grids and area of grid cells
       iunit = 100
-      lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='old')
       READ(iunit) latixy
@@ -1166,6 +1167,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
          snowdp_roof   (u) = 0.   !snow depth [m]
          snowdp_gimp   (u) = 0.   !snow depth [m]
          snowdp_gper   (u) = 0.   !snow depth [m]
+         snowdp_lake   (u) = 0.   !snow depth [m]
 
          z_sno_roof  (:,u) = 0.   !node depth of roof [m]
          z_sno_gimp  (:,u) = 0.   !node depth of impervious [m]

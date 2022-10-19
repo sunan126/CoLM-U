@@ -53,6 +53,15 @@ IMPLICIT NONE
 
       real(r8) dx2
 
+! ----------------------------------------------------------------------
+
+#ifdef USGS_CLASSIFICATION
+      cyear = ''
+#else
+      write(cyear,'(i4.4)') lc_year
+#endif
+
+
     ! ------------------------------------------------------------------
     ! determine grid longitudes and latitudes in increments of dx and dy
     ! ------------------------------------------------------------------
@@ -120,7 +129,6 @@ IMPLICIT NONE
     ! write out the coordinate of the center of the model grids and area of grid cells
     ! ------------------------------------------
       iunit = 100
-      write(cyear,'(i4.4)') lc_year
       lndname = trim(dir_srfdata)//trim(cyear)//'/model_lonlat_gridcell.bin'
       print*,trim(lndname)
       open(iunit,file=trim(lndname),form='unformatted',status='unknown')

@@ -30,18 +30,18 @@ MODULE UrbanFlux
 
   SUBROUTINE UrbanOnlyFlux ( &
         ! 模型运行信息
-        ipatch      ,deltim                                ,&
+        ipatch      ,deltim      ,lbr         ,lbi         ,&
         ! 外强迫
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
         qm          ,psrf        ,rhoair      ,Fhac        ,&
         Fwst        ,Fach                                  ,&
         ! 城市参数
-        hroof       ,hwr         ,nurb        ,pondmx      ,&
-        fcover                                             ,&
+        hroof       ,hwr         ,nurb        ,fcover      ,&
         ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
+        wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
         htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
         twsun       ,twsha       ,tgimp       ,tgper       ,&
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
@@ -64,7 +64,9 @@ MODULE UrbanFlux
 
 !----------------------- Dummy argument --------------------------------
      INTEGER, intent(in) :: &
-        ipatch     ! patch index [-]
+        ipatch,   &! patch index [-]
+        lbr,      &! lower bound of array
+        lbi        ! lower bound of array
 
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
@@ -95,7 +97,6 @@ MODULE UrbanFlux
      REAL(r8), intent(in) :: &
         hroof,    &! average building height [m]
         hwr,      &! average building height to their distance [-]
-        pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:4)! coverage of aboveground urban components [-]
 
      ! 地面状态
@@ -108,6 +109,10 @@ MODULE UrbanFlux
         fsno_roof,&! fraction of ground covered by snow [-]
         fsno_gimp,&! fraction of ground covered by snow [-]
         fsno_gper,&! fraction of ground covered by snow [-]
+        wliq_roofsno,&! liqui water [kg/m2]
+        wliq_gimpsno,&! liqui water [kg/m2]
+        wice_roofsno,&! ice lens [kg/m2]
+        wice_gimpsno,&! ice lens [kg/m2]
         htvp_roof,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gimp,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gper,&! latent heat of vapor of water (or sublimation) [j/kg]
@@ -223,6 +228,8 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
+        fgimp,    &! weight of impervious ground
+        fgper,    &! weight of pervious ground
         hlr,      &! average building height to their length of edge [-]
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
@@ -277,6 +284,8 @@ MODULE UrbanFlux
      ! temporal
      INTEGER i
      REAL(r8) bee, tmpw1, tmpw2, fact, facq
+     REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
+     REAL(r8) fwetfac
 
 !-----------------------End Variable List-------------------------------
 
@@ -285,6 +294,8 @@ MODULE UrbanFlux
 
      fc(:)  = fcover(0:nurb)
      fg     = 1 - fcover(0)
+     fgimp  = fcover(3)/fg
+     fgper  = fcover(4)/fg
      hlr    = hwr*(1-sqrt(fcover(0)))/sqrt(fcover(0))
      canlev = (/3, 2, 2/)
      numlay = 2
@@ -316,18 +327,58 @@ MODULE UrbanFlux
      ENDDO
 
 !-----------------------------------------------------------------------
-! 计算加权平均的qg, tg
+! 计算加权系数
 !-----------------------------------------------------------------------
 
      ! 设定权重
-     fah(1) =  1; fah(2) = fg; fah(3) = fg
-     faw(1) =  1; faw(2) = fg; faw(3) = fg
+     fah(1) = fg; fah(2) = fg; fah(3) = 1.
+     faw(1) = fg; faw(2) = fg; faw(3) = 1.
      fgh(1) = fg; fgh(2) = fg; fgh(3) = fg
      fgw(1) = fg; fgw(2) = fg; fgw(3) = fg
 
-     ! 加权后的qg, tg
-     tg = ( tgimp*fcover(3) + tgper*fcover(4) ) / fgh(3)
-     qg = ( qgimp*fcover(3) + qgper*fcover(4) ) / fgw(3)
+     ! 加权后的tg
+     tg = tgimp*fgimp + tgper*fgper
+
+     ! wet fraction for roof and impervious ground
+     !-------------------------------------------
+     ! roof
+     IF (lbr < 1) THEN
+        fwet_roof_ = fsno_roof !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
+        fwet_roof_ = min(1., fwet_roof_)
+     ENDIF
+
+     ! impervious ground
+     IF (lbi < 1) THEN
+        fwet_gimp_ = fsno_gimp !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+        fwet_gimp_ = min(1., fwet_gimp_)
+     ENDIF
+
+     ! dew case
+     IF (qm > qroof) THEN
+        fwet_roof = 1.
+     ELSE
+        fwet_roof = fwet_roof_
+     ENDIF
+
+     ! dew case
+     IF (qm > qgimp) THEN
+        fwet_gimp = 1.
+     ELSE
+        fwet_gimp = fwet_gimp_
+     ENDIF
+
+     ! 加权后的qg
+     ! NOTE: IF fwet_gimp=1, same as previous
+     fwetfac = fgimp*fwet_gimp + fgper
+     qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+
+     fgw(2) = fg*fwetfac
 
 !-----------------------------------------------------------------------
 ! initial for fluxes profile
@@ -540,7 +591,13 @@ MODULE UrbanFlux
 
         DO i = 0, nurb
            cfh(i) = 1 / rb(i)
-           cfw(i) = 1 / rb(i)
+
+           IF (i == 0) THEN !roof
+              ! account for fwet
+              cfw(i) = fwet_roof / rb(i)
+           ELSE
+              cfw(i) = 1 / rb(i)
+           ENDIF
         ENDDO
 
         ! 为了简单处理，墙面没有水交换
@@ -628,6 +685,29 @@ MODULE UrbanFlux
 
         ENDIF
 
+        !------------------------------------------------
+        ! update fwet for roof and impervious ground
+        ! to check whether dew happens
+        IF (qaf(3) > qroof) THEN
+           fwet_roof = 1. !dew case
+        ELSE
+           fwet_roof = fwet_roof_
+        ENDIF
+
+        ! to check whether dew happens
+        IF (qaf(2) > qgimp) THEN
+           fwet_gimp = 1. !dew case
+        ELSE
+           fwet_gimp = fwet_gimp_
+        ENDIF
+
+        ! 加权后的qg
+        ! NOTE: IF fwet_gimp=1, same as previous
+        fwetfac = fgimp*fwet_gimp + fgper
+        qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+
+        fgw(2) = fg*fwetfac
+
 !-----------------------------------------------------------------------
 ! Update monin-obukhov length and wind speed including the stability effect
 !-----------------------------------------------------------------------
@@ -679,6 +759,7 @@ MODULE UrbanFlux
 
      ! latent heat fluxes
      fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
+     fevproof = fevproof*fwet_roof
 
      ! fact   = 1. - wta0(2)*wtg0(3)
      ! facq   = 1. - wtaq0(2)*wtgq0(3)
@@ -687,6 +768,7 @@ MODULE UrbanFlux
      cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
      ! deduce: croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
      croofl = rhoair*cfw(0)*(1.-wtlq0(0)/facq)*qsatldT(0)
+     croofl = croofl*fwet_roof
 
      croof = croofs + croofl*htvp_roof
 
@@ -707,19 +789,21 @@ MODULE UrbanFlux
 ! 计算城市地面各组分的感热、潜热
 !-----------------------------------------------------------------------
 
-     fsengimp = cpair*rhoair*cgh(2)*(tgimp-taf(2))
      fsengper = cpair*rhoair*cgh(2)*(tgper-taf(2))
+     fsengimp = cpair*rhoair*cgh(2)*(tgimp-taf(2))
 
-     fevpgimp = rhoair*cgw(2)*(qgimp-qaf(2))
      fevpgper = rhoair*cgw(2)*(qgper-qaf(2))
+     fevpgimp = rhoair*cgw(2)*(qgimp-qaf(2))
+     fevpgimp = fevpgimp*fwet_gimp
 
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature (cgrnd)
 !-----------------------------------------------------------------------
 
      cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
-     cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
      cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
+     cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+     cgimpl = cgimpl*fwet_gimp
 
      cgimp  = cgrnds + cgimpl*htvp_gimp
      cgper  = cgrnds + cgperl*htvp_gper
@@ -736,7 +820,7 @@ MODULE UrbanFlux
 
   SUBROUTINE  UrbanVegFlux ( &
         ! 模型运行信息
-        ipatch      ,deltim                                ,&
+        ipatch      ,deltim      ,lbr         ,lbi         ,&
         ! 外强迫
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
@@ -744,16 +828,17 @@ MODULE UrbanFlux
         po2m        ,pco2m       ,par         ,sabv        ,&
         rstfac      ,Fhac        ,Fwst        ,Fach        ,&
         ! 城市和植被参数
-        hroof       ,hwr         ,nurb        ,pondmx      ,&
-        fcover      ,ewall       ,egimp       ,egper       ,&
-        ev          ,htop        ,hbot        ,lai         ,&
-        sai         ,sqrtdi      ,effcon      ,vmax25      ,&
-        slti        ,hlti        ,shti        ,hhti        ,&
-        trda        ,trdm        ,trop        ,gradm       ,&
-        binter      ,extkd       ,dewmx       ,etrc        ,&
+        hroof       ,hwr         ,nurb        ,fcover      ,&
+        ewall       ,egimp       ,egper       ,ev          ,&
+        htop        ,hbot        ,lai         ,sai         ,&
+        sqrtdi      ,effcon      ,vmax25      ,slti        ,&
+        hlti        ,shti        ,hhti        ,trda        ,&
+        trdm        ,trop        ,gradm       ,binter      ,&
+        extkd       ,dewmx       ,etrc                     ,&
         ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
+        wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
         htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
         twsun       ,twsha       ,tgimp       ,tgper       ,&
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
@@ -785,7 +870,9 @@ MODULE UrbanFlux
 
 !-----------------------Arguments---------------------------------------
      INTEGER,  intent(in) :: &
-        ipatch     ! patch index
+        ipatch,   &! patch index [-]
+        lbr,      &! lower bound of array
+        lbi        ! lower bound of array
 
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
@@ -823,7 +910,6 @@ MODULE UrbanFlux
      REAL(r8), intent(in) :: &
         hroof,    &! average building height [m]
         hwr,      &! average building height to their distance [-]
-        pondmx,   &! maximum ponding of roof/impervious [mm]
         fcover(0:5)! coverage of aboveground urban components [-]
 
      REAL(r8), intent(in) :: &
@@ -866,6 +952,10 @@ MODULE UrbanFlux
         fsno_roof,&! fraction of ground covered by snow
         fsno_gimp,&! fraction of ground covered by snow
         fsno_gper,&! fraction of ground covered by snow
+        wliq_roofsno,&! liqui water [kg/m2]
+        wliq_gimpsno,&! liqui water [kg/m2]
+        wice_roofsno,&! ice lens [kg/m2]
+        wice_gimpsno,&! ice lens [kg/m2]
         htvp_roof,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gimp,&! latent heat of vapor of water (or sublimation) [j/kg]
         htvp_gper,&! latent heat of vapor of water (or sublimation) [j/kg]
@@ -1042,6 +1132,8 @@ MODULE UrbanFlux
 
      REAL(r8) ::  &
         fg,       &! ground fractional cover
+        fgimp,    &! weight of impervious ground
+        fgper,    &! weight of pervious ground
         hlr,      &! average building height to their length of edge [-]
         sqrtdragc,&! sqrt(drag coefficient)
         lm,       &! mix length within canopy
@@ -1107,6 +1199,8 @@ MODULE UrbanFlux
      INTEGER i
      REAL(r8) bee, cf, tmpw1, tmpw2, fact, facq
      REAL(r8) B_5, B1_5, dBdT_5, X(5), dX(5)
+     REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
+     REAL(r8) fwetfac
 
 !-----------------------End Variable List-------------------------------
 
@@ -1177,15 +1271,55 @@ MODULE UrbanFlux
 ! 计算加权平均的qg, tg
 !-----------------------------------------------------------------------
 
-     !TODO: no wet
-     fah(1) =  1; fah(2) = fg; fah(3) = fg
-     faw(1) =  1; faw(2) = fg; faw(3) = fg
+     ! 设定权重
+     fah(1) = fg; fah(2) = fg; fah(3) = 1.
+     faw(1) = fg; faw(2) = fg; faw(3) = 1.
      fgh(1) = fg; fgh(2) = fg; fgh(3) = fg
      fgw(1) = fg; fgw(2) = fg; fgw(3) = fg
 
-     ! 加权后的qg, tg
-     tg = ( tgimp*fcover(3) + tgper*fcover(4) ) / fgh(3)
-     qg = ( qgimp*fcover(3) + qgper*fcover(4) ) / fgw(3)
+     ! 加权后的tg
+     tg = tgimp*fgimp + tgper*fgper
+
+     ! wet fraction for roof and impervious ground
+     !-------------------------------------------
+     ! roof
+     IF (lbr < 1) THEN
+        fwet_roof_ = fsno_roof !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
+        fwet_roof_ = min(1., fwet_roof_)
+     ENDIF
+
+     ! impervious ground
+     IF (lbi < 1) THEN
+        fwet_gimp_ = fsno_gimp !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+        fwet_gimp_ = min(1., fwet_gimp_)
+     ENDIF
+
+     ! dew case
+     IF (qm > qroof) THEN
+        fwet_roof = 1.
+     ELSE
+        fwet_roof = fwet_roof_
+     ENDIF
+
+     ! dew case
+     IF (qm > qgimp) THEN
+        fwet_gimp = 1.
+     ELSE
+        fwet_gimp = fwet_gimp_
+     ENDIF
+
+     ! 加权后的qg
+     ! NOTE: IF fwet_gimp=1, same as previous
+     fwetfac = fgimp*fwet_gimp + fgper
+     qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+
+     fgw(2) = fg*fwetfac
 
 !-----------------------------------------------------------------------
 ! initial for fluxes profile
@@ -1513,7 +1647,12 @@ MODULE UrbanFlux
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
            ELSE
               cfh(i) = 1 / rb(i)
-              cfw(i) = 1 / rb(i)
+              IF (i == 0) THEN !roof
+                 ! account for fwet
+                 cfw(i) = fwet_roof / rb(i)
+              ELSE
+                 cfw(i) = 1 / rb(i)
+              ENDIF
            ENDIF
         ENDDO
 
@@ -1827,6 +1966,27 @@ MODULE UrbanFlux
 
         ENDIF
 
+        !------------------------------------------------
+        ! account for fwet for roof and impervious ground
+        IF (qaf(3) > qroof) THEN
+           fwet_roof = 1. !dew case
+        ELSE
+           fwet_roof = fwet_roof_
+        ENDIF
+
+        IF (qaf(botlay) > qgimp) THEN
+           fwet_gimp = 1. !dew case
+        ELSE
+           fwet_gimp = fwet_gimp_
+        ENDIF
+
+        ! 加权后的qg
+        ! NOTE: IF fwet_gimp=1, same as previous
+        fwetfac = fgimp*fwet_gimp + fgper
+        qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+
+        fgw(2) = fg*fwetfac
+
 ! update co2 partial pressure within canopy air
         ! 05/02/2016: may have some problem with gdh2o, however,
         ! this variable seems never used here. Different height
@@ -2009,10 +2169,12 @@ MODULE UrbanFlux
 
      ! latent heat fluxes
      fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
+     fevproof = fevproof*fwet_roof
 
      croofs = rhoair*cpair*cfh(0)*(1.-wtg0(3)*wta0(2)*wtl0(0)/fact-wtl0(0))
      cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
      croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
+     croofl = croofl*fwet_roof
 
      croof = croofs + croofl*htvp_roof
 
@@ -2026,18 +2188,22 @@ MODULE UrbanFlux
      fevpgimp = rhoair*cgw(botlay)*(qgimp-qaf(botlay))
      fevpgper = rhoair*cgw(botlay)*(qgper-qaf(botlay))
 
+     fevpgimp = fevpgimp*fwet_gimp
+
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature
 !-----------------------------------------------------------------------
 
      IF (botlay == 2) THEN
         cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
-        cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
         cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
+        cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+        cgimpl = cgimpl*fwet_gimp
      ELSE !botlay == 1
         cgrnds = cpair*rhoair*cgh(1)*(1.-wta0(1)*wtg0(2)*wtg0(1)/fact-wtg0(1))
-        cgimpl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
         cgperl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgperdT
+        cgimpl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
+        cgimpl = cgimpl*fwet_gimp
      ENDIF
 
      cgimp = cgrnds + cgimpl*htvp_gimp

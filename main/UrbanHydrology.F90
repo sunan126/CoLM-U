@@ -195,9 +195,10 @@
       ENDIF
 
       ! only consider ponding and surface runoff
-      xs1 = wliq_roofsno(1) - pondmx
+      ! NOTE: set max ponding depth = 1mm (liq+ice)
+      xs1 = wliq_roofsno(1) - 1.
       IF (xs1 > 0.) THEN
-         wliq_roofsno(1) = pondmx
+         wliq_roofsno(1) = 1.
       ELSE
          xs1 = 0.
       ENDIF
@@ -225,9 +226,10 @@
       ENDIF
 
       ! only consider ponding and surface runoff
-      xs1 = wliq_gimpsno(1) - pondmx
+      ! NOTE: set max ponding depth = 1mm
+      xs1 = wliq_gimpsno(1) - 1.
       IF (xs1 > 0.) THEN
-         wliq_gimpsno(1) = pondmx
+         wliq_gimpsno(1) = 1.
       ELSE
          xs1 = 0.
       ENDIF

@@ -129,7 +129,7 @@
         hroof      ,&! average building height [m]
         hwr        ,&! average building height to their distance [-]
         fgper      ,&! impervious road fractional cover [-]
-        pondmx     ,&! maximum ponding of roof/impervious [mm]
+        pondmx     ,&! maximum ponding for soil [mm]
         eroof      ,&! emissivity of roof
         ewall      ,&! emissivity of walls
         egimp      ,&! emissivity of impervious road
@@ -656,7 +656,8 @@
       ! bare ground case
       CALL UrbanGroundFlux (forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_us, &
                             forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
-                            ur,thm,th,thv,zlnd,zsno,fsno_gper, &
+                            ur,thm,th,thv,zlnd,zsno,fsno_gimp, &
+                            lbi,wliq_gimpsno(1),wice_gimpsno(1), &
                             fcover,tgimp,tgper,qgimp,qgper,tref,qref, &
                             z0m_g,z0h_g,zol_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
 
@@ -678,7 +679,7 @@
          CALL UrbanVegFlux ( &
 
             ! 模型运行信息
-            ipatch      ,deltim                                ,&
+            ipatch      ,deltim      ,lbr         ,lbi         ,&
             ! 外强迫
             forc_hgt_u  ,forc_hgt_t  ,forc_hgt_q  ,forc_us     ,&
             forc_vs     ,thm         ,th          ,thv         ,&
@@ -686,16 +687,17 @@
             forc_po2m   ,forc_pco2m  ,par         ,sabv        ,&
             rstfac      ,Fhac        ,Fwst        ,Fach        ,&
             ! 城市和植被参数
-            hroof       ,hwr         ,nurb        ,pondmx      ,&
-            fcover      ,ewall       ,egimp       ,egper       ,&
-            ev          ,htop        ,hbot        ,lai         ,&
-            sai         ,sqrtdi      ,effcon      ,vmax25      ,&
-            slti        ,hlti        ,shti        ,hhti        ,&
-            trda        ,trdm        ,trop        ,gradm       ,&
-            binter      ,extkd       ,dewmx       ,etrc        ,&
+            hroof       ,hwr         ,nurb        ,fcover      ,&
+            ewall       ,egimp       ,egper       ,ev          ,&
+            htop        ,hbot        ,lai         ,sai         ,&
+            sqrtdi      ,effcon      ,vmax25      ,slti        ,&
+            hlti        ,shti        ,hhti        ,trda        ,&
+            trdm        ,trop        ,gradm       ,binter      ,&
+            extkd       ,dewmx       ,etrc                     ,&
             ! 地面状态
             z0h_g       ,obu_g       ,ustar_g     ,zlnd        ,&
             zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
+            wliq_roofsno(1),wliq_gimpsno(1),wice_roofsno(1),wice_gimpsno(1),&
             htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
             twsun       ,twsha       ,tgimp       ,tgper       ,&
             qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
@@ -723,18 +725,18 @@
          ! CALL urban flux
          CALL  UrbanOnlyFlux ( &
             ! 模型运行信息
-            ipatch      ,deltim                                ,&
+            ipatch      ,deltim      ,lbr         ,lbi         ,&
             ! 外强迫
             forc_hgt_u  ,forc_hgt_t  ,forc_hgt_q  ,forc_us     ,&
             forc_vs     ,thm         ,th          ,thv         ,&
             forc_q      ,forc_psrf   ,forc_rhoair ,Fhac        ,&
             Fwst        ,Fach                                  ,&
             ! 地面参数
-            hroof       ,hwr         ,nurb        ,pondmx      ,&
-            fcover                                             ,&
+            hroof       ,hwr         ,nurb        ,fcover      ,&
             ! 地面状态变量
             z0h_g       ,obu_g       ,ustar_g     ,zlnd        ,&
             zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
+            wliq_roofsno(1),wliq_gimpsno(1),wice_roofsno(1),wice_gimpsno(1),&
             htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
             twsun       ,twsha       ,tgimp       ,tgper       ,&
             qroof       ,qgimp       ,qgper       ,dqroofdT    ,&

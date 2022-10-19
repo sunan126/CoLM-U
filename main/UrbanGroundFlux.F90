@@ -1,6 +1,7 @@
 
  SUBROUTINE UrbanGroundFlux (hu, ht, hq, us, vs, tm, qm, rhoair, psrf, &
-                             ur, thm, th, thv, zlnd, zsno, fsno, &
+                             ur, thm, th, thv, zlnd, zsno, fsno_gimp, &
+                             lbi, wliq_gimpsno,wice_gimpsno, &
                              fcover, tgimp, tgper, qgimp, qgper, tref, qref, &
                              z0m, z0hg, zol, ustar, qstar, tstar, fm, fh, fq)
 
@@ -35,8 +36,12 @@
 
         zlnd,     &! roughness length for soil [m]
         zsno,     &! roughness length for snow [m]
-        fsno,     &! fraction of ground covered by snow
+        fsno_gimp,&! fraction of impervious ground covered by snow
+        lbi,      &! lower bound of array
         fcover(0:5),&! coverage of aboveground urban components [-]
+
+        wliq_gimpsno,&! liqui water [kg/m2]
+        wice_gimpsno,&! ice lens [kg/m2]
 
         tgimp,    &! ground impervious temperature [K]
         tgper,    &! ground pervious temperature [K]
@@ -69,8 +74,8 @@
         tg,       &! ground surface temperature [K]
         qg,       &! ground specific humidity [kg/kg]
         fg,       &! ground fractional cover [-]
-        fgh,      &! weight for thermal resistance to lower layer
-        fgw,      &! weight for moisture resistance to lower layer
+        fgimp,    &! weight of impervious ground
+        fgper,    &! weight of pervious ground
         dth,      &! diff of virtual temp. between ref. height and surface
         dqh,      &! diff of humidity between ref. height and surface
         dthv,     &! diff of vir. poten. temp. between ref. height and surface
@@ -89,11 +94,13 @@
         z0mg,     &! roughness length over ground, momentum [m]
         z0qg       ! roughness length over ground, latent heat [m]
 
+  REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
+
 !----------------------- Dummy argument --------------------------------
 ! initial roughness length
       !TODO: change to original
       !z0mg = (1.-fsno)*zlnd + fsno*zsno
-      IF (fsno > 0) THEN
+      IF (fsno_gimp > 0) THEN
          z0mg = zsno
       ELSE
          z0mg = zlnd
@@ -106,13 +113,25 @@
       zii  = 1000.    !m  (pbl height)
       z0m  = z0mg
 
-      fg  = 1 - fcover(0)
-      fgh = fg
-      fgw = fg
+      fg   = 1 - fcover(0)
+      fgimp = fcover(3)/fg
+      fgper = fcover(4)/fg
 
-      ! 加权后的qg, tg
-      tg = (tgimp*fcover(3) + tgper*fcover(4)) / fgh
-      qg = (qgimp*fcover(3) + qgper*fcover(4)) / fgw
+      ! 加权后的tg
+      tg = tgimp*fgimp + tgper*fgper
+
+      ! wet fraction impervious ground
+      !-------------------------------------------
+      IF (lbi < 1) THEN
+         fwet_gimp = fsno_gimp !for snow layer exist
+      ELSE
+         ! surface wet fraction. assuming max ponding = 1 kg/m2
+         fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+         fwet_gimp = min(1., fwet_gimp)
+      ENDIF
+
+      ! 加权后的qg
+      qg = qgimp*fgimp*fwet_gimp + qgper*fgper
 
 !-----------------------------------------------------------------------
 !     Compute sensible and latent fluxes and their derivatives with respect

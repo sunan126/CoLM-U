@@ -13,7 +13,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            tk_roof      ,tk_wall      ,tk_gimp      ,z_roof       ,&
            z_wall       ,dz_roof      ,dz_wall                    ,&
            lakedepth    ,dz_lake                                  ,&
-         ! LUCY输入变量  
+         ! LUCY输入变量
            fix_holiday  ,week_holiday ,hum_prof     ,popcell      ,&
            vehicle      ,weh_prof     ,wdh_prof     ,Fahe         ,&
          ! soil ground and wall information
@@ -102,7 +102,7 @@ SUBROUTINE UrbanCLMMAIN ( &
   USE LAKE
   USE timemanager
 #ifdef USE_LUCY
-  USE UrbanAnthropogenic 
+  USE UrbanAnthropogenic
 #endif
 
   IMPLICIT NONE
@@ -690,6 +690,7 @@ SUBROUTINE UrbanCLMMAIN ( &
 
       ! for urban hydrology input, only for pervious ground
       fracveg = fveg/((1-froof)*fgper)
+      fracveg = max(fracveg, 1.)
       pgper_rain = pgper_rain*fracveg + pg_rain*(1-fracveg)
       pgper_snow = pgper_snow*fracveg + pg_snow*(1-fracveg)
 

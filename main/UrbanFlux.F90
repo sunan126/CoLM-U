@@ -331,10 +331,10 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! 设定权重
-     fah(1) = fg; fah(2) = fg; fah(3) = 1.
-     faw(1) = fg; faw(2) = fg; faw(3) = 1.
-     fgh(1) = fg; fgh(2) = fg; fgh(3) = fg
-     fgw(1) = fg; fgw(2) = fg; fgw(3) = fg
+     fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
+     faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
+     fgh(1) = 1.; fgh(2) = fg; fgh(3) = 1.
+     fgw(1) = 1.; fgw(2) = fg; fgw(3) = 1.
 
      ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
@@ -1274,10 +1274,10 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! 设定权重
-     fah(1) = fg; fah(2) = fg; fah(3) = 1.
-     faw(1) = fg; faw(2) = fg; faw(3) = 1.
-     fgh(1) = fg; fgh(2) = fg; fgh(3) = fg
-     fgw(1) = fg; fgw(2) = fg; fgw(3) = fg
+     fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
+     faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
+     fgh(1) = 1.; fgh(2) = 1.; fgh(3) = 1.
+     fgw(1) = 1.; fgw(2) = 1.; fgw(3) = 1.
 
      ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
@@ -1367,8 +1367,10 @@ MODULE UrbanFlux
      ! 层次设定
      !IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
+        fgh(2) = fg; fgw(2) = fg;
      !ELSE
      !   numlay = 3; botlay = 1
+     !   fgh(1) = fg; fgw(1) = fg;
      !ENDIF
 
 !-----------------------------------------------------------------------

@@ -1200,7 +1200,7 @@ MODULE UrbanFlux
      REAL(r8) bee, cf, tmpw1, tmpw2, fact, facq
      REAL(r8) B_5, B1_5, dBdT_5, X(5), dX(5)
      REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
-     REAL(r8) fwetfac
+     REAL(r8) fwetfac, lambda
 
 !-----------------------End Variable List-------------------------------
 
@@ -1346,11 +1346,16 @@ MODULE UrbanFlux
      CALL cal_z0_displa(lsai, htop, 1., z0mv, displav)
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
+     faiv = fc(3)*(1. - exp(-0.5*lsai))
+
      ! Macdonald et al., 1998, Eq. (23), A=4.43
-     displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     lambda = fcover(0) + faiv*htop/hroof
+     !displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     displau = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
-        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
+        !exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
+        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
      ! 比较植被、裸地和建筑物的z0m和displa大小，取大者
      ! maximum assumption
@@ -1378,7 +1383,6 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! Raupach, 1992
-     faiv = fc(3)*(1. - exp(-0.5*lsai))
      sqrtdragc = min( (0.003+0.3*faiv)**0.5, 0.3 )
 
      ! Kondo, 1971
@@ -1432,8 +1436,8 @@ MODULE UrbanFlux
      ! have been set before
      z0hu = z0m; z0qu = z0m
      ur = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
-     dth = thm - taf(3)
-     dqh =  qm - qaf(3)
+     dth = thm - taf(2)
+     dqh =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
      ! 确保观测高度 >= hroof+10.
@@ -1480,8 +1484,8 @@ MODULE UrbanFlux
         ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for urban, from roof height to reference height
-        rah = 1./(vonkar/(fh-fht)*ustar)
-        raw = 1./(vonkar/(fq-fqt)*ustar)
+        rah = 1./(vonkar/(fh)*ustar)
+        raw = 1./(vonkar/(fq)*ustar)
 
 ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -1574,6 +1578,8 @@ MODULE UrbanFlux
            ueff_veg    = 2/PI*ueff_veg
            rd(:)       = PI/2*rd(:)
         ENDIF
+
+        ueff_lay(3) = ueff_lay(2)
 
         !print *, "ueff_lay :", ueff_lay
         !print *, "ueff_lay_:", ueff_lay_
@@ -1674,13 +1680,21 @@ MODULE UrbanFlux
            IF (i == 3) THEN
               cah(i) = 1. / rah
               caw(i) = 1. / raw
+           ELSE IF (i == 2) THEN
+              cah(i) = 1e6
+              caw(i) = 1e6
            ELSE
               cah(i) = 1. / rd(i+1)
               caw(i) = 1. / rd(i+1)
            ENDIF
 
-           cgh(i) = 1. / rd(i)
-           cgw(i) = 1. / rd(i)
+           IF (i == 3) THEN
+              cgh(i) = 1e6
+              cgw(i) = 1e6
+           ELSE
+              cgh(i) = 1. / rd(i)
+              cgw(i) = 1. / rd(i)
+           ENDIF
         ENDDO
 
         ! claculate wtshi, wtsqi
@@ -2008,11 +2022,11 @@ MODULE UrbanFlux
 
         ! 这里使用的是最高层的taf和qaf
         ! 如何进行限制?是不是梯度太大的问题?运行单点模型测试
-        dth = thm - taf(3)
-        dqh =  qm - qaf(3)
+        dth = thm - taf(2)
+        dqh =  qm - qaf(2)
 
-        tstar = vonkar/(fh-fht)*dth
-        qstar = vonkar/(fq-fqt)*dqh
+        tstar = vonkar/(fh)*dth
+        qstar = vonkar/(fq)*dqh
 
         thvstar = tstar + 0.61*th*qstar
         zeta = zldis*vonkar*grav*thvstar / (ustar**2*thv)

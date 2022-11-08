@@ -500,8 +500,8 @@ MODULE UrbanFlux
         ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for Urban: from roof height to reference height
-        rah = 1./(vonkar/(fh-fht)*ustar)
-        raw = 1./(vonkar/(fq-fqt)*ustar)
+        rah = 1./(vonkar/(fh)*ustar)
+        raw = 1./(vonkar/(fq)*ustar)
 
         ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -612,8 +612,8 @@ MODULE UrbanFlux
         ! 计算每层的阻抗
         DO i = 3, 2, -1
            IF (i == 3) THEN
-              cah(i) = 1. / rah
-              caw(i) = 1. / raw
+              cah(i) = 1. / (rah-rd(i))
+              caw(i) = 1. / (raw-rd(i))
            ELSE
               cah(i) = 1. / rd(i+1)
               caw(i) = 1. / rd(i+1)
@@ -714,11 +714,11 @@ MODULE UrbanFlux
 
         ! 这里使用的是最高层的taf和qaf
         !TODO: 是否合理，运行单点模型测试
-        dth = thm - taf(3)
-        dqh =  qm - qaf(3)
+        dth = thm - taf(2)
+        dqh =  qm - qaf(2)
 
-        tstar = vonkar/(fh-fht)*dth
-        qstar = vonkar/(fq-fqt)*dqh
+        tstar = vonkar/(fh)*dth
+        qstar = vonkar/(fq)*dqh
 
         thvstar = tstar + 0.61*th*qstar
         zeta = zldis*vonkar*grav*thvstar / (ustar**2*thv)
@@ -1243,9 +1243,10 @@ MODULE UrbanFlux
      ! index 0:roof, 1:sunlit wall, 2:shaded wall, 3: vegetation
      tu(0) = troof; tu(1) = twsun; tu(2) = twsha; tu(3) = tl
 
-     fc(:)  = fcover(0:nurb)
-     fc(3)  = fcover(5)
      fg     = 1 - fcover(0)
+     fc(:)  = fcover(0:nurb)
+     !fc(0)  = 0.
+     fc(3)  = fcover(5)
      fgimp  = fcover(3)/fg
      fgper  = fcover(4)/fg
      hlr    = hwr*(1-sqrt(fcover(0)))/sqrt(fcover(0))
@@ -1599,7 +1600,9 @@ MODULE UrbanFlux
               cycle
            ENDIF
            clev = canlev(i)
-           rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
+           !rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
+           ! Cole & Sturrock (1977) Building and Environment, 12, 207–214.
+           rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
         ENDDO
 
 !-----------------------------------------------------------------------
@@ -1609,7 +1612,7 @@ MODULE UrbanFlux
         IF (lai > 0.) THEN
 
            ! only for vegetation
-           rb(3) = rb(3) / lai
+           !rb(3) = rb(3) / lai
 
            clev = canlev(3)
            eah = qaf(clev) * psrf / ( 0.622 + 0.378 * qaf(clev) )    !pa
@@ -1621,7 +1624,7 @@ MODULE UrbanFlux
               shti    ,hhti    ,trda   ,trdm   ,trop   ,&
               gradm   ,binter  ,thm    ,psrf   ,po2m   ,&
               pco2m   ,pco2a   ,eah    ,ei(3)  ,tu(3)  ,&
-              par     ,rb(3)   ,raw    ,rstfac ,cint(:),&
+              par     ,rb(3)/lai,raw   ,rstfac ,cint(:),&
               assim   ,respc   ,rs     )
         ELSE
            rs = 2.e4; assim = 0.; respc = 0.
@@ -1678,23 +1681,23 @@ MODULE UrbanFlux
         ! 计算每层的阻抗
         DO i = 3, botlay, -1
            IF (i == 3) THEN
-              cah(i) = 1. / rah
-              caw(i) = 1. / raw
-           ELSE IF (i == 2) THEN
-              cah(i) = 1e6
-              caw(i) = 1e6
+              cah(i) = 1. / (rah-rd(i))
+              caw(i) = 1. / (raw-rd(i))
+           !ELSE IF (i == 2) THEN
+           !   cah(i) = 1e6
+           !   caw(i) = 1e6
            ELSE
               cah(i) = 1. / rd(i+1)
               caw(i) = 1. / rd(i+1)
            ENDIF
 
-           IF (i == 3) THEN
-              cgh(i) = 1e6
-              cgw(i) = 1e6
-           ELSE
+           !IF (i == 3) THEN
+           !   cgh(i) = 1e6
+           !   cgw(i) = 1e6
+           !ELSE
               cgh(i) = 1. / rd(i)
               cgw(i) = 1. / rd(i)
-           ENDIF
+           !ENDIF
         ENDDO
 
         ! claculate wtshi, wtsqi
@@ -2022,6 +2025,7 @@ MODULE UrbanFlux
 
         ! 这里使用的是最高层的taf和qaf
         ! 如何进行限制?是不是梯度太大的问题?运行单点模型测试
+        !TODO:
         dth = thm - taf(2)
         dqh =  qm - qaf(2)
 
@@ -2231,8 +2235,8 @@ MODULE UrbanFlux
 ! 2 m height air temperature above apparent sink height
 !-----------------------------------------------------------------------
 
-     !tref = thm + vonkar/(fh-fht)*dth * (fh2m/vonkar - fh/vonkar)
-     !qref =  qm + vonkar/(fq-fqt)*dqh * (fq2m/vonkar - fq/vonkar)
+     !tref = thm + vonkar/(fh)*dth * (fh2m/vonkar - fh/vonkar)
+     !qref =  qm + vonkar/(fq)*dqh * (fq2m/vonkar - fq/vonkar)
 
   END SUBROUTINE UrbanVegFlux
 !----------------------------------------------------------------------

@@ -96,8 +96,9 @@ CONTAINS
 #ifdef USE_POINT_DATA
       if (fid(1) > 0) then
          ! close(fid(1))
-         if (fprefix=='NC') THEN
+         if (fprefix=='NC') then
             call sanity( nf90_close(fid(1)) )
+            fid(1) = -1
          else
             fid(1) = -1
          endif

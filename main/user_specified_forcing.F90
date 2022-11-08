@@ -585,10 +585,10 @@ CONTAINS
  ! not applied for POINT
    integer, parameter :: nlats   = 2              ! number of latitudes
    integer, parameter :: nlons   = 2              ! number of longitudes
-   integer, parameter :: startyr = 1993           ! start year of forcing data
-   integer, parameter :: startsec= 34200 
-   integer, parameter :: startmo = 1              ! start month of forcing data
-   integer, parameter :: startday= 1
+   integer, parameter :: startyr = 1993!2009!1993!1991!1994!1993           ! start year of forcing data
+   integer, parameter :: startsec= 34200!5400!34200!64800!34200 
+   integer, parameter :: startmo = 1!12!1!12!1              ! start month of forcing data
+   integer, parameter :: startday= 1!31!1!31!1
    integer, parameter :: endyr   = 2020           ! end year of forcing data
    integer, parameter :: endmo   = 12             ! end month of forcing data
    integer, parameter :: dtime(NVAR)  = 3600      ! temporal resolution
@@ -611,7 +611,7 @@ CONTAINS
    character(len=256), parameter :: groupby = 'NULL'
 
  ! prefix of forcing data file
-   character(len=256), parameter :: fprefix(NVAR) = 'VAL.DAT.CTRL.INT'
+   character(len=256), parameter :: fprefix = 'INT'
 
  ! not applied for POINT
 !#ifdef USE_NCARATM_DATA
@@ -644,7 +644,7 @@ CONTAINS
       integer, intent(in) :: var_i
       character(len=256)  :: getfilename
 
-      getfilename = '/'//trim(fprefix(1))
+      getfilename = '/'//trim(fprefix)
       return
    END FUNCTION getfilename
 

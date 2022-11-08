@@ -1,9 +1,9 @@
 
- SUBROUTINE UrbanGroundFlux (hu, ht, hq, us, vs, tm, qm, rhoair, psrf, &
-                             ur, thm, th, thv, zlnd, zsno, fsno_gimp, &
-                             lbi, wliq_gimpsno,wice_gimpsno, &
-                             fcover, tgimp, tgper, qgimp, qgper, tref, qref, &
-                             z0m, z0hg, zol, ustar, qstar, tstar, fm, fh, fq)
+ SUBROUTINE UrbanRoofFlux (hu, ht, hq, us, vs, tm, qm, rhoair, psrf, &
+                           ur, thm, th, thv, zsno, fsno_roof, hroof, htvp_roof, &
+                           lbr, wliq_roofsno, wice_roofsno, troof, qroof, dqroofdT, &
+                           croofs, croofl, croof, fsenroof, fevproof, &
+                           z0m, z0hg, zol, ustar, qstar, tstar, fm, fh, fq)
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -17,6 +17,9 @@
   IMPLICIT NONE
 
 !----------------------- Dummy argument --------------------------------
+  INTEGER, intent(in) :: &
+        lbr        ! lower bound of array
+
   REAL(r8), intent(in) :: &
         ! atmospherical variables and observational height
         hu,       &! observational height of wind [m]
@@ -34,23 +37,26 @@
         th,       &! potential temperature (kelvin)
         thv,      &! virtual potential temperature (kelvin)
 
-        zlnd,     &! roughness length for soil [m]
         zsno,     &! roughness length for snow [m]
-        fsno_gimp,&! fraction of impervious ground covered by snow
-        lbi,      &! lower bound of array
-        fcover(0:5),&! coverage of aboveground urban components [-]
+        fsno_roof,&! fraction of impervious ground covered by snow
+        hroof,    &! average building height [m]
 
-        wliq_gimpsno,&! liqui water [kg/m2]
-        wice_gimpsno,&! ice lens [kg/m2]
+        wliq_roofsno,&! liqui water [kg/m2]
+        wice_roofsno,&! ice lens [kg/m2]
 
-        tgimp,    &! ground impervious temperature [K]
-        tgper,    &! ground pervious temperature [K]
-        qgimp,    &! ground impervious specific humidity [kg/kg]
-        qgper      ! ground pervious specific humidity [kg/kg]
+        troof,    &! ground impervious temperature [K]
+        qroof,    &! ground impervious specific humidity [kg/kg]
+        dqroofdT, &! d(qroof)/dT
+        htvp_roof  ! latent heat of vapor of water (or sublimation) [j/kg]
 
   REAL(r8), intent(out) :: &
-        tref,     &! 2 m height air temperature [kelvin]
-        qref       ! 2 m height air humidity
+        croofs,   &! deriv of roof sensible heat flux wrt soil temp [w/m**2/k]
+        croofl,   &! deriv of roof latent heat flux wrt soil temp [w/m**2/k]
+        croof      ! deriv of roof total heat flux wrt soil temp [w/m**2/k]
+
+  REAL(r8), intent(out) :: &
+        fsenroof, &! sensible heat flux from roof [W/m2]
+        fevproof   ! evaperation heat flux from roof [W/m2]
 
   REAL(r8), intent(out) :: &
         z0m,      &! effective roughness [m]
@@ -74,13 +80,17 @@
         tg,       &! ground surface temperature [K]
         qg,       &! ground specific humidity [kg/kg]
         fg,       &! ground fractional cover [-]
-        fgimp,    &! weight of impervious ground
-        fgper,    &! weight of pervious ground
+        froof,    &! weight of impervious ground
         dth,      &! diff of virtual temp. between ref. height and surface
         dqh,      &! diff of humidity between ref. height and surface
         dthv,     &! diff of vir. poten. temp. between ref. height and surface
         obu,      &! monin-obukhov length (m)
         obuold,   &! monin-obukhov length from previous iteration
+        ram,      &! aerodynamical resistance [s/m]
+        rah,      &! thermal resistance [s/m]
+        raw,      &! moisture resistance [s/m]
+        raih,     &! temporary variable [kg/m2/s]
+        raiw,     &! temporary variable [kg/m2/s]
         fh2m,     &! relation for temperature at 2m
         fq2m,     &! relation for specific humidity at 2m
         fm10m,    &! integral of profile function for momentum at 10m
@@ -94,16 +104,16 @@
         z0mg,     &! roughness length over ground, momentum [m]
         z0qg       ! roughness length over ground, latent heat [m]
 
-  REAL(r8) fwet_gimp, fwet_gimp_
+  REAL(r8) fwet_roof
 
 !----------------------- Dummy argument --------------------------------
 ! initial roughness length
       !TODO: change to original
       !z0mg = (1.-fsno)*zlnd + fsno*zsno
-      IF (fsno_gimp > 0) THEN
+      IF (fsno_roof > 0) THEN
          z0mg = zsno
       ELSE
-         z0mg = zlnd
+         z0mg = 0.01
       ENDIF
       z0hg = z0mg
       z0qg = z0mg
@@ -113,25 +123,21 @@
       zii  = 1000.    !m  (pbl height)
       z0m  = z0mg
 
-      fg   = 1 - fcover(0)
-      fgimp = fcover(3)/fg
-      fgper = fcover(4)/fg
-
-      ! 加权后的tg
-      tg = tgimp*fgimp + tgper*fgper
-
-      ! wet fraction impervious ground
+      ! wet fraction for roof and impervious ground
       !-------------------------------------------
-      IF (lbi < 1) THEN
-         fwet_gimp = fsno_gimp !for snow layer exist
+      ! roof
+      IF (lbr < 1) THEN
+         fwet_roof = fsno_roof !for snow layer exist
       ELSE
          ! surface wet fraction. assuming max ponding = 1 kg/m2
-         fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
-         fwet_gimp = min(1., fwet_gimp)
+         fwet_roof = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
+         fwet_roof = min(1., fwet_roof)
       ENDIF
 
-      ! 加权后的qg
-      qg = qgimp*fgimp*fwet_gimp + qgper*fgper
+      ! dew case
+      IF (qm > qroof) THEN
+         fwet_roof = 1.
+      ENDIF
 
 !-----------------------------------------------------------------------
 !     Compute sensible and latent fluxes and their derivatives with respect
@@ -141,10 +147,10 @@
       nmozsgn = 0
       obuold  = 0.
 
-      dth   = thm-tg
-      dqh   = qm-qg
+      dth   = thm-troof
+      dqh   = qm-qroof
       dthv  = dth*(1.+0.61*qm)+0.61*th*dqh
-      zldis = hu-0.
+      zldis = hu-hroof-0.
 
       CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mg,um,obu)
 
@@ -154,7 +160,7 @@
       !----------------------------------------------------------------
       ITERATION : DO iter = 1, niters         !begin stability iteration
       !----------------------------------------------------------------
-         displax = 0.
+         displax = hroof
          CALL moninobuk(hu,ht,hq,displax,z0mg,z0hg,z0qg,obu,um,&
                         ustar,fh2m,fq2m,fm10m,fm,fh,fq)
 
@@ -190,11 +196,24 @@
       ENDDO ITERATION                         !end stability iteration
       !----------------------------------------------------------------
 
+! Get derivative of fluxes with repect to ground temperature
+      ram    = 1./(ustar*ustar/um)
+      rah    = 1./(vonkar/fh*ustar)
+      raw    = 1./(vonkar/fq*ustar)
+
+      raih   = rhoair*cpair/rah
+      raiw   = rhoair/raw
+      croofs = raih
+      croofl = raiw*dqroofdT*fwet_roof
+      croof  = croofs + htvp_roof*croofl
+
       zol = zeta
-      !rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
-! 2 m height air temperature
-      tref   = thm + vonkar/fh*dth * (fh2m/vonkar - fh/vonkar)
-      qref   =  qm + vonkar/fq*dqh * (fq2m/vonkar - fq/vonkar)
+! surface fluxes of momentum, sensible and latent
+! using ground temperatures from previous time step
+      !taux   = -rhoair*us/ram
+      !tauy   = -rhoair*vs/ram
+      fsenroof  = -raih*dth
+      fevproof  = -raiw*dqh*fwet_roof
 
- END SUBROUTINE UrbanGroundFlux
+ END SUBROUTINE UrbanRoofFlux

@@ -648,6 +648,14 @@
       ! roof的净辐射
       lroof = eroof*forc_frl - eroof*stefnc*troof**4
 
+      !TEST: run roof separately
+      !CALL UrbanRoofFlux (forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_us, &
+      !                    forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, &
+      !                    ur,thm,th,thv,zsno,fsno_roof,hroof,htvp_roof, &
+      !                    lbr,wliq_roofsno(1),wice_roofsno(1),troof,qroof,dqroofdT, &
+      !                    croofs,croofl,croof,fsenroof,fevproof, &
+      !                    z0m_g,z0h_g,zol_g,ustar_g,qstar_g,tstar_g,fm_g,fh_g,fq_g)
+
 !=======================================================================
 ! [4] Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.

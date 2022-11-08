@@ -123,7 +123,7 @@
       ENDIF
 
     ! thermal conductivity at the layer interface
-      thk(1) = tk_roof(1)
+      thk(1:) = tk_roof(1:)
       IF (lb <= 0) THEN
          DO j = lb, 0
          tk(j) = thk(j)*thk(j+1)*(z_roofsno(j+1)-z_roofsno(j)) &
@@ -131,7 +131,11 @@
          ENDDO
       ENDIF
 
-      tk(1:) = tk_roof(1:)
+      DO j = 1, nl_roof-1
+         tk(j) = thk(j)*thk(j+1)*(z_roofsno(j+1)-z_roofsno(j)) &
+               /(thk(j)*(z_roofsno(j+1)-zi_roofsno(j))+thk(j+1)*(zi_roofsno(j)-z_roofsno(j)))
+      ENDDO
+      tk(nl_roof) = thk(nl_roof)
 
 !???
 !     ! update thermal conductivity of the ponding water

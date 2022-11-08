@@ -81,7 +81,14 @@
       wliq_wall(1:) = 0.0  !liquid water [kg/m2]
 
       cv(1:) = cv_wall(1:)*dz_wall(1:)
-      tk(1:) = tk_wall(1:)
+
+      thk(1:) = tk_wall(1:)
+
+      DO j = 1, nl_wall-1
+         tk(j) = thk(j)*thk(j+1)*(z_wall(j+1)-z_wall(j)) &
+               /(thk(j)*(z_wall(j+1)-zi_wall(j))+thk(j+1)*(zi_wall(j)-z_wall(j)))
+      ENDDO
+      tk(nl_wall) = thk(nl_wall)
 
 ! net ground heat flux into the wall surface and its temperature derivative
       hs = sabwall + lwall - fsenwall

@@ -36,7 +36,6 @@
   IMPLICIT NONE
 
   INTEGER, intent(in) :: lb        !lower bound of array
-  !INTEGER, intent(in) :: nl_soil   !upper bound of array
   INTEGER, intent(in) :: patchtype !land water TYPE (0=soil,1=urban or built-up,2=wetland,
                                    !3=land ice, 4=deep lake, 5=shallow lake)
   REAL(r8), intent(in) :: deltim   !seconds in a time step [second]

@@ -87,7 +87,8 @@ IMPLICIT NONE
 #if(defined USGS_CLASSIFICATION)
    fraction_patches(USGS_CLASSIFICATION,:,:) = 1.0
 #else
-   fraction_patches(IGBP_CLASSIFICATION,:,:) = 1.0
+   ! Called only for USGS_CLASSIFICATION
+   print *, "This file Called only for USGS_CLASSIFICATION!"
 #endif
 
 #else

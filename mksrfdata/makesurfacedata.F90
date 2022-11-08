@@ -233,9 +233,11 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
    ! calculate start region latitude/longitude
    sreglat = 90 - int((90.-edgen)/5.)*5
    ereglat = 90 - int((90.-edges-0.5*dll)/5.)*5
+   IF (ereglat > sreglat) ereglat = sreglat
 
    sreglon = -180 + int((edgew+180)/5.)*5
    ereglon = -180 + int((edgee+180-0.5*dll)/5.)*5
+   IF (ereglon < sreglon) ereglon = sreglon
 
    ! start loop regions
    print *, ">>> start looping regions..."

@@ -41,7 +41,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
    CHARACTER(LEN=256), intent(in) :: nam_urbdata   !urban data filename
    CHARACTER(LEN=256), intent(in) :: dir_atmdata
    CHARACTER(LEN=256), intent(in) :: nam_atmdata
-   
+
    LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
    INTEGER, intent(in)    :: lc_year     !which year of land cover data used
    INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
@@ -1168,10 +1168,10 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
          wliq_gpersno(:,u) = wliq_soisno(:,i) !liqui water [kg/m2]
          wliq_lakesno(:,u) = wliq_soisno(:,i) !liqui water [kg/m2]
 
-         wliq_soisno (:,i) = 0.
-         wliq_soisno (:,i) = wliq_roofsno(:,u)*froof(u)
-         wliq_soisno (:,i) = wliq_soisno(:,i) + wliq_gpersno(:,u)*(1-froof(u))*fgper(u)
-         wliq_soisno (:,i) = wliq_soisno(:,i) + wliq_gimpsno(:,u)*(1-froof(u))*(1-fgper(u))
+         wliq_soisno (: ,i) = 0.
+         wliq_soisno (:1,i) = wliq_roofsno(:1,u)*froof(u)
+         wliq_soisno (: ,i) = wliq_soisno(: ,i) + wliq_gpersno(: ,u)*(1-froof(u))*fgper(u)
+         wliq_soisno (:1,i) = wliq_soisno(:1,i) + wliq_gimpsno(:1,u)*(1-froof(u))*(1-fgper(u))
 
          snowdp_roof   (u) = 0.   !snow depth [m]
          snowdp_gimp   (u) = 0.   !snow depth [m]

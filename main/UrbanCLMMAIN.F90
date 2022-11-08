@@ -982,16 +982,16 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! water balance check
       ! ----------------------------------------
 
-      wliq_soisno(:) = 0.
-      wliq_soisno(:nl_roof) = wliq_roofsno(:)*froof
-      wliq_soisno(:) = wliq_soisno(:) + wliq_gpersno(:)*(1-froof)*fgper
-      wliq_soisno(:) = wliq_soisno(:) + wliq_gimpsno(:)*(1-froof)*(1-fgper)
+      wliq_soisno(: ) = 0.
+      wliq_soisno(:1) = wliq_roofsno(:1)*froof
+      wliq_soisno(: ) = wliq_soisno(: ) + wliq_gpersno(: )*(1-froof)*fgper
+      wliq_soisno(:1) = wliq_soisno(:1) + wliq_gimpsno(:1)*(1-froof)*(1-fgper)
       !wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake
 
-      wice_soisno(:) = 0.
-      wice_soisno(:nl_roof) = wice_roofsno(:)*froof
-      wice_soisno(:) = wice_soisno(:) + wice_gpersno(:)*(1-froof)*fgper
-      wice_soisno(:) = wice_soisno(:) + wice_gimpsno(:)*(1-froof)*(1-fgper)
+      wice_soisno(: ) = 0.
+      wice_soisno(:1) = wice_roofsno(:1)*froof
+      wice_soisno(: ) = wice_soisno(: ) + wice_gpersno(: )*(1-froof)*fgper
+      wice_soisno(:1) = wice_soisno(:1) + wice_gimpsno(:1)*(1-froof)*(1-fgper)
       !wice_soisno(:) = wice_soisno(:)*(1-flake) + wice_lakesno(:)*flake
 
       scv = scv_roof*froof + scv_gper*(1-froof)*fgper + scv_gimp*(1-froof)*(1-fgper)

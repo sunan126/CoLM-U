@@ -330,6 +330,7 @@ CONTAINS
      REAL(r8) :: phi_tot    !albedo of a single tree
      REAL(r8) :: phi_dif    !Temporal
      REAL(r8) :: pa2        !Temporal
+     REAL(r8) :: lsai       !lai+sai
 
      ! Claculate urban structure parameters
      !-------------------------------------------------
@@ -342,8 +343,9 @@ CONTAINS
 
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------
-     Td = tee(DD1*3/8.*(lai+sai))
-     CALL phi(.true., 3/8.*(lai+sai), tau+rho, tau, rho, phi_tot, phi_dif, pa2)
+     lsai = (lai+sai)*fv/cos(PI/3)/ShadowTree(fv, PI/3)
+     Td = tee(DD1*3/8.*lsai)
+     CALL phi(.true., 3/8.*lsai, tau+rho, tau, rho, phi_tot, phi_dif, pa2)
      av = phi_tot
 
      ! Calculate view factors
@@ -393,6 +395,10 @@ CONTAINS
      Fsvw = Svw
      Fsvg = Fsv - Fsvw
 
+     ! View factor from veg to sky and walls above canopy
+     Fvs = 0.5*(1-Sw_)
+     Fvw = 0.5*Sw_
+
      Sw_ = ShadowWall_dif(fb/fg, hv/L)
      fv_ = fv - fv*Sw_
      Sv  = ShadowTree(fv_, PI/3)
@@ -414,25 +420,40 @@ CONTAINS
      Fgvw = Svw
      Fgvs = Fgv - Fgvw
 
-     Fvs = Fsv*fg/(4*fv)
-     Fvg = Fgv*fg/(4*fv)
+     ! View factor from veg to sky and walls below+above canopy
+     Fvg = 0.5*(1-Sw_)
+     Fvw = 0.5*Sw_ + Fvw
+
      Fvw = 1 - Fvs - Fvg
 
-     ws  = (phi_tot - phi_dif)/2
-     wg  = (phi_tot + phi_dif)/2
-     ww  = (phi_tot + phi_dif)/2
-     sumw = Fvs*ws + Fvg*wg + Fvw*ww
-     Fvs = Fvs*ws/sumw
-     Fvg = Fvg*wg/sumw
-     Fvw = Fvw*ww/sumw
+     !Fvs = Fsv*fg/min(4*fv,2*fg)
+     !Fvg = Fgv*fg/min(4*fv,2*fg)
+     !Fvw = 1 - Fvs - Fvg
+
+     !ws  = (phi_tot - phi_dif)/2
+     !wg  = (phi_tot + phi_dif)/2
+     !ww  = (phi_tot + phi_dif)/2
+     !sumw = Fvs*ws + Fvg*wg + Fvw*ww
+     !Fvs = Fvs*ws/sumw
+     !Fvg = Fvg*wg/sumw
+     !Fvw = Fvw*ww/sumw
 
      ! Canopy mode:
-     Fwv  = Fvw*fv/fb/HL
+     Fwv = max(fv,0.5*(Fsv+Fgv))*2*fg*Fvw/(4*HL*fb)
+     Fwv = min(0.8, Fwv)
+
      fac1 = 1.*hv/H
      fac2 = 1.*(H-hv)/H
      Fwvw = Fwv/(1 + Fws*fac1/Fww + Fwg*fac2/Fww)
      Fwvs = Fws*fac1/Fww*Fwvw
      Fwvg = Fwg*fac2/Fww*Fwvw
+
+     ! set upper limit
+     Fwvw = min(Fww, Fwvw)
+     Fwvs = min(Fws, Fwvs)
+     Fwvg = min(Fwg, Fwvg)
+
+     Fwv = Fwvw + Fwvs + Fwvg
 
      ! View factors with trees
      !---------------------------------------------------------

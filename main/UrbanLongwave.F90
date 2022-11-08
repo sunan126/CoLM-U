@@ -309,7 +309,7 @@ CONTAINS
      REAL(r8) :: A(5,5)     !Radiation transfer matrix
 
      ! Temporal
-     REAL(r8) :: tmp, eb, fac1, fac2
+     REAL(r8) :: tmp, eb, fac1, fac2, lsai
 
      ! Claculate urban structure parameters
      !-------------------------------------------------
@@ -322,7 +322,8 @@ CONTAINS
 
      ! Calculate transmittion and albedo of tree
      !-------------------------------------------------
-     Td = tee(DD1*3/8.*(lai+sai))
+     lsai = (lai+sai)*fv/cos(PI/3)/ShadowTree(fv, PI/3)
+     Td = tee(DD1*3/8.*lsai)
      ev = 1 - Td
 
      ! Calculate view factors
@@ -371,6 +372,10 @@ CONTAINS
      Fsvw = Swv
      Fsvg = Fsv - Fsvw
 
+     ! View factor from veg to sky and walls above canopy
+     Fvs = 0.5*(1-Sw_)
+     Fvw = 0.5*Sw_
+
      Sw_ = ShadowWall_dif(fb/fg, hv/L)
      fv_ = fv - fv*Sw_
      Sv  = ShadowTree(fv_, PI/3)
@@ -392,17 +397,32 @@ CONTAINS
      Fgvw = Swv
      Fgvs = Fgv - Fgvw
 
-     Fvs = Fsv*fg/(4*fv)
-     Fvg = Fgv*fg/(4*fv)
+     ! View factor from veg to sky and walls below+above canopy
+     Fvg = 0.5*(1-Sw_)
+     Fvw = 0.5*Sw_ + Fvw
+
      Fvw = 1 - Fvs - Fvg
 
+     !Fvs = Fsv*fg/min(4*fv,2*fg)
+     !Fvg = Fgv*fg/min(4*fv,2*fg)
+     !Fvw = 1 - Fvs - Fvg
+
      ! Canopy mode:
-     Fwv  = Fvw*fv/fb/HL
+     Fwv = max(fv,0.5*(Fsv+Fgv))*2*fg*Fvw/(4*HL*fb)
+     Fwv = min(0.8, Fwv)
+
      fac1 = 1.*hv/H
      fac2 = 1.*(H-hv)/H
      Fwvw = Fwv/(1 + Fws*fac1/Fww + Fwg*fac2/Fww)
      Fwvs = Fws*fac1/Fww*Fwvw
      Fwvg = Fwg*fac2/Fww*Fwvw
+
+     ! set upper limit
+     Fwvw = min(Fww, Fwvw)
+     Fwvs = min(Fws, Fwvs)
+     Fwvg = min(Fwg, Fwvg)
+
+     Fwv = Fwvw + Fwvs + Fwvg
 
      ! View factors with trees
      !---------------------------------------------------------
@@ -483,7 +503,7 @@ CONTAINS
      ! 植被温度在湍流计算中迭代计算
      ! B(5) = 4*fv/fg*stefnc*ev*tl**4 !NOTE: 4*fv/fg or 2*fv/fg
                                       !4*fv/fg. equivalent to 2fc
-     B(5) = 4*fv/fg*stefnc*ev
+     B(5) = max(2*fv/fg,Fsv+Fgv)*stefnc*ev
 
      B1(1) = 4*fwsun*HL*fb/fg*stefnc*ewall*twsun**4
      B1(2) = 4*fwsha*HL*fb/fg*stefnc*ewall*twsha**4
@@ -491,7 +511,7 @@ CONTAINS
      B1(4) = fgper*stefnc*egper*tgper**4
      ! 植被温度在湍流计算中迭代计算
      ! B1(5) = 4*fv/fg*stefnc*ev*tl**4
-     B1(5) = 4*fv/fg*stefnc*ev
+     B1(5) = max(2*fv/fg,Fsv+Fgv)*stefnc*ev
 
      dBdT(1) = 16*fwsun*HL*fb/fg*stefnc*ewall*twsun**3
      dBdT(2) = 16*fwsha*HL*fb/fg*stefnc*ewall*twsha**3
@@ -499,7 +519,7 @@ CONTAINS
      dBdT(4) = 4*fgper*stefnc*egper*tgper**3
      ! 植被温度在湍流计算中迭代计算
      ! dBdT(5) = 16*fv/fg*stefnc*ev*tl**3
-     dBdT(5) = 16*fv/fg*stefnc*ev
+     dBdT(5) = 4*max(2*fv/fg,Fsv+Fgv)*stefnc*ev
 
      SkyVF(1:2) = Fws_
      SkyVF(3:4) = Fgs_

@@ -84,6 +84,7 @@ OBJS =  precision.o                 \
 	wetbulb.o                   \
 	UrbanFlux.o                 \
 	UrbanGroundFlux.o           \
+	UrbanRoofFlux.o             \
 	UrbanRoofTem.o              \
 	UrbanWallTem.o              \
 	UrbanPerviousTem.o          \

@@ -41,12 +41,12 @@ CONTAINS
         taf          ! temperature of urban air
 
      REAL(r8), intent(inout) :: &
-        troom        ! temperature of inner building
-
-     REAL(r8), intent(out) :: &
+        troom,      &! temperature of inner building
         troof_inner,&! temperature of inner roof
         twsun_inner,&! temperature of inner sunlit wall
-        twsha_inner,&! temperature of inner shaded wall
+        twsha_inner  ! temperature of inner shaded wall
+
+     REAL(r8), intent(out) :: &
         Fhac,       &! flux from heat or cool AC
         Fwst,       &! waste heat from cool or heat
         Fach         ! flux from air exchange
@@ -56,6 +56,7 @@ CONTAINS
         ACH,        &! air exchange coefficience
         hcv_roof,   &! convective exchange ceofficience for roof<->room
         hcv_wall,   &! convective exchange ceofficience for wall<->room
+        waste_coef, &! waste coefficient
         waste_cool, &! waste heat for AC cooling
         waste_heat   ! waste heat for AC heating
 
@@ -68,6 +69,17 @@ CONTAINS
         Ainv(4,4),  &! Inverse of Heat transfer matrix
         B(4),       &! B for Ax=B
         X(4)         ! x for Ax=B
+
+     REAL(r8) ::    &
+        troom_pro,       &! projected room temperature
+        troom_bef,       &! temperature of inner building
+        troof_inner_bef, &! temperature of inner roof
+        twsun_inner_bef, &! temperature of inner sunlit wall
+        twsha_inner_bef   ! temperature of inner shaded wall
+
+     LOGICAL :: heating
+
+     LOGICAL, parameter :: Constant_AC = .true.
 
   !=================================================================
   !
@@ -88,10 +100,11 @@ CONTAINS
   !=================================================================
 
      ACH = 0.3          !air exchange coefficience
-     hcv_roof   = 4.040 !convective exchange ceofficience for roof<->room
-     hcv_wall   = 3.076 !convective exchange ceofficience for wall<->room
+     hcv_roof   = 4.040 !convective exchange ceofficience for roof<->room (W m-2 K-1)
+     hcv_wall   = 3.076 !convective exchange ceofficience for wall<->room (W m-2 K-1)
      waste_cool = 0.6   !waste heat for AC cooling
      waste_heat = 0.2   !waste heat for AC heating
+     heating = .false.  !heating case
 
      f_wsun = fcover(1)/fcover(0) !weight factor for sunlit wall
      f_wsha = fcover(2)/fcover(0) !weight factor for shaded wall
@@ -126,12 +139,16 @@ CONTAINS
      ! Matrix computing to revole multiple reflections
      X = matmul(Ainv, B)
 
+     troof_inner_bef = troof_inner
+     twsun_inner_bef = twsun_inner
+     twsha_inner_bef = twsha_inner
+     troom_bef       = troom
+
      troof_inner = X(1)
      twsun_inner = X(2)
      twsha_inner = X(3)
      troom       = X(4)
-
-     Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
+     troom_pro   = X(4)
 
      IF (troom > troom_max) THEN !cooling case
         Fhac  = H*rhoair*cpair*(troom-troom_max)/deltim
@@ -146,6 +163,34 @@ CONTAINS
         ! nagative value, set it to 0.
         Fhac  = 0.
      ENDIF
+
+     ! for constant cooling or heating
+     IF ((troom_pro>troom_max .or. troom_pro<troom_min) .and. Constant_AC) THEN
+
+        IF (troom_pro > troom_max) THEN !cooling case
+           troom = troom_max
+           waste_coef = waste_cool
+        ENDIF
+
+        IF (troom_pro < troom_min) THEN !heating case
+           troom = troom_min
+           waste_coef = waste_heat
+           heating    = .true.
+        ENDIF
+
+        troof_inner = (B(1)-A(1,4)*troom)/A(1,1)
+        twsun_inner = (B(2)-A(2,4)*troom)/A(2,2)
+        twsha_inner = (B(3)-A(3,4)*troom)/A(3,3)
+
+        Fhac = 0.5*hcv_roof*(troof_inner_bef-troom_bef) + 0.5*hcv_roof*(troof_inner-troom)
+        Fhac = 0.5*hcv_wall*(twsun_inner_bef-troom_bef)*f_wsun + 0.5*hcv_wall*(twsun_inner-troom)*f_wsun + abs(Fhac)
+        Fhac = 0.5*hcv_wall*(twsha_inner_bef-troom_bef)*f_wsha + 0.5*hcv_wall*(twsha_inner-troom)*f_wsha + abs(Fhac)
+        Fwst = Fhac*waste_coef
+        IF ( heating ) Fhac = 0.
+
+     ENDIF
+
+     Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
 
      Fach = Fach*fcover(0)
      Fwst = Fwst*fcover(0)

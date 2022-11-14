@@ -386,6 +386,9 @@
         twsha_bef  ,&! temperature of shaded wall
         tgimp_bef  ,&! temperature of impervious road
         tgper_bef  ,&! ground soil temperature
+        troof_nl_bef,&!temperature of roof
+        twsun_nl_bef,&!temperature of sunlit wall
+        twsha_nl_bef,&!temperature of shaded wall
         tkdz_roof  ,&! heat flux from room to roof
         tkdz_wsun  ,&! heat flux from room to sunlit wall
         tkdz_wsha  ,&! heat flux from room to shaded wall
@@ -504,6 +507,11 @@
       troof = t_roofsno(lbr)
       tgimp = t_gimpsno(lbi)
       tgper = t_gpersno(lbp)
+
+      troof_nl_bef = t_roofsno(nl_roof)
+      twsun_nl_bef = t_wallsun(nl_wall)
+      twsha_nl_bef = t_wallsha(nl_wall)
+
       !TODO: ???如何计算tlake
       IF (lbl < 1) THEN
          tlake = t_lakesno(lbl)
@@ -1157,6 +1165,7 @@
 
       ! Building energy model
       CALL SimpleBEM ( deltim, forc_rhoair, fcover(0:2), hroof, troommax, troommin, &
+                       troof_nl_bef, twsun_nl_bef, twsha_nl_bef, &
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &

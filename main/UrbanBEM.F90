@@ -18,6 +18,7 @@ CONTAINS
 
   !-------------------------------------------------
   SUBROUTINE SimpleBEM ( deltim, rhoair, fcover, H, troom_max, troom_min, &
+                         troof_nl_bef, twsun_nl_bef, twsha_nl_bef, &
                          troof_nl, twsun_nl, twsha_nl, &
                          tkdz_roof, tkdz_wsun, tkdz_wsha, taf, &
                          troom, troof_inner, twsun_inner, twsha_inner, &
@@ -32,6 +33,9 @@ CONTAINS
         H,          &! average building height [m]
         troom_max,  &! maximum temperature of inner building
         troom_min,  &! minimum temperature of inner building
+        troof_nl_bef,&!roof temperature at layer nl_roof
+        twsun_nl_bef,&!sunlit wall temperature at layer nl_wall
+        twsha_nl_bef,&!shaded wall temperature at layer nl_wall
         troof_nl,   &! roof temperature at layer nl_roof
         twsun_nl,   &! sunlit wall temperature at layer nl_wall
         twsha_nl,   &! shaded wall temperature at layer nl_wall
@@ -77,7 +81,7 @@ CONTAINS
         twsun_inner_bef, &! temperature of inner sunlit wall
         twsha_inner_bef   ! temperature of inner shaded wall
 
-     LOGICAL :: heating
+     LOGICAL :: cooling, heating
 
      LOGICAL, parameter :: Constant_AC = .true.
 
@@ -104,6 +108,7 @@ CONTAINS
      hcv_wall   = 3.076 !convective exchange ceofficience for wall<->room (W m-2 K-1)
      waste_cool = 0.6   !waste heat for AC cooling
      waste_heat = 0.2   !waste heat for AC heating
+     cooling = .false.  !cooling case
      heating = .false.  !heating case
 
      f_wsun = fcover(1)/fcover(0) !weight factor for sunlit wall
@@ -124,9 +129,9 @@ CONTAINS
                  0.5*hcv_roof + 0.5*hcv_wall*f_wsun + 0.5*hcv_wall*f_wsha +&
                  H*rhoair*cpair/deltim + (ACH/3600.)*H*rhoair*cpair /)
 
-     B(1) = -0.5*hcv_roof*(troof_inner-troom) + 0.5*tkdz_roof*(troof_nl-troof_inner) + 0.5*tkdz_roof*troof_nl
-     B(2) = -0.5*hcv_wall*(twsun_inner-troom) + 0.5*tkdz_wsun*(twsun_nl-twsun_inner) + 0.5*tkdz_wsun*twsun_nl
-     B(3) = -0.5*hcv_wall*(twsha_inner-troom) + 0.5*tkdz_wsha*(twsha_nl-twsha_inner) + 0.5*tkdz_wsha*twsha_nl
+     B(1) = -0.5*hcv_roof*(troof_inner-troom) + 0.5*tkdz_roof*(troof_nl_bef-troof_inner) + 0.5*tkdz_roof*troof_nl
+     B(2) = -0.5*hcv_wall*(twsun_inner-troom) + 0.5*tkdz_wsun*(twsun_nl_bef-twsun_inner) + 0.5*tkdz_wsun*twsun_nl
+     B(3) = -0.5*hcv_wall*(twsha_inner-troom) + 0.5*tkdz_wsha*(twsha_nl_bef-twsha_inner) + 0.5*tkdz_wsha*twsha_nl
 
      B(4) = H*rhoair*cpair*troom/deltim + (ACH/3600.)*H*rhoair*cpair*taf &
           + 0.5*hcv_roof*(troof_inner-troom) &
@@ -150,6 +155,8 @@ CONTAINS
      troom       = X(4)
      troom_pro   = X(4)
 
+     Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
+
      IF (troom > troom_max) THEN !cooling case
         Fhac  = H*rhoair*cpair*(troom-troom_max)/deltim
         troom = troom_max
@@ -170,6 +177,7 @@ CONTAINS
         IF (troom_pro > troom_max) THEN !cooling case
            troom = troom_max
            waste_coef = waste_cool
+           cooling    = .true.
         ENDIF
 
         IF (troom_pro < troom_min) THEN !heating case
@@ -178,19 +186,20 @@ CONTAINS
            heating    = .true.
         ENDIF
 
+        Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
+
         troof_inner = (B(1)-A(1,4)*troom)/A(1,1)
         twsun_inner = (B(2)-A(2,4)*troom)/A(2,2)
         twsha_inner = (B(3)-A(3,4)*troom)/A(3,3)
 
         Fhac = 0.5*hcv_roof*(troof_inner_bef-troom_bef) + 0.5*hcv_roof*(troof_inner-troom)
-        Fhac = 0.5*hcv_wall*(twsun_inner_bef-troom_bef)*f_wsun + 0.5*hcv_wall*(twsun_inner-troom)*f_wsun + abs(Fhac)
-        Fhac = 0.5*hcv_wall*(twsha_inner_bef-troom_bef)*f_wsha + 0.5*hcv_wall*(twsha_inner-troom)*f_wsha + abs(Fhac)
+        Fhac = 0.5*hcv_wall*(twsun_inner_bef-troom_bef)*f_wsun + 0.5*hcv_wall*(twsun_inner-troom)*f_wsun + Fhac
+        Fhac = 0.5*hcv_wall*(twsha_inner_bef-troom_bef)*f_wsha + 0.5*hcv_wall*(twsha_inner-troom)*f_wsha + Fhac
+        Fhac = abs(Fhac) + abs(Fach)
         Fwst = Fhac*waste_coef
         IF ( heating ) Fhac = 0.
 
      ENDIF
-
-     Fach = (ACH/3600.)*H*rhoair*cpair*(troom - taf)
 
      Fach = Fach*fcover(0)
      Fwst = Fwst*fcover(0)

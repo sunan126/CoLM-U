@@ -452,8 +452,8 @@ MODULE UrbanFlux
      ! have been set before
      z0hu = z0m; z0qu = z0m
      ur   = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
-     dth  = thm - taf(3)
-     dqh  =  qm - qaf(3)
+     dth  = thm - taf(2)
+     dqh  =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
      ! 确保观测高度 >= hroof+10.
@@ -500,8 +500,8 @@ MODULE UrbanFlux
         ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for Urban: from roof height to reference height
-        rah = 1./(vonkar/(fh)*ustar)
-        raw = 1./(vonkar/(fq)*ustar)
+        rah = 1./(vonkar/(fh-fht)*ustar)
+        raw = 1./(vonkar/(fq-fqt)*ustar)
 
         ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -536,7 +536,7 @@ MODULE UrbanFlux
         !REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, 0., z0h_g, &
+        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
@@ -545,9 +545,9 @@ MODULE UrbanFlux
         !REAL(r8) FUNCTION ueffect(utop, htop, hbot, ztop, zbot, z0mg, alpha, bee, fc)
         ueff_lay(2) = ueffect(utop, hroof, 0., hroof, z0mg, z0mg, alpha, bee, 1.)
 
-        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+        !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
         !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
-        rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
+        rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         !print *, "------------------------"
@@ -555,10 +555,10 @@ MODULE UrbanFlux
         !print *, "rd_:", rd_
 
         !TODO: 计算ra2m, rd2m
-        ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., 0., z0h_g, &
+        ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
-        rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
+        rd2m = frd(ktop, hroof, 0., 2., z0qg, displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         ! Masson, 2000: Account for different canyon orientations
@@ -612,8 +612,8 @@ MODULE UrbanFlux
         ! 计算每层的阻抗
         DO i = 3, 2, -1
            IF (i == 3) THEN
-              cah(i) = 1. / (rah-rd(i))
-              caw(i) = 1. / (raw-rd(i))
+              cah(i) = 1. / rah
+              caw(i) = 1. / raw
            ELSE
               cah(i) = 1. / rd(i+1)
               caw(i) = 1. / rd(i+1)
@@ -1104,7 +1104,7 @@ MODULE UrbanFlux
 
 !----------------------- defination for 3d run ------------------------ !
      INTEGER, parameter :: nlay = 3
-     INTEGER, parameter :: avec(5) = (/0,0,0,0,1/) !unit vector
+     INTEGER, parameter :: uvec(5) = (/0,0,0,0,1/) !unit vector
 
      INTEGER ::   &
         clev,     &! current layer index
@@ -1388,6 +1388,7 @@ MODULE UrbanFlux
 
      ! Kondo, 1971
      alphav = htop/(htop-displav_lay)/(vonkar/sqrtdragc)
+     alphav = alphav*htop/hroof
 
      ! Masson, 2000; Oleson et al., 2008 plus tree (+)
      IF (alpha_opt == 1) alpha = 0.5*hwr + alphav
@@ -1485,8 +1486,8 @@ MODULE UrbanFlux
         ! 05/02/2016: calculate resistance from the top layer (effective exchange
         ! height) to reference height
         ! for urban, from roof height to reference height
-        rah = 1./(vonkar/(fh)*ustar)
-        raw = 1./(vonkar/(fq)*ustar)
+        rah = 1./(vonkar/(fh-fht)*ustar)
+        raw = 1./(vonkar/(fq-fqt)*ustar)
 
 ! update roughness length for sensible/latent heat
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
@@ -1516,13 +1517,13 @@ MODULE UrbanFlux
 
         ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         !      displah, htop, hbot, obu, ustar, ztop, zbot)
-        !rd_(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+        !rd_(3)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
         !   hroof, 0., obug, ustarg, hroof, displau+z0mu)
 
         ! REAL(r8) FUNCTION frd(ktop, htop, hbot, &
         !      ztop, zbot, displah, z0h, obu, ustar, &
         !      z0mg, alpha, bee, fc)
-        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, 0., z0h_g, &
+        rd(3) = frd(ktop, hroof, 0., hroof, displau+z0mu, displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
         ! REAL(r8) FUNCTION uintegral(utop, fc, bee, alpha, z0mg, htop, hbot, ztop, zbot)
@@ -1535,33 +1536,33 @@ MODULE UrbanFlux
         IF (numlay == 3) THEN
            ! REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
            !      displah, htop, hbot, obu, ustar, ztop, zbot)
-           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
            !   hroof, 0., obug, ustarg, displau+z0mu, displav+z0mv)
-           rd(2) = frd(ktop, hroof, 0., displau+z0mu, displav+z0mv,0., z0h_g, &
+           rd(2) = frd(ktop, hroof, 0., displau+z0mu, displav+z0mv,displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
            !   hroof, 0., obug, ustarg, displav+z0mv, z0qg)
-           rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, 0., z0h_g, &
+           rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
            !TODO: 计算ra2m, rd2m
-           ra2m = frd(ktop, hroof, 0., displav+z0mv, 2., 0., z0h_g, &
+           ra2m = frd(ktop, hroof, 0., displav+z0mv, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
+           rd2m = frd(ktop, hroof, 0., 2., z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ELSE
-           !rd_(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displau/hroof, &
+           !rd_(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
            !   hroof, 0., obug, ustarg, displau+z0mu, z0qg)
-           rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, 0., z0h_g, &
+           rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
            !TODO: 计算ra2m, rd2m
-           ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., 0., z0h_g, &
+           ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           rd2m = frd(ktop, hroof, 0., 2., z0qg, 0., z0h_g, &
+           rd2m = frd(ktop, hroof, 0., 2., z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
         ENDIF
 
@@ -1580,7 +1581,7 @@ MODULE UrbanFlux
            rd(:)       = PI/2*rd(:)
         ENDIF
 
-        ueff_lay(3) = ueff_lay(2)
+        !ueff_lay(3) = ueff_lay(2)
 
         !print *, "ueff_lay :", ueff_lay
         !print *, "ueff_lay_:", ueff_lay_
@@ -1681,8 +1682,8 @@ MODULE UrbanFlux
         ! 计算每层的阻抗
         DO i = 3, botlay, -1
            IF (i == 3) THEN
-              cah(i) = 1. / (rah-rd(i))
-              caw(i) = 1. / (raw-rd(i))
+              cah(i) = 1. / rah
+              caw(i) = 1. / raw
            !ELSE IF (i == 2) THEN
            !   cah(i) = 1e6
            !   caw(i) = 1e6
@@ -1872,7 +1873,7 @@ MODULE UrbanFlux
         dBdT(5) = dBdT_5*tl**3
         X  = matmul(Ainv, B)
         ! dBdT前5项为0, dBdT*(0,0,0,0,0,1)
-        dX = matmul(Ainv, dBdT*avec)
+        dX = matmul(Ainv, dBdT*uvec)
 
         ! 每步温度迭代进行计算, 最后一次应为tlbef
         irab = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5))/fcover(5)*fg
@@ -2308,8 +2309,6 @@ MODULE UrbanFlux
 
      REAL(r8) :: ulog,uexp
 
-     ! when canopy LAI->0, z0->zs, fac->1, u->umoninobuk
-     ! canopy LAI->large, fac->0 or=0, u->log profile
      ulog = utop*log(z/z0mg)/log(htop/z0mg)
      uexp = utop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
 
@@ -2350,7 +2349,7 @@ MODULE UrbanFlux
      fac  = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
      !TODO: 检查fac的设定，为什么设置为0
-     fac  = 0.
+     !fac  = 0.
      kcob = 1. / (fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
 
      kexp     = ktop*exp(-alpha*(htop-z)/(htop-hbot))
@@ -2674,10 +2673,11 @@ MODULE UrbanFlux
 
      ! calculate fac
      ! yuan, 12/28/2020:
-     !fac = 1. / (1.+exp(-(displah-com1)/com2))
+     fac = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
      !TODO: 检查fac的设定，为什么设定为0
-     fac = 0.
+     !11/18/2022, NOTE: fac=0 may have some problems
+     !fac = 0.
      roots(:) = 0.
 
      CALL kfindroots(ztop,zbot,(ztop+zbot)/2., &

@@ -26,6 +26,8 @@ OBJS =  precision.o              \
 	CLMINI.o                 \
 	initialize.o             \
 	ThreeDCanopy.o           \
+	SnowSnicarMod.o          \
+	SnowAlbedo.o             \
 	ALBEDO.o                 \
 	UrbanShortwave.o         \
 	UrbanALBEDO.o            \

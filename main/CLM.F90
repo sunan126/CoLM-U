@@ -30,6 +30,9 @@
       USE GETMETMOD
       USE omp_lib
 
+      ! SNICAR
+      USE SnowSnicarMod , only:SnowAge_init, SnowOptics_init
+
 #if(defined CaMa_Flood)
       USE parkind1   ,only: jpim, jprm
       USE mod_input  ,only: lognam, nxin, nyin
@@ -85,6 +88,9 @@
       INTEGER :: year, month, mday, month_p, mday_p
 
       TYPE(timestamp) :: itstamp, etstamp, ptstamp
+
+      character(len=256) fsnowaging   ! snow aging parameters file name
+      character(len=256) fsnowoptics  ! snow optical properties file name
 
 #if(defined CaMa_Flood)
       INTEGER(kind=jpim) :: iyyyy, imm, idd          !start date
@@ -173,6 +179,16 @@
       CALL READ_TimeVariables (idate,lc_year,dir_restart,casename)
 
 
+! ----------------------------------------------------------------------
+    ! Read in SNICAR optical and aging parameters
+
+      ! temporary dirs
+      fsnowoptics = 'snicar_optics_5bnd_mam_c211006.nc'
+      fsnowaging = 'snicar_drdt_bst_fit_60_c070416.nc'
+
+      call SnowOptics_init( fsnowoptics ) ! SNICAR optical parameters
+      call SnowAge_init( fsnowaging )     ! SNICAR aging   parameters
+
 !-----------------------
 #if(defined CaMa_Flood)
 #if(defined usempi)
@@ -255,7 +271,7 @@
        ! Call clm driver
        ! ----------------------------------------------------------------------
          CALL CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
-       
+
        ! Get leaf area index
        ! ----------------------------------------------------------------------
 #if(!defined DYN_PHENOLOGY)

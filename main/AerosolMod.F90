@@ -1,8 +1,6 @@
 
 MODULE AerosolMod
 
-#include "shr_assert.h"
-
   !-----------------------------------------------------------------------
   !
   IMPLICIT NONE
@@ -15,8 +13,8 @@ MODULE AerosolMod
   !-----------------------------------------------------------------------
     integer, parameter :: r8 = selected_real_kind(12) ! 8 byte real
 
-    integer, parameter :: begc = 1      !  beginning column index
-    integer, parameter :: endc = 1      !  beginning and ending column index
+    !integer, parameter :: begc = 1      !  beginning column index
+    !integer, parameter :: endc = 1      !  beginning and ending column index
     real(r8) :: dtime = 1800.0_r8       !  land model time step (sec)
 
     logical, parameter :: use_extrasnowlayers = .false.
@@ -33,8 +31,8 @@ contains
              mss_bcpho     ,mss_bcphi     ,mss_ocpho      ,mss_ocphi     ,&
              mss_dst1      ,mss_dst2      ,mss_dst3       ,mss_dst4      ,&
 
-             mss_cnc_bcphi ,mss_cnc_bcpho ,mss_cnc_ocphi  ,mss_cnc_ocpho ,& 
-             mss_cnc_dst1  ,mss_cnc_dst2  ,mss_cnc_dst3   ,mss_cnc_dst4  ) 
+             mss_cnc_bcphi ,mss_cnc_bcpho ,mss_cnc_ocphi  ,mss_cnc_ocpho ,&
+             mss_cnc_dst1  ,mss_cnc_dst2  ,mss_cnc_dst3   ,mss_cnc_dst4  )
 
     !
     ! !DESCRIPTION:
@@ -48,32 +46,32 @@ contains
 
     ! !ARGUMENTS:
     !
-    integer, intent(in)     ::   snl ( begc:endc )            !  number of snow layers
+    integer, intent(in)     ::  snl              !  number of snow layers
 
-    logical,  intent(in)    ::  do_capsnow    ( begc:endc )   !  true => do snow capping
-    real(r8), intent(in)    ::  h2osno_ice    ( begc:endc, -nlevsno+1:0 ) !  ice lens (kg/m2)
-    real(r8), intent(in)    ::  h2osno_liq    ( begc:endc, -nlevsno+1:0 ) !  liquid water (kg/m2)
-    real(r8), intent(in)    ::  qflx_snwcp_ice( begc:endc )   !  excess snowfall due to snow capping (mm H2O /s) [+]
+    logical,  intent(in)    ::  do_capsnow       !  true => do snow capping
+    real(r8), intent(in)    ::  h2osno_ice    ( -nlevsno+1:0 ) !  ice lens (kg/m2)
+    real(r8), intent(in)    ::  h2osno_liq    ( -nlevsno+1:0 ) !  liquid water (kg/m2)
+    real(r8), intent(in)    ::  qflx_snwcp_ice   !  excess snowfall due to snow capping (mm H2O /s) [+]
 
-    real(r8), intent(inout) ::  snw_rds       ( begc:endc, -nlevsno+1:0 ) !  effective snow grain radius (col,lyr) [microns, m^-6]
+    real(r8), intent(inout) ::  snw_rds       ( -nlevsno+1:0 ) !  effective snow grain radius (col,lyr) [microns, m^-6]
 
-    real(r8), intent(inout) ::  mss_bcpho     ( begc:endc, -nlevsno+1:0 ) !  mass of hydrophobic BC in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_bcphi     ( begc:endc, -nlevsno+1:0 ) !  mass of hydrophillic BC in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_ocpho     ( begc:endc, -nlevsno+1:0 ) !  mass of hydrophobic OC in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_ocphi     ( begc:endc, -nlevsno+1:0 ) !  mass of hydrophillic OC in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_dst1      ( begc:endc, -nlevsno+1:0 ) !  mass of dust species 1 in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_dst2      ( begc:endc, -nlevsno+1:0 ) !  mass of dust species 2 in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_dst3      ( begc:endc, -nlevsno+1:0 ) !  mass of dust species 3 in snow (col,lyr) [kg]
-    real(r8), intent(inout) ::  mss_dst4      ( begc:endc, -nlevsno+1:0 ) !  mass of dust species 4 in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_bcpho     ( -nlevsno+1:0 ) !  mass of hydrophobic BC in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_bcphi     ( -nlevsno+1:0 ) !  mass of hydrophillic BC in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_ocpho     ( -nlevsno+1:0 ) !  mass of hydrophobic OC in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_ocphi     ( -nlevsno+1:0 ) !  mass of hydrophillic OC in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_dst1      ( -nlevsno+1:0 ) !  mass of dust species 1 in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_dst2      ( -nlevsno+1:0 ) !  mass of dust species 2 in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_dst3      ( -nlevsno+1:0 ) !  mass of dust species 3 in snow (col,lyr) [kg]
+    real(r8), intent(inout) ::  mss_dst4      ( -nlevsno+1:0 ) !  mass of dust species 4 in snow (col,lyr) [kg]
 
-    real(r8), intent(out)   ::  mss_cnc_bcphi ( begc:endc, -nlevsno+1:0 ) !  mass concentration of BC species 1 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_bcpho ( begc:endc, -nlevsno+1:0 ) !  mass concentration of BC species 2 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_ocphi ( begc:endc, -nlevsno+1:0 ) !  mass concentration of OC species 1 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_ocpho ( begc:endc, -nlevsno+1:0 ) !  mass concentration of OC species 2 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_dst1  ( begc:endc, -nlevsno+1:0 ) !  mass concentration of dust species 1 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_dst2  ( begc:endc, -nlevsno+1:0 ) !  mass concentration of dust species 2 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_dst3  ( begc:endc, -nlevsno+1:0 ) !  mass concentration of dust species 3 (col,lyr) [kg/kg]
-    real(r8), intent(out)   ::  mss_cnc_dst4  ( begc:endc, -nlevsno+1:0 ) !  mass concentration of dust species 4 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_bcphi ( -nlevsno+1:0 ) !  mass concentration of BC species 1 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_bcpho ( -nlevsno+1:0 ) !  mass concentration of BC species 2 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_ocphi ( -nlevsno+1:0 ) !  mass concentration of OC species 1 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_ocpho ( -nlevsno+1:0 ) !  mass concentration of OC species 2 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_dst1  ( -nlevsno+1:0 ) !  mass concentration of dust species 1 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_dst2  ( -nlevsno+1:0 ) !  mass concentration of dust species 2 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_dst3  ( -nlevsno+1:0 ) !  mass concentration of dust species 3 (col,lyr) [kg/kg]
+    real(r8), intent(out)   ::  mss_cnc_dst4  ( -nlevsno+1:0 ) !  mass concentration of dust species 4 (col,lyr) [kg/kg]
 
     ! !LOCAL VARIABLES:
     integer  :: c,j             ! indices
@@ -82,74 +80,74 @@ contains
 
     !-----------------------------------------------------------------------
 
-      do c = begc, endc
+      !do c = begc, endc
          do j = -nlevsno+1, 0
 
             ! layer mass of snow:
-            snowmass = h2osno_ice(c,j) + h2osno_liq(c,j)
+            snowmass = h2osno_ice(j) + h2osno_liq(j)
 
             if (.not. use_extrasnowlayers) then
-               ! Correct the top layer aerosol mass to account for snow capping. 
+               ! Correct the top layer aerosol mass to account for snow capping.
                ! This approach conserves the aerosol mass concentration
                ! (but not the aerosol amss) when snow-capping is invoked
 
-               if (j == snl(c)+1) then
-                  if (do_capsnow(c)) then 
+               if (j == snl+1) then
+                  if (do_capsnow) then
 
-                     snowcap_scl_fct = snowmass / (snowmass + (qflx_snwcp_ice(c)*dtime))
+                     snowcap_scl_fct = snowmass / (snowmass + (qflx_snwcp_ice*dtime))
 
-                     mss_bcpho(c,j) = mss_bcpho(c,j)*snowcap_scl_fct
-                     mss_bcphi(c,j) = mss_bcphi(c,j)*snowcap_scl_fct
-                     mss_ocpho(c,j) = mss_ocpho(c,j)*snowcap_scl_fct
-                     mss_ocphi(c,j) = mss_ocphi(c,j)*snowcap_scl_fct
+                     mss_bcpho(j) = mss_bcpho(j)*snowcap_scl_fct
+                     mss_bcphi(j) = mss_bcphi(j)*snowcap_scl_fct
+                     mss_ocpho(j) = mss_ocpho(j)*snowcap_scl_fct
+                     mss_ocphi(j) = mss_ocphi(j)*snowcap_scl_fct
 
-                     mss_dst1(c,j)  = mss_dst1(c,j)*snowcap_scl_fct
-                     mss_dst2(c,j)  = mss_dst2(c,j)*snowcap_scl_fct
-                     mss_dst3(c,j)  = mss_dst3(c,j)*snowcap_scl_fct
-                     mss_dst4(c,j)  = mss_dst4(c,j)*snowcap_scl_fct
+                     mss_dst1(j)  = mss_dst1(j)*snowcap_scl_fct
+                     mss_dst2(j)  = mss_dst2(j)*snowcap_scl_fct
+                     mss_dst3(j)  = mss_dst3(j)*snowcap_scl_fct
+                     mss_dst4(j)  = mss_dst4(j)*snowcap_scl_fct
                   endif
                endif
             endif
 
-            if (j >= snl(c)+1) then
+            if (j >= snl+1) then
 
-               mss_cnc_bcphi(c,j) = mss_bcphi(c,j) / snowmass
-               mss_cnc_bcpho(c,j) = mss_bcpho(c,j) / snowmass
+               mss_cnc_bcphi(j) = mss_bcphi(j) / snowmass
+               mss_cnc_bcpho(j) = mss_bcpho(j) / snowmass
 
-               mss_cnc_ocphi(c,j) = mss_ocphi(c,j) / snowmass
-               mss_cnc_ocpho(c,j) = mss_ocpho(c,j) / snowmass
+               mss_cnc_ocphi(j) = mss_ocphi(j) / snowmass
+               mss_cnc_ocpho(j) = mss_ocpho(j) / snowmass
 
-               mss_cnc_dst1(c,j)  = mss_dst1(c,j)  / snowmass
-               mss_cnc_dst2(c,j)  = mss_dst2(c,j)  / snowmass
-               mss_cnc_dst3(c,j)  = mss_dst3(c,j)  / snowmass
-               mss_cnc_dst4(c,j)  = mss_dst4(c,j)  / snowmass
+               mss_cnc_dst1(j)  = mss_dst1(j)  / snowmass
+               mss_cnc_dst2(j)  = mss_dst2(j)  / snowmass
+               mss_cnc_dst3(j)  = mss_dst3(j)  / snowmass
+               mss_cnc_dst4(j)  = mss_dst4(j)  / snowmass
 
             else
                !set variables of empty snow layers to zero
-               snw_rds(c,j)       = 0._r8
+               snw_rds(j)       = 0._r8
 
-               mss_bcpho(c,j)     = 0._r8
-               mss_bcphi(c,j)     = 0._r8
-               mss_cnc_bcphi(c,j) = 0._r8
-               mss_cnc_bcpho(c,j) = 0._r8
+               mss_bcpho(j)     = 0._r8
+               mss_bcphi(j)     = 0._r8
+               mss_cnc_bcphi(j) = 0._r8
+               mss_cnc_bcpho(j) = 0._r8
 
-               mss_ocpho(c,j)     = 0._r8
-               mss_ocphi(c,j)     = 0._r8
-               mss_cnc_ocphi(c,j) = 0._r8
-               mss_cnc_ocpho(c,j) = 0._r8
+               mss_ocpho(j)     = 0._r8
+               mss_ocphi(j)     = 0._r8
+               mss_cnc_ocphi(j) = 0._r8
+               mss_cnc_ocpho(j) = 0._r8
 
-               mss_dst1(c,j)      = 0._r8
-               mss_dst2(c,j)      = 0._r8
-               mss_dst3(c,j)      = 0._r8
-               mss_dst4(c,j)      = 0._r8
-               mss_cnc_dst1(c,j)  = 0._r8
-               mss_cnc_dst2(c,j)  = 0._r8
-               mss_cnc_dst3(c,j)  = 0._r8
-               mss_cnc_dst4(c,j)  = 0._r8
+               mss_dst1(j)      = 0._r8
+               mss_dst2(j)      = 0._r8
+               mss_dst3(j)      = 0._r8
+               mss_dst4(j)      = 0._r8
+               mss_cnc_dst1(j)  = 0._r8
+               mss_cnc_dst2(j)  = 0._r8
+               mss_cnc_dst3(j)  = 0._r8
+               mss_cnc_dst4(j)  = 0._r8
             endif
          enddo
 
-      enddo
+      !enddo
 
   end subroutine AerosolMasses
 
@@ -157,8 +155,8 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine AerosolFluxes( snl, forc_aer, &
-                            mss_bcphi  ,mss_bcpho  ,mss_ocphi  ,mss_ocpho ,& 
-                            mss_dst1   ,mss_dst2   ,mss_dst3   ,mss_dst4   ) 
+                            mss_bcphi  ,mss_bcpho  ,mss_ocphi  ,mss_ocpho ,&
+                            mss_dst1   ,mss_dst2   ,mss_dst3   ,mss_dst4   )
     !
     ! !DESCRIPTION:
     ! Compute aerosol fluxes through snowpack and aerosol deposition fluxes into top layere
@@ -167,36 +165,36 @@ contains
     !
     !-----------------------------------------------------------------------
     ! !ARGUMENTS:
-    integer, intent(in) :: snl ( begc:endc )   ! number of snow layers
+    integer, intent(in) :: snl    ! number of snow layers
 
-    real(r8), intent(in) :: forc_aer ( begc:endc,14 )  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+    real(r8), intent(in) :: forc_aer (14 )  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
 
-    real(r8), intent(inout) :: mss_bcphi  ( begc:endc,-nlevsno+1:0 )  ! hydrophillic BC mass in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_bcpho  ( begc:endc,-nlevsno+1:0 )  ! hydrophobic  BC mass in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_ocphi  ( begc:endc,-nlevsno+1:0 )  ! hydrophillic OC mass in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_ocpho  ( begc:endc,-nlevsno+1:0 )  ! hydrophobic  OC mass in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_dst1   ( begc:endc,-nlevsno+1:0 )  ! mass of dust species 1 in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_dst2   ( begc:endc,-nlevsno+1:0 )  ! mass of dust species 2 in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_dst3   ( begc:endc,-nlevsno+1:0 )  ! mass of dust species 3 in snow (col,lyr) [kg]
-    real(r8), intent(inout) :: mss_dst4   ( begc:endc,-nlevsno+1:0 )  ! mass of dust species 4 in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_bcphi  (-nlevsno+1:0 )  ! hydrophillic BC mass in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_bcpho  (-nlevsno+1:0 )  ! hydrophobic  BC mass in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_ocphi  (-nlevsno+1:0 )  ! hydrophillic OC mass in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_ocpho  (-nlevsno+1:0 )  ! hydrophobic  OC mass in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_dst1   (-nlevsno+1:0 )  ! mass of dust species 1 in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_dst2   (-nlevsno+1:0 )  ! mass of dust species 2 in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_dst3   (-nlevsno+1:0 )  ! mass of dust species 3 in snow (col,lyr) [kg]
+    real(r8), intent(inout) :: mss_dst4   (-nlevsno+1:0 )  ! mass of dust species 4 in snow (col,lyr) [kg]
 
     ! !LOCAL VARIABLES:
-    real(r8) :: flx_bc_dep       ( begc:endc )   ! total BC deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_bc_dep_phi   ( begc:endc )   ! hydrophillic BC deposition (col) [kg m-1 s-1]
-    real(r8) :: flx_bc_dep_pho   ( begc:endc )   ! hydrophobic BC deposition (col) [kg m-1 s-1]
-    real(r8) :: flx_oc_dep       ( begc:endc )   ! total OC deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_oc_dep_phi   ( begc:endc )   ! hydrophillic OC deposition (col) [kg m-1 s-1]
-    real(r8) :: flx_oc_dep_pho   ( begc:endc )   ! hydrophobic OC deposition (col) [kg m-1 s-1]
-    real(r8) :: flx_dst_dep      ( begc:endc )   ! total dust deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_bc_dep          ! total BC deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_bc_dep_phi      ! hydrophillic BC deposition (col) [kg m-1 s-1]
+    real(r8) :: flx_bc_dep_pho      ! hydrophobic BC deposition (col) [kg m-1 s-1]
+    real(r8) :: flx_oc_dep          ! total OC deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_oc_dep_phi      ! hydrophillic OC deposition (col) [kg m-1 s-1]
+    real(r8) :: flx_oc_dep_pho      ! hydrophobic OC deposition (col) [kg m-1 s-1]
+    real(r8) :: flx_dst_dep         ! total dust deposition (col) [kg m-2 s-1]
 
-    real(r8) :: flx_dst_dep_wet1 ( begc:endc )   ! wet dust (species 1) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_dry1 ( begc:endc )   ! dry dust (species 1) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_wet2 ( begc:endc )   ! wet dust (species 2) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_dry2 ( begc:endc )   ! dry dust (species 2) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_wet3 ( begc:endc )   ! wet dust (species 3) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_dry3 ( begc:endc )   ! dry dust (species 3) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_wet4 ( begc:endc )   ! wet dust (species 4) deposition (col) [kg m-2 s-1]
-    real(r8) :: flx_dst_dep_dry4 ( begc:endc )   ! dry dust (species 4) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_wet1    ! wet dust (species 1) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_dry1    ! dry dust (species 1) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_wet2    ! wet dust (species 2) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_dry2    ! dry dust (species 2) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_wet3    ! wet dust (species 3) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_dry3    ! dry dust (species 3) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_wet4    ! wet dust (species 4) deposition (col) [kg m-2 s-1]
+    real(r8) :: flx_dst_dep_dry4    ! dry dust (species 4) deposition (col) [kg m-2 s-1]
 
     integer  :: c
 
@@ -211,28 +209,28 @@ contains
     ! (cloud-borne) aerosol, and "pho" flavors are interstitial
     ! aerosol. "wet" and "dry" fluxes of BC and OC specified here are
     ! purely diagnostic
-    do c = begc, endc
+    !do c = begc, endc
 
-       flx_bc_dep_phi(c)   = forc_aer(c,3)
-       flx_bc_dep_pho(c)   = forc_aer(c,1) + forc_aer(c,2)
-       flx_bc_dep(c)       = forc_aer(c,1) + forc_aer(c,2) + forc_aer(c,3)
+       flx_bc_dep_phi   = forc_aer(3)
+       flx_bc_dep_pho   = forc_aer(1) + forc_aer(2)
+       flx_bc_dep       = forc_aer(1) + forc_aer(2) + forc_aer(3)
 
-       flx_oc_dep_phi(c)   = forc_aer(c,6)
-       flx_oc_dep_pho(c)   = forc_aer(c,4) + forc_aer(c,5)
-       flx_oc_dep(c)       = forc_aer(c,4) + forc_aer(c,5) + forc_aer(c,6)
+       flx_oc_dep_phi   = forc_aer(6)
+       flx_oc_dep_pho   = forc_aer(4) + forc_aer(5)
+       flx_oc_dep       = forc_aer(4) + forc_aer(5) + forc_aer(6)
 
-       flx_dst_dep_wet1(c) = forc_aer(c,7)
-       flx_dst_dep_dry1(c) = forc_aer(c,8)
-       flx_dst_dep_wet2(c) = forc_aer(c,9)
-       flx_dst_dep_dry2(c) = forc_aer(c,10)
-       flx_dst_dep_wet3(c) = forc_aer(c,11)
-       flx_dst_dep_dry3(c) = forc_aer(c,12)
-       flx_dst_dep_wet4(c) = forc_aer(c,13)
-       flx_dst_dep_dry4(c) = forc_aer(c,14)
-       flx_dst_dep(c)      = forc_aer(c,7) + forc_aer(c,8) + forc_aer(c,9) + &
-                             forc_aer(c,10) + forc_aer(c,11) + forc_aer(c,12) + &
-                             forc_aer(c,13) + forc_aer(c,14)
-    end do
+       flx_dst_dep_wet1 = forc_aer(7)
+       flx_dst_dep_dry1 = forc_aer(8)
+       flx_dst_dep_wet2 = forc_aer(9)
+       flx_dst_dep_dry2 = forc_aer(10)
+       flx_dst_dep_wet3 = forc_aer(11)
+       flx_dst_dep_dry3 = forc_aer(12)
+       flx_dst_dep_wet4 = forc_aer(13)
+       flx_dst_dep_dry4 = forc_aer(14)
+       flx_dst_dep      = forc_aer(7) + forc_aer(8) + forc_aer(9) + &
+                             forc_aer(10) + forc_aer(11) + forc_aer(12) + &
+                             forc_aer(13) + forc_aer(14)
+    !end do
 
 #else
 
@@ -240,28 +238,28 @@ contains
     ! species are distinguished in model, other fluxes (e.g., dry and
     ! wet BC/OC) are purely diagnostic.
 
-      do c = begc,endc
+      !do c = begc,endc
 
-         flx_bc_dep_phi(c)   = forc_aer(c,1) + forc_aer(c,3)
-         flx_bc_dep_pho(c)   = forc_aer(c,2)
-         flx_bc_dep(c)       = forc_aer(c,1) + forc_aer(c,2) + forc_aer(c,3)
+         flx_bc_dep_phi   = forc_aer(1) + forc_aer(3)
+         flx_bc_dep_pho   = forc_aer(2)
+         flx_bc_dep       = forc_aer(1) + forc_aer(2) + forc_aer(3)
 
-         flx_oc_dep_phi(c)   = forc_aer(c,4) + forc_aer(c,6)
-         flx_oc_dep_pho(c)   = forc_aer(c,5)
-         flx_oc_dep(c)       = forc_aer(c,4) + forc_aer(c,5) + forc_aer(c,6)
+         flx_oc_dep_phi   = forc_aer(4) + forc_aer(6)
+         flx_oc_dep_pho   = forc_aer(5)
+         flx_oc_dep       = forc_aer(4) + forc_aer(5) + forc_aer(6)
 
-         flx_dst_dep_wet1(c) = forc_aer(c,7)
-         flx_dst_dep_dry1(c) = forc_aer(c,8)
-         flx_dst_dep_wet2(c) = forc_aer(c,9)
-         flx_dst_dep_dry2(c) = forc_aer(c,10)
-         flx_dst_dep_wet3(c) = forc_aer(c,11)
-         flx_dst_dep_dry3(c) = forc_aer(c,12)
-         flx_dst_dep_wet4(c) = forc_aer(c,13)
-         flx_dst_dep_dry4(c) = forc_aer(c,14)
-         flx_dst_dep(c)      = forc_aer(c,7) + forc_aer(c,8) + forc_aer(c,9) + &
-                               forc_aer(c,10) + forc_aer(c,11) + forc_aer(c,12) + &
-                               forc_aer(c,13) + forc_aer(c,14)
-      end do
+         flx_dst_dep_wet1 = forc_aer(7)
+         flx_dst_dep_dry1 = forc_aer(8)
+         flx_dst_dep_wet2 = forc_aer(9)
+         flx_dst_dep_dry2 = forc_aer(10)
+         flx_dst_dep_wet3 = forc_aer(11)
+         flx_dst_dep_dry3 = forc_aer(12)
+         flx_dst_dep_wet4 = forc_aer(13)
+         flx_dst_dep_dry4 = forc_aer(14)
+         flx_dst_dep      = forc_aer(7) + forc_aer(8) + forc_aer(9) + &
+                               forc_aer(10) + forc_aer(11) + forc_aer(12) + &
+                               forc_aer(13) + forc_aer(14)
+      !end do
 #endif
 
       ! aerosol deposition fluxes into top layer
@@ -270,17 +268,17 @@ contains
       ! washed out before radiative calculations are done
 
 
-      do c = begc,endc
-         mss_bcphi(c,snl(c)+1) = mss_bcphi(c,snl(c)+1) + (flx_bc_dep_phi(c)*dtime)
-         mss_bcpho(c,snl(c)+1) = mss_bcpho(c,snl(c)+1) + (flx_bc_dep_pho(c)*dtime)
-         mss_ocphi(c,snl(c)+1) = mss_ocphi(c,snl(c)+1) + (flx_oc_dep_phi(c)*dtime)
-         mss_ocpho(c,snl(c)+1) = mss_ocpho(c,snl(c)+1) + (flx_oc_dep_pho(c)*dtime)
+      !do c = begc,endc
+         mss_bcphi(snl+1) = mss_bcphi(snl+1) + (flx_bc_dep_phi*dtime)
+         mss_bcpho(snl+1) = mss_bcpho(snl+1) + (flx_bc_dep_pho*dtime)
+         mss_ocphi(snl+1) = mss_ocphi(snl+1) + (flx_oc_dep_phi*dtime)
+         mss_ocpho(snl+1) = mss_ocpho(snl+1) + (flx_oc_dep_pho*dtime)
 
-         mss_dst1(c,snl(c)+1) = mss_dst1(c,snl(c)+1) + (flx_dst_dep_dry1(c) + flx_dst_dep_wet1(c))*dtime
-         mss_dst2(c,snl(c)+1) = mss_dst2(c,snl(c)+1) + (flx_dst_dep_dry2(c) + flx_dst_dep_wet2(c))*dtime
-         mss_dst3(c,snl(c)+1) = mss_dst3(c,snl(c)+1) + (flx_dst_dep_dry3(c) + flx_dst_dep_wet3(c))*dtime
-         mss_dst4(c,snl(c)+1) = mss_dst4(c,snl(c)+1) + (flx_dst_dep_dry4(c) + flx_dst_dep_wet4(c))*dtime
-      end do
+         mss_dst1(snl+1) = mss_dst1(snl+1) + (flx_dst_dep_dry1 + flx_dst_dep_wet1)*dtime
+         mss_dst2(snl+1) = mss_dst2(snl+1) + (flx_dst_dep_dry2 + flx_dst_dep_wet2)*dtime
+         mss_dst3(snl+1) = mss_dst3(snl+1) + (flx_dst_dep_dry3 + flx_dst_dep_wet3)*dtime
+         mss_dst4(snl+1) = mss_dst4(snl+1) + (flx_dst_dep_dry4 + flx_dst_dep_wet4)*dtime
+      !end do
 
   end subroutine AerosolFluxes
 

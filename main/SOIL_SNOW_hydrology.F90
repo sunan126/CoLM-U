@@ -768,8 +768,8 @@ MODULE SOIL_SNOW_hydrology
     ! uncertainty in how this process operates.
 
     do j= lb, 0
-       if (j >= snl+1) then
-          if (j == snl+1) then
+       if (j >= lb) then
+          if (j == lb) then
              ! snow that has sublimated [kg/m2] (top layer only)
              subsnow = max(0._r8, (qsubl*deltim))
 

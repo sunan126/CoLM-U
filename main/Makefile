@@ -42,6 +42,9 @@ OBJS =  precision.o                 \
 	metdata.o                   \
 	GETMET.o                    \
 	ThreeDCanopy.o              \
+	AerosolMod.o                \
+	SnowSnicarMod.o             \
+	SnowAlbedo.o                \
 	ALBEDO.o                    \
 	UrbanShortwave.o            \
 	UrbanLongwave.o             \

@@ -39,6 +39,11 @@ SUBROUTINE CLMMAIN ( &
            zwt,          wa,                                       &
            t_lake,       lake_icefrac,                             &
 
+         ! SNICAR snow model related
+           snw_rds,                                                &
+           mss_bcpho,    mss_bcphi,   mss_ocpho,     mss_ocphi,    &
+           mss_dst1,     mss_dst2,    mss_dst3,      mss_dst4,     &
+
          ! additional diagnostic variables for output
            laisun,       laisha,                                   &
            rstfac,       h2osoi,       wat,                        &
@@ -118,6 +123,10 @@ SUBROUTINE CLMMAIN ( &
   USE SIMPLE_OCEAN
   USE ALBEDO
   USE timemanager
+
+  ! SNICAR
+  USE AerosolMod, only :AerosolFluxes, AerosolMasses
+  USE SnowSnicarMod, only :SnowAge_grain
 
   IMPLICIT NONE
 
@@ -241,6 +250,16 @@ SUBROUTINE CLMMAIN ( &
         snowdp      ,&! snow depth (m)
         zwt         ,&! the depth to water table [m]
         wa          ,&! water storage in aquifer [mm]
+
+        snw_rds   ( maxsnl+1:0 ) ,&! effective grain radius (col,lyr) [microns, m-6]
+        mss_bcpho ( maxsnl+1:0 ) ,&! mass of hydrophobic BC in snow  (col,lyr) [kg]
+        mss_bcphi ( maxsnl+1:0 ) ,&! mass of hydrophillic BC in snow (col,lyr) [kg]
+        mss_ocpho ( maxsnl+1:0 ) ,&! mass of hydrophobic OC in snow  (col,lyr) [kg]
+        mss_ocphi ( maxsnl+1:0 ) ,&! mass of hydrophillic OC in snow (col,lyr) [kg]
+        mss_dst1  ( maxsnl+1:0 ) ,&! mass of dust species 1 in snow  (col,lyr) [kg]
+        mss_dst2  ( maxsnl+1:0 ) ,&! mass of dust species 2 in snow  (col,lyr) [kg]
+        mss_dst3  ( maxsnl+1:0 ) ,&! mass of dust species 3 in snow  (col,lyr) [kg]
+        mss_dst4  ( maxsnl+1:0 ) ,&! mass of dust species 4 in snow  (col,lyr) [kg]
 
         fveg        ,&! fraction of vegetation cover
         fsno        ,&! fractional snow cover
@@ -383,6 +402,21 @@ SUBROUTINE CLMMAIN ( &
         imelt(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         lb          ,&! lower bound of arrays
         j             ! do looping index
+
+      ! For SNICAR snow model
+      logical  do_capsnow                       !true => do snow capping
+      real(r8) qflx_snwcp_ice                   !excess precipitation due to snow capping [kg m-2 s-1]
+      real(r8) qflx_snofrz_lyr ( maxsnl+1:0 )   !snow freezing rate (col,lyr) [kg m-2 s-1]
+      real(r8) forc_aer      ( 14 )             !aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+
+      real(r8) mss_cnc_bcphi ( maxsnl+1:0 )     !mass concentration of hydrophilic BC (col,lyr) [kg/kg]
+      real(r8) mss_cnc_bcpho ( maxsnl+1:0 )     !mass concentration of hydrophobic BC (col,lyr) [kg/kg]
+      real(r8) mss_cnc_ocphi ( maxsnl+1:0 )     !mass concentration of hydrophilic OC (col,lyr) [kg/kg]
+      real(r8) mss_cnc_ocpho ( maxsnl+1:0 )     !mass concentration of hydrophobic OC (col,lyr) [kg/kg]
+      real(r8) mss_cnc_dst1  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 1 (col,lyr) [kg/kg]
+      real(r8) mss_cnc_dst2  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
+      real(r8) mss_cnc_dst3  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
+      real(r8) mss_cnc_dst4  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
 
       REAL(r8) :: a, aa
       INTEGER ps, pe, pc
@@ -879,6 +913,50 @@ ENDIF
        ssw = min(1.,1.e-3*wliq_soisno(1)/dz_soisno(1))
        IF (patchtype >= 3) ssw = 1.0
 
+! ============================================================================
+! Compute aerosol fluxes through snowpack and aerosol deposition fluxes into top layere
+
+       forc_aer(:) = 4.2E-7  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+
+       IF (snl > 0) THEN
+       call AerosolFluxes( snl, forc_aer, &
+            mss_bcphi ,mss_bcpho ,mss_ocphi ,mss_ocpho ,&
+            mss_dst1  ,mss_dst2  ,mss_dst3  ,mss_dst4  )
+       ENDIF
+
+!  Calculate column-integrated aerosol masses, and
+!  mass concentrations for radiative calculations and output
+!  (based on new snow level state, after SnowFilter is rebuilt.
+!  NEEDS TO BE AFTER SnowFiler is rebuilt, otherwise there
+!  can be zero snow layers but an active column in filter)
+
+       do_capsnow = .false.
+       qflx_snwcp_ice = 0.01
+       qflx_snofrz_lyr (:) = 0.01
+
+!       call AerosolMasses( snl ,do_capsnow ,&
+!            wice_soisno(:0),wliq_soisno(:0),qflx_snwcp_ice ,snw_rds       ,&
+!
+!            mss_bcpho     ,mss_bcphi       ,mss_ocpho      ,mss_ocphi     ,&
+!            mss_dst1      ,mss_dst2        ,mss_dst3       ,mss_dst4      ,&
+!
+!            mss_cnc_bcphi ,mss_cnc_bcpho   ,mss_cnc_ocphi  ,mss_cnc_ocpho ,&
+!            mss_cnc_dst1  ,mss_cnc_dst2    ,mss_cnc_dst3   ,mss_cnc_dst4  )
+
+! ============================================================================
+! Snow aging routine based on Flanner and Zender (2006), Linking snowpack
+! microphysics and albedo evolution, JGR, and Brun (1989), Investigation of
+! wet-snow metamorphism in respect of liquid-water content, Ann. Glaciol.
+
+!       call SnowAge_grain( deltim ,snl ,dz_soisno(:1)      ,&
+!            pg_snow        ,qflx_snwcp_ice ,qflx_snofrz_lyr ,&
+!
+!            do_capsnow     ,fsno           ,scv             ,&
+!            wliq_soisno(:0),wice_soisno(:0),&
+!            t_soisno   (:1),t_grnd         ,&
+!            snw_rds        )
+
+! ============================================================================
        ! albedos
        ! we supposed CALL it every time-step, because
        ! other vegeation related parameters are needed to create
@@ -886,6 +964,9 @@ ENDIF
             CALL albland (ipatch, patchtype,&
                  soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
                  chil,rho,tau,fveg,green,lai,sai,coszen,wt,fsno,scv,sag,ssw,t_grnd,&
+                 snl,wliq_soisno,wice_soisno,snw_rds,&
+                 mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
+                 mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
                  alb,ssun,ssha,thermk,extkb,extkd)
        ENDIF
     ELSE                   !OCEAN

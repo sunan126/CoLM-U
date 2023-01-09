@@ -6,6 +6,8 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
                      ,t_soisno,wliq_soisno,wice_soisno,zwt,wa&
                      ,t_grnd,tleaf,ldew,sag,scv&
                      ,snowdp,fveg,fsno,sigf,green,lai,sai,coszen&
+                     ,snw_rds,mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi&
+                     ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4&
                      ,alb,ssun,ssha,thermk,extkb,extkd&
                      ,trad,tref,qref,rst,emis,zol,rib&
                      ,ustar,qstar,tstar,fm,fh,fq&
@@ -88,6 +90,16 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
         extkd,                  &! diffuse and scattered diffuse PAR extinction coefficient
         wa,                     &! water storage in aquifer [mm]
         zwt,                    &! the depth to water table [m]
+
+        snw_rds      ( maxsnl+1:0 ), &! effective grain radius (col,lyr) [microns, m-6]
+        mss_cnc_bcphi( maxsnl+1:0 ), &! mass concentration of hydrophilic BC (col,lyr) [kg/kg]
+        mss_cnc_bcpho( maxsnl+1:0 ), &! mass concentration of hydrophobic BC (col,lyr) [kg/kg]
+        mss_cnc_ocphi( maxsnl+1:0 ), &! mass concentration of hydrophilic OC (col,lyr) [kg/kg]
+        mss_cnc_ocpho( maxsnl+1:0 ), &! mass concentration of hydrophobic OC (col,lyr) [kg/kg]
+        mss_cnc_dst1 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 1 (col,lyr) [kg/kg]
+        mss_cnc_dst2 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
+        mss_cnc_dst3 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
+        mss_cnc_dst4 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
 
                     ! Additional variables required by reginal model (WRF & RSM)
                     ! ---------------------------------------------------------
@@ -248,6 +260,17 @@ ENDIF
      sag    = 0.
      snowdp = 0.
 
+     ! SNICAR
+     snw_rds   (:) = 54.526_r8
+     mss_cnc_bcpho (:) = 0.
+     mss_cnc_bcphi (:) = 0.
+     mss_cnc_ocpho (:) = 0.
+     mss_cnc_ocphi (:) = 0.
+     mss_cnc_dst1  (:) = 0.
+     mss_cnc_dst2  (:) = 0.
+     mss_cnc_dst3  (:) = 0.
+     mss_cnc_dst4  (:) = 0.
+
      wt     = 0.
      t_grnd = t_soisno(1)
 #endif
@@ -256,6 +279,9 @@ ENDIF
      ssw = min(1.,1.e-3*wliq_soisno(1)/dz_soisno(1))
      CALL albland (ipatch,patchtype,soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
                    chil,rho,tau,fveg,green,lai,sai,coszen,wt,fsno,scv,sag,ssw,t_grnd,&
+                   snl,wliq_soisno,wice_soisno,snw_rds,&
+                   mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
+                   mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
                    alb,ssun,ssha,thermk,extkb,extkd)
 
   ELSE                 !ocean grid

@@ -30,6 +30,9 @@ MODULE ALBEDO
                       soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
                       chil,rho,tau,fveg,green,lai,sai,coszen,&
                       wt,fsno,scv,sag,ssw,tg,&
+                      snl,wliq_soisno,wice_soisno,snw_rds,&
+                      mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
+                      mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
                       alb,ssun,ssha,thermk,extkb,extkd)
 
 !=======================================================================
@@ -55,6 +58,7 @@ MODULE ALBEDO
 !=======================================================================
 
   USE precision
+  USE GlobalVars
   USE PhysicalConstants, only: tfrz
   USE MOD_PFTimeInvars
   USE MOD_PFTimeVars
@@ -69,8 +73,9 @@ MODULE ALBEDO
       ipatch,   & ! patch index
       patchtype   ! land water type (0=soil, 1=urban or built-up, 2=wetland,
                   ! 3=land ice, 4=deep lake, 5=shallow lake)
+ INTEGER, intent(in) :: &
+      snl         ! number of snow layers
 
-                  ! parameters
  REAL(r8), intent(in) :: &
       soil_s_v_alb, &! albedo of visible of the saturated soil
       soil_d_v_alb, &! albedo of visible of the dry soil
@@ -93,6 +98,19 @@ MODULE ALBEDO
       sag,       &! non dimensional snow age [-]
       tg          ! ground surface temperature [K]
 
+ REAL(r8), intent(in) :: &
+      wliq_soisno  ( maxsnl+1:0 ), &! liquid water (kg/m2)
+      wice_soisno  ( maxsnl+1:0 ), &! ice lens (kg/m2)
+      snw_rds      ( maxsnl+1:0 ), &! effective grain radius (col,lyr) [microns, m-6]
+      mss_cnc_bcphi( maxsnl+1:0 ), &! mass concentration of hydrophilic BC (col,lyr) [kg/kg]
+      mss_cnc_bcpho( maxsnl+1:0 ), &! mass concentration of hydrophobic BC (col,lyr) [kg/kg]
+      mss_cnc_ocphi( maxsnl+1:0 ), &! mass concentration of hydrophilic OC (col,lyr) [kg/kg]
+      mss_cnc_ocpho( maxsnl+1:0 ), &! mass concentration of hydrophobic OC (col,lyr) [kg/kg]
+      mss_cnc_dst1 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 1 (col,lyr) [kg/kg]
+      mss_cnc_dst2 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
+      mss_cnc_dst3 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
+      mss_cnc_dst4 ( maxsnl+1:0 )   ! mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
+
  REAL(r8), intent(out) :: &
       alb(2,2),  &! averaged albedo [-]
       ssun(2,2), &! sunlit canopy absorption for solar radiation
@@ -112,6 +130,11 @@ MODULE ALBEDO
       age,       &! factor to reduce visible snow alb due to snow age [-]
       albg0,     &! temporary varaiable [-]
       albsno(2,2),&! snow albedo [-]
+      albsno_pur(2,2),&! snow albedo [-]
+      albsno_bc (2,2),&! snow albedo [-]
+      albsno_oc (2,2),&! snow albedo [-]
+      albsno_dst(2,2),&! snow albedo [-]
+      ssno(2,2,maxsnl+1:1),&! snow absorption [-]
       albg(2,2), &! albedo, ground
       albv(2,2), &! albedo, vegetation [-]
       alb_s_inc, &! decrease in soil albedo due to wetness [-]
@@ -136,6 +159,9 @@ MODULE ALBEDO
       tran(2,2)   ! canopy transmittances for solar radiation
 
    INTEGER ps, pe, pc
+   logical use_snicar_frc  !  true : if radiative forcing is being calculated, first estimate clean-snow albedo
+   logical use_snicar_ad   !  true: use SNICAR_AD_RT, false: use SNICAR_RT
+
 ! ----------------------------------------------------------------------
 ! 1. Initial set
 ! ----------------------------------------------------------------------
@@ -195,6 +221,10 @@ ENDIF
 
       czen=max(coszen,0.001)
       albsno(:,:)=0.         !set initial snow albedo
+      albsno_pur(:,:)=0.     !set initial snow albedo
+      albsno_bc(:,:) =0.     !set initial snow albedo
+      albsno_oc(:,:) =0.     !set initial snow albedo
+      albsno_dst(:,:)=0.     !set initial snow albedo
 
 ! ----------------------------------------------------------------------
 ! 2. albedo for snow cover.
@@ -225,6 +255,7 @@ ENDIF
          albsno(2,2) = dfalbl
       ENDIF
 
+
 ! ----------------------------------------------------------------------
 ! 3. get albedo over land
 ! ----------------------------------------------------------------------
@@ -251,6 +282,29 @@ ENDIF
             albg(2,:) = 0.4
          ENDIF
       ENDIF
+
+#ifdef SNICAR1
+  ! SNICAR snow albedo
+  ! need soil albedo, so put it here
+
+    use_snicar_frc  = .false.  !  true : if radiative forcing is being calculated, first estimate clean-snow albedo
+    use_snicar_ad   = .true.   !  use true: use SNICAR_AD_RT, false: use SNICAR_RT
+
+    IF (scv > 0.) THEN
+       call SnowAlbedo(     use_snicar_frc ,use_snicar_ad  ,coszen         ,&
+            albg(:,1)      ,albg(:,2)      ,snl            ,fsno           ,&
+            scv            ,wliq_soisno    ,wice_soisno    ,snw_rds        ,&
+
+            mss_cnc_bcphi  ,mss_cnc_bcpho  ,mss_cnc_ocphi  ,mss_cnc_ocpho  ,&
+            mss_cnc_dst1   ,mss_cnc_dst2   ,mss_cnc_dst3   ,mss_cnc_dst4   ,&
+
+            albsno(:,1)    ,albsno(:,2)    ,albsno_pur(:,1),albsno_pur(:,2),&
+            albsno_bc(:,1) ,albsno_bc(:,2) ,albsno_oc(:,1) ,albsno_oc(:,2) ,&
+            albsno_dst(:,1),albsno_dst(:,2),ssno(1,1,:)    ,ssno(2,1,:)    ,&
+            ssno(1,2,:)    ,ssno(2,2,:)    )
+    ENDIF
+#endif
+
 
 ! 3.4 correction due to snow cover
       albg(:,:) = (1.-fsno)*albg(:,:) + fsno*albsno(:,:)

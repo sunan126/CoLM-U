@@ -2,8 +2,6 @@
 !-------------------------------------------------------------------------
 MODULE SnowSnicarMod
 
-#include "shr_assert.h"
-
   !-----------------------------------------------------------------------
   ! !DESCRIPTION:
   ! Calculate albedo of snow containing impurities
@@ -14,7 +12,7 @@ MODULE SnowSnicarMod
   IMPLICIT NONE
 ! save
     integer, parameter :: r8 = selected_real_kind(12)    !  8 byte real
-    real(R8),parameter :: SHR_CONST_PI     = 3.14159265358979323846_R8  
+    real(R8),parameter :: SHR_CONST_PI     = 3.14159265358979323846_R8
     real(R8),parameter :: SHR_CONST_RHOICE = 0.917e3_R8 !  density of ice (kg/m^3)
 
     integer, parameter :: iulog = 6      ! "stdout" log file unit number, default is 6
@@ -26,13 +24,13 @@ MODULE SnowSnicarMod
 ! DAI, Dec. 29, 2022
 ! Temporay setting
 
-    integer, parameter :: begc = 1       !  beginning column index
-    integer, parameter :: endc = 1       !  beginning and ending column index
+    !integer, parameter :: begc = 1       !  beginning column index
+    !integer, parameter :: endc = 1       !  beginning and ending column index
 
     logical, parameter :: use_extrasnowlayers = .false.
-    character(len=256), parameter :: snow_shape = 'sphere' ! (=1), 'spheroid'(=2), 'hexagonal_plate'(=3), 'koch_snowflake'(=4) 
+    character(len=256), parameter :: snow_shape = 'sphere' ! (=1), 'spheroid'(=2), 'hexagonal_plate'(=3), 'koch_snowflake'(=4)
     logical, parameter :: use_dust_snow_internal_mixing = .false.
-    character(len=256), parameter :: snicar_atm_type = 'default'  ! Atmospheric profile used to obtain surface-incident spectral flux distribution 
+    character(len=256), parameter :: snicar_atm_type = 'default'  ! Atmospheric profile used to obtain surface-incident spectral flux distribution
                                                                   ! and subsequent broadband albedo
                                    ! = 'mid-latitude_winter'  ! => 1
                                    ! = 'mid-latitude_summer'  ! => 2
@@ -123,13 +121,13 @@ MODULE SnowSnicarMod
   ! direct & diffuse flux
   real(r8) :: flx_wgt_dir    (6, 90, numrad_snw) ! direct flux, six atmospheric types, 0-89 SZA
   real(r8) :: flx_wgt_dif    (6, numrad_snw)     ! diffuse flux, six atmospheric types
-  
+
   ! snow grain shape
   integer, parameter :: snow_shape_sphere            = 1
   integer, parameter :: snow_shape_spheroid          = 2
   integer, parameter :: snow_shape_hexagonal_plate   = 3
   integer, parameter :: snow_shape_koch_snowflake    = 4
-  
+
   ! atmospheric condition for SNICAR-AD
   integer, parameter :: atm_type_default             = 0
   integer, parameter :: atm_type_mid_latitude_winter = 1
@@ -138,7 +136,7 @@ MODULE SnowSnicarMod
   integer, parameter :: atm_type_sub_Arctic_summer   = 4
   integer, parameter :: atm_type_summit_Greenland    = 5
   integer, parameter :: atm_type_high_mountain       = 6
-  
+
 #ifdef MODAL_AER
   !mgf++
   ! Size-dependent BC optical properties. Currently a fixed BC size is
@@ -252,19 +250,19 @@ contains
 
     integer  , intent(in)  :: flg_snw_ice                   ! flag: =1 when called from CLM, =2 when called from CSIM
     integer  , intent(in)  :: flg_slr_in                    ! flag: =1 for direct-beam incident flux,=2 for diffuse incident flux
-    real(r8) , intent(in)  :: coszen         ( begc:endc )  ! cosine of solar zenith angle for next time step (col) [unitless]
+    real(r8) , intent(in)  :: coszen           ! cosine of solar zenith angle for next time step (col) [unitless]
 
-    integer  , intent(in)  :: snl            ( begc:endc )  !  negative number of snow layers (col) [nbr]
-    real(r8) , intent(in)  :: h2osno         ( begc:endc )  !  snow liquid water equivalent (col) [kg/m2]
-    real(r8) , intent(in)  :: frac_sno       ( begc:endc )  !  fraction of ground covered by snow (0 to 1)
+    integer  , intent(in)  :: snl              !  negative number of snow layers (col) [nbr]
+    real(r8) , intent(in)  :: h2osno           !  snow liquid water equivalent (col) [kg/m2]
+    real(r8) , intent(in)  :: frac_sno         !  fraction of ground covered by snow (0 to 1)
 
-    real(r8) , intent(in)  :: h2osno_liq     ( begc:endc , -nlevsno+1:0 )   ! liquid water content (col,lyr) [kg/m2]
-    real(r8) , intent(in)  :: h2osno_ice     ( begc:endc , -nlevsno+1:0 )   ! ice content (col,lyr) [kg/m2]
-    integer  , intent(in)  :: snw_rds        ( begc:endc , -nlevsno+1:0 )   ! snow effective radius (col,lyr) [microns, m^-6]
-    real(r8) , intent(in)  :: mss_cnc_aer_in ( begc:endc , -nlevsno+1:0 , 1:sno_nbr_aer ) ! mass concentration of all aerosol species (col,lyr,aer) [kg/kg]
-    real(r8) , intent(in)  :: albsfc         ( begc:endc , 1:numrad )       ! albedo of surface underlying snow (col,bnd) [frc]
-    real(r8) , intent(out) :: albout         ( begc:endc , 1:numrad )       ! snow albedo, averaged into 2 bands (=0 if no sun or no snow) (col,bnd) [frc]
-    real(r8) , intent(out) :: flx_abs        ( begc:endc , -nlevsno+1:1 , 1:numrad ) ! absorbed flux in each layer per unit flux incident (col, lyr, bnd)
+    real(r8) , intent(in)  :: h2osno_liq     ( -nlevsno+1:0 )   ! liquid water content (col,lyr) [kg/m2]
+    real(r8) , intent(in)  :: h2osno_ice     ( -nlevsno+1:0 )   ! ice content (col,lyr) [kg/m2]
+    integer  , intent(in)  :: snw_rds        ( -nlevsno+1:0 )   ! snow effective radius (col,lyr) [microns, m^-6]
+    real(r8) , intent(in)  :: mss_cnc_aer_in ( -nlevsno+1:0 , 1:sno_nbr_aer ) ! mass concentration of all aerosol species (col,lyr,aer) [kg/kg]
+    real(r8) , intent(in)  :: albsfc         ( 1:numrad )       ! albedo of surface underlying snow (col,bnd) [frc]
+    real(r8) , intent(out) :: albout         ( 1:numrad )       ! snow albedo, averaged into 2 bands (=0 if no sun or no snow) (col,bnd) [frc]
+    real(r8) , intent(out) :: flx_abs        ( -nlevsno+1:1 , 1:numrad ) ! absorbed flux in each layer per unit flux incident (col, lyr, bnd)
     !
     ! !LOCAL VARIABLES:
     !
@@ -331,7 +329,6 @@ contains
     real(r8):: g_star(-nlevsno+1:0)               ! transformed (i.e. Delta-Eddington) asymmetry paramater of snow+aerosol layer
                                                   ! (lyr) [frc]
 
-    integer :: c_idx                              ! column indices [idx]
     integer :: bnd_idx                            ! spectral band index (1 <= bnd_idx <= numrad_snw) [idx]
     integer :: rds_idx                            ! snow effective radius index for retrieving
                                                   ! Mie parameters from lookup table [idx]
@@ -343,7 +340,7 @@ contains
     integer :: n                                  ! tridiagonal matrix index [idx]
     integer :: m                                  ! secondary layer index [idx]
     integer :: nint_snw_rds_min                   ! nearest integer value of snw_rds_min
-    
+
     real(r8):: F_direct(-nlevsno+1:0)             ! direct-beam radiation at bottom of layer interface (lyr) [W/m^2]
     real(r8):: F_net(-nlevsno+1:0)                ! net radiative flux at bottom of layer interface (lyr) [W/m^2]
     real(r8):: F_abs(-nlevsno+1:0)                ! net absorbed radiative energy (lyr) [W/m^2]
@@ -410,32 +407,32 @@ contains
 
       ! Loop over all columns
       ! (when called from CSIM, there is only one column)
-      do c_idx = begc, endc
+      !do c_idx = begc, endc
 
          ! Zero absorbed radiative fluxes:
          do i=-nlevsno+1,1,1
             flx_abs_lcl(:,:)   = 0._r8
-            flx_abs(c_idx,i,:) = 0._r8
+            flx_abs(i,:) = 0._r8
          enddo
 
          ! set snow/ice mass to be used for RT:
          if (flg_snw_ice == 1) then
-            h2osno_lcl = h2osno(c_idx)
+            h2osno_lcl = h2osno
          else
-            h2osno_lcl = h2osno_ice(c_idx,0)
+            h2osno_lcl = h2osno_ice(0)
          endif
 
          ! Qualifier for computing snow RT:
          !  1) sunlight from atmosphere model
          !  2) minimum amount of snow on ground.
          !     Otherwise, set snow albedo to zero
-         if ((coszen(c_idx) > 0._r8) .and. (h2osno_lcl > min_snw)) then
+         if ((coszen > 0._r8) .and. (h2osno_lcl > min_snw)) then
 
             ! Set variables specific to CLM
             if (flg_snw_ice == 1) then
                ! If there is snow, but zero snow layers, we must create a layer locally.
                ! This layer is presumed to have the fresh snow effective radius.
-               if (snl(c_idx) > -1) then
+               if (snl > -1) then
                   flg_nosnl         =  1
                   snl_lcl           =  -1
                   h2osno_ice_lcl(0) =  h2osno_lcl
@@ -443,10 +440,10 @@ contains
                   snw_rds_lcl(0)    =  nint_snw_rds_min
                else
                   flg_nosnl         =  0
-                  snl_lcl           =  snl(c_idx)
-                  h2osno_liq_lcl(:) =  h2osno_liq(c_idx,:)
-                  h2osno_ice_lcl(:) =  h2osno_ice(c_idx,:)
-                  snw_rds_lcl(:)    =  snw_rds(c_idx,:)
+                  snl_lcl           =  snl
+                  h2osno_liq_lcl(:) =  h2osno_liq(:)
+                  h2osno_ice_lcl(:) =  h2osno_ice(:)
+                  snw_rds_lcl(:)    =  snw_rds(:)
                endif
 
                snl_btm   = 0
@@ -456,9 +453,9 @@ contains
             else
                flg_nosnl         = 0
                snl_lcl           = -1
-               h2osno_liq_lcl(:) = h2osno_liq(c_idx,:)
-               h2osno_ice_lcl(:) = h2osno_ice(c_idx,:)
-               snw_rds_lcl(:)    = snw_rds(c_idx,:)
+               h2osno_liq_lcl(:) = h2osno_liq(:)
+               h2osno_ice_lcl(:) = h2osno_ice(:)
+               snw_rds_lcl(:)    = snw_rds(:)
                snl_btm           = 0
                snl_top           = 0
             endif
@@ -478,13 +475,13 @@ contains
 
             ! Set local aerosol array
             do j=1,sno_nbr_aer
-               mss_cnc_aer_lcl(:,j) = mss_cnc_aer_in(c_idx,:,j)
+               mss_cnc_aer_lcl(:,j) = mss_cnc_aer_in(:,j)
             enddo
 
 
             ! Set spectral underlying surface albedos to their corresponding VIS or NIR albedos
-            albsfc_lcl(1)                       = albsfc(c_idx,1)
-            albsfc_lcl(nir_bnd_bgn:nir_bnd_end) = albsfc(c_idx,2)
+            albsfc_lcl(1)                       = albsfc(1)
+            albsfc_lcl(nir_bnd_bgn:nir_bnd_end) = albsfc(2)
 
 
             ! Error check for snow grain size:
@@ -493,7 +490,7 @@ contains
                if ((snw_rds_lcl(i) < snw_rds_min_tbl) .or. (snw_rds_lcl(i) > snw_rds_max_tbl)) then
                   write (iulog,*)  "SNICAR ERROR: snow grain radius of out of bounds."
                   write (iulog,*) "flg_snw_ice= ", flg_snw_ice
-                  write (iulog,*) "column: ", c_idx, " level: ", i, " snl(c)= ", snl_lcl
+                  write (iulog,*) " level: ", i, " snl(c)= ", snl_lcl
                   write (iulog,*) "h2osno(c)= ", h2osno_lcl
                   call abort
                endif
@@ -549,7 +546,7 @@ contains
             ! Loop over snow spectral bands
             do bnd_idx = 1,numrad_snw
 
-               mu_not    = coszen(c_idx)  ! must set here, because of error handling
+               mu_not    = coszen  ! must set here, because of error handling
                flg_dover = 1              ! default is to redo
                err_idx   = 0              ! number of times through loop
 
@@ -578,7 +575,7 @@ contains
                         APRX_TYP = 3
                      elseif (flg_dover == 3) then
                         APRX_TYP = 1
-                        if (coszen(c_idx) > 0.5_r8) then
+                        if (coszen > 0.5_r8) then
                            mu_not = mu_not - 0.02_r8
                         else
                            mu_not = mu_not + 0.02_r8
@@ -594,7 +591,7 @@ contains
                         APRX_TYP = 1
                      elseif (flg_dover == 3) then
                         APRX_TYP = 3
-                        if (coszen(c_idx) > 0.5_r8) then
+                        if (coszen > 0.5_r8) then
                            mu_not = mu_not - 0.02_r8
                         else
                            mu_not = mu_not + 0.02_r8
@@ -756,7 +753,7 @@ contains
 
                      L_snw(i)   = h2osno_ice_lcl(i)+h2osno_liq_lcl(i)
                      tau_snw(i) = L_snw(i)*ext_cff_mss_snw_lcl(i)
-  
+
                      do j=1,sno_nbr_aer
                         L_aer(i,j)   = L_snw(i)*mss_cnc_aer_lcl(i,j)
                         tau_aer(i,j) = L_aer(i,j)*ext_cff_mss_aer_lcl(j)
@@ -1015,7 +1012,7 @@ contains
                      flg_dover = 0
 #ifndef _OPENACC
                      write(iulog,*) "SNICAR ERROR: FOUND A WORMHOLE. STUCK IN INFINITE LOOP! Called from: ", flg_snw_ice
-                     write(iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(c_idx,0)
+                     write(iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(0)
                      write(iulog,*) "SNICAR STATS: L_snw(0)= ", L_snw(0)
                      write(iulog,*) "SNICAR STATS: h2osno= ", h2osno_lcl, " snl= ", snl_lcl
                      write(iulog,*) "SNICAR STATS: soot1(0)= ", mss_cnc_aer_lcl(0,1)
@@ -1024,8 +1021,7 @@ contains
                      write(iulog,*) "SNICAR STATS: dust2(0)= ", mss_cnc_aer_lcl(0,4)
                      write(iulog,*) "SNICAR STATS: dust3(0)= ", mss_cnc_aer_lcl(0,5)
                      write(iulog,*) "SNICAR STATS: dust4(0)= ", mss_cnc_aer_lcl(0,6)
-                     write(iulog,*) "column index: ", c_idx
-                     write(iulog,*) "frac_sno: ", frac_sno(c_idx)
+                     write(iulog,*) "frac_sno: ", frac_sno
                      call abort
 #endif
                   else
@@ -1049,12 +1045,12 @@ contains
                ! Check that albedo is less than 1
                if (albout_lcl(bnd_idx) > 1.0) then
 #ifndef _OPENACC
-                  write(iulog,*) "SNICAR ERROR: Albedo > 1.0 at c: ", c_idx
+                  write(iulog,*) "SNICAR ERROR: Albedo > 1.0: "
                   write(iulog,*) "SNICAR STATS: bnd_idx= ",bnd_idx
                   write (iulog,*) "SNICAR STATS: albout_lcl(bnd)= ",albout_lcl(bnd_idx), &
                        " albsfc_lcl(bnd_idx)= ",albsfc_lcl(bnd_idx)
                   write (iulog,*) "SNICAR STATS: h2osno= ", h2osno_lcl, " snl= ", snl_lcl
-                  write (iulog,*) "SNICAR STATS: coszen= ", coszen(c_idx), " flg_slr= ", flg_slr_in
+                  write (iulog,*) "SNICAR STATS: coszen= ", coszen, " flg_slr= ", flg_slr_in
 
                   write (iulog,*) "SNICAR STATS: soot(-4)= ", mss_cnc_aer_lcl(-4,1)
                   write (iulog,*) "SNICAR STATS: soot(-3)= ", mss_cnc_aer_lcl(-3,1)
@@ -1068,11 +1064,11 @@ contains
                   write (iulog,*) "SNICAR STATS: L_snw(-1)= ", L_snw(-1)
                   write (iulog,*) "SNICAR STATS: L_snw(0)= ", L_snw(0)
 
-                  write (iulog,*) "SNICAR STATS: snw_rds(-4)= ", snw_rds(c_idx,-4)
-                  write (iulog,*) "SNICAR STATS: snw_rds(-3)= ", snw_rds(c_idx,-3)
-                  write (iulog,*) "SNICAR STATS: snw_rds(-2)= ", snw_rds(c_idx,-2)
-                  write (iulog,*) "SNICAR STATS: snw_rds(-1)= ", snw_rds(c_idx,-1)
-                  write (iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(c_idx,0)
+                  write (iulog,*) "SNICAR STATS: snw_rds(-4)= ", snw_rds(-4)
+                  write (iulog,*) "SNICAR STATS: snw_rds(-3)= ", snw_rds(-3)
+                  write (iulog,*) "SNICAR STATS: snw_rds(-2)= ", snw_rds(-2)
+                  write (iulog,*) "SNICAR STATS: snw_rds(-1)= ", snw_rds(-1)
+                  write (iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(0)
 
                   call abort
 #endif
@@ -1082,35 +1078,35 @@ contains
 
 
             ! Weight output NIR albedo appropriately
-            albout(c_idx,1) = albout_lcl(1)
+            albout(1) = albout_lcl(1)
             flx_sum         = 0._r8
             do bnd_idx= nir_bnd_bgn,nir_bnd_end
                flx_sum = flx_sum + flx_wgt(bnd_idx)*albout_lcl(bnd_idx)
             end do
-            albout(c_idx,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
+            albout(2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
 
             ! Weight output NIR absorbed layer fluxes (flx_abs) appropriately
-            flx_abs(c_idx,:,1) = flx_abs_lcl(:,1)
+            flx_abs(:,1) = flx_abs_lcl(:,1)
             do i=snl_top,1,1
                flx_sum = 0._r8
                do bnd_idx= nir_bnd_bgn,nir_bnd_end
                   flx_sum = flx_sum + flx_wgt(bnd_idx)*flx_abs_lcl(i,bnd_idx)
                enddo
-               flx_abs(c_idx,i,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
+               flx_abs(i,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
             end do
 
             ! If snow < minimum_snow, but > 0, and there is sun, set albedo to underlying surface albedo
-         elseif ( (coszen(c_idx) > 0._r8) .and. (h2osno_lcl < min_snw) .and. (h2osno_lcl > 0._r8) ) then
-            albout(c_idx,1) = albsfc(c_idx,1)
-            albout(c_idx,2) = albsfc(c_idx,2)
+         elseif ( (coszen > 0._r8) .and. (h2osno_lcl < min_snw) .and. (h2osno_lcl > 0._r8) ) then
+            albout(1) = albsfc(1)
+            albout(2) = albsfc(2)
 
             ! There is either zero snow, or no sun
          else
-            albout(c_idx,1) = 0._r8
-            albout(c_idx,2) = 0._r8
+            albout(1) = 0._r8
+            albout(2) = 0._r8
          endif    ! if column has snow and coszen > 0
 
-      enddo    ! loop over all columns
+      !enddo    ! loop over all columns
 
   ! end associate
 
@@ -1153,19 +1149,19 @@ contains
 
      integer  , intent(in)  :: flg_snw_ice                  ! flag: =1 when called from CLM, =2 when called from CSIM
      integer  , intent(in)  :: flg_slr_in                   ! flag: =1 for direct-beam incident flux,=2 for diffuse incident flux
-     real(r8) , intent(in)  :: coszen         ( begc:endc ) ! cosine of solar zenith angle for next time step (col) [unitless]
+     real(r8) , intent(in)  :: coszen          ! cosine of solar zenith angle for next time step (col) [unitless]
 
-     integer  , intent(in)  :: snl            ( begc:endc ) !  negative number of snow layers (col) [nbr]
-     real(r8) , intent(in)  :: h2osno         ( begc:endc ) !  snow liquid water equivalent (col) [kg/m2]
-     real(r8) , intent(in)  :: frac_sno       ( begc:endc ) !  fraction of ground covered by snow (0 to 1)
+     integer  , intent(in)  :: snl             !  negative number of snow layers (col) [nbr]
+     real(r8) , intent(in)  :: h2osno          !  snow liquid water equivalent (col) [kg/m2]
+     real(r8) , intent(in)  :: frac_sno        !  fraction of ground covered by snow (0 to 1)
 
-     real(r8) , intent(in)  :: h2osno_liq     ( begc:endc , -nlevsno+1:0 )   ! liquid water content (col,lyr) [kg/m2]
-     real(r8) , intent(in)  :: h2osno_ice     ( begc:endc , -nlevsno+1:0 )   ! ice content (col,lyr) [kg/m2]
-     integer  , intent(in)  :: snw_rds        ( begc:endc , -nlevsno+1:0 )   ! snow effective radius (col,lyr) [microns, m^-6]
-     real(r8) , intent(in)  :: mss_cnc_aer_in ( begc:endc , -nlevsno+1:0 , 1:sno_nbr_aer ) ! mass concentration of all aerosol species (col,lyr,aer) [kg/kg]
-     real(r8) , intent(in)  :: albsfc         ( begc:endc , 1:numrad )       ! albedo of surface underlying snow (col,bnd) [frc]
-     real(r8) , intent(out) :: albout         ( begc:endc , 1:numrad )       ! snow albedo, averaged into 2 bands (=0 if no sun or no snow) (col,bnd) [frc]
-     real(r8) , intent(out) :: flx_abs        ( begc:endc , -nlevsno+1:1 , 1:numrad ) ! absorbed flux in each layer per unit flux incident (col, lyr, bnd)
+     real(r8) , intent(in)  :: h2osno_liq     ( -nlevsno+1:0 )   ! liquid water content (col,lyr) [kg/m2]
+     real(r8) , intent(in)  :: h2osno_ice     ( -nlevsno+1:0 )   ! ice content (col,lyr) [kg/m2]
+     integer  , intent(in)  :: snw_rds        ( -nlevsno+1:0 )   ! snow effective radius (col,lyr) [microns, m^-6]
+     real(r8) , intent(in)  :: mss_cnc_aer_in ( -nlevsno+1:0 , 1:sno_nbr_aer ) ! mass concentration of all aerosol species (col,lyr,aer) [kg/kg]
+     real(r8) , intent(in)  :: albsfc         ( 1:numrad )       ! albedo of surface underlying snow (col,bnd) [frc]
+     real(r8) , intent(out) :: albout         ( 1:numrad )       ! snow albedo, averaged into 2 bands (=0 if no sun or no snow) (col,bnd) [frc]
+     real(r8) , intent(out) :: flx_abs        ( -nlevsno+1:1 , 1:numrad ) ! absorbed flux in each layer per unit flux incident (col, lyr, bnd)
      !
      ! !LOCAL VARIABLES:
      !
@@ -1229,7 +1225,7 @@ contains
      real(r8):: g_star(-nlevsno+1:0)               ! transformed (i.e. Delta-Eddington) asymmetry paramater of snow+aerosol layer
                                                    ! (lyr) [frc]
 
-     integer :: c_idx                              ! column indices [idx]
+     !integer :: c_idx                              ! column indices [idx]
      integer :: bnd_idx                            ! spectral band index (1 <= bnd_idx <= numrad_snw) [idx]
      integer :: rds_idx                            ! snow effective radius index for retrieving
                                                    ! Mie parameters from lookup table [idx]
@@ -1274,9 +1270,9 @@ contains
          g_ice              , & ! asymmetry factor
          gg_F07_intp        , & ! temporary for calculation of asymetry factor (interpolated)
          g_Cg_intp          , & ! temporary for calculation of asymetry factor  (interpolated)
-	 R_1_omega_tmp      , & ! temporary for dust-snow mixing calculation 
+	 R_1_omega_tmp      , & ! temporary for dust-snow mixing calculation
          C_dust_total           ! dust concentration
-	
+
      integer :: atm_type_index  ! index for atmospheric type
      integer :: slr_zen         ! integer value of solar zenith angle
 
@@ -1478,12 +1474,12 @@ contains
               0.0951585_r8,  0.1246290_r8, &
               0.1495960_r8,  0.1691565_r8, &
               0.1826034_r8,  0.1894506_r8/)
-       
+
        snw_shp_lcl(:) = snow_shape_sphere
-       snw_fs_lcl(:)  = 0._r8 
+       snw_fs_lcl(:)  = 0._r8
        snw_ar_lcl(:)  = 0._r8
        atm_type_index = atm_type_default
-       
+
        ! Define snow grain shape
        if (trim(snow_shape) == 'sphere') then
          snw_shp_lcl(:) = snow_shape_sphere
@@ -1497,7 +1493,7 @@ contains
          write(iulog,*) "snow_shape = ", snow_shape
          call abort
        endif
-	  	    
+
        ! Define atmospheric type
        if (trim(snicar_atm_type) == 'default') then
          atm_type_index = atm_type_default
@@ -1517,35 +1513,35 @@ contains
          write(iulog,*) "snicar_atm_type = ", snicar_atm_type
          call abort
        endif
-	  
+
       ! Loop over all columns
       ! (when called from CSIM, there is only one column)
-       do c_idx = begc, endc
+       !do c_idx = begc, endc
 
           ! Zero absorbed radiative fluxes:
           do i=-nlevsno+1,1,1
              flx_abs_lcl(:,:)   = 0._r8
-             flx_abs(c_idx,i,:) = 0._r8
+             flx_abs(i,:) = 0._r8
           enddo
 
           ! set snow/ice mass to be used for RT:
           if (flg_snw_ice == 1) then
-             h2osno_lcl = h2osno(c_idx)
+             h2osno_lcl = h2osno
           else
-             h2osno_lcl = h2osno_ice(c_idx,0)
+             h2osno_lcl = h2osno_ice(0)
           endif
 
           ! Qualifier for computing snow RT:
           !  1) sunlight from atmosphere model
           !  2) minimum amount of snow on ground.
           !     Otherwise, set snow albedo to zero
-          if ((coszen(c_idx) > 0._r8) .and. (h2osno_lcl > min_snw) ) then
+          if ((coszen > 0._r8) .and. (h2osno_lcl > min_snw) ) then
 
              ! Set variables specific to ELM
              if (flg_snw_ice == 1) then
                 ! If there is snow, but zero snow layers, we must create a layer locally.
                 ! This layer is presumed to have the fresh snow effective radius.
-                if (snl(c_idx) > -1) then
+                if (snl > -1) then
                    flg_nosnl         =  1
                    snl_lcl           =  -1
                    h2osno_ice_lcl(0) =  h2osno_lcl
@@ -1553,10 +1549,10 @@ contains
                    snw_rds_lcl(0)    =  nint_snw_rds_min
                 else
                    flg_nosnl         =  0
-                   snl_lcl           =  snl(c_idx)
-                   h2osno_liq_lcl(:) =  h2osno_liq(c_idx,:)
-                   h2osno_ice_lcl(:) =  h2osno_ice(c_idx,:)
-                   snw_rds_lcl(:)    =  snw_rds(c_idx,:)
+                   snl_lcl           =  snl
+                   h2osno_liq_lcl(:) =  h2osno_liq(:)
+                   h2osno_ice_lcl(:) =  h2osno_ice(:)
+                   snw_rds_lcl(:)    =  snw_rds(:)
                 endif
 
                 snl_btm   = 0
@@ -1566,9 +1562,9 @@ contains
              else
                 flg_nosnl         = 0
                 snl_lcl           = -1
-                h2osno_liq_lcl(:) = h2osno_liq(c_idx,:)
-                h2osno_ice_lcl(:) = h2osno_ice(c_idx,:)
-                snw_rds_lcl(:)    = snw_rds(c_idx,:)
+                h2osno_liq_lcl(:) = h2osno_liq(:)
+                h2osno_ice_lcl(:) = h2osno_ice(:)
+                snw_rds_lcl(:)    = snw_rds(:)
                 snl_btm           = 0
                 snl_top           = 0
              endif ! end if flg_snw_ice == 1
@@ -1588,19 +1584,19 @@ contains
 
              ! Set local aerosol array
              do j=1,sno_nbr_aer
-                mss_cnc_aer_lcl(:,j) = mss_cnc_aer_in(c_idx,:,j)
+                mss_cnc_aer_lcl(:,j) = mss_cnc_aer_in(:,j)
              enddo
 
              ! Set spectral underlying surface albedos to their corresponding VIS or NIR albedos
-             albsfc_lcl(1)                       = albsfc(c_idx,1)
-             albsfc_lcl(nir_bnd_bgn:nir_bnd_end) = albsfc(c_idx,2)
+             albsfc_lcl(1)                       = albsfc(1)
+             albsfc_lcl(nir_bnd_bgn:nir_bnd_end) = albsfc(2)
 
              ! Error check for snow grain size:
              do i=snl_top,snl_btm,1
                 if ((snw_rds_lcl(i) < snw_rds_min_tbl) .or. (snw_rds_lcl(i) > snw_rds_max_tbl)) then
                    write (iulog,*) "SNICAR ERROR: snow grain radius of ", snw_rds_lcl(i), " out of bounds."
                    write (iulog,*) "flg_snw_ice= ", flg_snw_ice
-                   write (iulog,*) "column: ", c_idx, " level: ", i, " snl(c)= ", snl_lcl
+                   write (iulog,*) " level: ", i, " snl(c)= ", snl_lcl
                    write (iulog,*) "h2osno(c)= ", h2osno_lcl
                    call abort
                 endif
@@ -1643,8 +1639,8 @@ contains
                      flx_wgt(3) = 0.18099494230665_r8
                      flx_wgt(4) = 0.12094898498813_r8
                      flx_wgt(5) = 0.20453448749347_r8
-                  else                 
-                     slr_zen = nint(acos(coszen(c_idx)) * 180._r8 / pi)
+                  else
+                     slr_zen = nint(acos(coszen) * 180._r8 / pi)
                      if (slr_zen>89) then
                         slr_zen = 89
                      endif
@@ -1652,9 +1648,9 @@ contains
                      flx_wgt(2) = flx_wgt_dir(atm_type_index, slr_zen+1, 2)
                      flx_wgt(3) = flx_wgt_dir(atm_type_index, slr_zen+1, 3)
                      flx_wgt(4) = flx_wgt_dir(atm_type_index, slr_zen+1, 4)
-                     flx_wgt(5) = flx_wgt_dir(atm_type_index, slr_zen+1, 5)  
+                     flx_wgt(5) = flx_wgt_dir(atm_type_index, slr_zen+1, 5)
                   endif
-				  
+
                    ! Diffuse:
                 elseif (flg_slr_in == 2) then
                    if  (atm_type_index == atm_type_default) then
@@ -1685,7 +1681,7 @@ contains
                ! sure mu_not is large enough for stable and meaningful radiation
                ! solution: .01 is like sun just touching horizon with its lower edge
                ! equivalent to mu0 in sea-ice shortwave model ice_shortwave.F90
-                mu_not = max(coszen(c_idx), cp01)
+                mu_not = max(coszen, cp01)
 
 
                    ! Set direct or diffuse incident irradiance to 1
@@ -1727,7 +1723,7 @@ contains
                          ext_cff_mss_snw_lcl(i) = ext_cff_mss_snw_dfs(rds_idx,bnd_idx)
                       enddo
                    endif
-				   
+
                   ! Calculate the asymetry factors under different snow grain shapes
                    do i=snl_top,snl_btm,1
                       if(snw_shp_lcl(i) == snow_shape_spheroid) then ! spheroid
@@ -1735,28 +1731,28 @@ contains
                          if(snw_fs_lcl(i) == 0._r8) then
                             fs_sphd = 0.929_r8
                          else
-                            fs_sphd = snw_fs_lcl(i)               
+                            fs_sphd = snw_fs_lcl(i)
                          endif
-                         fs_hex = 0.788_r8 
+                         fs_hex = 0.788_r8
                          if(snw_ar_lcl(i) == 0._r8) then
                             AR_tmp = 0.5_r8
                          else
-                            AR_tmp = snw_ar_lcl(i)              
+                            AR_tmp = snw_ar_lcl(i)
                          endif
                          g_ice_Cg_tmp = g_b0 * ((fs_sphd/fs_hex)**g_b1) * (diam_ice**g_b2)
-                         gg_ice_F07_tmp = g_F07_c0 + g_F07_c1 * AR_tmp + g_F07_c2 * (AR_tmp**2)			 
+                         gg_ice_F07_tmp = g_F07_c0 + g_F07_c1 * AR_tmp + g_F07_c2 * (AR_tmp**2)
                       elseif(snw_shp_lcl(i) == snow_shape_hexagonal_plate) then ! hexagonal plate
                          diam_ice = 2._r8*snw_rds_lcl(i)
                          if(snw_fs_lcl(i) == 0._r8) then
                             fs_hex0 = 0.788_r8
                          else
-                            fs_hex0 = snw_fs_lcl(i)               
+                            fs_hex0 = snw_fs_lcl(i)
                          endif
-                         fs_hex = 0.788_r8 
+                         fs_hex = 0.788_r8
                          if(snw_ar_lcl(i) == 0._r8) then
                            AR_tmp = 2.5_r8
                          else
-                           AR_tmp = snw_ar_lcl(i)              
+                           AR_tmp = snw_ar_lcl(i)
                          endif
                          g_ice_Cg_tmp = g_b0 * ((fs_hex0/fs_hex)**g_b1) * (diam_ice**g_b2)
                          gg_ice_F07_tmp = g_F07_p0 + g_F07_p1 * log(AR_tmp) + g_F07_p2 * ((log(AR_tmp))**2)
@@ -1765,16 +1761,16 @@ contains
                          if(snw_fs_lcl(i) == 0._r8) then
                             fs_koch = 0.712_r8
                          else
-                            fs_koch = snw_fs_lcl(i)               
+                            fs_koch = snw_fs_lcl(i)
                          endif
-                         fs_hex = 0.788_r8 
+                         fs_hex = 0.788_r8
                          if(snw_ar_lcl(i) == 0._r8) then
                             AR_tmp = 2.5_r8
                          else
-                            AR_tmp = snw_ar_lcl(i)              
+                            AR_tmp = snw_ar_lcl(i)
                          endif
                          g_ice_Cg_tmp = g_b0 * ((fs_koch/fs_hex)**g_b1) * (diam_ice**g_b2)
-                         gg_ice_F07_tmp = g_F07_p0 + g_F07_p1 * log(AR_tmp) + g_F07_p2 * ((log(AR_tmp))**2)	 
+                         gg_ice_F07_tmp = g_F07_p0 + g_F07_p1 * log(AR_tmp) + g_F07_p2 * ((log(AR_tmp))**2)
                      endif
 
                      ! Linear interpolation for calculating the asymetry factor at band_idx.
@@ -1782,15 +1778,15 @@ contains
                        if(bnd_idx == 1) then
                          g_Cg_intp   = (g_ice_Cg_tmp(2)-g_ice_Cg_tmp(1))/(1.055_r8-0.475_r8)*(0.5_r8-0.475_r8) +g_ice_Cg_tmp(1)
                          gg_F07_intp = (gg_ice_F07_tmp(2)-gg_ice_F07_tmp(1))/(1.055_r8-0.475_r8)*(0.5_r8-0.475_r8)+gg_ice_F07_tmp(1)
-                       elseif(bnd_idx == 2) then 
+                       elseif(bnd_idx == 2) then
                          g_Cg_intp   = (g_ice_Cg_tmp(2)-g_ice_Cg_tmp(1))/(1.055_r8-0.475_r8)*(0.85_r8-0.475_r8)+g_ice_Cg_tmp(1)
                        gg_F07_intp = (gg_ice_F07_tmp(2)-gg_ice_F07_tmp(1))/(1.055_r8-0.475_r8)*(0.85_r8-0.475_r8)+gg_ice_F07_tmp(1)
-                       elseif(bnd_idx == 3) then 
+                       elseif(bnd_idx == 3) then
                          g_Cg_intp   = (g_ice_Cg_tmp(3)-g_ice_Cg_tmp(2))/(1.655_r8-1.055_r8)*(1.1_r8-1.055_r8)&
                                        +g_ice_Cg_tmp(2)
                          gg_F07_intp = (gg_ice_F07_tmp(3)-gg_ice_F07_tmp(2))/(1.655_r8-1.055_r8)*(1.1_r8-1.055_r8)&
                                        +gg_ice_F07_tmp(2)
-                       elseif(bnd_idx == 4) then 
+                       elseif(bnd_idx == 4) then
                          g_Cg_intp   = (g_ice_Cg_tmp(3)-g_ice_Cg_tmp(2))/(1.655_r8-1.055_r8)*(1.35_r8-1.055_r8)&
                                        +g_ice_Cg_tmp(2)
                          gg_F07_intp = (gg_ice_F07_tmp(3)-gg_ice_F07_tmp(2))/(1.655_r8-1.055_r8)*(1.35_r8-1.055_r8)&
@@ -1806,9 +1802,9 @@ contains
                        asm_prm_snw_lcl(i) = g_ice
                      endif
 
-                     if(asm_prm_snw_lcl(i) > 0.99_r8) then 
+                     if(asm_prm_snw_lcl(i) > 0.99_r8) then
                        asm_prm_snw_lcl(i) = 0.99_r8
-                     endif                        
+                     endif
 
                    enddo
                    !!!-end
@@ -1924,15 +1920,15 @@ contains
                         if (bnd_idx < 4) then
                            C_dust_total = mss_cnc_aer_lcl(i,5) + mss_cnc_aer_lcl(i,6) &
                                         + mss_cnc_aer_lcl(i,7) + mss_cnc_aer_lcl(i,8)
-                           C_dust_total = C_dust_total * 1.0E+06_r8 
+                           C_dust_total = C_dust_total * 1.0E+06_r8
                            if(C_dust_total > 0._r8) then
                               if (flg_slr_in == 1) then
                                  R_1_omega_tmp = dust_clear_d0(bnd_idx) &
-                                               + dust_clear_d2(bnd_idx)*(C_dust_total**dust_clear_d1(bnd_idx))                   
+                                               + dust_clear_d2(bnd_idx)*(C_dust_total**dust_clear_d1(bnd_idx))
                               else
                                  R_1_omega_tmp = dust_cloudy_d0(bnd_idx) &
-                                               + dust_cloudy_d2(bnd_idx)*(C_dust_total**dust_cloudy_d1(bnd_idx))   
-                              endif					  
+                                               + dust_cloudy_d2(bnd_idx)*(C_dust_total**dust_cloudy_d1(bnd_idx))
+                              endif
                               ss_alb_snw_lcl(i) = 1.0_r8 - (1.0_r8 - ss_alb_snw_lcl(i)) *R_1_omega_tmp
                            endif
                         endif
@@ -1942,7 +1938,7 @@ contains
                            ext_cff_mss_aer_lcl(j)   = 0._r8
                         enddo
                     endif
-					
+
                     !mgf--
 
                       L_snw(i)   = h2osno_ice_lcl(i)+h2osno_liq_lcl(i)
@@ -2141,11 +2137,11 @@ contains
 
                   ! set the underlying ground albedo == albedo of near-IR
                   ! unless bnd_idx == 1, for visible
-                  rupdir(snl_btm_itf) = albsfc(c_idx,2)
-                  rupdif(snl_btm_itf) = albsfc(c_idx,2)
+                  rupdir(snl_btm_itf) = albsfc(2)
+                  rupdif(snl_btm_itf) = albsfc(2)
                   if (bnd_idx == 1) then
-                      rupdir(snl_btm_itf) = albsfc(c_idx,1)
-                      rupdif(snl_btm_itf) = albsfc(c_idx,1)
+                      rupdir(snl_btm_itf) = albsfc(1)
+                      rupdif(snl_btm_itf) = albsfc(1)
                   endif
 
                   do i=snl_btm,snl_top,-1
@@ -2228,9 +2224,8 @@ contains
 
                     ! ERROR check: negative absorption
                     if (flx_abs_lcl(i,bnd_idx) < -0.00001) then
-                      write (iulog,"(a,e13.6,a,i6)") "SNICAR ERROR: negative absoption : ", flx_abs_lcl(i,bnd_idx), &
-                            " at column: ", c_idx
-                      write(iulog,*) "SNICAR_AD STATS: snw_rds(0)= ", snw_rds(c_idx,0)
+                      write (iulog,"(a,e13.6,a,i6)") "SNICAR ERROR: negative absoption : ", flx_abs_lcl(i,bnd_idx)
+                      write(iulog,*) "SNICAR_AD STATS: snw_rds(0)= ", snw_rds(0)
                       write(iulog,*) "SNICAR_AD STATS: L_snw(0)= ", L_snw(0)
                       write(iulog,*) "SNICAR_AD STATS: h2osno= ", h2osno_lcl, " snl= ", snl_lcl
                       write(iulog,*) "SNICAR_AD STATS: soot1(0)= ", mss_cnc_aer_lcl(0,1)
@@ -2280,8 +2275,7 @@ contains
                 ! Incident direct+diffuse radiation equals (absorbed+bulk_transmitted+bulk_reflected)
                 energy_sum = (mu_not*pi*flx_slrd_lcl(bnd_idx)) + flx_slri_lcl(bnd_idx) - (F_abs_sum + F_btm_net + F_sfc_pls)
                 if (abs(energy_sum) > 0.00001_r8) then
-                   write (iulog,"(a,e13.6,a,i6)") "SNICAR ERROR: Energy conservation error of : ", energy_sum, &
-                         " at column: ", c_idx
+                   write (iulog,"(a,e13.6,a,i6)") "SNICAR ERROR: Energy conservation error of : ", energy_sum
                    write(iulog,*) "F_abs_sum: ",F_abs_sum
                    write(iulog,*) "F_btm_net: ",F_btm_net
                    write(iulog,*) "F_sfc_pls: ",F_sfc_pls
@@ -2296,12 +2290,12 @@ contains
                 albout_lcl(bnd_idx) = albedo
                 ! Check that albedo is less than 1
                 if (albout_lcl(bnd_idx) > 1.0) then
-                   write (iulog,*) "SNICAR ERROR: Albedo > 1.0 at c: ", c_idx
+                   write (iulog,*) "SNICAR ERROR: Albedo > 1.0: "
                    write (iulog,*) "SNICAR STATS: bnd_idx= ",bnd_idx
                    write (iulog,*) "SNICAR STATS: albout_lcl(bnd)= ",albout_lcl(bnd_idx), &
                         " albsfc_lcl(bnd_idx)= ",albsfc_lcl(bnd_idx)
                    write (iulog,*) "SNICAR STATS: h2osno= ", h2osno_lcl, " snl= ", snl_lcl
-                   write (iulog,*) "SNICAR STATS: coszen= ", coszen(c_idx), " flg_slr= ", flg_slr_in
+                   write (iulog,*) "SNICAR STATS: coszen= ", coszen, " flg_slr= ", flg_slr_in
 
                    write (iulog,*) "SNICAR STATS: soot(-4)= ", mss_cnc_aer_lcl(-4,1)
                    write (iulog,*) "SNICAR STATS: soot(-3)= ", mss_cnc_aer_lcl(-3,1)
@@ -2315,11 +2309,11 @@ contains
                    write (iulog,*) "SNICAR STATS: L_snw(-1)= ", L_snw(-1)
                    write (iulog,*) "SNICAR STATS: L_snw(0)= ", L_snw(0)
 
-                   write (iulog,*) "SNICAR STATS: snw_rds(-4)= ", snw_rds(c_idx,-4)
-                   write (iulog,*) "SNICAR STATS: snw_rds(-3)= ", snw_rds(c_idx,-3)
-                   write (iulog,*) "SNICAR STATS: snw_rds(-2)= ", snw_rds(c_idx,-2)
-                   write (iulog,*) "SNICAR STATS: snw_rds(-1)= ", snw_rds(c_idx,-1)
-                   write (iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(c_idx,0)
+                   write (iulog,*) "SNICAR STATS: snw_rds(-4)= ", snw_rds(-4)
+                   write (iulog,*) "SNICAR STATS: snw_rds(-3)= ", snw_rds(-3)
+                   write (iulog,*) "SNICAR STATS: snw_rds(-2)= ", snw_rds(-2)
+                   write (iulog,*) "SNICAR STATS: snw_rds(-1)= ", snw_rds(-1)
+                   write (iulog,*) "SNICAR STATS: snw_rds(0)= ", snw_rds(0)
 
                    call abort
                 endif
@@ -2328,21 +2322,21 @@ contains
 
 
              ! Weight output NIR albedo appropriately
-             albout(c_idx,1) = albout_lcl(1)
+             albout(1) = albout_lcl(1)
              flx_sum         = 0._r8
              do bnd_idx= nir_bnd_bgn,nir_bnd_end
                 flx_sum = flx_sum + flx_wgt(bnd_idx)*albout_lcl(bnd_idx)
              enddo
-             albout(c_idx,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
+             albout(2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
 
              ! Weight output NIR absorbed layer fluxes (flx_abs) appropriately
-             flx_abs(c_idx,:,1) = flx_abs_lcl(:,1)
+             flx_abs(:,1) = flx_abs_lcl(:,1)
              do i=snl_top,1,1
                 flx_sum = 0._r8
                 do bnd_idx= nir_bnd_bgn,nir_bnd_end
                    flx_sum = flx_sum + flx_wgt(bnd_idx)*flx_abs_lcl(i,bnd_idx)
                 enddo
-                flx_abs(c_idx,i,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
+                flx_abs(i,2) = flx_sum / sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
              enddo
 
              ! near-IR direct albedo/absorption adjustment for high solar zenith angles
@@ -2352,23 +2346,23 @@ contains
                 sza_c1 = sza_a0 + sza_a1 * mu_not + sza_a2 * mu_not**2
                 sza_c0 = sza_b0 + sza_b1 * mu_not + sza_b2 * mu_not**2
                 sza_factor = sza_c1 * (log10(snw_rds_lcl(snl_top) * c1) - c6) + sza_c0
-                flx_sza_adjust  = albout(c_idx,2) * (sza_factor-c1) * sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
-                albout(c_idx,2) = albout(c_idx,2) * sza_factor
-                flx_abs(c_idx,snl_top,2) = flx_abs(c_idx,snl_top,2) - flx_sza_adjust
+                flx_sza_adjust  = albout(2) * (sza_factor-c1) * sum(flx_wgt(nir_bnd_bgn:nir_bnd_end))
+                albout(2) = albout(2) * sza_factor
+                flx_abs(snl_top,2) = flx_abs(snl_top,2) - flx_sza_adjust
              endif
 
              ! If snow < minimum_snow, but > 0, and there is sun, set albedo to underlying surface albedo
-          elseif ( (coszen(c_idx) > 0._r8) .and. (h2osno_lcl < min_snw) .and. (h2osno_lcl > 0._r8) ) then
-             albout(c_idx,1) = albsfc(c_idx,1)
-             albout(c_idx,2) = albsfc(c_idx,2)
+          elseif ( (coszen > 0._r8) .and. (h2osno_lcl < min_snw) .and. (h2osno_lcl > 0._r8) ) then
+             albout(1) = albsfc(1)
+             albout(2) = albsfc(2)
 
              ! There is either zero snow, or no sun
           else
-             albout(c_idx,1) = 0._r8
-             albout(c_idx,2) = 0._r8
+             albout(1) = 0._r8
+             albout(2) = 0._r8
           endif    ! if column has snow and coszen > 0
 
-       enddo    ! loop over all columns
+       !enddo    ! loop over all columns
 
    ! end associate
 
@@ -2377,11 +2371,11 @@ contains
 
 
   subroutine SnowAge_grain( dtime          , snl            , dz              , &
-                            qflx_snow_grnd , qflx_snwcp_ice , qflx_snofrz_lyr , & 
+                            qflx_snow_grnd , qflx_snwcp_ice , qflx_snofrz_lyr , &
                             do_capsnow     , frac_sno       , h2osno          , &
                             h2osno_liq     , h2osno_ice     , &
                             t_soisno       , t_grnd         , &
-                            snw_rds        ) 
+                            snw_rds        )
     !
     ! !DESCRIPTION:
     ! Updates the snow effective grain size (radius).
@@ -2424,25 +2418,25 @@ contains
 
     IMPLICIT NONE
 
-    real(r8) , intent(in)   :: dtime             !  land model time step [sec]
+    real(r8) , intent(in)   ::  dtime              !  land model time step [sec]
 
-    integer  , intent(in)   ::  snl              ( begc:endc )  !  negative number of snow layers (col) [nbr]
-    real(r8) , intent(in)   ::  dz               ( begc:endc,-nlevsno+1:1 ) !  layer thickness (col,lyr) [m]
+    integer  , intent(in)   ::  snl                !  negative number of snow layers (col) [nbr]
+    real(r8) , intent(in)   ::  dz               ( -nlevsno+1:1 ) !  layer thickness (col,lyr) [m]
 
-    real(r8) , intent(in)   ::  qflx_snow_grnd   ( begc:endc )  !  snow on ground after interception (col) [kg m-2 s-1]
-    real(r8) , intent(in)   ::  qflx_snwcp_ice   ( begc:endc )  !  excess precipitation due to snow capping [kg m-2 s-1]
-    real(r8) , intent(in)   ::  qflx_snofrz_lyr  ( begc:endc,-nlevsno+1:0 ) !  snow freezing rate (col,lyr) [kg m-2 s-1]
+    real(r8) , intent(in)   ::  qflx_snow_grnd     !  snow on ground after interception (col) [kg m-2 s-1]
+    real(r8) , intent(in)   ::  qflx_snwcp_ice     !  excess precipitation due to snow capping [kg m-2 s-1]
+    real(r8) , intent(in)   ::  qflx_snofrz_lyr  ( -nlevsno+1:0 ) !  snow freezing rate (col,lyr) [kg m-2 s-1]
 
-    logical  , intent(in)   ::  do_capsnow       ( begc:endc )  !  true => do snow capping
-    real(r8) , intent(in)   ::  frac_sno         ( begc:endc )  !  fraction of ground covered by snow (0 to 1)
-    real(r8) , intent(in)   ::  h2osno           ( begc:endc )  !  snow water (col) [mm H2O]
-    real(r8) , intent(in)   ::  h2osno_liq       ( begc:endc,-nlevsno+1:0 ) !  liquid water content (col,lyr) [kg m-2]
-    real(r8) , intent(in)   ::  h2osno_ice       ( begc:endc,-nlevsno+1:0 ) !  ice content (col,lyr) [kg m-2]
+    logical  , intent(in)   ::  do_capsnow         !  true => do snow capping
+    real(r8) , intent(in)   ::  frac_sno           !  fraction of ground covered by snow (0 to 1)
+    real(r8) , intent(in)   ::  h2osno             !  snow water (col) [mm H2O]
+    real(r8) , intent(in)   ::  h2osno_liq       ( -nlevsno+1:0 ) !  liquid water content (col,lyr) [kg m-2]
+    real(r8) , intent(in)   ::  h2osno_ice       ( -nlevsno+1:0 ) !  ice content (col,lyr) [kg m-2]
 
-    real(r8) , intent(in)   ::  t_soisno         ( begc:endc,-nlevsno+1:1 ) !  soil and snow temperature (col,lyr) [K]
-    real(r8) , intent(in)   ::  t_grnd           ( begc:endc )  !  ground temperature (col) [K]
+    real(r8) , intent(in)   ::  t_soisno         ( -nlevsno+1:1 ) !  soil and snow temperature (col,lyr) [K]
+    real(r8) , intent(in)   ::  t_grnd             !  ground temperature (col) [K]
 
-    real(r8) , intent(inout)  ::  snw_rds        ( begc:endc,-nlevsno+1:0 ) !  effective grain radius (col,lyr) [microns, m-6]
+    real(r8) , intent(inout)  ::  snw_rds        ( -nlevsno+1:0 ) !  effective grain radius (col,lyr) [microns, m-6]
 
   ! DAI, Dec. 29, 2022
   !-----------------------------------------------------------------------
@@ -2451,14 +2445,14 @@ contains
     integer :: snl_top             !  top snow layer index [idx]
     integer :: snl_btm             !  bottom snow layer index [idx]
     integer :: i                   !  layer index [idx]
-    integer :: c_idx               !  column index [idx]
+    !integer :: c_idx              !  column index [idx]
     integer :: fc                  !  snow column filter index [idx]
     integer :: T_idx               !  snow aging lookup table temperature index [idx]
     integer :: Tgrd_idx            !  snow aging lookup table temperature gradient index [idx]
     integer :: rhos_idx            !  snow aging lookup table snow density index [idx]
     real(r8) :: t_snotop           !  temperature at upper layer boundary [K]
     real(r8) :: t_snobtm           !  temperature at lower layer boundary [K]
-    real(r8) :: dTdz(begc:endc,-nlevsno:0)  !  snow temperature gradient (col,lyr) [K m-1]
+    real(r8) :: dTdz(-nlevsno:0)   !  snow temperature gradient (col,lyr) [K m-1]
     real(r8) :: bst_tau            !  snow aging parameter retrieved from lookup table [hour]
     real(r8) :: bst_kappa          !  snow aging parameter retrieved from lookup table [unitless]
     real(r8) :: bst_drdt0          !  snow aging parameter retrieved from lookup table [um hr-1]
@@ -2475,10 +2469,10 @@ contains
     real(r8) :: h2osno_lyr         !  liquid + solid H2O in snow layer [kg m-2]
     real(r8) :: cdz(-nlevsno+1:0)  !  column average layer thickness [m]
 
-    real(r8) :: snot_top    ( begc:endc )  !  temperature in top snow layer (col) [K]
-    real(r8) :: dTdz_top    ( begc:endc )  !  temperature gradient in top layer (col) [K m-1]
-    real(r8) :: snw_rds_top ( begc:endc )  !  effective grain radius, top layer (col) [microns, m-6]
-    real(r8) :: sno_liq_top ( begc:endc )  !  liquid water fraction (mass) in top snow layer (col) [frc]
+    real(r8) :: snot_top      !  temperature in top snow layer (col) [K]
+    real(r8) :: dTdz_top      !  temperature gradient in top layer (col) [K m-1]
+    real(r8) :: snw_rds_top   !  effective grain radius, top layer (col) [microns, m-6]
+    real(r8) :: sno_liq_top   !  liquid water fraction (mass) in top snow layer (col) [frc]
 
     !--------------------------------------------------------------------------!
 
@@ -2507,49 +2501,49 @@ contains
 
 
       ! loop over columns that have at least one snow layer
-      do c_idx = begc, endc
+      !do c_idx = begc, endc
 
-         if (snl(c_idx) < 0 .and. h2osno(c_idx) > 0._r8) then
+         if (snl < 0 .and. h2osno > 0._r8) then
 
          snl_btm = 0
-         snl_top = snl(c_idx) + 1
+         snl_top = snl + 1
 
-         cdz(snl_top:snl_btm)=frac_sno(c_idx)*dz(c_idx,snl_top:snl_btm)
+         cdz(snl_top:snl_btm)=frac_sno*dz(snl_top:snl_btm)
 
          ! loop over snow layers
          do i = snl_top, snl_btm, 1
             !
             !**********  1. DRY SNOW AGING  ***********
             !
-            h2osno_lyr = h2osno_liq(c_idx,i) + h2osno_ice(c_idx,i)
+            h2osno_lyr = h2osno_liq(i) + h2osno_ice(i)
 
             ! temperature gradient
             if (i == snl_top) then
                ! top layer
-               t_snotop = t_soisno(c_idx,snl_top)
-               t_snobtm = (t_soisno(c_idx,i+1)*dz(c_idx,i) &
-                         + t_soisno(c_idx,i)*dz(c_idx,i+1)) &
-                         / (dz(c_idx,i)+dz(c_idx,i+1))
+               t_snotop = t_soisno(snl_top)
+               t_snobtm = (t_soisno(i+1)*dz(i) &
+                         + t_soisno(i)*dz(i+1)) &
+                         / (dz(i)+dz(i+1))
             else
-               t_snotop = (t_soisno(c_idx,i-1)*dz(c_idx,i) &
-                         + t_soisno(c_idx,i)*dz(c_idx,i-1)) &
-                         / (dz(c_idx,i)+dz(c_idx,i-1))
-               t_snobtm = (t_soisno(c_idx,i+1)*dz(c_idx,i) &
-                         + t_soisno(c_idx,i)*dz(c_idx,i+1)) &
-                         / (dz(c_idx,i)+dz(c_idx,i+1))
+               t_snotop = (t_soisno(i-1)*dz(i) &
+                         + t_soisno(i)*dz(i-1)) &
+                         / (dz(i)+dz(i-1))
+               t_snobtm = (t_soisno(i+1)*dz(i) &
+                         + t_soisno(i)*dz(i+1)) &
+                         / (dz(i)+dz(i+1))
             endif
 
-            dTdz(c_idx,i) = abs((t_snotop - t_snobtm) / cdz(i))
+            dTdz(i) = abs((t_snotop - t_snobtm) / cdz(i))
 
             ! snow density
-            rhos = (h2osno_liq(c_idx,i)+h2osno_ice(c_idx,i)) / cdz(i)
+            rhos = (h2osno_liq(i)+h2osno_ice(i)) / cdz(i)
 
             ! make sure rhos doesn't drop below 50 (see rhos_idx below)
             rhos=max(50._r8,rhos)
 
             ! best-fit table indecies
-            T_idx    = nint((t_soisno(c_idx,i)-223) / 5) + 1
-            Tgrd_idx = nint(dTdz(c_idx,i) / 10) + 1
+            T_idx    = nint((t_soisno(i)-223) / 5) + 1
+            Tgrd_idx = nint(dTdz(i) / 10) + 1
             rhos_idx = nint((rhos-50) / 50) + 1
 
             ! boundary check:
@@ -2579,13 +2573,13 @@ contains
 
             ! change in snow effective radius, using best-fit parameters
             ! added checks suggested by mgf. --HW 10/15/2015
-            dr_fresh = snw_rds(c_idx,i)-snw_rds_min
+            dr_fresh = snw_rds(i)-snw_rds_min
 
 #ifdef MODAL_AER
             if ( abs(dr_fresh) < 1.0e-8_r8 ) then
                dr_fresh = 0.0_r8
             else if ( dr_fresh < 0.0_r8 ) then
-               write(iulog,*) "dr_fresh = ", dr_fresh, snw_rds(c_idx,i), snw_rds_min
+               write(iulog,*) "dr_fresh = ", dr_fresh, snw_rds(i), snw_rds_min
                call abort
             end if
 
@@ -2601,11 +2595,11 @@ contains
             ! This is justified by setting the linear offset constant C1_liq_Brun89 to zero [Brun, 1989]
 
             ! liquid water faction
-            frc_liq = min(0.1_r8, (h2osno_liq(c_idx,i) / (h2osno_liq(c_idx,i)+h2osno_ice(c_idx,i))))
+            frc_liq = min(0.1_r8, (h2osno_liq(i) / (h2osno_liq(i)+h2osno_ice(i))))
 
-            !dr_wet = 1E6_r8*(dtime*(C1_liq_Brun89 + C2_liq_Brun89*(frc_liq**(3))) / (4*SHR_CONST_PI*(snw_rds(c_idx,i)/1E6)**(2)))
+            !dr_wet = 1E6_r8*(dtime*(C1_liq_Brun89 + C2_liq_Brun89*(frc_liq**(3))) / (4*SHR_CONST_PI*(snw_rds(i)/1E6)**(2)))
             !simplified, units of microns:
-            dr_wet = 1E18_r8*(dtime*(C2_liq_Brun89*(frc_liq**(3))) / (4*SHR_CONST_PI*snw_rds(c_idx,i)**(2)))
+            dr_wet = 1E18_r8*(dtime*(C2_liq_Brun89*(frc_liq**(3))) / (4*SHR_CONST_PI*snw_rds(i)**(2)))
 
             dr = dr + dr_wet
 
@@ -2625,14 +2619,14 @@ contains
             !               RE-FREEZING
             !
             ! new snowfall [kg/m2]
-            if (do_capsnow(c_idx) .and. .not. use_extrasnowlayers) then
-               newsnow = max(0._r8, (qflx_snwcp_ice(c_idx)*dtime))
+            if (do_capsnow .and. .not. use_extrasnowlayers) then
+               newsnow = max(0._r8, (qflx_snwcp_ice*dtime))
             else
-               newsnow = max(0._r8, (qflx_snow_grnd(c_idx)*dtime))
+               newsnow = max(0._r8, (qflx_snow_grnd*dtime))
             endif
 
             ! snow that has re-frozen [kg/m2]
-            refrzsnow = max(0._r8, (qflx_snofrz_lyr(c_idx,i)*dtime))
+            refrzsnow = max(0._r8, (qflx_snofrz_lyr(i)*dtime))
 
             ! fraction of layer mass that is re-frozen
             frc_refrz = refrzsnow / h2osno_lyr
@@ -2653,40 +2647,40 @@ contains
             endif
 
             ! mass-weighted mean of fresh snow, old snow, and re-frozen snow effective radius
-            snw_rds(c_idx,i) = (snw_rds(c_idx,i)+dr)*frc_oldsnow + snw_rds_min*frc_newsnow + snw_rds_refrz*frc_refrz
+            snw_rds(i) = (snw_rds(i)+dr)*frc_oldsnow + snw_rds_min*frc_newsnow + snw_rds_refrz*frc_refrz
             !
             !**********  5. CHECK BOUNDARIES   ***********
             !
             ! boundary check
-            if (snw_rds(c_idx,i) < snw_rds_min) then
-               snw_rds(c_idx,i) = snw_rds_min
+            if (snw_rds(i) < snw_rds_min) then
+               snw_rds(i) = snw_rds_min
             endif
 
-            if (snw_rds(c_idx,i) > snw_rds_max) then
-               snw_rds(c_idx,i) = snw_rds_max
+            if (snw_rds(i) > snw_rds_max) then
+               snw_rds(i) = snw_rds_max
             end if
 
             ! set top layer variables for history files
             if (i == snl_top) then
-               snot_top(c_idx)    = t_soisno(c_idx,i)
-               dTdz_top(c_idx)    = dTdz(c_idx,i)
-               snw_rds_top(c_idx) = snw_rds(c_idx,i)
-               sno_liq_top(c_idx) = h2osno_liq(c_idx,i) / (h2osno_liq(c_idx,i)+h2osno_ice(c_idx,i))
+               snot_top    = t_soisno(i)
+               dTdz_top    = dTdz(i)
+               snw_rds_top = snw_rds(i)
+               sno_liq_top = h2osno_liq(i) / (h2osno_liq(i)+h2osno_ice(i))
             endif
-     
-         enddo
-         endif   ! endif (snl(c_idx) < 0 )
 
-      enddo
+         enddo
+         endif   ! endif (snl < 0 )
+
+      !enddo
 
       ! Special case: snow on ground, but not enough to have defined a snow layer:
       !   set snw_rds to fresh snow grain size:
 
-      do c_idx = begc, endc
-         if (snl(c_idx) >= 0 .and. h2osno(c_idx) > 0._r8) then
-             snw_rds(c_idx,0) = snw_rds_min
+      !do c_idx = begc, endc
+         if (snl >= 0 .and. h2osno > 0._r8) then
+             snw_rds(0) = snw_rds_min
          end if
-      enddo
+      !enddo
 
   ! end associate
 
@@ -2697,14 +2691,14 @@ contains
   subroutine SnowOptics_init( fsnowoptics )
 
       USE netcdf
-     
+
       IMPLICIT NONE
-       
+
       character(len=256), intent(in) :: fsnowoptics     ! snow optical properties file name
       character(len= 32) :: subname = 'SnowOptics_init' ! subroutine name
       integer :: atm_type_index                         ! index for atmospheric type
       integer :: ncid, varid
-	  
+
       logical :: readvar  ! determine if variable was read from NetCDF file
   !-----------------------------------------------------------------------
 
@@ -2730,7 +2724,7 @@ contains
 	write(iulog,*) "snicar_atm_type = ", snicar_atm_type
         call abort
       endif
-	  
+
       !
       ! Open optics file:
       write(iulog,*) 'Attempting to read snow optical properties .....'
@@ -2758,9 +2752,9 @@ contains
 
       call nccheck( nf90_inq_varid(ncid, 'ext_cff_mss_ice_dfs', varid) )
       call nccheck( nf90_get_var(ncid, varid, ext_cff_mss_snw_dfs) )
-	  
+
       !!! Direct and diffuse flux under different atmospheric conditions
-      ! Direct-beam incident spectral flux: 
+      ! Direct-beam incident spectral flux:
       call nccheck( nf90_inq_varid(ncid, 'flx_wgt_dir', varid) )
       call nccheck( nf90_get_var(ncid, varid, flx_wgt_dir) )
       if ((atm_type_index > 0) .and. (.not. readvar)) call abort
@@ -2819,7 +2813,7 @@ contains
 
      call nccheck( nf90_inq_varid(ncid, 'ext_cff_mss_bcphil', varid) )
      call nccheck( nf90_get_var(ncid, varid, ext_cff_mss_bc1) )
-     ! 
+     !
      ! BC species 2 Mie parameters
      !
      call nccheck( nf90_inq_varid(ncid, 'ss_alb_bcphob', varid) )
@@ -2946,7 +2940,7 @@ contains
      write (iulog,*) 'SNICAR: Mie single scatter albedos for dust species 4: ', &
            ss_alb_dst4(1), ss_alb_dst4(2), ss_alb_dst4(3), ss_alb_dst4(4), ss_alb_dst4(5)
      write(iulog,*)
-      
+
   end subroutine SnowOptics_init
   !-----------------------------------------------------------------------
 

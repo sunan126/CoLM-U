@@ -337,6 +337,7 @@
 ! [2] specific humidity and its derivative at ground surface
 !=======================================================================
 
+      rsr  = 0. !initialization
       qred = 1.
       CALL qsadv(t_grnd,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
@@ -353,8 +354,6 @@
          psit = max( -1.e8, psit )
          hr   = exp(psit/roverg/t_grnd)
          qred = (1.-fsno)*hr + fsno
-
-         rsr = 0. !initialization
 
          IF (lb == 1) THEN !no snow layer exist
 

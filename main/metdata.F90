@@ -96,7 +96,7 @@ CONTAINS
 #ifdef USE_POINT_DATA
       if (fid(1) > 0) then
          ! close(fid(1))
-         if (fprefix=='NC') then
+         if (trim(fprefix)=='NC') then
             call sanity( nf90_close(fid(1)) )
             fid(1) = -1
          else
@@ -625,7 +625,7 @@ CONTAINS
       integer , intent(in)    :: idate(3)
       real(r8), intent(in)    :: deltim
       real(r8), intent(inout) :: forcn(:,:,:)
-      
+
       ! var ids
       INTEGER  :: ncid, varid, swid, lwid, prid, snid, taid, qaid, wvid, &
                   wuid, psid
@@ -643,8 +643,8 @@ CONTAINS
       filename = trim(fmetdat)//trim(fmetnam)
 
       rtime = deltim !dtime(1)
-      
-      IF(fprefix=='NC') THEN
+
+      IF(trim(fprefix)=='NC') THEN
          IF(time_i <= 0) THEN
             IF (s_year==startyr .and. s_month==startmo .and. s_day==startday .and. s_seconds==startsec) THEN
                IF (idate(1) == s_year) THEN
@@ -662,7 +662,7 @@ CONTAINS
 
                   time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))+ &
                            ((86400-s_seconds)/rtime)+(months(12)-months(s_month-1)-s_day)*(86400/rtime)
-                  
+
                   DO i = s_year+1, idate(1)
                      IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
                         time_i = time_i+(86400/rtime)*366
@@ -721,7 +721,7 @@ CONTAINS
                CALL sanity( nf90_inq_varid(fid(1), 'Snowf', snid) )
                CALL sanity( nf90_get_var  (fid(1), prid, rain(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
                CALL sanity( nf90_get_var  (fid(1), snid, snow(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
-               
+
                forcn(1,1,4) = rain(1) + snow(1)
             ELSE
                CALL sanity( nf90_inq_varid(fid(1), vname(i), varid) )
@@ -730,7 +730,7 @@ CONTAINS
                forcn(1,1,i) = metadata(1)
             ENDIF
          ENDDO
-         ! close in metfina     
+         ! close in metfina
          ! CALL sanity( nf90_close(ncid) )
       ELSE
          IF(fid(1) ==  -1) THEN

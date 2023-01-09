@@ -133,17 +133,17 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
             !wtlunitroof (j,i,:) = rooffrac(:)
             !htroof      (j,i,:) = roofhgt (:)
             canyonhwr   (j,i,:) = h2w     (:)
-            wtroadperv  (j,i,:) = perfrac (:) 
-            emroof      (j,i,:) = roofem  (:) 
+            wtroadperv  (j,i,:) = perfrac (:)
+            emroof      (j,i,:) = roofem  (:)
             emwall      (j,i,:) = wallem  (:)
             emimproad   (j,i,:) = roadem  (:)
             emperroad   (j,i,:) = perem   (:)
             tbuildingmax(j,i,:) = 299.15
             tbuildingmin(j,i,:) = 296.15
-            thickroof   (j,i,:) = rooftk  (:) 
+            thickroof   (j,i,:) = rooftk  (:)
             thickwall   (j,i,:) = walltk  (:)
             !thickroad   (j,i,:) = roadtk  (:)
-            
+
             albroof     (j,i,:,1,1) = roofalb(:)
             albroof     (j,i,:,1,2) = roofalb(:)
             albroof     (j,i,:,2,1) = roofalb(:)
@@ -264,7 +264,52 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       htroof       (1,1,:) = rfht
       urbantreetop (1,1,:) = htop_point
       canyonhwr    (1,1,:) = hw_point
-      !albroof(:,:,:,:,:) = 0.4
+
+      !Roof
+      !albroof(:,:,:,:,:) = 0.17
+      tkroof (:,:,:,:)   = 1.25
+      !tkroof (:,:,:,1:2)   = 6.53
+      !tkroof (:,:,:,3:5) = 0.025
+      !tkroof (:,:,:,6:9) = 0.23
+      !tkroof (:,:,:,10)  = 0.16
+      cvroof (:,:,:,:)   = 1.8*1e6
+      !cvroof (:,:,:,1:2)   = 2.07*1e6
+      !cvroof (:,:,:,3:5) = 0.0071*1e6
+      !cvroof (:,:,:,6:9) = 1.5*1e6
+      !cvroof (:,:,:,10)  = 0.67*1e6
+      thickroof(:,:,:)   = 0.1141
+
+      !Wall
+      tkwall (:,:,:,:) = 1.25
+      !tkwall (:,:,:,1:2) = 0.61
+      !tkwall (:,:,:,3:7) = 0.43
+      !tkwall (:,:,:,8:9) = 0.024
+      !tkwall (:,:,:,10)  = 0.16
+      cvwall (:,:,:,:) = 2*1e6
+      !cvwall (:,:,:,1:2) = 1.25*1e6
+      !cvwall (:,:,:,3:7) = 1.4*1e6
+      !cvwall (:,:,:,8:9) = 0.0013*1e6
+      !cvwall (:,:,:,10)  = 0.67*1e6
+      thickwall(:,:,:)   = 0.1489
+
+      !Impervious Road
+      tkimproad(:,:,:,1:4)   = 1.17
+      tkimproad(:,:,:,5) = 0.3
+      tkimproad(:,:,:,5) = 0.42
+      tkimproad(:,:,:,6:10)= 0
+      cvimproad(:,:,:,1)   = 1.14*1e6
+      cvimproad(:,:,:,2:3) = 1.05*1e6
+      cvimproad(:,:,:,4)   = 1.29*1e6
+      cvimproad(:,:,:,5:10)= 0
+
+      tbuildingmax(:,:,:) = 297.15
+      tbuildingmin(:,:,:) = 293.15
+
+      !emroof   (:,:,:) = 0.973
+      !emwall   (:,:,:) = 0.973
+      !emimproad(:,:,:) = 0.973
+      !emperroad(:,:,:) = 0.973
+
 #endif
 #endif
 #endif
@@ -378,7 +423,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       print*,'hwr   = ', hwr
       print*,'fveg  = ', fveg
       print*,'flake = ', flake
-      print*,'htop  = ', htop  
+      print*,'htop  = ', htop
       print*,'albroof= ', alb_roof
       print*,'albwall= ', alb_wall
 

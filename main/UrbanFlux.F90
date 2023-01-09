@@ -1601,9 +1601,9 @@ MODULE UrbanFlux
               cycle
            ENDIF
            clev = canlev(i)
-           !rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
+           rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
            ! Cole & Sturrock (1977) Building and Environment, 12, 207–214.
-           rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
+           !rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
         ENDDO
 
 !-----------------------------------------------------------------------

@@ -644,6 +644,7 @@ CONTAINS
 
       rtime = deltim !dtime(1)
 
+#ifdef USE_POINT_DATA
       IF(trim(fprefix)=='NC') THEN
          IF(time_i <= 0) THEN
             IF (s_year==startyr .and. s_month==startmo .and. s_day==startday .and. s_seconds==startsec) THEN
@@ -743,6 +744,7 @@ CONTAINS
 
 10       format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
       ENDIF
+#endif
 
    END SUBROUTINE metreadpoint
 

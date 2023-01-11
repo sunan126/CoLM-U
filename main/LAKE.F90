@@ -255,7 +255,7 @@ MODULE LAKE
            ! -------------------
            t_grnd       , scv         , snowdp       , t_soisno  ,&
            wliq_soisno  , wice_soisno , imelt_soisno , t_lake    ,&
-           lake_icefrac , &
+           lake_icefrac , snofrz      ,&
 
            ! "out" arguments
            ! -------------------
@@ -368,6 +368,8 @@ MODULE LAKE
 
   real(r8), INTENT(inout) :: t_lake(nl_lake)       ! lake temperature (kelvin)
   real(r8), INTENT(inout) :: lake_icefrac(nl_lake) ! lake mass fraction of lake layer that is frozen
+
+  REAL(r8), intent(out) :: snofrz (maxsnl+1:0)     ! snow freezing rate (col,lyr) [kg m-2 s-1]
 
   real(r8), INTENT(out) :: taux   ! wind stress: E-W [kg/m/s**2]
   real(r8), INTENT(out) :: tauy   ! wind stress: N-S [kg/m/s**2]
@@ -497,6 +499,7 @@ MODULE LAKE
 
   real(r8) t_soisno_bef(maxsnl+1:nl_soil) ! beginning soil/snow temp for E cons. check [K]
   real(r8) t_lake_bef(1:nl_lake)          ! beginning lake temp for energy conservation check [K]
+  real(r8) wice_soisno_bef(maxsnl+1:0)    ! ice lens [kg/m2]
 
   real(r8) cvx    (maxsnl+1:nl_lake+nl_soil) ! heat capacity for whole column [J/(m2 K)]
   real(r8) tkix   (maxsnl+1:nl_lake+nl_soil) ! thermal conductivity at layer interfaces for whole column [W/(m K)]
@@ -1120,6 +1123,8 @@ MODULE LAKE
       imelt_soisno(:) = 0
       imelt_lake(:) = 0
 
+      wice_soisno_bef(lb:0) = wice_soisno(lb:0)
+
       ! Check for case of snow without snow layers and top lake layer temp above freezing.
 
       if (snl == 0 .and. scv > 0. .and. t_lake(1) > tfrz) then
@@ -1189,7 +1194,16 @@ MODULE LAKE
             xmf = xmf + melt*hfus
          end if
       end do
+
+      ! layer freezing mass flux (positive):
+      DO j = lb, 0
+         IF (imelt_soisno(j)==2 .and. j<1) THEN
+            snofrz(j) = max(0._r8,(wice_soisno(j)-wice_soisno_bef(j)))/deltim
+         ENDIF
+      ENDDO
       !------------------------------------------------------------
+
+
 
 #if (defined CLMDEBUG)
       ! second energy check and water check. now check energy balance before and after phase
@@ -1560,6 +1574,267 @@ MODULE LAKE
 
   end subroutine snowwater_lake
 
+
+  subroutine snowwater_lake_snicar ( &
+             ! "in" arguments
+             ! ---------------------------
+             maxsnl      , nl_soil     , nl_lake   , deltim ,&
+             ssi         , wimp        , porsl     , pg_rain ,&
+             pg_snow     , dz_lake     , imelt     , fiold ,&
+             qseva       , qsubl       , qsdew     , qfros ,&
+
+             ! "inout" arguments
+             ! ---------------------------
+             z_soisno    , dz_soisno   , zi_soisno , t_soisno ,&
+             wice_soisno , wliq_soisno , t_lake    , lake_icefrac ,&
+             fseng       , fgrnd       , snl       , scv ,&
+             snowdp      , sm          ,&
+             ! SNICAR
+             forc_aer,&
+             mss_bcpho, mss_bcphi, mss_ocpho, mss_ocphi, &
+             mss_dst1,  mss_dst2,  mss_dst3,  mss_dst4 )
+
+!-----------------------------------------------------------------------------------------------
+! Calculation of Lake Hydrology. Lake water mass is kept constant. The soil is simply maintained at
+! volumetric saturation if ice melting frees up pore space.
+!
+! Called:
+!    -> snowwater:             change of snow mass and snow water onto soil
+!    -> snowcompaction:        compaction of snow layers
+!    -> combinesnowlayers:     combine snow layers that are thinner than minimum
+!    -> dividesnowlayers:      subdivide snow layers that are thicker than maximum
+!
+! Initial: Yongjiu Dai, December, 2012
+!                          April, 2014
+!-----------------------------------------------------------------------------------------------
+
+  use precision
+  use PhysicalConstants, only : denh2o, denice, hfus, tfrz, cpliq, cpice
+  use SOIL_SNOW_hydrology
+  use SNOW_Layers_CombineDivide
+
+  implicit none
+
+! ------------- in/inout/out variables -----------------------------------------
+
+  integer, INTENT(in) :: maxsnl  ! maximum number of snow layers
+  integer, INTENT(in) :: nl_soil ! number of soil layers
+  integer, INTENT(in) :: nl_lake ! number of soil layers
+
+  real(r8), INTENT(in) :: deltim             ! seconds in a time step (sec)
+  real(r8), INTENT(in) :: ssi                ! irreducible water saturation of snow
+  real(r8), INTENT(in) :: wimp               ! water impremeable if porosity less than wimp
+  real(r8), INTENT(in) :: porsl(1:nl_soil)   ! volumetric soil water at saturation (porosity)
+
+  real(r8), INTENT(in) :: pg_rain            ! rainfall incident on ground [mm/s]
+  real(r8), INTENT(in) :: pg_snow            ! snowfall incident on ground [mm/s]
+  real(r8), INTENT(in) :: dz_lake(1:nl_lake) ! layer thickness for lake (m)
+
+  integer,  INTENT(in) :: imelt(maxsnl+1:0)  ! signifies if node in melting (imelt = 1)
+  real(r8), INTENT(in) :: fiold(maxsnl+1:0)  ! fraction of ice relative to the total water content at the previous time step
+  real(r8), INTENT(in) :: qseva              ! ground surface evaporation rate (mm h2o/s)
+  real(r8), INTENT(in) :: qsubl              ! sublimation rate from snow pack (mm H2O /s) [+]
+  real(r8), INTENT(in) :: qsdew              ! surface dew added to snow pack (mm H2O /s) [+]
+  real(r8), INTENT(in) :: qfros              ! ground surface frosting formation (mm H2O /s) [+]
+
+  real(r8), INTENT(inout) :: z_soisno   (maxsnl+1:nl_soil) ! layer depth  (m)
+  real(r8), INTENT(inout) :: dz_soisno  (maxsnl+1:nl_soil) ! layer thickness depth (m)
+  real(r8), INTENT(inout) :: zi_soisno    (maxsnl:nl_soil) ! interface depth (m)
+  real(r8), INTENT(inout) :: t_soisno   (maxsnl+1:nl_soil) ! snow temperature (Kelvin)
+  real(r8), INTENT(inout) :: wice_soisno(maxsnl+1:nl_soil) ! ice lens (kg/m2)
+  real(r8), INTENT(inout) :: wliq_soisno(maxsnl+1:nl_soil) ! liquid water (kg/m2)
+  real(r8), INTENT(inout) :: t_lake      (1:nl_lake) ! lake temperature (Kelvin)
+  real(r8), INTENT(inout) :: lake_icefrac(1:nl_lake) ! mass fraction of lake layer that is frozen
+
+  real(r8), INTENT(inout) :: fseng  ! total sensible heat flux (W/m**2) [+ to atm]
+  real(r8), INTENT(inout) :: fgrnd  ! heat flux into snow / lake (W/m**2) [+ = into soil]
+
+  integer , INTENT(inout) :: snl    ! number of snow layers
+  real(r8), INTENT(inout) :: scv    ! snow water (mm H2O)
+  real(r8), INTENT(inout) :: snowdp ! snow height (m)
+  real(r8), INTENT(inout) :: sm     ! rate of snow melt (mm H2O /s)
+
+! Aerosol Fluxes (Jan. 07, 2023)
+  real(r8), intent(in) :: forc_aer ( 14 )  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+
+  real(r8), INTENT(inout) :: &
+        mss_bcpho (maxsnl+1:0), &! mass of hydrophobic BC in snow  (col,lyr) [kg]
+        mss_bcphi (maxsnl+1:0), &! mass of hydrophillic BC in snow (col,lyr) [kg]
+        mss_ocpho (maxsnl+1:0), &! mass of hydrophobic OC in snow  (col,lyr) [kg]
+        mss_ocphi (maxsnl+1:0), &! mass of hydrophillic OC in snow (col,lyr) [kg]
+        mss_dst1  (maxsnl+1:0), &! mass of dust species 1 in snow  (col,lyr) [kg]
+        mss_dst2  (maxsnl+1:0), &! mass of dust species 2 in snow  (col,lyr) [kg]
+        mss_dst3  (maxsnl+1:0), &! mass of dust species 3 in snow  (col,lyr) [kg]
+        mss_dst4  (maxsnl+1:0)   ! mass of dust species 4 in snow  (col,lyr) [kg]
+! Aerosol Fluxes (Jan. 07, 2023)
+
+
+! ------------- other local variables -----------------------------------------
+  integer  j          ! indices
+  integer lb          ! lower bound of array
+
+  real(r8) qout_snowb ! rate of water out of snow bottom (mm/s)
+  real(r8) xmf        ! snow melt heat flux (W/m**2)
+
+  real(r8) sumsnowice ! sum of snow ice if snow layers found above unfrozen lake [kg/m&2]
+  real(r8) sumsnowliq ! sum of snow liquid if snow layers found above unfrozen lake [kg/m&2]
+  logical  unfrozen   ! true if top lake layer is unfrozen with snow layers above
+  real(r8) heatsum    ! used in case above [J/m^2]
+  real(r8) heatrem    ! used in case above [J/m^2]
+
+  real(r8) a, b, c, d
+  real(r8) wice_lake(1:nl_lake)  ! ice lens (kg/m2)
+  real(r8) wliq_lake(1:nl_lake)  ! liquid water (kg/m2)
+  real(r8) t_ave, frac_
+!-----------------------------------------------------------------------
+
+      ! for runoff calculation (assumed no mass change in the land water bodies)
+      lb = snl + 1
+      qout_snowb = 0.0
+
+      ! ----------------------------------------------------------
+      !*[1] snow layer on frozen lake
+      ! ----------------------------------------------------------
+      if (snl < 0) then
+         lb = snl + 1
+         call snowwater_snicar (lb,deltim,ssi,wimp,&
+                         pg_rain,qseva,qsdew,qsubl,qfros,&
+                         dz_soisno(lb:0),wice_soisno(lb:0),wliq_soisno(lb:0),qout_snowb,&
+                         forc_aer,&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+
+         ! Natural compaction and metamorphosis.
+         lb = snl + 1
+         call snowcompaction (lb,deltim, &
+                         imelt(lb:0),fiold(lb:0),t_soisno(lb:0),&
+                         wliq_soisno(lb:0),wice_soisno(lb:0),dz_soisno(lb:0))
+
+         ! Combine thin snow elements
+         lb = maxsnl + 1
+         CALL snowlayerscombine_snicar (lb,snl,&
+                         z_soisno(lb:1),dz_soisno(lb:1),zi_soisno(lb-1:1),&
+                         wliq_soisno(lb:1),wice_soisno(lb:1),t_soisno(lb:1),scv,snowdp,&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+
+         ! Divide thick snow elements
+         if (snl < 0) then
+         CALL snowlayersdivide_snicar (lb,snl,&
+                         z_soisno(lb:0),dz_soisno(lb:0),zi_soisno(lb-1:0),&
+                         wliq_soisno(lb:0),wice_soisno(lb:0),t_soisno(lb:0),&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+         endif
+
+      ! ----------------------------------------------------------
+      !*[2] check for single completely unfrozen snow layer over lake.
+      !     Modeling this ponding is unnecessary and can cause instability after the timestep
+      !     when melt is completed, as the temperature after melt can be excessive
+      !     because the fluxes were calculated with a fixed ground temperature of freezing, but the
+      !     phase change was unable to restore the temperature to freezing.  (Zack Subnin 05/2010)
+      ! ----------------------------------------------------------
+
+         if (snl == -1 .and. wice_soisno(0) == 0.) then
+            ! Remove layer
+            ! Take extra heat of layer and release to sensible heat in order to maintain energy conservation.
+            heatrem = cpliq*wliq_soisno(0)*(t_soisno(0) - tfrz)
+            fseng = fseng + heatrem/deltim
+            fgrnd = fgrnd - heatrem/deltim
+
+            snl = 0
+            scv = 0.
+            snowdp = 0.
+         end if
+
+      endif
+
+      ! ----------------------------------------------------------
+      !*[3] check for snow layers above lake with unfrozen top layer. Mechanically,
+      !     the snow will fall into the lake and melt or turn to ice. If the top layer has
+      !     sufficient heat to melt the snow without freezing, then that will be done.
+      !     Otherwise, the top layer will undergo freezing, but only if the top layer will
+      !     not freeze completely. Otherwise, let the snow layers persist and melt by diffusion.
+      ! ----------------------------------------------------------
+
+      if (t_lake(1) > tfrz .and. snl < 0 .and. lake_icefrac(1) < 0.001) then ! for unfrozen lake
+         unfrozen = .true.
+      else
+         unfrozen = .false.
+      end if
+
+      sumsnowice = 0.
+      sumsnowliq = 0.
+      heatsum = 0.0
+      do j = snl+1,0
+         if (unfrozen) then
+            sumsnowice = sumsnowice + wice_soisno(j)
+            sumsnowliq = sumsnowliq + wliq_soisno(j)
+            heatsum = heatsum + wice_soisno(j)*cpice*(tfrz-t_soisno(j)) &
+                             + wliq_soisno(j)*cpliq*(tfrz-t_soisno(j))
+         end if
+      end do
+
+      if (unfrozen) then
+         ! changed by weinan as the subroutine newsnow_lake
+         ! Remove snow and subtract the latent heat from the top layer.
+
+         t_ave = tfrz - heatsum/(sumsnowice*cpice + sumsnowliq*cpliq)
+
+         a = heatsum
+         b = sumsnowice*hfus
+         c = (t_lake(1) - tfrz)*cpliq*denh2o*dz_lake(1)
+         d = denh2o*dz_lake(1)*hfus
+
+         ! all snow melt
+           if (c>=a+b)then
+              t_lake(1) = (cpliq*(denh2o*dz_lake(1)*t_lake(1) + (sumsnowice+sumsnowliq)*tfrz) - a - b) / &
+                        (cpliq*(denh2o*dz_lake(1) + sumsnowice+ sumsnowice))
+              sm = sm + scv/deltim
+              scv = 0.
+              snowdp = 0.
+              snl = 0
+           else if(c+d >= a+b)then
+              t_lake(1) = tfrz
+              sm = sm + scv/deltim
+              scv = 0.
+              snowdp = 0.
+              snl = 0
+              lake_icefrac(1) = (a+b-c)/d
+            !  snow do not melt while lake freezing
+            else if(c+d < a) then
+             t_lake(1) = (c+d + cpice*(sumsnowice*t_ave+denh2o*dz_lake(1)*tfrz) + cpliq*sumsnowliq*t_ave)/&
+                        (cpice*(sumsnowice+denh2o*dz_lake(1))+cpliq*sumsnowliq)
+             lake_icefrac(1) = 1.0
+            end if
+      end if
+
+
+      ! ----------------------------------------------------------
+      !*[4] Soil water and ending water balance
+      ! ----------------------------------------------------------
+      ! Here this consists only of making sure that soil is saturated even as it melts and
+      ! pore space opens up. Conversely, if excess ice is melting and the liquid water exceeds the
+      ! saturation value, then remove water.
+
+      do j = 1, nl_soil
+         a = wliq_soisno(j)/(dz_soisno(j)*denh2o) + wice_soisno(j)/(dz_soisno(j)*denice)
+
+         if (a < porsl(j)) then
+            wliq_soisno(j) = max( 0., (porsl(j)*dz_soisno(j) - wice_soisno(j)/denice)*denh2o )
+            wice_soisno(j) = max( 0., (porsl(j)*dz_soisno(j) - wliq_soisno(j)/denh2o)*denice )
+         else
+            wliq_soisno(j) = max(0., wliq_soisno(j) - (a - porsl(j))*denh2o*dz_soisno(j) )
+            wice_soisno(j) = max( 0., (porsl(j)*dz_soisno(j) - wliq_soisno(j)/denh2o)*denice )
+         end if
+
+         if (wliq_soisno(j) > porsl(j)*denh2o*dz_soisno(j)) then
+             wliq_soisno(j) = porsl(j)*denh2o*dz_soisno(j)
+         endif
+      end do
+
+
+  end subroutine snowwater_lake_snicar
 
 
   subroutine roughness_lake (snl,t_grnd,t_lake,lake_icefrac,forc_psrf,&

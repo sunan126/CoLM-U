@@ -26,7 +26,7 @@
                      trad        ,rst         ,assim       ,respc      ,&
                      errore      ,emis        ,z0m         ,zol        ,&
                      rib         ,ustar       ,qstar       ,tstar      ,&
-                     fm          ,fh          ,fq                       )
+                     fm          ,fh          ,fq          ,snofrz      )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -154,13 +154,16 @@
         scv,         &! snow cover, water equivalent [mm, kg/m2]
         snowdp        ! snow depth [m]
 
+  REAL(r8), intent(out) :: &
+        snofrz (lb:0) !snow freezing rate (col,lyr) [kg m-2 s-1]
+
   INTEGER, intent(out) :: &
-       imelt(lb:nl_soil) ! flag for melting or freezing [-]
+        imelt(lb:nl_soil) ! flag for melting or freezing [-]
 
   REAL(r8), intent(out) :: &
-       laisun,       &! sunlit leaf area index
-       laisha,       &! shaded leaf area index
-       rstfac         ! factor of soil water stress
+        laisun,      &! sunlit leaf area index
+        laisha,      &! shaded leaf area index
+        rstfac        ! factor of soil water stress
 
         ! Output fluxes
   REAL(r8), intent(out) :: &
@@ -809,14 +812,14 @@ ENDIF
                       sigf,dz_soisno,z_soisno,zi_soisno,&
                       t_soisno,wice_soisno,wliq_soisno,scv,snowdp,&
                       frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg,&
-                      imelt,sm,xmf,fact,psi0,bsw)
+                      imelt,snofrz,sm,xmf,fact,psi0,bsw)
 
 !=======================================================================
 ! [6] Correct fluxes to present soil temperature
 !=======================================================================
 
 ! 问题：为什么tinc更新fseng, fevpg后能继续保持守恒
-! 在植被湍流计算过程中的等式保证了能量的平衡，最对土壤温度求导
+! 在植被湍流计算过程中的等式保证了能量的平衡，最后对土壤温度求导
       t_grnd = t_soisno(lb)
       tinc   = t_soisno(lb) - t_soisno_bef(lb)
       fseng  = fseng + tinc*cgrnds
@@ -876,7 +879,7 @@ ENDIF
 
 ! radiative temperature
       IF (olrg < 0) THEN !fordebug
-         print *, ipatch, olrg, tinc, ulrad
+         print *, "Outgoing longwave radiation < 0!",ipatch, olrg, tinc, ulrad
          write(6,*) ipatch,errore,sabv,sabg,frl,olrg,fsenl,fseng,hvap*fevpl,htvp*fevpg,xmf
          olrg = 0.
       ENDIF

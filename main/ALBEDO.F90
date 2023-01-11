@@ -283,7 +283,7 @@ ENDIF
          ENDIF
       ENDIF
 
-#ifdef SNICAR1
+#ifdef SNICAR
   ! SNICAR snow albedo
   ! need soil albedo, so put it here
 

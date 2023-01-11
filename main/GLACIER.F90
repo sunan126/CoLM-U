@@ -4,7 +4,7 @@
 
 !-----------------------------------------------------------------------
 ! Energy and Mass Balance Model of LAND ICE (GLACIER / ICE SHEET)
-! 
+!
 ! Original author: Yongjiu Dai, /05/2014/
 !-----------------------------------------------------------------------
  use precision
@@ -14,6 +14,7 @@
 ! PUBLIC MEMBER FUNCTIONS:
   public :: GLACIER_TEMP
   public :: GLACIER_WATER
+  public :: GLACIER_WATER_snicar
 
 
 ! PRIVATE MEMBER FUNCTIONS:
@@ -42,22 +43,22 @@
                     sm          ,tref       ,qref        ,trad        ,&
                     errore      ,emis       ,z0m         ,zol         ,&
                     rib         ,ustar      ,qstar       ,tstar       ,&
-                    fm          ,fh         ,fq)
+                    fm          ,fh         ,fq          ,snofrz       )
 
 !=======================================================================
-! this is the main subroutine to execute the calculation 
+! this is the main subroutine to execute the calculation
 ! of thermal processes and surface fluxes of the land ice (glacier and ice sheet)
 !
 ! Original author : Yongjiu Dai and Nan Wei, /05/2014/
-! 
+!
 ! FLOW DIAGRAM FOR GLACIER_TEMP.F90
-! 
+!
 ! GLACIER_TEMP ===> qsadv
 !                   groundfluxes | --------->  |moninobukini
 !                                |             |moninobuk
 !
 !                   groundTem    | --------->  |meltf
-!                               
+!
 !=======================================================================
 
   use precision
@@ -65,11 +66,11 @@
   use FRICTION_VELOCITY
 
   IMPLICIT NONE
- 
+
 !---------------------Argument------------------------------------------
 
   integer, INTENT(in) :: &
-        lb,          &! lower bound of array 
+        lb,          &! lower bound of array
         nl_ice        ! upper bound of array
 
   real(r8), INTENT(in) :: &
@@ -109,9 +110,12 @@
         scv,                   &! snow cover, water equivalent [mm, kg/m2]
         snowdp                  ! snow depth [m]
 
-  integer, INTENT(out) :: & 
+  REAL(r8), intent(inout) :: &
+        snofrz (lb:0)    !snow freezing rate (col,lyr) [kg m-2 s-1]
+
+  integer, INTENT(out) :: &
        imelt(lb:nl_ice)  ! flag for melting or freezing [-]
- 
+
         ! Output fluxes
   real(r8), INTENT(out) :: &
         taux,        &! wind stress: E-W [kg/m/s**2]
@@ -157,7 +161,7 @@
        eg,           &! water vapor pressure at temperature T [pa]
        egsmax,       &! max. evaporation which ice can provide at one time step
        egidif,       &! the excess of evaporation over "egsmax"
-       emg,          &! ground emissivity (0.96) 
+       emg,          &! ground emissivity (0.96)
        errore,       &! energy balnce error [w/m2]
        fact(lb:nl_ice), &! used in computing tridiagonal matrix
        htvp,         &! latent heat of vapor of water (or sublimation) [j/kg]
@@ -203,11 +207,11 @@
       qred = 1.
       call qsadv(t_grnd,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
-      qg = qred*qsatg  
+      qg = qred*qsatg
       dqgdT = qred*qsatgdT
 
 !=======================================================================
-! [3] Compute sensible and latent fluxes and their derivatives with respect 
+! [3] Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.
 !=======================================================================
 
@@ -226,7 +230,7 @@
                      capr,cnfac,dz_icesno,z_icesno,zi_icesno,&
                      t_icesno,wice_icesno,wliq_icesno,scv,snowdp,&
                      forc_frl,sabg,fseng,fevpg,cgrnd,htvp,emg,&
-                     imelt,sm,xmf,fact)
+                     imelt,snofrz,sm,xmf,fact)
 
 !=======================================================================
 ! [5] Correct fluxes to present ice temperature
@@ -234,10 +238,10 @@
 
       t_grnd = t_icesno(lb)
       tinc = t_icesno(lb) - t_icesno_bef(lb)
-      fseng = fseng + tinc*cgrnds 
+      fseng = fseng + tinc*cgrnds
       fevpg = fevpg + tinc*cgrndl
 
-! calculation of evaporative potential; flux in kg m-2 s-1.  
+! calculation of evaporative potential; flux in kg m-2 s-1.
 ! egidif holds the excess energy if all water is evaporated
 ! during the timestep. this energy is later added to the sensible heat flux.
 
@@ -251,16 +255,16 @@
       fsena = fseng
       fevpa = fevpg
       lfevpa= htvp*fevpg   ! W/m^2 (accouting for sublimation)
-      
+
       qseva = 0.
       qsubl = 0.
       qfros = 0.
       qsdew = 0.
 
-      if(fevpg >= 0)then 
+      if(fevpg >= 0)then
          qseva = min(wliq_icesno(lb)/deltim, fevpg)
          qsubl = fevpg - qseva
-      else 
+      else
         if(t_grnd < tfrz)then
            qfros = abs(fevpg)
         else
@@ -278,7 +282,7 @@
 ! for conservation we put the increase of ground longwave to outgoing
            + 4.*emg*stefnc*t_icesno_bef(lb)**3*tinc
 
-! averaged bulk surface emissivity 
+! averaged bulk surface emissivity
       emis = emg
 
 ! radiative temperature
@@ -294,7 +298,7 @@
       enddo
 
 !#if (defined CLMDEBUG)
-     if(abs(errore)>.2)then 
+     if(abs(errore)>.2)then
      write(6,*) 'GLACIER_TEMP.F90 : energy  balance violation'
      write(6,100) errore,sabg,forc_frl,olrg,fsena,lfevpa,xmf
      endif
@@ -308,7 +312,7 @@
  subroutine groundfluxes_glacier (zlnd,zsno,hu,ht,hq,&
                                   us,vs,tm,qm,rhoair,psrf,&
                                   ur,thm,th,thv,t_grnd,qg,dqgdT,htvp,&
-                                  fsno,cgrnd,cgrndl,cgrnds,& 
+                                  fsno,cgrnd,cgrndl,cgrnds,&
                                   taux,tauy,fsena,fevpa,fseng,fevpg,tref,qref,&
                                   z0m,zol,rib,ustar,qstar,tstar,fm,fh,fq)
 
@@ -323,7 +327,7 @@
   use PhysicalConstants, only : cpair,vonkar,grav
   use FRICTION_VELOCITY
   implicit none
- 
+
 !----------------------- Dummy argument --------------------------------
   real(r8), INTENT(in) :: &
         zlnd,     &! roughness length for ice [m]
@@ -427,7 +431,7 @@
       z0m = z0mg
 
 !-----------------------------------------------------------------------
-!     Compute sensible and latent fluxes and their derivatives with respect 
+!     Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.
 !-----------------------------------------------------------------------
 ! Initialization variables
@@ -440,7 +444,7 @@
       zldis = hu-0.
 
       call moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mg,um,obu)
- 
+
 ! Evaluated stability-dependent variables using moz from prior iteration
       niters=6
 
@@ -485,11 +489,11 @@
 
 ! Get derivative of fluxes with repect to ground temperature
       ram    = 1./(ustar*ustar/um)
-      rah    = 1./(vonkar/fh*ustar) 
-      raw    = 1./(vonkar/fq*ustar) 
+      rah    = 1./(vonkar/fh*ustar)
+      raw    = 1./(vonkar/fq*ustar)
 
       raih   = rhoair*cpair/rah
-      raiw   = rhoair/raw          
+      raiw   = rhoair/raw
       cgrnds = raih
       cgrndl = raiw*dqgdT
       cgrnd  = cgrnds + htvp*cgrndl
@@ -497,12 +501,12 @@
       zol = zeta
       rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
-! surface fluxes of momentum, sensible and latent 
+! surface fluxes of momentum, sensible and latent
 ! using ground temperatures from previous time step
-      taux   = -rhoair*us/ram        
+      taux   = -rhoair*us/ram
       tauy   = -rhoair*vs/ram
       fseng  = -raih*dth
-      fevpg  = -raiw*dqh 
+      fevpg  = -raiw*dqh
 
       fsena  = fseng
       fevpa  = fevpg
@@ -519,7 +523,7 @@
                       capr,cnfac,dz_icesno,z_icesno,zi_icesno,&
                       t_icesno,wice_icesno,wliq_icesno,scv,snowdp,&
                       forc_frl,sabg,fseng,fevpg,cgrnd,htvp,emg,&
-                      imelt,sm,xmf,fact)
+                      imelt,snofrz,sm,xmf,fact)
 
 !=======================================================================
 ! SNOW and LAND ICE temperatures
@@ -538,7 +542,7 @@
 !   method and resulted in a tridiagonal system equation.
 !
 ! Phase change (see meltf.F90)
-! 
+!
 ! Original author : Yongjiu Dai, /05/2014/
 !=======================================================================
 
@@ -576,6 +580,8 @@
   real(r8), INTENT(out) :: fact(lb:nl_ice) !used in computing tridiagonal matrix
   integer, INTENT(out)  :: imelt(lb:nl_ice)    !flag for melting or freezing [-]
 
+  REAL(r8), intent(out) :: snofrz(lb:0)        !snow freezing rate (lyr) [kg m-2 s-1]
+
 !------------------------ local variables ------------------------------
   real(r8) rhosnow         ! partitial density of water (ice + liquid)
   real(r8) cv(lb:nl_ice)   ! heat capacity [J/(m2 K)]
@@ -593,6 +599,7 @@
   real(r8) dzp             ! used in computing tridiagonal matrix
 
   real(r8) t_icesno_bef(lb:nl_ice) ! snow/ice temperature before update
+  real(r8) wice_icesno_bef(lb:0)   ! ice lens [kg/m2]
   real(r8) hs              ! net energy flux into the surface (w/m2)
   real(r8) dhsdt           ! d(hs)/dT
   real(r8) brr(lb:nl_ice)  ! temporay set
@@ -600,7 +607,7 @@
   integer i,j
 
 !=======================================================================
-! SNOW and LAND ICE heat capacity 
+! SNOW and LAND ICE heat capacity
       cv(1:) = wice_icesno(1:)*cpice + wliq_icesno(1:)*cpliq
       if(lb==1 .and. scv>0.) cv(1) = cv(1) + cpice*scv
 
@@ -643,7 +650,7 @@
 ! Because when the distance of bottom snow node to the interfacee
 ! is larger than that of interface to top ice node,
 ! the snow thermal conductivity will be dominant, and the result is that
-! lees heat tranfer between snow and ice 
+! lees heat tranfer between snow and ice
          if((j==0) .and. (z_icesno(j+1)-zi_icesno(j)<zi_icesno(j)-z_icesno(j)))then
             tk(j) = 2.*thk(j)*thk(j+1)/(thk(j)+thk(j+1))
             tk(j) = max(0.5*thk(j+1),tk(j))
@@ -657,7 +664,7 @@
 
 
 ! net ground heat flux into the surface and its temperature derivative
-      hs = sabg + emg*forc_frl - emg*stefnc*t_icesno(lb)**4 - (fseng+fevpg*htvp) 
+      hs = sabg + emg*forc_frl - emg*stefnc*t_icesno(lb)**4 - (fseng+fevpg*htvp)
 
       dhsdT = - cgrnd - 4.*emg * stefnc * t_icesno(lb)**3
       t_icesno_bef(lb:) = t_icesno(lb:)
@@ -702,10 +709,10 @@
 
 ! solve for t_icesno
       i = size(at)
-      call tridia (i ,at ,bt ,ct ,rt ,t_icesno) 
+      call tridia (i ,at ,bt ,ct ,rt ,t_icesno)
 
 !=======================================================================
-! melting or freezing 
+! melting or freezing
 !=======================================================================
 
       do j = lb, nl_ice - 1
@@ -720,10 +727,19 @@
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       enddo
 
+      wice_icesno_bef(lb:0) = wice_icesno(lb:0)
+
       call meltf (lb,nl_ice,deltim, &
                   fact(lb:),brr(lb:),hs,dhsdT, &
                   t_icesno_bef(lb:),t_icesno(lb:),wliq_icesno(lb:),wice_icesno(lb:),imelt(lb:), &
                   scv,snowdp,sm,xmf)
+
+      ! layer freezing mass flux (positive):
+      DO j = lb, 0
+         IF (imelt(j)==2 .and. j<1) THEN
+            snofrz(j) = max(0._r8,(wice_icesno(j)-wice_icesno_bef(j)))/deltim
+         ENDIF
+      ENDDO
 
 !-----------------------------------------------------------------------
 
@@ -738,7 +754,7 @@
                     fiold       ,snl         ,qseva     ,qsdew   ,&
                     qsubl       ,qfros       ,rsur      ,rnof    ,&
                     ssi         ,wimp    )
-	           
+
 !=======================================================================
   use precision
   use PhysicalConstants, only : denice, denh2o, tfrz
@@ -746,7 +762,7 @@
   use SOIL_SNOW_hydrology
 
   IMPLICIT NONE
-    
+
 !-----------------------Argument---------- ------------------------------
   integer, INTENT(in) :: nl_ice  ! upper bound of array
   integer, INTENT(in) :: maxsnl  ! maximum number of snow layers
@@ -780,9 +796,9 @@
   real(r8), INTENT(out) :: &
        rsur      , &! surface runoff (mm h2o/s)
        rnof         ! total runoff (mm h2o/s)
-!                    
+!
 !-----------------------Local Variables------------------------------
-!                   
+!
   integer lb, j
 
   real(r8) :: gwat   ! net water input from top (mm/s)
@@ -798,7 +814,7 @@
 ! In warm parts of the ice sheet, the meltwater does not refreeze, but stays in place indefinitely.
 !=======================================================================
 
-      lb = snl + 1 
+      lb = snl + 1
       if (lb>=1)then
          gwat = pg_rain + sm - qseva
       else
@@ -847,6 +863,150 @@
 
 
  end subroutine GLACIER_WATER
+
+
+ subroutine GLACIER_WATER_snicar ( nl_ice,maxsnl,deltim,&
+                    z_icesno    ,dz_icesno   ,zi_icesno ,t_icesno,&
+                    wliq_icesno ,wice_icesno ,pg_rain   ,pg_snow ,&
+                    sm          ,scv         ,snowdp    ,imelt   ,&
+                    fiold       ,snl         ,qseva     ,qsdew   ,&
+                    qsubl       ,qfros       ,rsur      ,rnof    ,&
+                    ssi         ,wimp        ,&
+                    ! SNICAR
+                    forc_aer,&
+                    mss_bcpho, mss_bcphi, mss_ocpho, mss_ocphi, &
+                    mss_dst1,  mss_dst2,  mss_dst3,  mss_dst4 )
+
+!=======================================================================
+  use precision
+  use PhysicalConstants, only : denice, denh2o, tfrz
+  use SNOW_Layers_CombineDivide
+  use SOIL_SNOW_hydrology
+
+  IMPLICIT NONE
+
+!-----------------------Argument---------- ------------------------------
+  integer, INTENT(in) :: nl_ice  ! upper bound of array
+  integer, INTENT(in) :: maxsnl  ! maximum number of snow layers
+
+  real(r8), INTENT(in) :: &
+       deltim    , &! time step (s)
+       ssi       , &! irreducible water saturation of snow
+       wimp      , &! water impremeable if porosity less than wimp
+       pg_rain   , &! rainfall (mm h2o/s)
+       pg_snow   , &! snowfall (mm h2o/s)
+       sm        , &! snow melt (mm h2o/s)
+       qseva     , &! ground surface evaporation rate (mm h2o/s)
+       qsdew     , &! ground surface dew formation (mm h2o /s) [+]
+       qsubl     , &! sublimation rate from snow pack (mm h2o /s) [+]
+       qfros     , &! surface dew added to snow pack (mm h2o /s) [+]
+       fiold(maxsnl+1:nl_ice)  ! fraction of ice relative to the total water
+
+  integer, INTENT(in) :: imelt(maxsnl+1:nl_ice)  ! flag for: melting=1, freezing=2, nothing happended=0
+  integer, INTENT(inout) :: snl ! lower bound of array
+
+  real(r8), INTENT(inout) :: &
+       z_icesno   (maxsnl+1:nl_ice) , &! layer depth (m)
+       dz_icesno  (maxsnl+1:nl_ice) , &! layer thickness (m)
+       zi_icesno  (maxsnl  :nl_ice) , &! interface level below a "z" level (m)
+       t_icesno   (maxsnl+1:nl_ice) , &! snow/ice skin temperature (K)
+       wice_icesno(maxsnl+1:nl_ice) , &! ice lens (kg/m2)
+       wliq_icesno(maxsnl+1:nl_ice) , &! liquid water (kg/m2)
+       scv       , &! snow mass (kg/m2)
+       snowdp       ! snow depth (m)
+
+  real(r8), INTENT(out) :: &
+       rsur      , &! surface runoff (mm h2o/s)
+       rnof         ! total runoff (mm h2o/s)
+
+! Aerosol Fluxes (Jan. 07, 2023)
+  real(r8), intent(in) :: forc_aer ( 14 )  ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+
+  real(r8), INTENT(inout) :: &
+        mss_bcpho (maxsnl+1:0), &! mass of hydrophobic BC in snow  (col,lyr) [kg]
+        mss_bcphi (maxsnl+1:0), &! mass of hydrophillic BC in snow (col,lyr) [kg]
+        mss_ocpho (maxsnl+1:0), &! mass of hydrophobic OC in snow  (col,lyr) [kg]
+        mss_ocphi (maxsnl+1:0), &! mass of hydrophillic OC in snow (col,lyr) [kg]
+        mss_dst1  (maxsnl+1:0), &! mass of dust species 1 in snow  (col,lyr) [kg]
+        mss_dst2  (maxsnl+1:0), &! mass of dust species 2 in snow  (col,lyr) [kg]
+        mss_dst3  (maxsnl+1:0), &! mass of dust species 3 in snow  (col,lyr) [kg]
+        mss_dst4  (maxsnl+1:0)   ! mass of dust species 4 in snow  (col,lyr) [kg]
+! Aerosol Fluxes (Jan. 07, 2023)
+
+!
+!-----------------------Local Variables------------------------------
+!
+  integer lb, j
+
+  real(r8) :: gwat   ! net water input from top (mm/s)
+  real(r8) :: rsubst ! subsurface runoff (mm h2o/s)
+
+!=======================================================================
+! [1] update the liquid water within snow layer and the water onto the ice surface
+!
+! Snow melting is treated in a realistic fashion, with meltwater
+! percolating downward through snow layers as long as the snow is unsaturated.
+! Once the underlying snow is saturated, any additional meltwater runs off.
+! When glacier ice melts, however, the meltwater is assumed to remain in place until it refreezes.
+! In warm parts of the ice sheet, the meltwater does not refreeze, but stays in place indefinitely.
+!=======================================================================
+
+      lb = snl + 1
+      if (lb>=1)then
+         gwat = pg_rain + sm - qseva
+      else
+         call snowwater_snicar (lb,deltim,ssi,wimp,&
+                         pg_rain,qseva,qsdew,qsubl,qfros,&
+                         dz_icesno(lb:0),wice_icesno(lb:0),wliq_icesno(lb:0),gwat,&
+                         forc_aer,&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+      endif
+
+!=======================================================================
+! [2] surface runoff and infiltration
+!=======================================================================
+
+      rsur = max(0.0,gwat)
+      rsubst = 0.
+      rnof = rsur
+
+      if(snl<0)then
+         ! Compaction rate for snow
+         ! Natural compaction and metamorphosis. The compaction rate
+         ! is recalculated for every new timestep
+         lb  = snl + 1   ! lower bound of array
+         call snowcompaction (lb,deltim,&
+                         imelt(lb:0),fiold(lb:0),t_icesno(lb:0),&
+                         wliq_icesno(lb:0),wice_icesno(lb:0),dz_icesno(lb:0))
+
+         ! Combine thin snow elements
+         lb = maxsnl + 1
+         CALL snowlayerscombine_snicar (lb,snl,&
+                         z_icesno(lb:1),dz_icesno(lb:1),zi_icesno(lb-1:1),&
+                         wliq_icesno(lb:1),wice_icesno(lb:1),t_icesno(lb:1),scv,snowdp,&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+
+         ! Divide thick snow elements
+         if(snl<0) &
+         CALL snowlayersdivide_snicar (lb,snl,&
+                         z_icesno(lb:0),dz_icesno(lb:0),zi_icesno(lb-1:0),&
+                         wliq_icesno(lb:0),wice_icesno(lb:0),t_icesno(lb:0),&
+                         mss_bcpho(lb:0), mss_bcphi(lb:0), mss_ocpho(lb:0), mss_ocphi(lb:0),&
+                         mss_dst1(lb:0), mss_dst2(lb:0), mss_dst3(lb:0), mss_dst4(lb:0) )
+      endif
+
+      if (snl > maxsnl) then
+         wice_icesno(maxsnl+1:snl) = 0.
+         wliq_icesno(maxsnl+1:snl) = 0.
+         t_icesno   (maxsnl+1:snl) = 0.
+         z_icesno   (maxsnl+1:snl) = 0.
+         dz_icesno  (maxsnl+1:snl) = 0.
+      endif
+
+
+ end subroutine GLACIER_WATER_snicar
 
 
 

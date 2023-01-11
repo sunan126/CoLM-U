@@ -667,14 +667,16 @@ MODULE SNOW_Layers_CombineDivide
             wice_soisno(j+1) = wice_soisno(j+1) + wice_soisno(j)
 
 !Aerosol Fluxes (January 07, 2023)
-            mss_bcphi(j+1) = mss_bcphi(j+1)  + mss_bcphi(j)
-            mss_bcpho(j+1) = mss_bcpho(j+1)  + mss_bcpho(j)
-            mss_ocphi(j+1) = mss_ocphi(j+1)  + mss_ocphi(j)
-            mss_ocpho(j+1) = mss_ocpho(j+1)  + mss_ocpho(j)
-            mss_dst1 (j+1) = mss_dst1 (j+1)  + mss_dst1 (j)
-            mss_dst2 (j+1) = mss_dst2 (j+1)  + mss_dst2 (j)
-            mss_dst3 (j+1) = mss_dst3 (j+1)  + mss_dst3 (j)
-            mss_dst4 (j+1) = mss_dst4 (j+1)  + mss_dst4 (j)
+            IF (j < 0) THEN  ! 01/11/2023, yuan: add j < 0
+               mss_bcphi(j+1) = mss_bcphi(j+1)  + mss_bcphi(j)
+               mss_bcpho(j+1) = mss_bcpho(j+1)  + mss_bcpho(j)
+               mss_ocphi(j+1) = mss_ocphi(j+1)  + mss_ocphi(j)
+               mss_ocpho(j+1) = mss_ocpho(j+1)  + mss_ocpho(j)
+               mss_dst1 (j+1) = mss_dst1 (j+1)  + mss_dst1 (j)
+               mss_dst2 (j+1) = mss_dst2 (j+1)  + mss_dst2 (j)
+               mss_dst3 (j+1) = mss_dst3 (j+1)  + mss_dst3 (j)
+               mss_dst4 (j+1) = mss_dst4 (j+1)  + mss_dst4 (j)
+            ENDIF
 !Aerosol Fluxes (January 07, 2023)
 
 

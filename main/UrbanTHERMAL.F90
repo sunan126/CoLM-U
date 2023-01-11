@@ -438,6 +438,8 @@
         fh_lake    ,&! integral of profile function for heat
         fq_lake      ! integral of profile function for moisture
 
+  REAL(r8) :: snofrz    (maxsnl+1:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
+                                      !temporary variable for SNICAR, not used
   REAL(r8) :: z0m_g,z0h_g,zol_g,obu_g,ustar_g,qstar_g,tstar_g
   REAL(r8) :: fm10m,fm_g,fh_g,fq_g,fh2m,fq2m,um,obu,eb
 
@@ -849,7 +851,7 @@
            ! ---------------------------
            tlake        ,scv_lake     ,snowdp_lake     ,t_lakesno       ,&
            wliq_lakesno ,wice_lakesno ,imelt_lake      ,t_lake          ,&
-           lake_icefrac                                                 ,&
+           lake_icefrac ,snofrz                                         ,&
 
            ! "out" laketem arguments
            ! ---------------------------

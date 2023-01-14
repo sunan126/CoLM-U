@@ -26,7 +26,8 @@
                      trad        ,rst         ,assim       ,respc      ,&
                      errore      ,emis        ,z0m         ,zol        ,&
                      rib         ,ustar       ,qstar       ,tstar      ,&
-                     fm          ,fh          ,fq          ,snofrz      )
+                     fm          ,fh          ,fq                      ,&
+                     snofrz      ,sabg_lyr                              )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -143,6 +144,9 @@
         dz_soisno(lb:nl_soil),  &! layer thickiness [m]
         z_soisno (lb:nl_soil),  &! node depth [m]
         zi_soisno(lb-1:nl_soil)  ! interface depth [m]
+
+  REAL(r8), intent(in) :: &
+        sabg_lyr(lb:1)           ! snow layer aborption
 
         ! state variables (2)
   REAL(r8), intent(inout) :: &
@@ -811,7 +815,7 @@ ENDIF
                       capr,cnfac,csol,porsl,dkdry,dksatu,&
                       sigf,dz_soisno,z_soisno,zi_soisno,&
                       t_soisno,wice_soisno,wliq_soisno,scv,snowdp,&
-                      frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg,&
+                      frl,dlrad,sabg,sabg_lyr,fseng,fevpg,cgrnd,htvp,emg,&
                       imelt,snofrz,sm,xmf,fact,psi0,bsw)
 
 !=======================================================================

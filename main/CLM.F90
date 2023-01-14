@@ -184,10 +184,10 @@
 
       ! temporary dirs
       fsnowoptics = 'snicar_optics_5bnd_mam_c211006.nc'
-      fsnowaging = 'snicar_drdt_bst_fit_60_c070416.nc'
+      fsnowaging  = 'snicar_drdt_bst_fit_60_c070416.nc'
 
-      call SnowOptics_init( fsnowoptics ) ! SNICAR optical parameters
-      call SnowAge_init( fsnowaging )     ! SNICAR aging   parameters
+      CALL SnowOptics_init( fsnowoptics ) ! SNICAR optical parameters
+      CALL SnowAge_init( fsnowaging )     ! SNICAR aging   parameters
 
 !-----------------------
 #if(defined CaMa_Flood)

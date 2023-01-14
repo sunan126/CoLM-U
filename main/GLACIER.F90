@@ -43,7 +43,8 @@
                     sm          ,tref       ,qref        ,trad        ,&
                     errore      ,emis       ,z0m         ,zol         ,&
                     rib         ,ustar      ,qstar       ,tstar       ,&
-                    fm          ,fh         ,fq          ,snofrz       )
+                    fm          ,fh         ,fq                       ,&
+                    snofrz      ,sabg_lyr                              )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -102,6 +103,9 @@
         z_icesno (lb:nl_ice),  &! node depth [m]
         zi_icesno(lb-1:nl_ice)  ! interface depth [m]
 
+  REAL(r8), intent(in) :: &
+        sabg_lyr (lb:1)    ! snow layer absorption [W/m-2]
+
         ! State variables (2)
   real(r8), INTENT(inout) :: &
         t_icesno(lb:nl_ice),   &! snow/ice temperature [K]
@@ -111,7 +115,7 @@
         snowdp                  ! snow depth [m]
 
   REAL(r8), intent(inout) :: &
-        snofrz (lb:0)    !snow freezing rate (col,lyr) [kg m-2 s-1]
+        snofrz (lb:0)    ! snow freezing rate (lyr) [kg m-2 s-1]
 
   integer, INTENT(out) :: &
        imelt(lb:nl_ice)  ! flag for melting or freezing [-]
@@ -229,7 +233,7 @@
       call groundtem_glacier (lb,nl_ice,deltim,&
                      capr,cnfac,dz_icesno,z_icesno,zi_icesno,&
                      t_icesno,wice_icesno,wliq_icesno,scv,snowdp,&
-                     forc_frl,sabg,fseng,fevpg,cgrnd,htvp,emg,&
+                     forc_frl,sabg,sabg_lyr,fseng,fevpg,cgrnd,htvp,emg,&
                      imelt,snofrz,sm,xmf,fact)
 
 !=======================================================================
@@ -522,7 +526,7 @@
  subroutine groundtem_glacier (lb,nl_ice,deltim,&
                       capr,cnfac,dz_icesno,z_icesno,zi_icesno,&
                       t_icesno,wice_icesno,wliq_icesno,scv,snowdp,&
-                      forc_frl,sabg,fseng,fevpg,cgrnd,htvp,emg,&
+                      forc_frl,sabg,sabg_lyr,fseng,fevpg,cgrnd,htvp,emg,&
                       imelt,snofrz,sm,xmf,fact)
 
 !=======================================================================
@@ -568,6 +572,8 @@
   real(r8), INTENT(in) :: cgrnd     !deriv. of ice energy flux wrt to ice temp [W/m2/k]
   real(r8), INTENT(in) :: htvp      !latent heat of vapor of water (or sublimation) [J/kg]
   real(r8), INTENT(in) :: emg       !ground emissivity (0.97 for snow,
+
+  REAL(r8), intent(in) :: sabg_lyr (lb:1)         !snow layer absorption [W/m-2]
 
   real(r8), INTENT(inout) :: t_icesno (lb:nl_ice) !snow and ice temperature [K]
   real(r8), INTENT(inout) :: wice_icesno(lb:nl_ice) !ice lens [kg/m2]
@@ -664,7 +670,11 @@
 
 
 ! net ground heat flux into the surface and its temperature derivative
+#ifdef SNICAR
+      hs = sabg_lyr(lb) + emg*forc_frl - emg*stefnc*t_icesno(lb)**4 - (fseng+fevpg*htvp)
+#else
       hs = sabg + emg*forc_frl - emg*stefnc*t_icesno(lb)**4 - (fseng+fevpg*htvp)
+#endif
 
       dhsdT = - cgrnd - 4.*emg * stefnc * t_icesno(lb)**3
       t_icesno_bef(lb:) = t_icesno(lb:)
@@ -690,8 +700,20 @@
       ct(j) =  -(1.-cnfac)*fact(j)*tk(j)/dzp
       rt(j) = t_icesno(j) + fact(j)*( hs - dhsdT*t_icesno(j) + cnfac*fn(j) )
 
+! January 12, 2023
+      if (lb <= 0) then
+          do j = lb + 1, 1
+             dzm   = (z_icesno(j)-z_icesno(j-1))
+             dzp   = (z_icesno(j+1)-z_icesno(j))
+             at(j) =   - (1.-cnfac)*fact(j)* tk(j-1)/dzm
+             bt(j) = 1.+ (1.-cnfac)*fact(j)*(tk(j)/dzp + tk(j-1)/dzm)
+             ct(j) =   - (1.-cnfac)*fact(j)* tk(j)/dzp
+             rt(j) = t_icesno(j) + fact(j)*sabg_lyr(j) + cnfac*fact(j)*( fn(j) - fn(j-1) )
+          end do
+      endif
 
-      do j = lb + 1, nl_ice - 1
+      do j = 2, nl_ice - 1
+! January 12, 2023
          dzm   = (z_icesno(j)-z_icesno(j-1))
          dzp   = (z_icesno(j+1)-z_icesno(j))
          at(j) =   - (1.-cnfac)*fact(j)* tk(j-1)/dzm

@@ -40,7 +40,7 @@ SUBROUTINE CLMMAIN ( &
            t_lake,       lake_icefrac,                             &
 
          ! SNICAR snow model related
-           snw_rds,                                                &
+           snw_rds,      ssno,                                     &
            mss_bcpho,    mss_bcphi,   mss_ocpho,     mss_ocphi,    &
            mss_dst1,     mss_dst2,    mss_dst3,      mss_dst4,     &
 
@@ -260,6 +260,7 @@ SUBROUTINE CLMMAIN ( &
         mss_dst2  ( maxsnl+1:0 ) ,&! mass of dust species 2 in snow  (col,lyr) [kg]
         mss_dst3  ( maxsnl+1:0 ) ,&! mass of dust species 3 in snow  (col,lyr) [kg]
         mss_dst4  ( maxsnl+1:0 ) ,&! mass of dust species 4 in snow  (col,lyr) [kg]
+        ssno    (2,2,maxsnl+1:1) ,&! snow layer absorption [-]
 
         fveg        ,&! fraction of vegetation cover
         fsno        ,&! fractional snow cover
@@ -363,7 +364,6 @@ SUBROUTINE CLMMAIN ( &
         fiold(maxsnl+1:nl_soil), &! fraction of ice relative to the total water
         w_old       ,&! liquid water mass of the column at the previous time step (mm)
         orb_coszen  ,&! cosine of the solar zenith angle
-        sabvg       ,&! solar absorbed by ground + vegetation [W/m2]
         parsun      ,&! PAR by sunlit leaves [W/m2]
         parsha      ,&! PAR by shaded leaves [W/m2]
         qseva       ,&! ground surface evaporation rate (mm h2o/s)
@@ -405,21 +405,22 @@ SUBROUTINE CLMMAIN ( &
 
       ! For SNICAR snow model
       !----------------------------------------------------------------------
-      logical  do_capsnow              !true => do snow capping
-      real(r8) snwcp_ice               !excess precipitation due to snow capping [kg m-2 s-1]
-      real(r8) forc_aer        ( 14 )  !aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
-      real(r8) snofrz    (maxsnl+1:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
-      real(r8) t_soisno_ (maxsnl+1:1)  !soil + snow layer temperature [K]
-      real(r8) dz_soisno_(maxsnl+1:1)  !layer thickness (m)
+      LOGICAL  do_capsnow              !true => do snow capping
+      REAL(r8) snwcp_ice               !excess precipitation due to snow capping [kg m-2 s-1]
+      REAL(r8) forc_aer        ( 14 )  !aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+      REAL(r8) snofrz    (maxsnl+1:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
+      REAL(r8) t_soisno_ (maxsnl+1:1)  !soil + snow layer temperature [K]
+      REAL(r8) dz_soisno_(maxsnl+1:1)  !layer thickness (m)
+      REAL(r8) sabg_lyr  (maxsnl+1:1)  !snow layer absorption [W/m-2]
 
-      real(r8) mss_cnc_bcphi ( maxsnl+1:0 )     !mass concentration of hydrophilic BC (col,lyr) [kg/kg]
-      real(r8) mss_cnc_bcpho ( maxsnl+1:0 )     !mass concentration of hydrophobic BC (col,lyr) [kg/kg]
-      real(r8) mss_cnc_ocphi ( maxsnl+1:0 )     !mass concentration of hydrophilic OC (col,lyr) [kg/kg]
-      real(r8) mss_cnc_ocpho ( maxsnl+1:0 )     !mass concentration of hydrophobic OC (col,lyr) [kg/kg]
-      real(r8) mss_cnc_dst1  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 1 (col,lyr) [kg/kg]
-      real(r8) mss_cnc_dst2  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
-      real(r8) mss_cnc_dst3  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
-      real(r8) mss_cnc_dst4  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_bcphi ( maxsnl+1:0 )     !mass concentration of hydrophilic BC (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_bcpho ( maxsnl+1:0 )     !mass concentration of hydrophobic BC (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_ocphi ( maxsnl+1:0 )     !mass concentration of hydrophilic OC (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_ocpho ( maxsnl+1:0 )     !mass concentration of hydrophobic OC (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_dst1  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 1 (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_dst2  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_dst3  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
+      REAL(r8) mss_cnc_dst4  ( maxsnl+1:0 )     !mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
       !----------------------------------------------------------------------
 
       REAL(r8) :: a, aa
@@ -439,8 +440,8 @@ SUBROUTINE CLMMAIN ( &
 
       CALL netsolar (ipatch,idate,deltim,patchlonr,patchtype,&
                      forc_sols,forc_soll,forc_solsd,forc_solld,&
-                     alb,ssun,ssha,lai,sai,rho,tau,&
-                     parsun,parsha,sabvsun,sabvsha,sabg,sabvg,sr,&
+                     alb,ssun,ssha,lai,sai,rho,tau,ssno,&
+                     parsun,parsha,sabvsun,sabvsha,sabg,sabg_lyr,sr,&
                      solvd,solvi,solnd,solni,srvd,srvi,srnd,srni,&
                      solvdln,solviln,solndln,solniln,srvdln,srviln,srndln,srniln)
 
@@ -559,7 +560,8 @@ ENDIF
            trad              ,rst               ,assim             ,respc             ,&
            errore            ,emis              ,z0m               ,zol               ,&
            rib               ,ustar             ,qstar             ,tstar             ,&
-           fm                ,fh                ,fq                ,snofrz(lb:0)       )
+           fm                ,fh                ,fq                                   ,&
+           snofrz(lb:0)      ,sabg_lyr(lb:1)                                           )
 
 #ifdef SNICAR
       CALL WATER_snicar (ipatch,patchtype       ,lb                ,nl_soil           ,&
@@ -723,7 +725,8 @@ ELSE IF (patchtype == 3) THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtyp
                    sm          ,tref        ,qref       ,trad        ,&
                    errore      ,emis        ,z0m        ,zol         ,&
                    rib         ,ustar       ,qstar      ,tstar       ,&
-                   fm          ,fh          ,fq         ,snofrz(lb:0) )
+                   fm          ,fh          ,fq                      ,&
+                   snofrz(lb:0),sabg_lyr(lb:1)                        )
 
 
 #ifdef SNICAR
@@ -809,7 +812,8 @@ ELSE IF (patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and
            snowdp       ,lake_icefrac )
 
 
-      CALL laketem ( &
+#ifdef SNICAR
+      CALL laketem_snicar ( &
            ! "in" laketem arguments
            ! ---------------------------
            patchtype    ,maxsnl       ,nl_soil         ,nl_lake         ,&
@@ -825,7 +829,10 @@ ELSE IF (patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and
            ! ---------------------------
            t_grnd       ,scv          ,snowdp          ,t_soisno        ,&
            wliq_soisno  ,wice_soisno  ,imelt           ,t_lake          ,&
-           lake_icefrac ,snofrz       ,&
+           lake_icefrac , &
+
+           ! SNICAR
+           snofrz       ,sabg_lyr     ,&
 
            ! "out" laketem arguments
            ! ---------------------------
@@ -837,7 +844,6 @@ ELSE IF (patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and
            rib          ,ustar        ,qstar           ,tstar           ,&
            fm           ,fh           ,fq              ,sm )
 
-#ifdef SNICAR
       CALL snowwater_lake_snicar ( &
            ! "in" snowater_lake arguments
            ! ---------------------------
@@ -857,7 +863,36 @@ ELSE IF (patchtype == 4) THEN   ! <=== is LAND WATER BODIES (lake, reservior and
            forc_aer     ,&
            mss_bcpho    ,mss_bcphi    ,mss_ocpho       ,mss_ocphi       ,&
            mss_dst1     ,mss_dst2     ,mss_dst3        ,mss_dst4         )
+
 #else
+      CALL laketem ( &
+           ! "in" laketem arguments
+           ! ---------------------------
+           patchtype    ,maxsnl       ,nl_soil         ,nl_lake         ,&
+           patchlatr    ,deltim       ,forc_hgt_u      ,forc_hgt_t      ,&
+           forc_hgt_q   ,forc_us      ,forc_vs         ,forc_t          ,&
+           forc_q       ,forc_rhoair  ,forc_psrf       ,forc_sols       ,&
+           forc_soll    ,forc_solsd   ,forc_solld      ,sabg            ,&
+           forc_frl     ,dz_soisno    ,z_soisno        ,zi_soisno       ,&
+           dz_lake      ,lakedepth    ,csol            ,porsl           ,&
+           dkdry        ,dksatu       ,&
+
+           ! "inout" laketem arguments
+           ! ---------------------------
+           t_grnd       ,scv          ,snowdp          ,t_soisno        ,&
+           wliq_soisno  ,wice_soisno  ,imelt           ,t_lake          ,&
+           lake_icefrac ,&
+
+           ! "out" laketem arguments
+           ! ---------------------------
+           taux         ,tauy         ,fsena                            ,&
+           fevpa        ,lfevpa       ,fseng           ,fevpg           ,&
+           qseva        ,qsubl        ,qsdew           ,qfros           ,&
+           olrg         ,fgrnd        ,tref            ,qref            ,&
+           trad         ,emis         ,z0m             ,zol             ,&
+           rib          ,ustar        ,qstar           ,tstar           ,&
+           fm           ,fh           ,fq              ,sm )
+
       CALL snowwater_lake ( &
            ! "in" snowater_lake arguments
            ! ---------------------------
@@ -1039,7 +1074,7 @@ ENDIF
                  snl,wliq_soisno,wice_soisno,snw_rds,&
                  mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
                  mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
-                 alb,ssun,ssha,thermk,extkb,extkd)
+                 alb,ssun,ssha,ssno,thermk,extkb,extkd)
        ENDIF
     ELSE                   !OCEAN
        sag = 0.0

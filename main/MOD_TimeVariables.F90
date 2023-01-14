@@ -59,6 +59,7 @@ MODULE MOD_TimeVariables
   REAL(r8), allocatable :: mss_dst2    (:,:) !mass of dust species 2 in snow  (col,lyr) [kg]
   REAL(r8), allocatable :: mss_dst3    (:,:) !mass of dust species 3 in snow  (col,lyr) [kg]
   REAL(r8), allocatable :: mss_dst4    (:,:) !mass of dust species 4 in snow  (col,lyr) [kg]
+  REAL(r8), allocatable :: ssno    (:,:,:,:) !snow layer absorption [-]
 
   REAL(r8), allocatable :: trad          (:) !radiative temperature of surface [K]
   REAL(r8), allocatable :: tref          (:) !2 m height air temperature [kelvin]
@@ -150,6 +151,7 @@ CONTAINS
      allocate (mss_dst2          (maxsnl+1:0,numpatch))
      allocate (mss_dst3          (maxsnl+1:0,numpatch))
      allocate (mss_dst4          (maxsnl+1:0,numpatch))
+     allocate (ssno          (2,2,maxsnl+1:1,numpatch))
 
      allocate (trad                         (numpatch))
      allocate (tref                         (numpatch))
@@ -252,15 +254,16 @@ CONTAINS
            t_lake,          &! lake layer teperature [K]
            lake_icefrac,    &! lake mass fraction of lake layer that is frozen
 
-           snw_rds,         &!effective grain radius (col,lyr) [microns, m-6]
-           mss_bcpho,       &!mass of hydrophobic BC in snow  (col,lyr) [kg]
-           mss_bcphi,       &!mass of hydrophillic BC in snow (col,lyr) [kg]
-           mss_ocpho,       &!mass of hydrophobic OC in snow  (col,lyr) [kg]
-           mss_ocphi,       &!mass of hydrophillic OC in snow (col,lyr) [kg]
-           mss_dst1,        &!mass of dust species 1 in snow  (col,lyr) [kg]
-           mss_dst2,        &!mass of dust species 2 in snow  (col,lyr) [kg]
-           mss_dst3,        &!mass of dust species 3 in snow  (col,lyr) [kg]
-           mss_dst4,        &!mass of dust species 4 in snow  (col,lyr) [kg]
+           snw_rds,         &! effective grain radius (col,lyr) [microns, m-6]
+           mss_bcpho,       &! mass of hydrophobic BC in snow  (col,lyr) [kg]
+           mss_bcphi,       &! mass of hydrophillic BC in snow (col,lyr) [kg]
+           mss_ocpho,       &! mass of hydrophobic OC in snow  (col,lyr) [kg]
+           mss_ocphi,       &! mass of hydrophillic OC in snow (col,lyr) [kg]
+           mss_dst1,        &! mass of dust species 1 in snow  (col,lyr) [kg]
+           mss_dst2,        &! mass of dust species 2 in snow  (col,lyr) [kg]
+           mss_dst3,        &! mass of dust species 3 in snow  (col,lyr) [kg]
+           mss_dst4,        &! mass of dust species 4 in snow  (col,lyr) [kg]
+           ssno,            &! snow layer absorption [-]
 
          ! Additional variables required by reginal model (such as WRF & RSM)
            trad,            &! radiative temperature of surface [K]
@@ -457,15 +460,16 @@ CONTAINS
            t_lake,          &! lake layer teperature [K]
            lake_icefrac,    &! lake mass fraction of lake layer that is frozen
 
-           snw_rds,         &!effective grain radius (col,lyr) [microns, m-6]
-           mss_bcpho,       &!mass of hydrophobic BC in snow  (col,lyr) [kg]
-           mss_bcphi,       &!mass of hydrophillic BC in snow (col,lyr) [kg]
-           mss_ocpho,       &!mass of hydrophobic OC in snow  (col,lyr) [kg]
-           mss_ocphi,       &!mass of hydrophillic OC in snow (col,lyr) [kg]
-           mss_dst1,        &!mass of dust species 1 in snow  (col,lyr) [kg]
-           mss_dst2,        &!mass of dust species 2 in snow  (col,lyr) [kg]
-           mss_dst3,        &!mass of dust species 3 in snow  (col,lyr) [kg]
-           mss_dst4,        &!mass of dust species 4 in snow  (col,lyr) [kg]
+           snw_rds,         &! effective grain radius (col,lyr) [microns, m-6]
+           mss_bcpho,       &! mass of hydrophobic BC in snow  (col,lyr) [kg]
+           mss_bcphi,       &! mass of hydrophillic BC in snow (col,lyr) [kg]
+           mss_ocpho,       &! mass of hydrophobic OC in snow  (col,lyr) [kg]
+           mss_ocphi,       &! mass of hydrophillic OC in snow (col,lyr) [kg]
+           mss_dst1,        &! mass of dust species 1 in snow  (col,lyr) [kg]
+           mss_dst2,        &! mass of dust species 2 in snow  (col,lyr) [kg]
+           mss_dst3,        &! mass of dust species 3 in snow  (col,lyr) [kg]
+           mss_dst4,        &! mass of dust species 4 in snow  (col,lyr) [kg]
+           ssno,            &! snow layer absorption [-]
 
          ! Additional variables required by reginal model (such as WRF & RSM)
            trad,            &! radiative temperature of surface [K]
@@ -637,6 +641,7 @@ CONTAINS
      deallocate (mss_dst2     )
      deallocate (mss_dst3     )
      deallocate (mss_dst4     )
+     deallocate (ssno         )
 
      deallocate (trad         )
      deallocate (tref         )

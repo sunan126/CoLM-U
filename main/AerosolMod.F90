@@ -128,6 +128,7 @@ contains
                ! 01/10/2023, yuan: set to snw_rds_min
                !snw_rds(j)       = 0._r8
                snw_rds(j)       = snw_rds_min
+
                mss_bcpho(j)     = 0._r8
                mss_bcphi(j)     = 0._r8
                mss_cnc_bcphi(j) = 0._r8

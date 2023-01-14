@@ -33,7 +33,7 @@ MODULE ALBEDO
                       snl,wliq_soisno,wice_soisno,snw_rds,&
                       mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
                       mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
-                      alb,ssun,ssha,thermk,extkb,extkd)
+                      alb,ssun,ssha,ssno,thermk,extkb,extkd)
 
 !=======================================================================
 ! Calculates fragmented albedos (direct and diffuse) in
@@ -120,6 +120,9 @@ MODULE ALBEDO
       extkb,     &! (k, g(mu)/mu) direct solar extinction coefficient
       extkd       ! diffuse and scattered diffuse PAR extinction coefficient
 
+ REAL(r8), intent(out) :: &
+      ssno(2,2,maxsnl+1:1) ! snow absorption [-]
+
 !-------------------------- Local variables ----------------------------
  INTEGER         &!
       iw,        &! wavelength (1=visible, 2=near-infrared)
@@ -134,7 +137,6 @@ MODULE ALBEDO
       albsno_bc (2,2),&! snow albedo [-]
       albsno_oc (2,2),&! snow albedo [-]
       albsno_dst(2,2),&! snow albedo [-]
-      ssno(2,2,maxsnl+1:1),&! snow absorption [-]
       albg(2,2), &! albedo, ground
       albv(2,2), &! albedo, vegetation [-]
       alb_s_inc, &! decrease in soil albedo due to wetness [-]
@@ -159,7 +161,7 @@ MODULE ALBEDO
       tran(2,2)   ! canopy transmittances for solar radiation
 
    INTEGER ps, pe, pc
-   logical use_snicar_frc  !  true : if radiative forcing is being calculated, first estimate clean-snow albedo
+   logical use_snicar_frc  !  true: if radiative forcing is being calculated, first estimate clean-snow albedo
    logical use_snicar_ad   !  true: use SNICAR_AD_RT, false: use SNICAR_RT
 
 ! ----------------------------------------------------------------------
@@ -189,6 +191,14 @@ MODULE ALBEDO
       thermk    = 1.e-3
       extkb     = 1.
       extkd     = 0.718
+
+      albsno    (:,:) = 0.     !set initial snow albedo
+      albsno_pur(:,:) = 0.     !set initial snow albedo
+      albsno_bc (:,:) = 0.     !set initial snow albedo
+      albsno_oc (:,:) = 0.     !set initial snow albedo
+      albsno_dst(:,:) = 0.     !set initial snow albedo
+      ssno    (:,:,:) = 0.     !set initial snow absorption
+      ssno(:,:,snl+1) = 1.     !set initial snow absorption
 
 ! 08/25/2019, yuan:
 IF (patchtype == 0) THEN
@@ -220,11 +230,6 @@ ENDIF
       ENDIF
 
       czen=max(coszen,0.001)
-      albsno(:,:)=0.         !set initial snow albedo
-      albsno_pur(:,:)=0.     !set initial snow albedo
-      albsno_bc(:,:) =0.     !set initial snow albedo
-      albsno_oc(:,:) =0.     !set initial snow albedo
-      albsno_dst(:,:)=0.     !set initial snow albedo
 
 ! ----------------------------------------------------------------------
 ! 2. albedo for snow cover.
@@ -287,11 +292,11 @@ ENDIF
   ! SNICAR snow albedo
   ! need soil albedo, so put it here
 
-    use_snicar_frc  = .false.  !  true : if radiative forcing is being calculated, first estimate clean-snow albedo
-    use_snicar_ad   = .true.   !  use true: use SNICAR_AD_RT, false: use SNICAR_RT
+    use_snicar_frc = .false.  !  true: if radiative forcing is being calculated, first estimate clean-snow albedo
+    use_snicar_ad  = .true.   !  use true: use SNICAR_AD_RT, false: use SNICAR_RT
 
     IF (scv > 0.) THEN
-       call SnowAlbedo(     use_snicar_frc ,use_snicar_ad  ,coszen         ,&
+       CALL SnowAlbedo(     use_snicar_frc ,use_snicar_ad  ,coszen         ,&
             albg(:,1)      ,albg(:,2)      ,snl            ,fsno           ,&
             scv            ,wliq_soisno    ,wice_soisno    ,snw_rds        ,&
 
@@ -302,6 +307,13 @@ ENDIF
             albsno_bc(:,1) ,albsno_bc(:,2) ,albsno_oc(:,1) ,albsno_oc(:,2) ,&
             albsno_dst(:,1),albsno_dst(:,2),ssno(1,1,:)    ,ssno(2,1,:)    ,&
             ssno(1,2,:)    ,ssno(2,2,:)    )
+
+       ! IF no snow layer exist
+       IF (snl == 0) THEN
+          ssno(:,:,1) = ssno(:,:,1) + ssno(:,:,0)
+          ssno(:,:,0) = 0.
+       ENDIF
+
     ENDIF
 #endif
 

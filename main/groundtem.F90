@@ -3,7 +3,7 @@
                        capr,cnfac,csol,porsl,dkdry,dksatu, &
                        sigf,dz_soisno,z_soisno,zi_soisno,&
                        t_soisno,wice_soisno,wliq_soisno,scv,snowdp, &
-                       frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg, &
+                       frl,dlrad,sabg,sabg_lyr,fseng,fevpg,cgrnd,htvp,emg, &
                        imelt,snofrz,sm,xmf,fact,psi0,bsw)
                        !TODO: not used, psi0, bsw
 
@@ -55,6 +55,8 @@
   real(r8), INTENT(in) :: dz_soisno(lb:nl_soil)   !layer thickiness [m]
   real(r8), INTENT(in) :: z_soisno (lb:nl_soil)   !node depth [m]
   real(r8), INTENT(in) :: zi_soisno(lb-1:nl_soil) !interface depth [m]
+
+  REAL(r8), intent(in) :: sabg_lyr(lb:1)          !snow layer absorption [W/m-2]
 
   real(r8), INTENT(in) :: sabg     !solar radiation absorbed by ground [W/m2]
   real(r8), INTENT(in) :: frl      !atmospheric infrared (longwave) radiation [W/m2]
@@ -115,7 +117,11 @@
                           t_soisno,wice_soisno,wliq_soisno,tk)
 
 ! net ground heat flux into the surface and its temperature derivative
+#ifdef SNICAR
+      hs = sabg_lyr(lb) + dlrad*emg &
+#else
       hs = sabg + dlrad*emg &
+#endif
 ! 08/19/2021, yuan: remove sigf, LAI->100% cover
          !+ (1.-sigf)*emg*frl - emg*stefnc*t_soisno(lb)**4 &
          - emg*stefnc*t_soisno(lb)**4 &
@@ -145,8 +151,20 @@
       ct(j) =  -(1.-cnfac)*fact(j)*tk(j)/dzp
       rt(j) = t_soisno(j) + fact(j)*( hs - dhsdT*t_soisno(j) + cnfac*fn(j) )
 
+! January 12, 2023
+      if (lb <= 0) then
+          do j = lb + 1, 1
+             dzm   = (z_soisno(j)-z_soisno(j-1))
+             dzp   = (z_soisno(j+1)-z_soisno(j))
+             at(j) =   - (1.-cnfac)*fact(j)* tk(j-1)/dzm
+             bt(j) = 1.+ (1.-cnfac)*fact(j)*(tk(j)/dzp + tk(j-1)/dzm)
+             ct(j) =   - (1.-cnfac)*fact(j)* tk(j)/dzp
+             rt(j) = t_soisno(j) + fact(j)*sabg_lyr(j) + cnfac*fact(j)*( fn(j) - fn(j-1) )
+          end do
+      endif
 
-      do j = lb + 1, nl_soil - 1
+      do j = 2, nl_soil - 1
+! January 12, 2023
          dzm   = (z_soisno(j)-z_soisno(j-1))
          dzp   = (z_soisno(j+1)-z_soisno(j))
          at(j) =   - (1.-cnfac)*fact(j)* tk(j-1)/dzm

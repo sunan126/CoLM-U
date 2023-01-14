@@ -2,8 +2,8 @@
 
  SUBROUTINE netsolar (ipatch,idate,deltim,dlon,patchtype,&
                       forc_sols,forc_soll,forc_solsd,forc_solld,&
-                      alb,ssun,ssha,lai,sai,rho,tau,&
-                      parsun,parsha,sabvsun,sabvsha,sabg,sabvg,sr,&
+                      alb,ssun,ssha,lai,sai,rho,tau,ssno,&
+                      parsun,parsha,sabvsun,sabvsha,sabg,sabg_lyr,sr,&
                       solvd,solvi,solnd,solni,srvd,srvi,srnd,srni,&
                       solvdln,solviln,solndln,solniln,srvdln,srviln,srndln,srniln)
 !=======================================================================
@@ -42,6 +42,9 @@
         ssun,     &! sunlit canopy absorption for solar radiation
         ssha       ! shaded canopy absorption for solar radiation
 
+  REAL(r8), dimension(1:2,1:2,maxsnl+1:1), intent(inout) :: &
+        ssno       ! snow layer absorption
+
   REAL(r8), intent(in) :: &
         lai,      &! leaf area index
         sai,      &! stem area index
@@ -54,7 +57,6 @@
         sabvsun,  &! solar absorbed by sunlit vegetation [W/m2]
         sabvsha,  &! solar absorbed by shaded vegetation [W/m2]
         sabg,     &! solar absorbed by ground  [W/m2]
-        sabvg,    &! solar absorbed by ground + vegetation [W/m2]
         sr,       &! total reflected solar radiation (W/m2)
         solvd,    &! incident direct beam vis solar radiation (W/m2)
         solvi,    &! incident diffuse beam vis solar radiation (W/m2)
@@ -73,9 +75,12 @@
         srndln,   &! reflected direct beam nir solar radiation at local noon(W/m2)
         srniln     ! reflected diffuse beam nir solar radiation at local noon(W/m2)
 
+  REAL(r8), intent(out) :: &
+        sabg_lyr(maxsnl+1:1)   ! solar absorbed by snow layers [W/m2]
+
 ! ----------------local variables ---------------------------------
    INTEGER  :: local_secs
-   REAL(r8) :: radpsec
+   REAL(r8) :: radpsec, sabvg
 
    INTEGER ps, pe, pc
 !=======================================================================
@@ -85,8 +90,8 @@
         parsun  = 0.
         parsha  = 0.
 
-        sabg  = 0.
-        sabvg = 0.
+        sabg    = 0.
+        sabg_lyr(:) = 0.
 
 IF (patchtype == 0) THEN
 
@@ -117,12 +122,12 @@ ENDIF
                       + forc_soll*ssun(2,1) + forc_solld*ssun(2,2)
               sabvsha = forc_sols*ssha(1,1) + forc_solsd*ssha(1,2) &
                       + forc_soll*ssha(2,1) + forc_solld*ssha(2,2)
-              sabvg   = forc_sols *(1.-alb(1,1)) + forc_soll *(1.-alb(2,1)) &
-                      + forc_solsd*(1.-alb(1,2)) + forc_solld*(1.-alb(2,2))
+              sabvg   = forc_sols*(1.-alb(1,1)) + forc_solsd*(1.-alb(1,2)) &
+                      + forc_soll*(1.-alb(2,1)) + forc_solld*(1.-alb(2,2))
               sabg    = sabvg - sabvsun - sabvsha
 
               !TODO: bug exist
-              ! 08/17/2021, yuan: LAI PAR, 区别lai和sai的吸收
+              ! 08/17/2021, yuan: LAI PAR, difference between LAI and SAI
               !parsun  = parsun * lai*(1.-rho(1,1)-tau(1,1)) / &
               !   ( lai*(1.-rho(1,1)-tau(1,1)) + sai*(1.-rho(1,2)-tau(1,2)) )
 
@@ -151,10 +156,22 @@ IF (patchtype == 0) THEN
 
 ENDIF
            ELSE               !lake or ocean
-              sabvg = forc_sols *(1.-alb(1,1)) + forc_soll *(1.-alb(2,1)) &
-                    + forc_solsd*(1.-alb(1,2)) + forc_solld*(1.-alb(2,2))
+              sabvg = forc_sols*(1.-alb(1,1)) + forc_solsd*(1.-alb(1,2)) &
+                    + forc_soll*(1.-alb(2,1)) + forc_solld*(1.-alb(2,2))
               sabg = sabvg
            ENDIF
+
+#ifdef SNICAR
+           ! normalization
+           IF(sum(ssno(1,1,:))>0.) ssno(1,1,:) = (1-alb(1,1)-ssun(1,1)-ssha(1,1)) * ssno(1,1,:)/sum(ssno(1,1,:))
+           IF(sum(ssno(1,2,:))>0.) ssno(1,2,:) = (1-alb(1,2)-ssun(1,2)-ssha(1,2)) * ssno(1,2,:)/sum(ssno(1,2,:))
+           IF(sum(ssno(2,1,:))>0.) ssno(2,1,:) = (1-alb(2,1)-ssun(2,1)-ssha(2,1)) * ssno(2,1,:)/sum(ssno(2,1,:))
+           IF(sum(ssno(2,2,:))>0.) ssno(2,2,:) = (1-alb(2,2)-ssun(2,2)-ssha(2,2)) * ssno(2,2,:)/sum(ssno(2,2,:))
+
+           ! snow layer absorption
+           sabg_lyr(:) = forc_sols*ssno(1,1,:) + forc_solsd*ssno(1,2,:) &
+                       + forc_soll*ssno(2,1,:) + forc_solld*ssno(2,2,:)
+#endif
         ENDIF
 
         solvd = forc_sols

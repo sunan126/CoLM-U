@@ -8,7 +8,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
                      ,snowdp,fveg,fsno,sigf,green,lai,sai,coszen&
                      ,snw_rds,mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi&
                      ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4&
-                     ,alb,ssun,ssha,thermk,extkb,extkd&
+                     ,alb,ssun,ssha,ssno,thermk,extkb,extkd&
                      ,trad,tref,qref,rst,emis,zol,rib&
                      ,ustar,qstar,tstar,fm,fh,fq&
 #if(defined SOILINI)
@@ -100,6 +100,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
         mss_cnc_dst2 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 2 (col,lyr) [kg/kg]
         mss_cnc_dst3 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 3 (col,lyr) [kg/kg]
         mss_cnc_dst4 ( maxsnl+1:0 ), &! mass concentration of dust aerosol species 4 (col,lyr) [kg/kg]
+        ssno      (2,2,maxsnl+1:1 ), &! snow absorption [-]
 
                     ! Additional variables required by reginal model (WRF & RSM)
                     ! ---------------------------------------------------------
@@ -259,6 +260,7 @@ ENDIF
      scv    = 0.
      sag    = 0.
      snowdp = 0.
+     snl    = 0
 
      ! SNICAR
      snw_rds   (:) = 54.526_r8
@@ -282,7 +284,7 @@ ENDIF
                    snl,wliq_soisno,wice_soisno,snw_rds,&
                    mss_cnc_bcpho,mss_cnc_bcphi,mss_cnc_ocpho,mss_cnc_ocphi,&
                    mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4,&
-                   alb,ssun,ssha,thermk,extkb,extkd)
+                   alb,ssun,ssha,ssno,thermk,extkb,extkd)
 
   ELSE                 !ocean grid
      t_soisno(:) = 300.
@@ -303,6 +305,7 @@ ENDIF
      CALL albocean (oro,scv,coszen,alb)
      ssun(:,:) = 0.0
      ssha(:,:) = 0.0
+     ssno(:,:,:) = 0.0
      thermk = 0.0
      extkb = 0.0
      extkd = 0.0

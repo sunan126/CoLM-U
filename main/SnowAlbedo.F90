@@ -46,7 +46,7 @@
     !
     ! !ARGUMENTS:
     !
-    logical , INTENT(in) :: use_snicar_frc       !  true : if radiative forcing is being calculated, first estimate clean-snow albedo
+    logical , INTENT(in) :: use_snicar_frc       !  true: if radiative forcing is being calculated, first estimate clean-snow albedo
     logical , INTENT(in) :: use_snicar_ad        !  true: use SNICAR_AD_RT, false: use SNICAR_RT
 
     real(r8), INTENT(in) :: coszen_col      !  cosine of solar zenith angle

@@ -406,6 +406,7 @@ SUBROUTINE CLMMAIN ( &
       ! For SNICAR snow model
       !----------------------------------------------------------------------
       LOGICAL  do_capsnow              !true => do snow capping
+      INTEGER  snl_bef                 !number of snow layers
       REAL(r8) snwcp_ice               !excess precipitation due to snow capping [kg m-2 s-1]
       REAL(r8) forc_aer        ( 14 )  !aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
       REAL(r8) snofrz    (maxsnl+1:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
@@ -702,9 +703,17 @@ ELSE IF (patchtype == 3) THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtyp
       ! Initilize new snow nodes for snowfall / sleet
       !----------------------------------------------------------------
 
+      snl_bef = snl
+
       CALL newsnow (patchtype,maxsnl,deltim,t_grnd,pg_rain,pg_snow,bifall,&
                     t_precip,zi_soisno(:0),z_soisno(:0),dz_soisno(:0),t_soisno(:0),&
                     wliq_soisno(:0),wice_soisno(:0),fiold(:0),snl,sag,scv,snowdp,fsno)
+
+      ! new snow layer
+      IF (snl .lt. snl_bef) THEN
+         sabg_lyr(snl+1:snl-snl_bef+1) = sabg_lyr(snl_bef+1:1)
+         sabg_lyr(snl-snl_bef+2:1) = 0.
+      ENDIF
 
       !----------------------------------------------------------------
       ! Energy and Water balance

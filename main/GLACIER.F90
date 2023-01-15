@@ -749,10 +749,12 @@
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       enddo
 
+#ifdef SNICAR
+
       wice_icesno_bef(lb:0) = wice_icesno(lb:0)
 
-      call meltf (lb,nl_ice,deltim, &
-                  fact(lb:),brr(lb:),hs,dhsdT, &
+      call meltf_snicar (lb,nl_ice,deltim, &
+                  fact(lb:),brr(lb:),hs,dhsdT,sabg_lyr, &
                   t_icesno_bef(lb:),t_icesno(lb:),wliq_icesno(lb:),wice_icesno(lb:),imelt(lb:), &
                   scv,snowdp,sm,xmf)
 
@@ -762,6 +764,13 @@
             snofrz(j) = max(0._r8,(wice_icesno(j)-wice_icesno_bef(j)))/deltim
          ENDIF
       ENDDO
+
+#else
+      call meltf (lb,nl_ice,deltim, &
+                  fact(lb:),brr(lb:),hs,dhsdT, &
+                  t_icesno_bef(lb:),t_icesno(lb:),wliq_icesno(lb:),wice_icesno(lb:),imelt(lb:), &
+                  scv,snowdp,sm,xmf)
+#endif
 
 !-----------------------------------------------------------------------
 

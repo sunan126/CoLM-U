@@ -915,12 +915,12 @@ ENDIF
       ENDDO
       !print *, "errore 2:", errore     !the other way to check energy
 
-#if (defined CLMDEBUG)
+!#if (defined CLMDEBUG)
       IF (abs(errore) > .5) THEN
       write(6,*) 'THERMAL.F90: energy balance violation'
       write(6,*) ipatch,errore,'=',sabv+sabg+frl-olrg-fsenl-fseng-hvap*fevpl-htvp*fevpg-xmf
       ENDIF
 100   format(10(f15.3))
-#endif
+!#endif
 
  END SUBROUTINE THERMAL

@@ -1,3 +1,4 @@
+#include <define.h>
 
  subroutine groundtem (patchtype,lb,nl_soil,deltim, &
                        capr,cnfac,csol,porsl,dkdry,dksatu, &
@@ -200,10 +201,12 @@
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       enddo
 
+#ifdef SNICAR
+
       wice_soisno_bef(lb:0) = wice_soisno(lb:0)
 
-      call meltf (lb,nl_soil,deltim, &
-                  fact(lb:),brr(lb:),hs,dhsdT, &
+      call meltf_snicar (lb,nl_soil,deltim, &
+                  fact(lb:),brr(lb:),hs,dhsdT,sabg_lyr, &
                   t_soisno_bef(lb:),t_soisno(lb:),wliq_soisno(lb:),wice_soisno(lb:),imelt(lb:), &
                   scv,snowdp,sm,xmf)
 
@@ -213,6 +216,13 @@
             snofrz(j) = max(0._r8,(wice_soisno(j)-wice_soisno_bef(j)))/deltim
          ENDIF
       ENDDO
+
+#else
+      call meltf (lb,nl_soil,deltim, &
+                  fact(lb:),brr(lb:),hs,dhsdT, &
+                  t_soisno_bef(lb:),t_soisno(lb:),wliq_soisno(lb:),wice_soisno(lb:),imelt(lb:), &
+                  scv,snowdp,sm,xmf)
+#endif
 
 !-----------------------------------------------------------------------
 

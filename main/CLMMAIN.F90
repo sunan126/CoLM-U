@@ -526,9 +526,17 @@ ENDIF
 ! [3] Initilize new snow nodes for snowfall / sleet
 !----------------------------------------------------------------------
 
+      snl_bef = snl
+
       CALL newsnow (patchtype,maxsnl,deltim,t_grnd,pg_rain,pg_snow,bifall,&
                     t_precip,zi_soisno(:0),z_soisno(:0),dz_soisno(:0),t_soisno(:0),&
                     wliq_soisno(:0),wice_soisno(:0),fiold(:0),snl,sag,scv,snowdp,fsno)
+
+      ! new snow layer
+      IF (snl .lt. snl_bef) THEN
+         sabg_lyr(snl+1:snl-snl_bef+1) = sabg_lyr(snl_bef+1:1)
+         sabg_lyr(snl-snl_bef+2:1) = 0.
+      ENDIF
 
 !----------------------------------------------------------------------
 ! [4] Energy and Water balance

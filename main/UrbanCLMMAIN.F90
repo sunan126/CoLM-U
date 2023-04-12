@@ -15,7 +15,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            lakedepth    ,dz_lake                                  ,&
          ! LUCY输入变量
            fix_holiday  ,week_holiday ,hum_prof     ,popcell      ,&
-           vehicle      ,weh_prof     ,wdh_prof     ,Fahe         ,&
+           vehicle      ,weh_prof     ,wdh_prof                   ,&
          ! soil ground and wall information
            porsl        ,psi0         ,bsw          ,hksati       ,&
            csol         ,dksatu       ,dkdry        ,rootfr       ,&
@@ -35,6 +35,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            forc_sols    ,forc_soll    ,forc_solsd   ,forc_solld   ,&
            forc_frl     ,forc_hgt_u   ,forc_hgt_t   ,forc_hgt_q   ,&
            forc_rhoair  ,Fhac         ,Fwst         ,Fach         ,&
+           Fahe         ,Fhah         ,vehc         ,meta         ,&
 
          ! land surface variables required for restart
            z_sno_roof   ,z_sno_gimp   ,z_sno_gper   ,z_sno_lake   ,&
@@ -71,6 +72,9 @@ SUBROUTINE UrbanCLMMAIN ( &
            taux         ,tauy         ,fsena        ,fevpa        ,&
            lfevpa       ,fsenl        ,fevpl        ,etr          ,&
            fseng        ,fevpg        ,olrg         ,fgrnd        ,&
+           fsen_roof    ,fsen_wsun    ,fsen_wsha    ,fsen_gimp    ,&
+           fsen_gper    ,fsen_l       ,troof        ,twall        ,&
+           lfevp_roof   ,lfevp_gimp   ,lfevp_gper   ,lfevp_l      ,&
            trad         ,tref         ,tmax         ,tmin         ,&
            qref         ,rsur         ,rnof         ,qintr        ,&
            qinfl        ,qdrip        ,rst          ,assim        ,&
@@ -321,6 +325,9 @@ SUBROUTINE UrbanCLMMAIN ( &
         Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
         Fahe       ,&
+        Fhah       ,&
+        vehc       ,&
+        meta       ,&
 
         alb  (2,2) ,&! averaged albedo [-]
         ssun (2,2) ,&! sunlit canopy absorption for solar radiation
@@ -371,6 +378,21 @@ SUBROUTINE UrbanCLMMAIN ( &
         rst        ,&! canopy stomatal resistance
         assim      ,&! canopy assimilation
         respc      ,&! canopy respiration
+
+        fsen_roof  ,&
+        fsen_wsun  ,&
+        fsen_wsha  ,&
+        fsen_gimp  ,&
+        fsen_gper  ,&
+        fsen_l     ,&
+
+        lfevp_roof ,&
+        lfevp_gimp ,&
+        lfevp_gper ,&
+        lfevp_l    ,&
+
+        troof      ,&! temperature of roof
+        twall      ,&! temperature of wall
 
         sabvsun    ,&! solar absorbed by sunlit vegetation [W/m2]
         sabvsha    ,&! solar absorbed by shaded vegetation [W/m2]
@@ -428,7 +450,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         sabgper    ,&! solar absorbed by vegetation [W/m2]
         sablake    ,&! solar absorbed by vegetation [W/m2]
         par        ,&! PAR by leaves [W/m2]
-        troof      ,&! temperature of roof surface [K]
+        !troof      ,&! temperature of roof surface [K]
         tgimp      ,&! temperature of impervious surface [K]
         tgper      ,&! temperature of pervious surface [K]
         tlake      ,&! temperature of lake surface [K]
@@ -512,9 +534,9 @@ SUBROUTINE UrbanCLMMAIN ( &
         lbp        ,&! lower bound of arrays
         lbl        ,&! lower bound of arrays
         j            ! do looping index
-   REAL(r8) :: &
-        car_sp, &
-        f_fac
+   ! REAL(r8) :: &
+   !      car_sp, &
+   !      f_fac
 
       theta = acos(max(coszen,0.001))
 
@@ -755,6 +777,11 @@ SUBROUTINE UrbanCLMMAIN ( &
          theta                ,sabroof              ,sabwsun              ,sabwsha              ,&
          sabgimp              ,sabgper              ,sablake              ,sabv                 ,&
          par                  ,Fhac                 ,Fwst                 ,Fach                 ,&
+         Fahe                 ,Fhah                 ,vehc                 ,meta                 ,&
+         ! LUCY输入变量
+         fix_holiday          ,week_holiday         ,hum_prof             ,popcell              ,&
+         vehicle              ,weh_prof             ,wdh_prof             ,idate                ,&
+         patchlonr                                                                              ,&
          ! 地面参数
          froof                ,flake                ,hroof                ,hwr                  ,&
          fgper                ,pondmx               ,em_roof              ,em_wall              ,&
@@ -789,6 +816,9 @@ SUBROUTINE UrbanCLMMAIN ( &
          taux                 ,tauy                 ,fsena                ,fevpa                ,&
          lfevpa               ,fsenl                ,fevpl                ,etr                  ,&
          fseng                ,fevpg                ,olrg                 ,fgrnd                ,&
+         fsen_roof            ,fsen_wsun            ,fsen_wsha            ,fsen_gimp            ,&
+         fsen_gper            ,fsen_l               ,troof                ,twall                ,&
+         lfevp_roof           ,lfevp_gimp           ,lfevp_gper           ,lfevp_l              ,&
          qseva_roof           ,qseva_gimp           ,qseva_gper           ,qseva_lake           ,&
          qsdew_roof           ,qsdew_gimp           ,qsdew_gper           ,qsdew_lake           ,&
          qsubl_roof           ,qsubl_gimp           ,qsubl_gper           ,qsubl_lake           ,&
@@ -803,12 +833,12 @@ SUBROUTINE UrbanCLMMAIN ( &
 
 
 ! 计算代谢热和交通热
-#ifdef USE_LUCY
-     f_fac  = 0.8
-     car_sp = 54
-     CALL LUCY(idate,deltim,fix_holiday,week_holiday,f_fac,car_sp,hum_prof, &
-              wdh_prof,weh_prof,popcell,vehicle,Fahe) !vehc_tot,ahf_flx,vehc_flx)
-#endif
+!#ifdef USE_LUCY
+!     f_fac  = 0.8
+!     car_sp = 54
+!     CALL LUCY(idate,deltim,fix_holiday,week_holiday,f_fac,car_sp,hum_prof, &
+!              wdh_prof,weh_prof,popcell,vehicle,Fahe) !vehc_tot,ahf_flx,vehc_flx)
+!#endif
 !----------------------------------------------------------------------
 ! [4] Urban hydrology
 !----------------------------------------------------------------------

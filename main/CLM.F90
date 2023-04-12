@@ -215,7 +215,7 @@
 #ifdef URBAN_MODEL
 #ifndef USE_LCZ
 #ifdef USE_LUCY
-      CALL LUCY_readin_nc     (dir_srfdata)
+     ! CALL LUCY_readin_nc     (dir_srfdata)
 #endif
 #endif
 #endif

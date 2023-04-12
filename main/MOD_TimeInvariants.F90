@@ -258,6 +258,16 @@ MODULE MOD_TimeInvariants
            tk_gimp,         &! thermal conductivity of impervious [W/m-K]
            t_roommax,       &! maximum temperature of inner room [K]
            t_roommin         ! minimum temperature of inner room [K]
+#ifdef USE_LUCY
+     read (lhistTimeConst)  &!
+           popcell,         &! population density
+           vehicle,         &!
+           week_holiday,    &!
+           weh_prof,        &!
+           wdh_prof,        &!
+           hum_prof,        &!
+           fix_holiday       !
+#endif
 #endif
 
      close(lhistTimeConst)
@@ -394,6 +404,16 @@ MODULE MOD_TimeInvariants
            tk_gimp,         &! thermal conductivity of impervious [W/m-K]
            t_roommax,       &! maximum temperature of inner room [K]
            t_roommin         ! minimum temperature of inner room [K]
+#ifdef USE_LUCY
+     write(lhistTimeConst)  &!
+           popcell,         &! population density
+           vehicle,         &!
+           week_holiday,    &!
+           weh_prof,        &!
+           wdh_prof,        &!
+           hum_prof,        &!
+           fix_holiday       !  
+#endif
 #endif
      close(lhistTimeConst)
 

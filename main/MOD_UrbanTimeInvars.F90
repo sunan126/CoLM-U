@@ -14,7 +14,6 @@ MODULE MOD_UrbanTimeInvars
    INTEGER , allocatable :: patch2urb   (:)  !projection from patch to Urban
    INTEGER , allocatable :: urb2patch   (:)  !projection from Urban to patch
 
-   INTEGER , allocatable :: reg_id (:)       !urban region id of LUCY
    REAL(r8), allocatable :: popcell(:)       !pop density
    REAL(r8), allocatable :: vehicle(:,:)     !number of different vehicl
    REAL(r8), allocatable :: week_holiday(:,:)!weekday or weekend day
@@ -80,7 +79,6 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
-      allocate (reg_id       (numurban) ) 
       allocate (popcell      (numurban) )
 
       allocate (vehicle      (numurban,3  ) )
@@ -164,7 +162,6 @@ CONTAINS
       deallocate (t_roommax )
       deallocate (t_roommin )
 
-      deallocate (reg_id       )
       deallocate (popcell      )
       deallocate (vehicle      )
       deallocate (week_holiday )

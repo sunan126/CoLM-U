@@ -165,12 +165,12 @@ IMPLICIT NONE
 !NOTE: For regional/point cases, not efficient for the global case.
 !      For global cases, run separately. see MakeGlobalSurface.F90
 #else
-      CALL makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
+       CALL makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
                              lc_year,edgen,edgee,edges,edgew )
 #ifdef URBAN_MODEL
 !#ifndef USE_POINT
       CALL makeurbandata ( casename,dir_rawdata,dir_srfdata, &
-                             lc_year,edgen,edgee,edges,edgew )
+                           lc_year,edgen,edgee,edges,edgew )
 !#endif
 #endif
 #endif

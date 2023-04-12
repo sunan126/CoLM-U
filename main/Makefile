@@ -65,7 +65,6 @@ OBJS =  precision.o                 \
 	LAI_empirical.o             \
 	LAI_readin.o                \
 	LAI_readin_nc.o             \
-	LUCY_readin_nc.o            \
 	UrbanLAI_readin_nc.o        \
 	LEAF_interception.o         \
 	lpwrite.o                   \

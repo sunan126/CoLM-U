@@ -11,6 +11,9 @@
   USE MOD_2D_Fluxes
   USE MOD_TimeInvariants, only: gridlond, gridlatd
   USE timemanager
+  USE netcdf
+  USE ncio
+
   IMPLICIT NONE
 
   INTEGER, intent(in) :: idate(3)
@@ -27,6 +30,14 @@
   CHARACTER(LEN=256) fout
   CHARACTER(LEN=256) cdate
   REAL(r8) a
+
+  INTEGER  :: ix,iy,ilev
+  INTEGER  :: ncid, xid, yid, varid, sslevid, lakelevid, bandid
+  INTEGER  :: lake_lev(nl_lake), sslev(nl_soil-maxsnl), band(2)
+  REAL(r4) :: lons(lon_points), lats(lat_points)
+  REAL(r8) :: tmp(lon_points, lat_points, 2)
+  REAL(r8) :: tmp1(lon_points, lat_points, maxsnl+1:nl_soil)
+  REAL(r8) :: tmp2(lon_points, lat_points, nl_lake)
 
 ! ----------------------------------------------------------------------
 ! Open for model time varying data (model state variables) and history filed
@@ -114,8 +125,26 @@
            IF (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
            IF (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
            IF (f_fahe   (i,j) /= spval) f_fahe   (i,j) = f_fahe   (i,j) / a
+           IF (f_fhah   (i,j) /= spval) f_fhah   (i,j) = f_fhah   (i,j) / a
+           IF (f_vehc   (i,j) /= spval) f_vehc   (i,j) = f_vehc   (i,j) / a
+           IF (f_meta   (i,j) /= spval) f_meta   (i,j) = f_meta   (i,j) / a
            IF (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
            IF (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
+
+           IF (f_senroof(i,j) /= spval) f_senroof   (i,j) = f_senroof   (i,j) / a
+           IF (f_senwsun(i,j) /= spval) f_senwsun   (i,j) = f_senwsun   (i,j) / a
+           IF (f_senwsha(i,j) /= spval) f_senwsha   (i,j) = f_senwsha   (i,j) / a
+           IF (f_sengimp(i,j) /= spval) f_sengimp   (i,j) = f_sengimp   (i,j) / a
+           IF (f_sengper(i,j) /= spval) f_sengper   (i,j) = f_sengper   (i,j) / a
+           IF (f_senurl (i,j) /= spval) f_senurl    (i,j) = f_senurl    (i,j) / a
+
+           IF (f_lfevproof(i,j) /= spval) f_lfevproof   (i,j) = f_lfevproof   (i,j) / a
+           IF (f_lfevpgimp(i,j) /= spval) f_lfevpgimp   (i,j) = f_lfevpgimp   (i,j) / a
+           IF (f_lfevpgper(i,j) /= spval) f_lfevpgper   (i,j) = f_lfevpgper   (i,j) / a
+           IF (f_lfevpurl (i,j) /= spval) f_lfevpurl    (i,j) = f_lfevpurl    (i,j) / a
+
+           IF (f_troof   (i,j) /= spval) f_troof   (i,j) = f_troof   (i,j) / a
+           IF (f_twall   (i,j) /= spval) f_twall   (i,j) = f_twall   (i,j) / a
 
            IF (f_sabvdt  (i,j) /= spval) f_sabvdt  (i,j) = f_sabvdt  (i,j) / nac_dt(i,j)  ! solar absorbed by sunlit canopy [w/m2]
            IF (f_sabgdt  (i,j) /= spval) f_sabgdt  (i,j) = f_sabgdt  (i,j) / nac_dt(i,j)  ! solar absorbed by ground [w/m2]
@@ -202,6 +231,1523 @@
 !$OMP END PARALLEL DO
 #endif
 
+! 单点、时间步长输出，减少后处理时间，增加部分变量，便于Urban-PLUMBER2比较
+#ifdef NC_OUTPUT
+    ! create netcdf and define dimensions
+      CALL nccheck( nf90_create(trim(fout)//'.nc', nf90_64bit_offset, ncid) )
+
+    ! dimensions
+      CALL nccheck( nf90_def_dim(ncid, 'lon',           lon_points,     xid) )
+      CALL nccheck( nf90_def_dim(ncid, 'lat',           lat_points,     yid) )
+      CALL nccheck( nf90_def_dim(ncid, 'soil_snow_lev', nl_soil-maxsnl, sslevid) )
+      CALL nccheck( nf90_def_dim(ncid, 'lake_lev',      nl_lake,        lakelevid) )
+      CALL nccheck( nf90_def_dim(ncid, 'band',          2,              bandid) )
+
+    ! global attr
+      CALL nccheck( nf90_put_att(ncid, NF90_GLOBAL, 'title','CLM SIMULATED SURFACE FLUXES') )
+
+    ! variables
+    ! dimension variables
+      CALL nccheck( nf90_def_var(ncid, 'lon', nf90_float, (/xid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','longitude') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','degrees_east') )
+
+      CALL nccheck( nf90_def_var(ncid, 'lat', nf90_float, (/yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latitude') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','degrees_north') )
+
+      CALL nccheck( nf90_def_var(ncid, 'soil_snow_lev', nf90_int, (/sslevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name',"soil plus snow level") )
+
+      CALL nccheck( nf90_def_var(ncid, 'lake_lev', nf90_int, (/lakelevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name',"lake level") )
+
+      CALL nccheck( nf90_def_var(ncid, 'band', nf90_int, (/bandid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name',"band (vis/nir)") )
+
+      ! grid mask
+      CALL nccheck( nf90_def_var(ncid, 'landmask', nf90_int, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','grid mask') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','none') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', -1) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', -1) )
+
+      ! grid total fraction
+      CALL nccheck( nf90_def_var(ncid, 'landfrac', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','grid total fraction') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','fraction') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! grid cell area [km2]
+      CALL nccheck( nf90_def_var(ncid, 'area', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','grid cell area [km2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','fraction') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! wind stress: E-W [kg/m/s2]
+      CALL nccheck( nf90_def_var(ncid, 'f_taux', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','wind stress: E-W [kg/m/s2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/m/s2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! wind stress: N-S [kg/m/s2]
+      CALL nccheck( nf90_def_var(ncid, 'f_tauy', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','wind stress: N-S [kg/m/s2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/m/s2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible heat from canopy height to atmosphere [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fsena', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from canopy height to atmosphere [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenroof', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban roof [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenwsun', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban sunwall [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenwsha', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban shadedwall [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsengimp', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban imperivous ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsengper', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban perivous ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenurl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from urban tree [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! latent heat flux from canopy height to atmosphere [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpa', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from canopy height to atmosphere [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevproof', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from urban roof [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpgimp', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from urban imperivous ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpgper', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from urban perivous ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpurl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from urban tree [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! evapotranspiration from canopy to atmosphere [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_fevpa', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','evapotranspiration from canopy to atmosphere [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible heat from leaves [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from leaves [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! evaporation+transpiration from leaves [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_fevpl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','evaporation+transpiration from leaves [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! transpiration rate [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_etr', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','transpiration rate [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible heat flux from ground [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fseng', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat flux from ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! evaporation heat flux from ground [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_fevpg', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','evaporation heat flux from ground [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ground heat flux [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fgrnd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground heat flux [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! solar absorbed by sunlit canopy [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sabvsun', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','solar absorbed by sunlit canopy [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! solar absorbed by shaded [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sabvsha', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','solar absorbed by shaded [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! solar absorbed by ground  [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sabg', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','solar absorbed by ground [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! outgoing long-wave radiation from ground+canopy [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_olrg', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','outgoing long-wave radiation from ground+canopy [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! net radiation [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_rnet', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','net radiation [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! the error of water banace [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xerr', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','the error of water banace [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! the error of energy balance [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_zerr', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','the error of energy balance [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! surface runoff [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_rsur', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','surface runoff [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! total runoff [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_rnof', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','total runoff [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! canopy assimilation rate [mol m-2 s-1]
+      CALL nccheck( nf90_def_var(ncid, 'f_assim', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','canopy assimilation rate [mol m-2 s-1]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mol m-2 s-1') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! respiration (plant+soil) [mol m-2 s-1]
+      CALL nccheck( nf90_def_var(ncid, 'f_respc', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','respiration (plant+soil) [mol m-2 s-1]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mol m-2 s-1') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! groundwater recharge rate [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_qcharge', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','groundwater recharge rate [mm/s] ') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      !---------------------------------------------------------------------
+      ! ground surface temperature [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_grnd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground surface temperature [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sunlit leaf temperature [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_tleaf', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sunlit leaf temperature [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! depth of water on foliage [mm]
+      CALL nccheck( nf90_def_var(ncid, 'f_ldew', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','depth of water on foliage [mm]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! snow cover, water equivalent [mm]
+      CALL nccheck( nf90_def_var(ncid, 'f_scv', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','snow cover, water equivalent [mm]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! snow depth [meter]
+      CALL nccheck( nf90_def_var(ncid, 'f_snowdp', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','snow depth [meter]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','meter') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! fraction of snow cover on ground [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_fsno', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','fraction of snow cover on ground [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! fraction of veg cover, excluding snow-covered veg [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_sigf', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','fraction of veg cover, excluding snow-covered veg [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! leaf greenness [fraction]
+      CALL nccheck( nf90_def_var(ncid, 'f_green', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','leaf greenness [fraction]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','fraction') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! leaf area index [m2/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_lai', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','leaf area index [m2/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m2/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! stem area index [m2/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sai', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','stem area index [m2/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m2/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! averaged albedo direct [%]
+      CALL nccheck( nf90_def_var(ncid, 'f_albd', nf90_double, (/xid,yid,bandid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','averaged albedo direct [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! averaged albedo diffuse [%]
+      CALL nccheck( nf90_def_var(ncid, 'f_albi', nf90_double, (/xid,yid,bandid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','averaged albedo diffuse [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! averaged bulk surface emissivity [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_emis', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','averaged bulk surface emissivity [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! effective roughness [m]
+      CALL nccheck( nf90_def_var(ncid, 'f_z0m', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','effective roughness [m]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! radiative temperature of surface [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_trad', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','radiative temperature of surface [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_tref', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','2 m height air temperature [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! Diurnal Max 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_tmax', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','Diurnal Max 2 m height air temperature [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! Diurnal Min 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_tmin', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','Diurnal Min 2 m height air temperature [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! DTR of 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_tdtr', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','DTR of 2 m height air temperature [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 2 m height air specific humidity [kg/kg]
+      CALL nccheck( nf90_def_var(ncid, 'f_qref', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','2 m height air specific humidity [kg/kg]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/kg') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! rain [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_rain', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','rain [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! snow [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_snow', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','snow [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! temperature of inner building [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_room', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of inner building [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! temperature of outer building [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_tafu', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of outer building [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible flux from heat or cool AC [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fhac', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible flux from heat or cool AC [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! waste heat flux from heat or cool AC [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fwst', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','waste heat flux from heat or cool AC [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! flux from inner and outter air exchange [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fach', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from inner and outter air exchange [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fahe', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from people and cars [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_fhah', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from heating/cooling [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_vehc', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from cars [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_meta', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from people [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! solar absorbed by sunlit canopy in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sabvdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','solar absorbed by sunlit canopy in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! solar absorbed by ground in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sabgdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','solar absorbed by ground in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected solar radiation at surface in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_srdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected solar radiation at surface in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible heat from canopy height to atmosphere in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenadt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from canopy height to atmosphere in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! latent heat flux from canopy height to atmosphere in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpadt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from canopy height to atmosphere in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ground heat flux in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fgrnddt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground heat flux in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! outgoing long-wave radiation from ground+canopy in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_olrgdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','outgoing long-wave radiation from ground+canopy in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! net radiation in daytime [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_rnetdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','net radiation in daytime [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ground surface temperature in daytime [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_grnddt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground surface temperature in daytime [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! radiative temperature of surface in daytime [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_traddt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','radiative temperature of surface in daytime [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 2 m height air temperature in daytime [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_trefdt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','2 m height air temperature in daytime [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! temperature of outer building in daytime [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_tafudt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of outer building in daytime [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_troof', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of roof [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL nccheck( nf90_def_var(ncid, 'f_troom', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of wall [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! sensible heat from canopy height to atmosphere in night-time [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fsenant', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','sensible heat from canopy height to atmosphere in night-time [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! latent heat flux from canopy height to atmosphere in night-time [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_lfevpant', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','latent heat flux from canopy height to &
+                                 atmosphere in night-time [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ground heat flux in night-time [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_fgrndnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground heat flux in night-time [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! outgoing long-wave radiation from ground+canopy in night-time [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_olrgnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','outgoing long-wave radiation from ground+canopy in night-time [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! net radiation in night-time [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_rnetnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','net radiation in night-time [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ground surface temperature in night-time [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_grndnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ground surface temperature in night-time [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! radiative temperature of surface in night-time [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_tradnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','radiative temperature of surface in night-time [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 2 m height air temperature in night-time [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_trefnt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','2 m height air temperature in night-time [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! temperature of outer building in nighttime [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_tafunt', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of outer building in nighttime [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      !---------------------------------------------------------------------
+      ! soil temperature [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_soisno', nf90_double, (/xid,yid,sslevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','soil temperature [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! liquid water in soil layers [kg/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_wliq_soisno', nf90_double, (/xid,yid,sslevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','liquid water in soil layers [kg/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! ice lens in soil layers [kg/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_wice_soisno', nf90_double, (/xid,yid,sslevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','ice lens in soil layers [kg/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! lake temperature [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_lake', nf90_double, (/xid,yid,lakelevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','lake temperature [K]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! lake ice fraction cover [0-1]
+      CALL nccheck( nf90_def_var(ncid, 'f_lake_icefrac', nf90_double, (/xid,yid,lakelevid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','lake ice fraction cover [0-1]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','0-1') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! u* in similarity theory [m/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_ustar', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','u* in similarity theory [m/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! t* in similarity theory [kg/kg]
+      CALL nccheck( nf90_def_var(ncid, 'f_tstar', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','t* in similarity theory [kg/kg]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/kg') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! q* in similarity theory [kg/kg]
+      CALL nccheck( nf90_def_var(ncid, 'f_qstar', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','q* in similarity theory [kg/kg]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/kg') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! dimensionless height (z/L) used in Monin-Obukhov theory [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_zol', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','dimensionless height (z/L) used in Monin-Obukhov theory [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! bulk Richardson number in surface layer [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_rib', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','bulk Richardson number in surface layer [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! integral of profile function for momentum [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_fm', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','integral of profile function for momentum [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! integral of profile function for heat [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_fh', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','integral of profile function for heat [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! integral of profile function for moisture [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_fq', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','integral of profile function for moisture [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 10m u-velocity [m/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_us10m', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','10m u-velocity [m/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! 10m v-velocity [m/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_vs10m', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','10m v-velocity [m/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! integral of profile function for momentum at 10m [-]
+      CALL nccheck( nf90_def_var(ncid, 'f_fm10m', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','integral of profile function for momentum at 10m [-]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','-') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! wind in eastward direction [m/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_us', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','wind in eastward direction [m/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! wind in northward direction [m/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_vs', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','wind in northward direction [m/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','m/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! temperature at reference height [kelvin]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_t', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature at reference height [kelvin]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kelvin') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! specific humidity at reference height [kg/kg]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_q', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','specific humidity at reference height [kg/kg]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','kg/kg') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! convective precipitation [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_prc', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','convective precipitation [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! large scale precipitation [mm/s]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_prl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','large scale precipitation [mm/s]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','mm/s') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! atmospheric pressure at the surface [pa]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_pbot', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','atmospheric pressure at the surface [pa]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','pa') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! atmospheric infrared (longwave) radiation [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_frl', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','atmospheric infrared (longwave) radiation [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+
+      ! downward solar radiation at surface [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_xy_solarin', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','downward solar radiation at surface [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected solar radiation at surface [W/m2]
+      CALL nccheck( nf90_def_var(ncid, 'f_sr', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected solar radiation at surface [W/m2]') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident direct beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solvd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident direct beam vis solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident diffuse beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solvi', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident diffuse beam vis solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident direct beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solnd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident direct beam nir solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident diffuse beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solni', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident diffuse beam nir solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected direct beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srvd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected direct beam vis solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected diffuse beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srvi', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected diffuse beam vis solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected direct beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srnd', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected direct beam nir solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected diffuse beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srni', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected diffuse beam nir solar radiation (W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident direct beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solvdln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident direct beam vis solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident diffuse beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solviln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident diffuse beam vis solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident direct beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solndln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident direct beam nir solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! incident diffuse beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_solniln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','incident diffuse beam nir solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected direct beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srvdln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected direct beam vis solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected diffuse beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srviln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected diffuse beam vis solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected direct beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srndln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected direct beam nir solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      ! reflected diffuse beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_def_var(ncid, 'f_srniln', nf90_double, (/xid,yid/), varid) )
+      CALL nccheck( nf90_put_att(ncid, varid, 'long_name','reflected diffuse beam nir solar radiation at local noon(W/m2)') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
+      CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+
+    ! end defination
+      CALL nccheck( nf90_enddef(ncid) )
+
+    ! write data
+    ! ------------------------------------------------------------
+
+    ! dimension data
+      lons = gridlond
+      CALL nccheck( nf90_inq_varid(ncid,'lon',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,lons) )
+
+      lats = gridlatd
+      CALL nccheck( nf90_inq_varid(ncid,'lat',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,lats) )
+
+      DO ilev = 1, nl_soil-maxsnl
+         sslev(ilev) = maxsnl+ilev
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'soil_snow_lev',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,sslev) )
+
+      DO ilev = 1, nl_lake
+         lake_lev(ilev) = ilev
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'lake_lev',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,lake_lev) )
+
+      DO ilev = 1, 2
+         band(ilev) = ilev
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'band',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,band) )
+
+      ! grid mask
+      CALL nccheck( nf90_inq_varid(ncid,'landmask',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,mask) )
+
+      ! grid total fraction
+      CALL nccheck( nf90_inq_varid(ncid,'landfrac',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,frac) )
+
+      ! grid cell area [km2]
+      CALL nccheck( nf90_inq_varid(ncid,'area',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,area) )
+
+      ! wind stress: E-W [kg/m/s2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_taux',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_taux) )
+
+      ! wind stress: N-S [kg/m/s2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tauy',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tauy) )
+
+      ! sensible heat from canopy height to atmosphere [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsena',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fsena) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenroof',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_senroof) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenwsun',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_senwsun) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenwsha',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_senwsha) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsengimp',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sengimp) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsengper',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sengper) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenurl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_senurl) )
+
+      ! latent heat flux from canopy height to atmosphere [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpa',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpa) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevproof',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevproof) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpgimp',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpgimp) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpgper',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpgper) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpurl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpurl) )
+
+      ! evapotranspiration from canopy to atmosphere [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fevpa',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fevpa) )
+
+      ! sensible heat from leaves [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fsenl) )
+
+      ! evaporation+transpiration from leaves [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fevpl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fevpl) )
+
+      ! transpiration rate [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_etr',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_etr) )
+
+      ! sensible heat flux from ground [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fseng',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fseng) )
+
+      ! evaporation heat flux from ground [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fevpg',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fevpg) )
+
+      ! ground heat flux [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fgrnd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fgrnd) )
+
+      ! solar absorbed by sunlit canopy [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sabvsun',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sabvsun) )
+
+      ! solar absorbed by shaded [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sabvsha',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sabvsha) )
+
+      ! solar absorbed by ground  [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sabg',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sabg) )
+
+      ! outgoing long-wave radiation from ground+canopy [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_olrg',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_olrg) )
+
+      ! net radiation [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_rnet',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rnet) )
+
+      ! the error of water banace [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xerr',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xerr) )
+
+      ! the error of energy balance [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_zerr',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_zerr) )
+
+      ! surface runoff [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_rsur',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rsur) )
+
+      ! total runoff [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_rnof',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rnof) )
+
+      ! canopy assimilation rate [mol m-2 s-1]
+      CALL nccheck( nf90_inq_varid(ncid,'f_assim',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_assim) )
+
+      ! respiration (plant+soil) [mol m-2 s-1]
+      CALL nccheck( nf90_inq_varid(ncid,'f_respc',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_respc) )
+
+      ! groundwater recharge rate [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_qcharge',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_qcharge) )
+
+!---------------------------------------------------------------------
+      ! ground surface temperature [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_grnd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_t_grnd) )
+
+      ! sunlit leaf temperature [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tleaf',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tleaf) )
+
+      ! shaded leaf temperature [K]
+      !CALL nccheck( nf90_inq_varid(ncid,'f_tlsha',varid) )
+      !CALL nccheck( nf90_put_var(ncid,varid,f_tlsha) )
+
+      ! depth of water on foliage [mm]
+      CALL nccheck( nf90_inq_varid(ncid,'f_ldew',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_ldew) )
+
+      ! snow cover, water equivalent [mm]
+      CALL nccheck( nf90_inq_varid(ncid,'f_scv',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_scv) )
+
+      ! snow depth [meter]
+      CALL nccheck( nf90_inq_varid(ncid,'f_snowdp',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_snowdp) )
+
+      ! fraction of snow cover on ground
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsno',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fsno) )
+
+      ! fraction of veg cover, excluding snow-covered veg [-]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sigf',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sigf) )
+
+      ! leaf greenness
+      CALL nccheck( nf90_inq_varid(ncid,'f_green',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_green) )
+
+      ! leaf area index
+      CALL nccheck( nf90_inq_varid(ncid,'f_lai',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lai) )
+
+      ! stem area index
+      CALL nccheck( nf90_inq_varid(ncid,'f_sai',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sai) )
+
+      ! averaged albedo direct
+      tmp(:,:,1) = f_alb(1,1,:,:)
+      tmp(:,:,2) = f_alb(2,1,:,:)
+      CALL nccheck( nf90_inq_varid(ncid,'f_albd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp) )
+
+      ! averaged albedo diffuse
+      tmp(:,:,1) = f_alb(1,2,:,:)
+      tmp(:,:,2) = f_alb(2,2,:,:)
+      CALL nccheck( nf90_inq_varid(ncid,'f_albi',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp) )
+
+      ! averaged bulk surface emissivity
+      CALL nccheck( nf90_inq_varid(ncid,'f_emis',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_emis) )
+
+      ! effective roughness [m]
+      CALL nccheck( nf90_inq_varid(ncid,'f_z0m',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_z0m) )
+
+      ! radiative temperature of surface [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_trad',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_trad) )
+
+      ! 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tref',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tref) )
+
+      ! Diurnal Max 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tmax',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tmax) )
+
+      ! Dirnal 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tmin',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tmin) )
+
+      ! DTR of 2 m height air temperature [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tdtr',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tdtr) )
+
+      ! 2 m height air specific humidity [kg/kg]
+      CALL nccheck( nf90_inq_varid(ncid,'f_qref',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_qref) )
+
+      ! rain [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_rain',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_rain) )
+
+      ! snow [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_snow',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_snow) )
+
+      ! temperature of inner building [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_room',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_t_room) )
+
+      ! temperature of outer building [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tafu',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tafu) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_troof',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_troof) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_troof',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_troof) )
+
+      ! sensible flux from heat or cool AC [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fhac',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fhac) )
+
+      ! waste heat flux from heat or cool AC [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fwst',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fwst) )
+
+      ! flux from inner and outter air exchange [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fach',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fach) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fahe',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fahe) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_fhah',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fhah) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_vehc',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_vehc) )
+
+      CALL nccheck( nf90_inq_varid(ncid,'f_meta',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_meta) )
+
+      ! solar absorbed by sunlit canopy in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sabvdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sabvdt) )
+
+      ! solar absorbed by ground in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sabgdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sabgdt) )
+
+      ! reflected solar radiation at surface in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_srdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srdt) )
+
+      ! sensible heat from canopy height to atmosphere in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenadt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fsenadt) )
+
+      ! latent heat flux from canopy height to atmosphere in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpadt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpadt) )
+
+      ! ground heat flux in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fgrnddt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fgrnddt) )
+
+      ! outgoing long-wave radiation from ground+canopy in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_olrgdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_olrgdt) )
+
+      ! net radiation in daytime [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_rnetdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rnetdt) )
+
+      ! ground surface temperature in daytime [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_grnddt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_t_grnddt) )
+
+      ! radiative temperature of surface in daytime [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_traddt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_traddt) )
+
+      ! 2 m height air temperature in daytime [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_trefdt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_trefdt) )
+
+      ! temperature of outer building in daytime [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tafudt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tafudt) )
+
+      ! sensible heat from canopy height to atmosphere in night-time [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenant',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fsenant) )
+
+      ! latent heat flux from canopy height to atmosphere in night-time [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpant',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpant) )
+
+      ! ground heat flux in night-time [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fgrndnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fgrndnt) )
+
+      ! outgoing long-wave radiation from ground+canopy in night-time [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_olrgnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_olrgnt) )
+
+      ! net radiation in night-time [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_rnetnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rnetnt) )
+
+      ! ground surface temperature in night-time [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_grndnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_t_grndnt) )
+
+      ! radiative temperature of surface in night-time [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tradnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tradnt) )
+
+      ! 2 m height air temperature in night-time [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_trefnt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_trefnt) )
+
+      ! temperature of outer building in nighttime [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tafunt',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tafunt) )
+
+!---------------------------------------------------------------------
+      ! soil temperature [K]
+      DO i = maxsnl+1, nl_soil
+         tmp1(:,:,i) = f_t_soisno(i,:,:)
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_soisno',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp1) )
+
+      ! liquid water in soil layers [kg/m2]
+      DO i = maxsnl+1, nl_soil
+         tmp1(:,:,i) = f_wliq_soisno(i,:,:)
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'f_wliq_soisno',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp1) )
+
+      ! ice lens in soil layers [kg/m2]
+      DO i = maxsnl+1, nl_soil
+         tmp1(:,:,i) = f_wice_soisno(i,:,:)
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'f_wice_soisno',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp1) )
+
+      ! lake temperature [K]
+      DO i = 1, nl_lake
+         tmp2(:,:,i) = f_t_lake(i,:,:)
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_lake',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp2) )
+
+      ! lake ice fraction cover [0-1]
+      DO i = 1, nl_lake
+         tmp2(:,:,i) = f_lake_icefrac(i,:,:)
+      ENDDO
+      CALL nccheck( nf90_inq_varid(ncid,'f_lake_icefrac',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,tmp2) )
+
+      ! u* in similarity theory [m/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_ustar',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_ustar) )
+
+      ! t* in similarity theory [kg/kg]
+      CALL nccheck( nf90_inq_varid(ncid,'f_tstar',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_tstar) )
+
+      ! q* in similarity theory [kg/kg]
+      CALL nccheck( nf90_inq_varid(ncid,'f_qstar',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_qstar) )
+
+      ! dimensionless height (z/L) used in Monin-Obukhov theory
+      CALL nccheck( nf90_inq_varid(ncid,'f_zol',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_zol) )
+
+      ! bulk Richardson number in surface layer
+      CALL nccheck( nf90_inq_varid(ncid,'f_rib',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_rib) )
+
+      ! integral of profile function for momentum
+      CALL nccheck( nf90_inq_varid(ncid,'f_fm',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fm) )
+
+      ! integral of profile function for heat
+      CALL nccheck( nf90_inq_varid(ncid,'f_fh',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fh) )
+
+      ! integral of profile function for moisture
+      CALL nccheck( nf90_inq_varid(ncid,'f_fq',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fq) )
+
+      ! 10m u-velocity [m/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_us10m',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_us10m) )
+
+      ! 10m v-velocity [m/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_vs10m',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_vs10m) )
+
+      ! integral of profile function for momentum at 10m [-]
+      CALL nccheck( nf90_inq_varid(ncid,'f_fm10m',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_fm10m) )
+
+      ! wind in eastward direction [m/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_us',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_us) )
+
+      ! wind in northward direction [m/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_vs',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_vs) )
+
+      ! temperature at reference height [kelvin]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_t',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_t) )
+
+      ! specific humidity at reference height [kg/kg]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_q',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_q) )
+
+      ! convective precipitation [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_prc',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_prc) )
+
+      ! large scale precipitation [mm/s]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_prl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_prl) )
+
+      ! atmospheric pressure at the surface [pa]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_pbot',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_pbot) )
+
+      ! atmospheric infrared (longwave) radiation [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_frl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_frl) )
+
+      ! downward solar radiation at surface [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_xy_solarin',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_xy_solarin) )
+
+      ! total reflected solar radiation at surface [W/m2]
+      CALL nccheck( nf90_inq_varid(ncid,'f_sr',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_sr) )
+
+      ! incident direct beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solvd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solvd) )
+
+      ! incident diffuse beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solvi',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solvi) )
+
+      ! incident direct beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solnd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solnd) )
+
+      ! incident diffuse beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solni',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solni) )
+
+      ! reflected direct beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srvd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srvd) )
+
+      ! reflected diffuse beam vis solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srvi',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srvi) )
+
+      ! reflected direct beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srnd',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srnd) )
+
+      ! reflected diffuse beam nir solar radiation (W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srni',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srni) )
+
+      ! incident direct beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solvdln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solvdln) )
+
+      ! incident diffuse beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solviln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solviln) )
+
+      ! incident direct beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solndln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solndln) )
+
+      ! incident diffuse beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_solniln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_solniln) )
+
+      ! reflected direct beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srvdln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srvdln) )
+
+      ! reflected diffuse beam vis solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srviln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srviln) )
+
+      ! reflected direct beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srndln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srndln) )
+
+      ! reflected diffuse beam nir solar radiation at local noon(W/m2)
+      CALL nccheck( nf90_inq_varid(ncid,'f_srniln',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_srniln) )
+
+      CALL nccheck( nf90_close(ncid) )
+#else
      write(luout) gridlond (:)    ! longitude in degree
      write(luout) gridlatd (:)    ! latitude in degree
      write(luout) mask     (:,:)  ! grid mask
@@ -261,6 +1807,7 @@
      write(luout) f_xy_snow(:,:)  ! snow [mm/s]
      write(luout) f_t_room (:,:)  ! temperature of inner building [K]
      write(luout) f_tafu   (:,:)  ! temperature of outer building [K]
+     write(luout) f_fhah   (:,:)  ! 
      write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
      write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
      write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
@@ -343,7 +1890,7 @@
      write(luout) f_srniln (:,:)  ! reflected diffuse beam nir solar radiation at local noon(W/m2)
 
      CLOSE (luout)
-
+#endif
   END SUBROUTINE flxwrite
 
 ! ----------------------------------------------------------------------

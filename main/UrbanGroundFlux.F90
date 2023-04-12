@@ -17,6 +17,8 @@
   IMPLICIT NONE
 
 !----------------------- Dummy argument --------------------------------
+  INTEGER , intent(in) :: &
+        lbi
   REAL(r8), intent(in) :: &
         ! atmospherical variables and observational height
         hu,       &! observational height of wind [m]
@@ -37,7 +39,7 @@
         zlnd,     &! roughness length for soil [m]
         zsno,     &! roughness length for snow [m]
         fsno_gimp,&! fraction of impervious ground covered by snow
-        lbi,      &! lower bound of array
+        !lbi,      &! lower bound of array
         fcover(0:5),&! coverage of aboveground urban components [-]
 
         wliq_gimpsno,&! liqui water [kg/m2]
@@ -119,19 +121,21 @@
 
       ! 加权后的tg
       tg = tgimp*fgimp + tgper*fgper
+      qg = qgimp*fgimp + qgper*fgper
 
       ! wet fraction impervious ground
       !-------------------------------------------
-      IF (lbi < 1) THEN
-         fwet_gimp = fsno_gimp !for snow layer exist
-      ELSE
-         ! surface wet fraction. assuming max ponding = 1 kg/m2
-         fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
-         fwet_gimp = min(1., fwet_gimp)
-      ENDIF
+      ! print*, lbi
+      ! IF (lbi < 1) THEN
+      !    fwet_gimp = fsno_gimp !for snow layer exist
+      ! ELSE
+      !    ! surface wet fraction. assuming max ponding = 1 kg/m2
+      !    fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+      !    fwet_gimp = min(1., fwet_gimp)
+      ! ENDIF
 
       ! 加权后的qg
-      qg = qgimp*fgimp*fwet_gimp + qgper*fgper
+      ! qg = qgimp*fgimp*fwet_gimp + qgper*fgper
 
 !-----------------------------------------------------------------------
 !     Compute sensible and latent fluxes and their derivatives with respect
@@ -177,7 +181,7 @@
            um = max(ur,0.1)
          ELSE
            wc = (-grav*ustar*thvstar*zii/thv)**(1./3.)
-          wc2 = beta*beta*(wc*wc)
+           wc2 = beta*beta*(wc*wc)
            um = sqrt(ur*ur+wc2)
          ENDIF
 

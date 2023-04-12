@@ -585,8 +585,8 @@ CONTAINS
  ! not applied for POINT
    integer, parameter :: nlats   = 2              ! number of latitudes
    integer, parameter :: nlons   = 2              ! number of longitudes
-   integer, parameter :: startyr = 1993!2009!1993!1991!1994!1993           ! start year of forcing data
-   integer, parameter :: startsec= 34200!5400!34200!64800!34200
+   integer, parameter :: startyr = 1994!1993!2009!1993!1991!1994!1993           ! start year of forcing data
+   integer, parameter :: startsec= 1800!5400!34200!64800!34200 
    integer, parameter :: startmo = 1!12!1!12!1              ! start month of forcing data
    integer, parameter :: startday= 1!31!1!31!1
    integer, parameter :: endyr   = 2020           ! end year of forcing data

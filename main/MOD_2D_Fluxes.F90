@@ -92,7 +92,24 @@ REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
 REAL(r8), allocatable :: f_fahe   (:,:)
+REAL(r8), allocatable :: f_fhah   (:,:)
+REAL(r8), allocatable :: f_vehc   (:,:)
+REAL(r8), allocatable :: f_meta   (:,:)
 
+REAL(r8), allocatable :: f_senroof(:,:)
+REAL(r8), allocatable :: f_senwsun(:,:)
+REAL(r8), allocatable :: f_senwsha(:,:)
+REAL(r8), allocatable :: f_sengimp(:,:)
+REAL(r8), allocatable :: f_sengper(:,:)
+REAL(r8), allocatable :: f_senurl (:,:)
+
+REAL(r8), allocatable :: f_lfevproof(:,:)
+REAL(r8), allocatable :: f_lfevpgimp(:,:)
+REAL(r8), allocatable :: f_lfevpgper(:,:)
+REAL(r8), allocatable :: f_lfevpurl (:,:)
+
+REAL(r8), allocatable :: f_troof    (:,:)
+REAL(r8), allocatable :: f_twall    (:,:)
 ! 分daytime(dt) and nighttime(nt)
 REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
 REAL(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
@@ -257,6 +274,25 @@ allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or co
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
 allocate ( f_fahe   (lon_points,lat_points) )
 
+allocate ( f_fhah   (lon_points,lat_points) )
+allocate ( f_vehc   (lon_points,lat_points) )
+allocate ( f_meta   (lon_points,lat_points) )
+
+allocate ( f_senroof (lon_points,lat_points) )
+allocate ( f_senwsun (lon_points,lat_points) )
+allocate ( f_senwsha (lon_points,lat_points) )
+allocate ( f_sengimp (lon_points,lat_points) )
+allocate ( f_sengper (lon_points,lat_points) )
+allocate ( f_senurl  (lon_points,lat_points) )
+
+allocate ( f_lfevproof(lon_points,lat_points) )
+allocate ( f_lfevpgimp(lon_points,lat_points) )
+allocate ( f_lfevpgper(lon_points,lat_points) )
+allocate ( f_lfevpurl (lon_points,lat_points) )
+
+allocate ( f_troof   (lon_points,lat_points) )
+allocate ( f_twall   (lon_points,lat_points) )
+
 allocate ( f_sabvdt  (lon_points,lat_points) ) ! solar absorbed by sunlit canopy [W/m2]
 allocate ( f_sabgdt  (lon_points,lat_points) ) ! solar absorbed by ground [W/m2]
 allocate ( f_srdt    (lon_points,lat_points) ) ! total reflected solar radiation (W/m2)
@@ -416,6 +452,24 @@ f_fhac      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
 f_fahe      (:,:) = spval
+f_fhah      (:,:) = spval
+f_vehc      (:,:) = spval
+f_meta      (:,:) = spval
+
+f_senroof   (:,:) = spval
+f_senwsun   (:,:) = spval
+f_senwsha   (:,:) = spval
+f_sengimp   (:,:) = spval
+f_sengper   (:,:) = spval
+f_senurl    (:,:) = spval
+
+f_lfevproof (:,:) = spval
+f_lfevpgimp (:,:) = spval
+f_lfevpgper (:,:) = spval
+f_lfevpurl  (:,:) = spval
+
+f_troof     (:,:) = spval
+f_twall     (:,:) = spval
 
 f_sabvdt    (:,:) = spval
 f_sabgdt    (:,:) = spval
@@ -551,6 +605,24 @@ deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
 deallocate ( f_fahe   )  
+deallocate ( f_fhah   )
+deallocate ( f_vehc   )
+deallocate ( f_meta   )
+
+deallocate ( f_senroof  )
+deallocate ( f_senwsun  )
+deallocate ( f_senwsha  )
+deallocate ( f_sengimp  )
+deallocate ( f_sengper  )
+deallocate ( f_senurl   )
+
+deallocate ( f_lfevproof )
+deallocate ( f_lfevpgimp )
+deallocate ( f_lfevpgper )
+deallocate ( f_lfevpurl  )
+
+deallocate ( f_troof    )
+deallocate ( f_twall    )
 
 deallocate ( f_sabvdt   )! solar absorbed by sunlit canopy [W/m2]
 deallocate ( f_sabgdt   )! solar absorbed by ground [W/m2]

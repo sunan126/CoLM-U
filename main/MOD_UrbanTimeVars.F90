@@ -86,6 +86,25 @@ MODULE MOD_UrbanTimeVars
    REAL(r8), allocatable :: Fwst           (:) !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fach           (:) !flux from inner and outter air exchange [W/m2]
    REAL(r8), allocatable :: Fahe           (:) !flux from metabolism and vehicle
+   REAL(r8), allocatable :: Fhah           (:)
+   REAL(r8), allocatable :: vehc           (:)
+   REAL(r8), allocatable :: meta           (:)
+   
+   REAL(r8), allocatable :: fsen_roof      (:)
+   REAL(r8), allocatable :: fsen_wsun      (:)
+   REAL(r8), allocatable :: fsen_wsha      (:)
+   REAL(r8), allocatable :: fsen_gimp      (:)
+   REAL(r8), allocatable :: fsen_gper      (:)
+   REAL(r8), allocatable :: fsen_url       (:)
+
+   REAL(r8), allocatable :: lfevp_roof     (:)
+   REAL(r8), allocatable :: lfevp_gimp     (:)
+   REAL(r8), allocatable :: lfevp_gper     (:)
+   REAL(r8), allocatable :: lfevp_url      (:)
+
+   REAL(r8), allocatable :: troof          (:)
+   REAL(r8), allocatable :: twall          (:)
+
 
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_UrbanTimeVars
@@ -176,7 +195,24 @@ CONTAINS
       allocate (Fwst                          (numurban))
       allocate (Fach                          (numurban))
       allocate (Fahe                          (numurban))
+      allocate (Fhah                          (numurban))
+      allocate (vehc                          (numurban))
+      allocate (meta                          (numurban))
 
+      allocate (fsen_roof                     (numurban))
+      allocate (fsen_wsun                     (numurban))
+      allocate (fsen_wsha                     (numurban))
+      allocate (fsen_gimp                     (numurban))
+      allocate (fsen_gper                     (numurban))
+      allocate (fsen_url                      (numurban))
+
+      allocate (lfevp_roof                    (numurban))
+      allocate (lfevp_gimp                    (numurban))
+      allocate (lfevp_gper                    (numurban))
+      allocate (lfevp_url                     (numurban))
+
+      allocate (troof                         (numurban))
+      allocate (twall                         (numurban))
    END SUBROUTINE allocate_UrbanTimeVars
 
    SUBROUTINE deallocate_UrbanTimeVars
@@ -250,6 +286,21 @@ CONTAINS
       deallocate (Fwst         )
       deallocate (Fach         )
       deallocate (Fahe         )
+
+      deallocate (fsen_roof    )
+      deallocate (fsen_wsun    )
+      deallocate (fsen_wsha    )
+      deallocate (fsen_gimp    )
+      deallocate (fsen_gper    )
+      deallocate (fsen_url     )
+
+      deallocate (lfevp_roof   )
+      deallocate (lfevp_gimp   )
+      deallocate (lfevp_gper   )
+      deallocate (lfevp_url    )
+
+      deallocate (troof        )
+      deallocate (twall        )
    END SUBROUTINE deallocate_UrbanTimeVars
 
 END MODULE MOD_UrbanTimeVars

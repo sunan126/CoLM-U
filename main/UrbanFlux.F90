@@ -344,7 +344,7 @@ MODULE UrbanFlux
      tg = tgimp*fgimp + tgper*fgper
      qg = qgimp*fgimp + qgper*fgper
 
-     ! 这部分有点问题导致部分patch通量跟屋顶和不透水面计算有点问题，最后长波为负，UrbanVegFlux/UrbanGroundFlux同样，暂时注释掉。
+     ! 这部分有点问题导致部分patch通量跟屋顶和不透水面温度计算有点问题，最后长波为负，UrbanVegFlux/UrbanGroundFlux同样，暂时注释掉。
      ! wet fraction for roof and impervious ground
      !-------------------------------------------
      ! roof

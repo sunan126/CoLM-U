@@ -181,6 +181,8 @@ IF (patchtype == 0) THEN
       ssun_c(:,:,:,pc) = 0.
       ssha_c(:,:,:,pc) = 0.
       thermk_c(:,pc)   = 1.e-3
+      fshade_c(:,pc)   = pcfrac(:,pc)
+      fshade_c(0,pc)   = 0.
       extkb_c(:,pc)    = 1.
       extkd_c(:,pc)    = 0.718
 #endif

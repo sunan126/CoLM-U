@@ -22,7 +22,7 @@ CONTAINS
                          troof_nl, twsun_nl, twsha_nl, &
                          tkdz_roof, tkdz_wsun, tkdz_wsha, taf, &
                          troom, troof_inner, twsun_inner, twsha_inner, &
-                         Fhac, Fwst, Fach )
+                         Fhac, Fwst, Fach, Fhah)
 
      IMPLICIT NONE
 
@@ -51,6 +51,7 @@ CONTAINS
         twsha_inner  ! temperature of inner shaded wall
 
      REAL(r8), intent(out) :: &
+        Fhah,       &! flux from heating
         Fhac,       &! flux from heat or cool AC
         Fwst,       &! waste heat from cool or heat
         Fach         ! flux from air exchange
@@ -195,12 +196,14 @@ CONTAINS
         Fhac = 0.5*hcv_roof*(troof_inner_bef-troom_bef) + 0.5*hcv_roof*(troof_inner-troom)
         Fhac = 0.5*hcv_wall*(twsun_inner_bef-troom_bef)*f_wsun + 0.5*hcv_wall*(twsun_inner-troom)*f_wsun + Fhac
         Fhac = 0.5*hcv_wall*(twsha_inner_bef-troom_bef)*f_wsha + 0.5*hcv_wall*(twsha_inner-troom)*f_wsha + Fhac
+        Fhah = Fhac
         Fhac = abs(Fhac) + abs(Fach)
         Fwst = Fhac*waste_coef
         IF ( heating ) Fhac = 0.
 
      ENDIF
 
+     Fhah = Fhah*fcover(0)
      Fach = Fach*fcover(0)
      Fwst = Fwst*fcover(0)
      Fhac = Fhac*fcover(0)

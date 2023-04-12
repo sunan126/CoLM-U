@@ -29,7 +29,8 @@ SUBROUTINE LUCY_readin_nc(dir_srfdata)
                  lvehicle     (231,3)        ! number of cars/mobike/freight
 
 
-! READ in inputdata for LUCY
+
+      ! READ in inputdata for LUCY
       lndname = trim("/hard/dongwz/github/AHE/LUCY_AHE.nc")
       !print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
@@ -68,11 +69,11 @@ SUBROUTINE LUCY_readin_nc(dir_srfdata)
          j = patch2lat(npatch)
          t = urbclass(u)
 
-         reg_id (u)        = lreg_id(i,j)
+         reg_id (u)        = 70!lreg_id(i,j)
          r = reg_id(u)
-         popcell(u)        = lpopcell(i,j,t)
+         popcell(u)        = 13000!lpopcell(i,j,t)
          IF (r > 0) THEN
-            vehicle(u,:)      = lvehicle(r,:)
+            vehicle(u,:)      = 669!lvehicle(r,:)
             week_holiday(u,:) = lweek_holiday(r,:)
             weh_prof(u,:)     = lvehc_prof(r,:,2)
             wdh_prof(u,:)     = lvehc_prof(r,:,1)

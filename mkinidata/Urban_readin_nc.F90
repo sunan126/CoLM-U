@@ -36,8 +36,9 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       INTEGER :: tkroof_vid, tkwall_vid, tkimproad_vid
       INTEGER :: tbuildingmax_vid, tbuildingmin_vid
       INTEGER :: thickroof_vid, thickwall_vid
-
-      INTEGER :: i, j, u, t, l, m, npatch, k
+      INTEGER :: reg_vid, pop_vid, veh_vid, wed_vid, weh_vid, wdh_vid, met_vid, hol_vid
+      INTEGER :: urbanpop_vid, urbanlucy_vid
+      INTEGER :: i, j, u, t, l, m, npatch, k, lucy_id
 
       REAL(r8) :: thick_roof, thick_wall
 
@@ -49,6 +50,12 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       REAL(r8) :: rfwt, rfht, tpct, wpct, hw_point, htop_point, prwt
 #endif
 #endif
+      REAL(r8):: lweek_holiday(231,7)   , &  ! weekday and weekendday
+                 lvehc_prof   (231,24,2), &  ! diurnal traffic profile
+                 lhum_prof    (231,24 ) , &  ! diurnal metabolize profile
+                 lfix_holiday (231,365) , &  ! public holiday
+                 lvehicle     (231,3)        ! number of cars/mobike/freight
+
       REAL(r8), allocatable :: wtlunitroof   (:,:,:)
       REAL(r8), allocatable :: htroof        (:,:,:)
       REAL(r8), allocatable :: canyonhwr     (:,:,:)
@@ -56,6 +63,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       REAL(r8), allocatable :: urbanwaterpct (:,:,:)
       REAL(r8), allocatable :: urbantreepct  (:,:,:)
       REAL(r8), allocatable :: urbantreetop  (:,:,:)
+      REAL(r8), allocatable :: urbanpop      (:,:,:)
 
       ! albedo
       REAL(r8), allocatable :: albroof   (:,:,:,:,:)
@@ -87,6 +95,9 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       REAL(r8), allocatable :: thickroof     (:,:,:)
       REAL(r8), allocatable :: thickwall     (:,:,:)
 
+      ! parameters for LUCY
+      INTEGER , allocatable :: urbanlucy(:,:)
+
       print*, N_URB
       allocate ( wtlunitroof   (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( htroof        (1:lon_points,1:lat_points,1:N_URB) )
@@ -113,6 +124,8 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       allocate ( tbuildingmin  (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( thickroof     (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( thickwall     (1:lon_points,1:lat_points,1:N_URB) )
+      allocate ( urbanpop      (1:lon_points,1:lat_points,1:N_URB) )
+      allocate ( urbanlucy     (1:lon_points,1:lat_points) )
 
 #ifdef USE_LCZ
 
@@ -120,6 +133,12 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "LCZ_LUCY_id"  , urbanlucy_vid ) )
+      CALL nccheck( nf90_get_var  (ncid, urbanlucy_vid  , urbanlucy     ) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "LCZ_POP_DEN"  , urbanpop_vid  ) )
+      CALL nccheck( nf90_get_var  (ncid, urbanpop_vid   , urbanpop      ) )
 
       CALL nccheck( nf90_inq_varid(ncid, "LCZ_WT_ROOF"  , wtlunitroof_vid) )
       CALL nccheck( nf90_get_var  (ncid, wtlunitroof_vid, wtlunitroof    ) )
@@ -133,17 +152,17 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
             !wtlunitroof (j,i,:) = rooffrac(:)
             !htroof      (j,i,:) = roofhgt (:)
             canyonhwr   (j,i,:) = h2w     (:)
-            wtroadperv  (j,i,:) = perfrac (:)
-            emroof      (j,i,:) = roofem  (:)
+            wtroadperv  (j,i,:) = perfrac (:) 
+            emroof      (j,i,:) = roofem  (:) 
             emwall      (j,i,:) = wallem  (:)
             emimproad   (j,i,:) = roadem  (:)
             emperroad   (j,i,:) = perem   (:)
             tbuildingmax(j,i,:) = 299.15
             tbuildingmin(j,i,:) = 296.15
-            thickroof   (j,i,:) = rooftk  (:)
+            thickroof   (j,i,:) = rooftk  (:) 
             thickwall   (j,i,:) = walltk  (:)
             !thickroad   (j,i,:) = roadtk  (:)
-
+            
             albroof     (j,i,:,1,1) = roofalb(:)
             albroof     (j,i,:,1,2) = roofalb(:)
             albroof     (j,i,:,2,1) = roofalb(:)
@@ -178,6 +197,8 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       print*,trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
+      CALL nccheck( nf90_inq_varid(ncid, "URBAN_LUCY_id",   urbanlucy_vid    ) )
+      CALL nccheck( nf90_inq_varid(ncid, "URBAN_POP_DEN",   urbanpop_vid     ) )
       CALL nccheck( nf90_inq_varid(ncid, "WTLUNIT_ROOF",    wtlunitroof_vid  ) )
       CALL nccheck( nf90_inq_varid(ncid, "HT_ROOF",         htroof_vid       ) )
       CALL nccheck( nf90_inq_varid(ncid, "CANYON_HWR",      canyonhwr_vid    ) )
@@ -204,10 +225,13 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CALL nccheck( nf90_inq_varid(ncid, "THICK_ROOF",      thickroof_vid    ) )
       CALL nccheck( nf90_inq_varid(ncid, "THICK_WALL",      thickwall_vid    ) )
 
+      CALL nccheck( nf90_get_var(ncid, urbanlucy_vid  ,   urbanlucy    ) )
+      CALL nccheck( nf90_get_var(ncid, urbanpop_vid   ,   urbanpop     ) )
       CALL nccheck( nf90_get_var(ncid, wtlunitroof_vid,   wtlunitroof  ) )
       CALL nccheck( nf90_get_var(ncid, htroof_vid,        htroof       ) )
       CALL nccheck( nf90_get_var(ncid, canyonhwr_vid,     canyonhwr    ) )
       CALL nccheck( nf90_get_var(ncid, wtroadperv_vid,    wtroadperv   ) )
+      CALL nccheck( nf90_get_var(ncid, urbanpop_vid,      urbanpop     ) )
       CALL nccheck( nf90_get_var(ncid, urbanwaterpct_vid, urbanwaterpct) )
       CALL nccheck( nf90_get_var(ncid, urbantreepct_vid,  urbantreepct ) )
       CALL nccheck( nf90_get_var(ncid, urbantreetop_vid,  urbantreetop ) )
@@ -232,6 +256,24 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
       CALL nccheck( nf90_close(ncid) )
 
+      lndname = trim("/stu01/dongwz/data/CLMrawdata/urban_5x5/LUCY_rawdata.nc")
+      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
+
+      CALL nccheck( nf90_inq_varid(ncid, "vehicle"    , veh_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "weekendday" , wed_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "weekendhour", weh_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "weekdayhour", wdh_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "metabolism" , met_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "holiday"    , hol_vid) )
+
+      CALL nccheck( nf90_get_var(ncid, veh_vid, lvehicle) )
+      CALL nccheck( nf90_get_var(ncid, wed_vid, lweek_holiday) )
+      CALL nccheck( nf90_get_var(ncid, weh_vid, lvehc_prof(:,:,2)) )
+      CALL nccheck( nf90_get_var(ncid, wdh_vid, lvehc_prof(:,:,1)) )
+      CALL nccheck( nf90_get_var(ncid, met_vid, lhum_prof) )
+      CALL nccheck( nf90_get_var(ncid, hol_vid, lfix_holiday) )
+
+      CALL nccheck( nf90_close(ncid) )
 #ifdef USE_POINT_DATA
 #ifdef USE_OBS_PARA
 
@@ -264,59 +306,14 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       htroof       (1,1,:) = rfht
       urbantreetop (1,1,:) = htop_point
       canyonhwr    (1,1,:) = hw_point
-
-      !Roof
-      !albroof(:,:,:,:,:) = 0.17
-      tkroof (:,:,:,:)   = 1.25
-      !tkroof (:,:,:,1:2)   = 6.53
-      !tkroof (:,:,:,3:5) = 0.025
-      !tkroof (:,:,:,6:9) = 0.23
-      !tkroof (:,:,:,10)  = 0.16
-      cvroof (:,:,:,:)   = 1.8*1e6
-      !cvroof (:,:,:,1:2)   = 2.07*1e6
-      !cvroof (:,:,:,3:5) = 0.0071*1e6
-      !cvroof (:,:,:,6:9) = 1.5*1e6
-      !cvroof (:,:,:,10)  = 0.67*1e6
-      thickroof(:,:,:)   = 0.1141
-
-      !Wall
-      tkwall (:,:,:,:) = 1.25
-      !tkwall (:,:,:,1:2) = 0.61
-      !tkwall (:,:,:,3:7) = 0.43
-      !tkwall (:,:,:,8:9) = 0.024
-      !tkwall (:,:,:,10)  = 0.16
-      cvwall (:,:,:,:) = 2*1e6
-      !cvwall (:,:,:,1:2) = 1.25*1e6
-      !cvwall (:,:,:,3:7) = 1.4*1e6
-      !cvwall (:,:,:,8:9) = 0.0013*1e6
-      !cvwall (:,:,:,10)  = 0.67*1e6
-      thickwall(:,:,:)   = 0.1489
-
-      !Impervious Road
-      tkimproad(:,:,:,1:4)   = 1.17
-      tkimproad(:,:,:,5) = 0.3
-      tkimproad(:,:,:,5) = 0.42
-      tkimproad(:,:,:,6:10)= 0
-      cvimproad(:,:,:,1)   = 1.14*1e6
-      cvimproad(:,:,:,2:3) = 1.05*1e6
-      cvimproad(:,:,:,4)   = 1.29*1e6
-      cvimproad(:,:,:,5:10)= 0
-
-      tbuildingmax(:,:,:) = 297.15
-      tbuildingmin(:,:,:) = 293.15
-
-      !emroof   (:,:,:) = 0.973
-      !emwall   (:,:,:) = 0.973
-      !emimproad(:,:,:) = 0.973
-      !emperroad(:,:,:) = 0.973
-
+      !albroof(:,:,:,:,:) = 0.4
 #endif
 #endif
 #endif
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &
-!$OMP PRIVATE(i, j, u, t, l, m, npatch) &
+!$OMP PRIVATE(i, j, u, t, l, m, npatch, lucy_id) &
 !$OMP PRIVATE(thick_roof, thick_wall)
 #endif
       DO u = 1, numurban
@@ -327,6 +324,17 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
          m = patchclass(npatch)
          t = urbclass(u)
 
+         lucy_id         = urbanlucy     (i,j)
+         IF (lucy_id > 0) THEN
+            vehicle(u,:)      = lvehicle(lucy_id,:)
+            week_holiday(u,:) = lweek_holiday(lucy_id,:)
+            weh_prof(u,:)     = lvehc_prof(lucy_id,:,2)
+            wdh_prof(u,:)     = lvehc_prof(lucy_id,:,1)
+            hum_prof(u,:)     = lhum_prof(lucy_id,:)
+            fix_holiday(u,:)  = lfix_holiday(lucy_id,:)
+         ENDIF 
+
+         popcell(u)      = urbanpop      (i,j,t)
          froof(u)        = wtlunitroof   (i,j,t) !roof fractional cover
          hroof(u)        = htroof        (i,j,t) !average building height
          hwr(u)          = canyonhwr     (i,j,t) !average building height to their distance
@@ -352,7 +360,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
          thick_roof      = thickroof     (i,j,t) !thickness of roof [m]
          thick_wall      = thickwall     (i,j,t) !thickness of wall [m]
-
+        
 #ifdef URBAN_BEM
          t_roommax(u)    = tbuildingmax  (i,j,t) !maximum temperature of inner room [K]
          t_roommin(u)    = tbuildingmin  (i,j,t) !minimum temperature of inner room [K]
@@ -417,15 +425,15 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 #ifdef OPENMP
 !$OMP END PARALLEL DO
 #endif
-      print*,'froof = ', froof
-      print*,'hroof = ', hroof
-      print*,'fgper = ', fgper
-      print*,'hwr   = ', hwr
-      print*,'fveg  = ', fveg
-      print*,'flake = ', flake
-      print*,'htop  = ', htop
-      print*,'albroof= ', alb_roof
-      print*,'albwall= ', alb_wall
+      ! print*,'froof = ', froof
+      ! print*,'hroof = ', hroof
+      ! print*,'fgper = ', fgper
+      ! print*,'hwr   = ', hwr
+      ! print*,'fveg  = ', fveg
+      ! print*,'flake = ', flake
+      ! print*,'htop  = ', htop  
+      ! print*,'albroof= ', alb_roof
+      ! print*,'albwall= ', alb_wall
 
       deallocate ( wtlunitroof   )
       deallocate ( htroof        )

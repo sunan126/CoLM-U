@@ -58,6 +58,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: harea
    REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: wtrf
    REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: htrf
+   REAL(r8), ALLOCATABLE, DIMENSION(:,:) :: pop
 
 #ifdef USE_LCZ
    INTEGER , ALLOCATABLE, DIMENSION(:,:) :: lcz
@@ -91,6 +92,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: htop_ur
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: ht_rf
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: wt_rf
+   REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: pop_ur
 #ifndef USE_LCZ
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: hwr_can
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:) :: wt_rd
@@ -116,6 +118,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:,:,:) :: alb_perd
 #endif
 
+   INTEGER , ALLOCATABLE, DIMENSION(:,:)     :: LUCY_reg
+   INTEGER , ALLOCATABLE, DIMENSION(:,:)     :: LUCY_coun
    REAL(r8), ALLOCATABLE, DIMENSION(:,:)     :: hgt, avg
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:)   :: ur_dc
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:)   :: pct_ur
@@ -135,7 +139,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    INTEGER :: ncid, lat_vid, lon_vid, urlat_vid, urlon_vid, mon_vid, den_vid, &
               pct_tcvid, pct_urvid, pct_urwtvid, ur_laivid, ur_saivid, htop_urvid
    INTEGER :: upftvid, gedi_thvid, gfcc_tcvid, gl30_wtvid, ur_clssvid, &
-              laivid, saivid, wt_rfvid, ht_rfvid 
+              laivid, saivid, wt_rfvid, ht_rfvid, popvid, pop_denvid
+   INTEGER :: LUCY_vid, reg_id
 #ifndef USE_LCZ
    INTEGER :: ns_dimid, nr_dimid, ulev_dimid
    INTEGER :: ns_vid, nr_vid, lev_vid
@@ -151,7 +156,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8) :: pi, deg2rad, re, dx, dy, sumur
    REAL(r8) :: x_delta, y_delta
    
-   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, mm, cont, sumth, p, inx
+   INTEGER  :: i, j, k, io, jo, m, n, ii, jj, mm, cont, sumth, p, inx, im, jm
    INTEGER  :: n_ns(2), n_nr(2), n_den(3), n_ulev(10), n_mon(12)
    INTEGER  :: XY2D(2), XY3D(3), XY4D(4), UR3D(3), UL3D(4), XY5D(5)
 
@@ -181,6 +186,9 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( hlai (hxy, hxy, mon) )
    allocate( hsai (hxy, hxy, mon) )
 
+   allocate( ht_rf     (lon_points, lat_points, nlcz ) )
+   allocate( wt_rf     (lon_points, lat_points, nlcz ) )
+   allocate( pop_ur    (lon_points, lat_points, nlcz ) )
    allocate( ur_dc     (lon_points, lat_points, nlcz ) )
    allocate( pct_ur    (lon_points, lat_points, nlcz ) )
    allocate( wgt_top   (lon_points, lat_points, nlcz ) )
@@ -211,7 +219,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( hlai    (nxy, nxy, mon) )
    allocate( hsai    (nxy, nxy, mon) )
 
-   
+   allocate( pop_ur    (lon_points, lat_points, den_clss ) )
    allocate( ur_dc     (lon_points, lat_points, den_clss ) )
    allocate( pct_ur    (lon_points, lat_points, den_clss ) )
    allocate( wgt_top   (lon_points, lat_points, den_clss ) )
@@ -303,12 +311,16 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( modur   (nxy, nxy) )
    allocate( wtrf    (nxy, nxy) )
    allocate( htrf    (nxy, nxy) )
+   allocate( pop     (bxy, bxy) )
 
    allocate( latso     (lat_points) )
    allocate( lonso     (lon_points) )
    allocate( area      (lon_points, lat_points) )
    allocate( hgt       (lon_points, lat_points) )
    allocate( avg       (lon_points, lat_points) )
+   allocate( LUCY_coun (lon_points, lat_points) )
+
+   allocate( LUCY_reg  (8640, 4320) )
    ! initialization
    hgt      (:,:)   = 0.
    wtrf     (:,:)   = 0.
@@ -333,7 +345,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    x_delta = (edgee-edgew)*1._r8/lon_points*1._r8
    y_delta = (edgen-edges)*1._r8/lat_points*1._r8
-
+   print*, x_delta
    DO i = 1, lon_points
       lonso(i) = edgew + (i-0.5)*x_delta
       IF (lonso(i) > 180) THEN
@@ -351,6 +363,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    ldelta = 5._r8/(nxy*1._r8)
 #endif
 
+   CALL nccheck( nf90_open(TRIM(dir_rawdata)//'urban_5x5/LUCY_countryid.nc', nf90_nowrite, ncid))
+
+   CALL nccheck( nf90_inq_varid(ncid, "Country_id", reg_id  ) )
+   CALL nccheck( nf90_get_var  (ncid, reg_id      , LUCY_reg) )
+
+   CALL nccheck( nf90_close(ncid) )
 #ifndef USE_LCZ
    CALL nccheck( nf90_open(TRIM(dir_rawdata)//'urban_5x5/urban_properties.nc', nf90_nowrite, ncid) )
 
@@ -435,16 +453,26 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
             CALL nccheck( nf90_open(trim(lndname), nf90_nowrite    , ncid       ) )
 
             CALL nccheck( nf90_inq_varid(ncid, "PCT_URBAN"     , upftvid    ) )
-            CALL nccheck( nf90_inq_varid(ncid, "HTOP"          , gedi_thvid ) )
+            ! CALL nccheck( nf90_inq_varid(ncid, "HTOP"          , gedi_thvid ) )
 
             CALL nccheck( nf90_get_var(ncid, upftvid    , modur   ) )
-            CALL nccheck( nf90_get_var(ncid, gedi_thvid , gedi_th ) )
+            ! CALL nccheck( nf90_get_var(ncid, gedi_thvid , gedi_th ) )
 
             CALL nccheck( nf90_close(ncid) )
          ELSE
             print*, 'Please check ', lndname
             CYCLE
          ENDIF
+
+         lndname = TRIM(dir_rawdata)//'ETH_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
+                    TRIM(adjustL(reg2))//'_'//TRIM(adjustL(reg3))//'_'//TRIM(adjustL(reg4))//'.ETH'//'.nc' !TRIM(year)//'.nc'
+
+         CALL nccheck( nf90_open(trim(lndname), nf90_nowrite    , ncid       ) )
+
+         CALL nccheck( nf90_inq_varid(ncid, "ETH_htop" , gedi_thvid ) )
+         CALL nccheck( nf90_get_var(ncid  , gedi_thvid , gedi_th    ) )
+
+         CALL nccheck( nf90_close(ncid) )
 
          lndname = TRIM(dir_rawdata)//'urban_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
                     TRIM(adjustL(reg2))//'_'//TRIM(adjustL(reg3))//'_'//TRIM(adjustL(reg4))//'.SRF'//TRIM(cyear)//'.nc' !TRIM(year)//'.nc'
@@ -461,7 +489,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
          CALL nccheck( nf90_close(ncid) )
 
-         ! read urban LAI
+         ! read roof fraction and building height
          lndname = TRIM(dir_rawdata)//'building_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
                     TRIM(adjustL(reg2))//'_'//TRIM(adjustL(reg3))//'_'//TRIM(adjustL(reg4))//'.BLD.nc'
          CALL nccheck( nf90_open(lndname, nf90_nowrite, ncid) )
@@ -470,6 +498,15 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          CALL nccheck( nf90_get_var  (ncid, ht_rfvid      , htrf    ) )
          CALL nccheck( nf90_inq_varid(ncid, "WTLUNIT_ROOF", wt_rfvid) )
          CALL nccheck( nf90_get_var  (ncid, wt_rfvid      , wtrf    ) )
+
+         CALL nccheck( nf90_close(ncid) )
+
+         lndname = TRIM(dir_rawdata)//'POP_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
+                    TRIM(adjustL(reg2))//'_'//TRIM(adjustL(reg3))//'_'//TRIM(adjustL(reg4))//'.POP'//TRIM(cyear)//'.nc'
+         CALL nccheck( nf90_open(lndname, nf90_nowrite, ncid) )
+
+         CALL nccheck( nf90_inq_varid(ncid, "Band1"     , popvid  ) )
+         CALL nccheck( nf90_get_var  (ncid, popvid      , pop     ) )
 
          CALL nccheck( nf90_close(ncid) )
 
@@ -527,9 +564,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                ii = CEILING(i*1./5)
                jj = CEILING(j*1./5)
 
+               im = CEILING(i*1./10)
+               jm = CEILING(j*1./10)
+
                IF (x_delta>0 .and. y_delta>0) THEN
-                  io = NINT((90.-(hlats(i)+ldelta/2))/y_delta+0.5)
-                  jo = NINT((hlonw(j)+ldelta/2+180.)/x_delta+0.5)
+                  io = NINT((edgen-(hlats(i)+ldelta/2))/y_delta+0.5)
+                  jo = NINT((hlonw(j)+ldelta/2-edgew)/x_delta+0.5)
                ELSE
                   io = 1
                   jo = 1
@@ -548,12 +588,16 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                      inx = int(lcz(j,i))
                      ur_dc(jo,io,inx) = ur_dc(jo,io,inx) + harea(j,i)
                      
-                     IF (htrf(j,i) > 0) THEN
-                        ht_rf(jo,io,3) = ht_rf(jo,io,3) + htrf(j,i)*harea(j,i)
+                     IF (htrf(jj,ii) > 0) THEN
+                        ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + htrf(jj,ii)*harea(j,i)
                      ENDIF
 
-                     IF (wtrf(j,i) > 0) THEN
-                        wt_rf(jo,io,3) = wt_rf(jo,io,3) + wtrf(j,i)*harea(j,i)
+                     IF (pop(jm,im) > 0) THEN
+                        pop_ur(jo,io,inx) = pop_ur(jo,io,inx) + pop(jm,im)*harea(j,i)
+                     ENDIF
+
+                     IF (wtrf(jj,ii) > 0) THEN
+                        wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + wtrf(jj,ii)*harea(j,i)
                      ENDIF
                      ! 加权：
                      ! 粗网格城市水体(植被)覆盖度=粗网格城市水体(植被)覆盖度+500m城市格点水体(植被)覆盖度*500m城市格点面积
@@ -650,271 +694,221 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          IF (ei < si) ei = si
          IF (ej < sj) ej = sj
 
-#ifdef USE_POINT_DATA
-         DO i = 1, nxy
-            DO j= 1, nxy
-               IF (gedi_th(j,i)>0 .and. modur(j,i)>0) THEN
-                  hgt(1,1) = hgt(1,1) + gedi_th(j,i)*harea(j,i)*modur(j,i)/100
-                  avg(1,1) = avg(1,1) + harea(j,i)*modur(j,i)/100
-               ENDIF
-            ENDDO
-         ENDDO
-#endif
          DO i = si, ei
             DO j = sj, ej
                ! calculate io, jo
                !io = NINT((hlats(i)+ldelta/2+ 90.)/y_delta+0.5)
                !io = nyo+1-io
-
+               im = CEILING(i*1./2)
+               jm = CEILING(j*1./2)
                IF (x_delta>0 .and. y_delta>0) THEN
-                  io = NINT((90.-(hlats(i)+ldelta/2))/y_delta+0.5)
-                  jo = NINT((hlonw(j)+ldelta/2+180.)/x_delta+0.5)
+                  io = NINT((edgen-(hlats(i)+ldelta/2))/y_delta+0.5)
+                  jo = NINT((hlonw(j)+ldelta/2-edgew)/x_delta+0.5)
                ELSE
                   print*, 'Site point is ', (hlats(i)+ldelta/2), (hlonw(j)+ldelta/2)  ! for debug
                   io = 1
                   jo = 1
                ENDIF
+               ! print*, jo,io
                ! 聚合Simard树高
                ! 加权：
                ! 粗网格树高=粗网格树高+simard树高*1km格点面积
                ! 加权系数：粗网格格点面积
-#ifndef USE_POINT_DATA
-               IF (gedi_th(j,i) > 0) THEN
-                  hgt(jo,io) = hgt(jo,io) + gedi_th(j,i)*harea(j,i)
-                  avg(jo,io) = avg(jo,io) + harea(j,i)
-               ENDIF
-#endif
-#ifndef USE_POINT_DATA
-               IF (modur(j,i) > 0) THEN
-#endif
-                  IF (urden(j,i) > 0) THEN
-                     ! IF (urden(j,i) == 1) THEN
+               IF (urden(j,i) > 0) THEN
+                  ! 加权：
+                  ! 粗网格城市水体(植被)覆盖度=粗网格城市水体(植被)覆盖度+500m城市格点水体(植被)覆盖度*500m城市格点面积
+                  ! 加权系数；粗网格城市格点面积
+                  ! check for FI-Torni
+                  IF (modur(j,i)<=0 .and. urden(j,i)>0) THEn
+                     print*, 'MODIS and NCAR inconsistance'
+                  ENDIF
+                  inx = int(urden(j,i))
+                  IF (gl30_wt(j,i) > 0.) THEN
+                     urwt (jo,io,inx) = urwt (jo,io,inx) + gl30_wt(j,i)*harea(j,i)
+                  ENDIF
+                  IF (gfcc_tc(j,i) > 0.) THEN
+
+                     tc(jo,io,inx) = tc(jo,io,inx) + gfcc_tc(j,i)*harea(j,i)
+
+                     DO ii = 1, 12
+                        IF (hlai(j,i,ii) > 0) THEN
+                           ur_lai (jo,io,inx,ii) = ur_lai (jo,io,inx,ii) + hlai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
+                           wgt_lai(jo,io,inx,ii) = wgt_lai(jo,io,inx,ii) + harea(j,i)*gfcc_tc(j,i)
+                        ENDIF
+
+                        IF (hsai(j,i,ii) > 0) THEN
+                           ur_sai (jo,io,inx,ii) = ur_sai (jo,io,inx,ii) + hsai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
+                           wgt_sai(jo,io,inx,ii) = wgt_sai(jo,io,inx,ii) + harea(j,i)*gfcc_tc(j,i)
+                        ENDIF
+                     ENDDO
+                     ! 树高加权
+                     ! 粗网格城市树高=粗网格城市树高+500m城市格点植被覆盖度*城市格点树高*城市格点面积
+                     ! 加权系数:城市格点植被覆盖度*城市面积
+                     IF (gedi_th(j,i) > 0) THEN
+                        htop   (jo,io,inx) = htop   (jo,io,inx) + gedi_th(j,i)*gfcc_tc(j,i)*harea(j,i)
+                        wgt_top(jo,io,inx) = wgt_top(jo,io,inx) + gfcc_tc(j,i)*harea(j,i)
+                     ENDIF
+                     ! ENDIF
+                  ENDIF
+
+                  uxid             = urrgid(j,i)
+                  ur_dc(jo,io,inx) = ur_dc(jo,io,inx) + harea(j,i) !*modur(j,i)/100
                   
-                     ! 加权：
-                     ! 粗网格城市水体(植被)覆盖度=粗网格城市水体(植被)覆盖度+500m城市格点水体(植被)覆盖度*500m城市格点面积
-                     ! 加权系数；粗网格城市格点面积
-                     ! check for FI-Torni
-                     IF (modur(j,i)<=0 .and. urden(j,i)>0) THEn
-                        print*, 'MODIS and NCAR inconsistance'
-                     ENDIF
-                     inx = int(urden(j,i))
-                     IF (gl30_wt(j,i) > 0.) THEN
-                        urwt (jo,io,inx) = urwt (jo,io,inx) + gl30_wt(j,i)*harea(j,i)
-                     ENDIF
-                     IF (gfcc_tc(j,i) > 0.) THEN
-
-                        tc(jo,io,inx) = tc(jo,io,inx) + gfcc_tc(j,i)*harea(j,i)
-
-                        DO ii = 1, 12
-                           IF (hlai(j,i,ii) > 0) THEN
-                              ur_lai (jo,io,inx,ii) = ur_lai (jo,io,inx,ii) + hlai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
-                              wgt_lai(jo,io,inx,ii) = wgt_lai(jo,io,inx,ii) + harea(j,i)*gfcc_tc(j,i)
-                           ENDIF
-
-                           IF (hsai(j,i,ii) > 0) THEN
-                              ur_sai (jo,io,inx,ii) = ur_sai (jo,io,inx,ii) + hsai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
-                              wgt_sai(jo,io,inx,ii) = wgt_sai(jo,io,inx,ii) + harea(j,i)*gfcc_tc(j,i)
-                           ENDIF
-                        ENDDO
-                        ! 树高加权
-                        ! 粗网格城市树高=粗网格城市树高+500m城市格点植被覆盖度*城市格点树高*城市格点面积
-                        ! 加权系数:城市格点植被覆盖度*城市面积
-                        IF (gedi_th(j,i) > 0) THEN
-                           htop   (jo,io,inx) = htop   (jo,io,inx) + gedi_th(j,i)*gfcc_tc(j,i)*harea(j,i)
-                           wgt_top(jo,io,inx) = wgt_top(jo,io,inx) + gfcc_tc(j,i)*harea(j,i)
-                        ENDIF
-                        ! ENDIF
-                     ENDIF
-
-                     uxid             = urrgid(j,i)
-                     ur_dc(jo,io,inx) = ur_dc(jo,io,inx) + harea(j,i)
-                     
-                     IF (htrf(j,i) > 0) THEN
-                        ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + htrf(j,i)*harea(j,i)
-                     ELSE
-                        ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + ncar_ht(inx,uxid)*harea(j,i)
-                     ENDIF
-
-                     IF (wtrf(j,i) > 0) THEN
-                        wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + wtrf(j,i)*harea(j,i)
-                     ELSE
-                        wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + ncar_wt(inx,uxid)*harea(j,i)
-                     ENDIF
-                     
-                     hwr_can  (jo,io,inx) = hwr_can  (jo,io,inx) + hwrcan  (inx,uxid)*harea(j,i)
-                     !wt_rf    (jo,io,inx) = wt_rf    (jo,io,inx) + wtrf    (inx,uxid)*harea(j,i)
-                     wt_rd    (jo,io,inx) = wt_rd    (jo,io,inx) + wtrd    (inx,uxid)*harea(j,i)
-                     em_rf    (jo,io,inx) = em_rf    (jo,io,inx) + emrf    (inx,uxid)*harea(j,i)
-                     em_wl    (jo,io,inx) = em_wl    (jo,io,inx) + emwl    (inx,uxid)*harea(j,i)
-                     em_imrd  (jo,io,inx) = em_imrd  (jo,io,inx) + emimrd  (inx,uxid)*harea(j,i)
-                     em_perd  (jo,io,inx) = em_perd  (jo,io,inx) + emperd  (inx,uxid)*harea(j,i)
-                     th_rf    (jo,io,inx) = th_rf    (jo,io,inx) + thrf    (inx,uxid)*harea(j,i)
-                     th_wl    (jo,io,inx) = th_wl    (jo,io,inx) + thwl    (inx,uxid)*harea(j,i)
-                     tb_min   (jo,io,inx) = tb_min   (jo,io,inx) + tbmin   (inx,uxid)*harea(j,i)
-                     tb_max   (jo,io,inx) = tb_max   (jo,io,inx) + tbmax   (inx,uxid)*harea(j,i)
-                     !ht_rf    (jo,io,inx) = ht_rf    (jo,io,inx) + htrf    (inx,uxid)*harea(j,i)
-
-                     alb_rf  (jo,io,inx,:,:) = alb_rf  (jo,io,inx,:,:) + albrf  (inx,uxid,:,:)*harea(j,i)
-                     alb_wl  (jo,io,inx,:,:) = alb_wl  (jo,io,inx,:,:) + albwl  (inx,uxid,:,:)*harea(j,i)
-                     alb_imrd(jo,io,inx,:,:) = alb_imrd(jo,io,inx,:,:) + albimrd(inx,uxid,:,:)*harea(j,i)
-                     alb_perd(jo,io,inx,:,:) = alb_perd(jo,io,inx,:,:) + albperd(inx,uxid,:,:)*harea(j,i)
-
-                     tk_rf  (jo,io,inx,:) = tk_rf  (jo,io,inx,:) + tkrf  (inx,uxid,:)*harea(j,i)
-                     tk_wl  (jo,io,inx,:) = tk_wl  (jo,io,inx,:) + tkwl  (inx,uxid,:)*harea(j,i)
-                     DO m = 1, 10
-                        ! tkimrd与cvimrd有缺省值，计算需要跳过
-                        IF (tkimrd(inx,uxid,m) .ne. -999) THEN
-                           tk_imrd(jo,io,inx,m) = tk_imrd(jo,io,inx,m) + tkimrd(inx,uxid,m)*harea(j,i)
-                        ENDIF
-                        IF (cvimrd(inx,uxid,m) .ne. -999.) THEN
-                           cv_imrd(jo,io,inx,m) = cv_imrd(jo,io,inx,m) + cvimrd(inx,uxid,m)*harea(j,i)
-                        ENDIF
-                     ENDDO
-                     cv_rf  (jo,io,inx,:) = cv_rf  (jo,io,inx,:) + cvrf  (inx,uxid,:)*harea(j,i)
-                     cv_wl  (jo,io,inx,:) = cv_wl  (jo,io,inx,:) + cvwl  (inx,uxid,:)*harea(j,i)
+                  IF (htrf(j,i) > 0) THEN
+                     ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + htrf(j,i)*harea(j,i)
+                  ELSE
+                     ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + ncar_ht(inx,uxid)*harea(j,i)
                   ENDIF
 
-                  ! 根据MODIS城市覆盖对城市格点补充，并将其归类为MD urban
-                  !IF (modur(j,i)>0 .and. urden(j,i)<=0) THEN
-                  IF (urden(j,i) <= 0) THEN
-                     ! print*, 'mod Processing'
-                     IF (gl30_wt(j,i) > 0.) THEN
-                        urwt (jo,io,3) = urwt (jo,io,3) + gl30_wt(j,i)*harea(j,i)*modur(j,i)/100
-                     ENDIF
-                     IF (gfcc_tc(j,i) > 0.) THEN
-                        tc(jo,io,3) = tc(jo,io,3) + gfcc_tc(j,i)*harea(j,i)*modur(j,i)/100
-
-                        DO ii = 1, 12
-                           IF (hlai(j,i,ii) > 0) THEN
-                              ur_lai (jo,io,3,ii) = ur_lai (jo,io,3,ii) + hlai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
-                              wgt_lai(jo,io,3,ii) = wgt_lai(jo,io,3,ii) + harea(j,i)*gfcc_tc(j,i)
-                           ENDIF
-
-                           IF (hsai(j,i,ii) > 0) THEN
-                              ur_sai (jo,io,3,ii) = ur_sai (jo,io,3,ii) + hsai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
-                              wgt_sai(jo,io,3,ii) = wgt_sai(jo,io,3,ii) + harea(j,i)*gfcc_tc(j,i)
-                           ENDIF
-                        ENDDO
-
-                        IF (gedi_th(j,i) > 0) THEN
-                           htop(jo,io,3) = htop(jo,io,3) + gedi_th(j,i)*gfcc_tc(j,i)*harea(j,i)*modur(j,i)/100
-                           wgt_top(jo,io,3) = wgt_top(jo,io,3) + harea(j,i)*gfcc_tc(j,i)*modur(j,i)/100
-                        ENDIF
-                     ENDIF
-
-                     !ur_dc(jo,io,3) = ur_dc(jo,io,3) + harea(j,i)*modur(j,i)/100
-                     uxid           = urrgid(j,i)
-                     ! 部分格点MODIS与NCAR不一致(NCAR没有城市ID)，因此通过距离MODIS格点最近的NCAR城市ID赋值
-                     IF (reg(1)==-45 .and. reg(3)==-50 .and. reg(2)==65 .and. reg(4)==70) THEN
-                        uxid = 30
-                     ENDIF
-                     ! 城市建筑属性聚合
-                     ! 加权：
-                     ! 粗网格城市属性=粗网格城市属性+细网格城市属性*细网格面积*MODIS_PCT_URBAN
-                     ! 加权系数：细网格面积(ur_dc)
-#ifdef USE_POINT_DATA
-                     print*, 'Urban class = ', urden(j,i)
-                     ur_dc(jo,io,3) = ur_dc(jo,io,3) + harea(j,i)
-                     
-                     IF (htrf(j,i) > 0) THEN
-                        ht_rf(jo,io,3) = ht_rf(jo,io,3) + htrf(j,i)*harea(j,i)
-                     ELSE
-                        ht_rf(jo,io,3) = ht_rf(jo,io,3) + ncar_ht(inx,3)*harea(j,i)
-                     ENDIF
-
-                     IF (wtrf(j,i) > 0) THEN
-                        wt_rf(jo,io,3) = wt_rf(jo,io,3) + wtrf(j,i)*harea(j,i)
-                     ELSE
-                        wt_rf(jo,io,3) = wt_rf(jo,io,3) + ncar_wt(inx,3)*harea(j,i)
-                     ENDIF
-                     
-                     hwr_can  (jo,io,3) = hwr_can  (jo,io,3) + hwrcan  (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     !wt_rf    (jo,io,3) = wt_rf    (jo,io,3) + wtrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     wt_rd    (jo,io,3) = wt_rd    (jo,io,3) + wtrd    (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     em_rf    (jo,io,3) = em_rf    (jo,io,3) + emrf    (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     em_wl    (jo,io,3) = em_wl    (jo,io,3) + emwl    (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     em_imrd  (jo,io,3) = em_imrd  (jo,io,3) + emimrd  (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     em_perd  (jo,io,3) = em_perd  (jo,io,3) + emperd  (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     th_rf    (jo,io,3) = th_rf    (jo,io,3) + thrf    (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     th_wl    (jo,io,3) = th_wl    (jo,io,3) + thwl    (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     tb_min   (jo,io,3) = tb_min   (jo,io,3) + tbmin   (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     tb_max   (jo,io,3) = tb_max   (jo,io,3) + tbmax   (3,uxid)*harea(j,i)!*modur(j,i)/100
-                     !ht_rf    (jo,io,3) = ht_rf    (jo,io,3) + htrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-
-                     alb_rf  (jo,io,3,:,:) = alb_rf  (jo,io,3,:,:) + albrf  (3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
-                     alb_wl  (jo,io,3,:,:) = alb_wl  (jo,io,3,:,:) + albwl  (3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
-                     alb_imrd(jo,io,3,:,:) = alb_imrd(jo,io,3,:,:) + albimrd(3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
-                     alb_perd(jo,io,3,:,:) = alb_perd(jo,io,3,:,:) + albperd(3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
-
-                     tk_rf  (jo,io,3,:) = tk_rf  (jo,io,3,:) + tkrf  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
-                     tk_wl  (jo,io,3,:) = tk_wl  (jo,io,3,:) + tkwl  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
-                     DO m = 1, 10
-                        IF (tkimrd(3,uxid,m) .ne. -999.) THEN
-                           tk_imrd(jo,io,3,m) = tk_imrd(jo,io,3,m) + tkimrd(3,uxid,m)*harea(j,i)!*modur(j,i)/100
-                        ENDIF
-                        IF (cvimrd(3,uxid,m) .ne. -999.) THEN
-                           cv_imrd(jo,io,3,m) = cv_imrd(jo,io,3,m) + cvimrd(3,uxid,m)*harea(j,i)!*modur(j,i)/100
-                        ENDIF
-                     ENDDO
-                     cv_rf  (jo,io,3,:) = cv_rf  (jo,io,3,:) + cvrf  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
-                     cv_wl  (jo,io,3,:) = cv_wl  (jo,io,3,:) + cvwl  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
-#else
-                     ur_dc(jo,io,3) = ur_dc(jo,io,3) + harea(j,i)*modur(j,i)/100
-
-                     IF (htrf(j,i) > 0) THEN
-                        ht_rf(jo,io,3) = ht_rf(jo,io,3) + htrf(j,i)*harea(j,i)*modur(j,i)/100
-                     ELSE
-                        ht_rf(jo,io,3) = ht_rf(jo,io,3) + ncar_ht(inx,3)*harea(j,i)*modur(j,i)/100
-                     ENDIF
-
-                     IF (wtrf(j,i) > 0) THEN
-                        wt_rf(jo,io,3) = wt_rf(jo,io,3) + wtrf(j,i)*harea(j,i)
-                     ELSE
-                        wt_rf(jo,io,3) = wt_rf(jo,io,3) + ncar_wt(inx,3)*harea(j,i)
-                     ENDIF
-
-                     hwr_can  (jo,io,3) = hwr_can  (jo,io,3) + hwrcan  (3,uxid)*harea(j,i)*modur(j,i)/100
-                     !wt_rf    (jo,io,3) = wt_rf    (jo,io,3) + wtrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     wt_rd    (jo,io,3) = wt_rd    (jo,io,3) + wtrd    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     em_rf    (jo,io,3) = em_rf    (jo,io,3) + emrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     em_wl    (jo,io,3) = em_wl    (jo,io,3) + emwl    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     em_imrd  (jo,io,3) = em_imrd  (jo,io,3) + emimrd  (3,uxid)*harea(j,i)*modur(j,i)/100
-                     em_perd  (jo,io,3) = em_perd  (jo,io,3) + emperd  (3,uxid)*harea(j,i)*modur(j,i)/100
-                     th_rf    (jo,io,3) = th_rf    (jo,io,3) + thrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     th_wl    (jo,io,3) = th_wl    (jo,io,3) + thwl    (3,uxid)*harea(j,i)*modur(j,i)/100
-                     tb_min   (jo,io,3) = tb_min   (jo,io,3) + tbmin   (3,uxid)*harea(j,i)*modur(j,i)/100
-                     tb_max   (jo,io,3) = tb_max   (jo,io,3) + tbmax   (3,uxid)*harea(j,i)*modur(j,i)/100
-                     !ht_rf    (jo,io,3) = ht_rf    (jo,io,3) + htrf    (3,uxid)*harea(j,i)*modur(j,i)/100
-
-                     alb_rf  (jo,io,3,:,:) = alb_rf  (jo,io,3,:,:) + albrf  (3,uxid,:,:)*harea(j,i)*modur(j,i)/100
-                     alb_wl  (jo,io,3,:,:) = alb_wl  (jo,io,3,:,:) + albwl  (3,uxid,:,:)*harea(j,i)*modur(j,i)/100
-                     alb_imrd(jo,io,3,:,:) = alb_imrd(jo,io,3,:,:) + albimrd(3,uxid,:,:)*harea(j,i)*modur(j,i)/100
-                     alb_perd(jo,io,3,:,:) = alb_perd(jo,io,3,:,:) + albperd(3,uxid,:,:)*harea(j,i)*modur(j,i)/100
-
-                     tk_rf  (jo,io,3,:) = tk_rf  (jo,io,3,:) + tkrf  (3,uxid,:)*harea(j,i)*modur(j,i)/100
-                     tk_wl  (jo,io,3,:) = tk_wl  (jo,io,3,:) + tkwl  (3,uxid,:)*harea(j,i)*modur(j,i)/100
-                     DO m = 1, 10
-                        IF (tkimrd(3,uxid,m) .ne. -999.) THEN
-                           tk_imrd(jo,io,3,m) = tk_imrd(jo,io,3,m) + tkimrd(3,uxid,m)*harea(j,i)*modur(j,i)/100
-                        ENDIF
-                        IF (cvimrd(3,uxid,m) .ne. -999.) THEN
-                           cv_imrd(jo,io,3,m) = cv_imrd(jo,io,3,m) + cvimrd(3,uxid,m)*harea(j,i)*modur(j,i)/100
-                        ENDIF
-                     ENDDO
-                     cv_rf  (jo,io,3,:) = cv_rf  (jo,io,3,:) + cvrf  (3,uxid,:)*harea(j,i)*modur(j,i)/100
-                     cv_wl  (jo,io,3,:) = cv_wl  (jo,io,3,:) + cvwl  (3,uxid,:)*harea(j,i)*modur(j,i)/100
-#endif
+                  IF (wtrf(j,i) > 0) THEN
+                     wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + wtrf(j,i)*harea(j,i)
+                  ELSE
+                     wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + ncar_wt(inx,uxid)*harea(j,i)
                   ENDIF
-#ifndef USE_POINT_DATA
+
+                  IF (pop(jm,im) > 0) THEN
+                     pop_ur(jo,io,inx) = pop_ur(jo,io,inx) + pop(jm,im)*harea(j,i)
+                  ENDIF
+
+                  hwr_can  (jo,io,inx) = hwr_can  (jo,io,inx) + hwrcan  (inx,uxid)*harea(j,i)
+                  !wt_rf    (jo,io,inx) = wt_rf    (jo,io,inx) + wtrf    (inx,uxid)*harea(j,i)
+                  wt_rd    (jo,io,inx) = wt_rd    (jo,io,inx) + wtrd    (inx,uxid)*harea(j,i)
+                  em_rf    (jo,io,inx) = em_rf    (jo,io,inx) + emrf    (inx,uxid)*harea(j,i)
+                  em_wl    (jo,io,inx) = em_wl    (jo,io,inx) + emwl    (inx,uxid)*harea(j,i)
+                  em_imrd  (jo,io,inx) = em_imrd  (jo,io,inx) + emimrd  (inx,uxid)*harea(j,i)
+                  em_perd  (jo,io,inx) = em_perd  (jo,io,inx) + emperd  (inx,uxid)*harea(j,i)
+                  th_rf    (jo,io,inx) = th_rf    (jo,io,inx) + thrf    (inx,uxid)*harea(j,i)
+                  th_wl    (jo,io,inx) = th_wl    (jo,io,inx) + thwl    (inx,uxid)*harea(j,i)
+                  tb_min   (jo,io,inx) = tb_min   (jo,io,inx) + tbmin   (inx,uxid)*harea(j,i)
+                  tb_max   (jo,io,inx) = tb_max   (jo,io,inx) + tbmax   (inx,uxid)*harea(j,i)
+                  !ht_rf    (jo,io,inx) = ht_rf    (jo,io,inx) + htrf    (inx,uxid)*harea(j,i)
+
+                  alb_rf  (jo,io,inx,:,:) = alb_rf  (jo,io,inx,:,:) + albrf  (inx,uxid,:,:)*harea(j,i)
+                  alb_wl  (jo,io,inx,:,:) = alb_wl  (jo,io,inx,:,:) + albwl  (inx,uxid,:,:)*harea(j,i)
+                  alb_imrd(jo,io,inx,:,:) = alb_imrd(jo,io,inx,:,:) + albimrd(inx,uxid,:,:)*harea(j,i)
+                  alb_perd(jo,io,inx,:,:) = alb_perd(jo,io,inx,:,:) + albperd(inx,uxid,:,:)*harea(j,i)
+
+                  tk_rf  (jo,io,inx,:) = tk_rf  (jo,io,inx,:) + tkrf  (inx,uxid,:)*harea(j,i)
+                  tk_wl  (jo,io,inx,:) = tk_wl  (jo,io,inx,:) + tkwl  (inx,uxid,:)*harea(j,i)
+                  DO m = 1, 10
+                     ! tkimrd与cvimrd有缺省值，计算需要跳过
+                     IF (tkimrd(inx,uxid,m) .ne. -999) THEN
+                        tk_imrd(jo,io,inx,m) = tk_imrd(jo,io,inx,m) + tkimrd(inx,uxid,m)*harea(j,i)
+                     ENDIF
+                     IF (cvimrd(inx,uxid,m) .ne. -999.) THEN
+                        cv_imrd(jo,io,inx,m) = cv_imrd(jo,io,inx,m) + cvimrd(inx,uxid,m)*harea(j,i)
+                     ENDIF
+                  ENDDO
+                  cv_rf  (jo,io,inx,:) = cv_rf  (jo,io,inx,:) + cvrf  (inx,uxid,:)*harea(j,i)
+                  cv_wl  (jo,io,inx,:) = cv_wl  (jo,io,inx,:) + cvwl  (inx,uxid,:)*harea(j,i)
                ENDIF
+               ! 根据MODIS城市覆盖对城市格点补充，并将其归类为MD urban
+#ifdef USE_POINT_DATA
+               IF (urden(j,i)<=0) THEN
+#else
+               IF (modur(j,i)>0 .and. urden(j,i)<=0) THEN
 #endif
+               ! IF (urden(j,i) <= 0) THEN
+                  ! print*, 'mod Processing'
+                  IF (gl30_wt(j,i) > 0.) THEN
+                     urwt (jo,io,3) = urwt (jo,io,3) + gl30_wt(j,i)*harea(j,i)!*modur(j,i)/100
+                  ENDIF
+                  IF (gfcc_tc(j,i) > 0.) THEN
+                     tc(jo,io,3) = tc(jo,io,3) + gfcc_tc(j,i)*harea(j,i)!*modur(j,i)/100
+
+                     DO ii = 1, 12
+                        IF (hlai(j,i,ii) > 0) THEN
+                           ur_lai (jo,io,3,ii) = ur_lai (jo,io,3,ii) + hlai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
+                           wgt_lai(jo,io,3,ii) = wgt_lai(jo,io,3,ii) + harea(j,i)*gfcc_tc(j,i)
+                        ENDIF
+
+                        IF (hsai(j,i,ii) > 0) THEN
+                           ur_sai (jo,io,3,ii) = ur_sai (jo,io,3,ii) + hsai(j,i,ii)*harea(j,i)*gfcc_tc(j,i)
+                           wgt_sai(jo,io,3,ii) = wgt_sai(jo,io,3,ii) + harea(j,i)*gfcc_tc(j,i)
+                        ENDIF
+                     ENDDO
+
+                     IF (gedi_th(j,i) > 0) THEN
+                        htop(jo,io,3) = htop(jo,io,3) + gedi_th(j,i)*gfcc_tc(j,i)*harea(j,i)!*modur(j,i)/100
+                        wgt_top(jo,io,3) = wgt_top(jo,io,3) + harea(j,i)*gfcc_tc(j,i)!*modur(j,i)/100
+                     ENDIF
+                  ENDIF
+
+                  !ur_dc(jo,io,3) = ur_dc(jo,io,3) + harea(j,i)*modur(j,i)/100
+                  uxid           = urrgid(j,i)
+                  ! 部分格点MODIS与NCAR不一致(NCAR没有城市ID)，因此通过距离MODIS格点最近的NCAR城市ID赋值
+                  IF (reg(1)==-45 .and. reg(3)==-50 .and. reg(2)==65 .and. reg(4)==70) THEN
+                     uxid = 30
+                  ENDIF
+                  ! 城市建筑属性聚合
+                  ! 加权：
+                  ! 粗网格城市属性=粗网格城市属性+细网格城市属性*细网格面积*MODIS_PCT_URBAN
+                  ! 加权系数：细网格面积(ur_dc)
+                  ur_dc(jo,io,3) = ur_dc(jo,io,3) + harea(j,i)*modur(j,i)/100
+
+                  IF (htrf(j,i) > 0) THEN
+                     ht_rf(jo,io,3) = ht_rf(jo,io,3) + htrf(j,i)*harea(j,i)!*modur(j,i)/100
+                  ELSE
+                     ht_rf(jo,io,3) = ht_rf(jo,io,3) + ncar_ht(3,uxid)*harea(j,i)!*modur(j,i)/100
+                  ENDIF
+
+                  IF (wtrf(j,i) > 0) THEN
+                     wt_rf(jo,io,3) = wt_rf(jo,io,3) + wtrf(j,i)*harea(j,i)
+                  ELSE
+                     wt_rf(jo,io,3) = wt_rf(jo,io,3) + ncar_wt(3,uxid)*harea(j,i)
+                  ENDIF
+
+                  IF (pop(jm,im) > 0) THEN
+                     pop_ur(jo,io,3) = pop_ur(jo,io,3) + pop(jm,im)*harea(j,i)
+                  ENDIF
+
+                  hwr_can  (jo,io,3) = hwr_can  (jo,io,3) + hwrcan  (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  !wt_rf    (jo,io,3) = wt_rf    (jo,io,3) + wtrf    (3,uxid)*harea(j,i)*modur(j,i)/100
+                  wt_rd    (jo,io,3) = wt_rd    (jo,io,3) + wtrd    (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  em_rf    (jo,io,3) = em_rf    (jo,io,3) + emrf    (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  em_wl    (jo,io,3) = em_wl    (jo,io,3) + emwl    (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  em_imrd  (jo,io,3) = em_imrd  (jo,io,3) + emimrd  (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  em_perd  (jo,io,3) = em_perd  (jo,io,3) + emperd  (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  th_rf    (jo,io,3) = th_rf    (jo,io,3) + thrf    (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  th_wl    (jo,io,3) = th_wl    (jo,io,3) + thwl    (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  tb_min   (jo,io,3) = tb_min   (jo,io,3) + tbmin   (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  tb_max   (jo,io,3) = tb_max   (jo,io,3) + tbmax   (3,uxid)*harea(j,i)!*modur(j,i)/100
+                  !ht_rf    (jo,io,3) = ht_rf    (jo,io,3) + htrf    (3,uxid)*harea(j,i)*modur(j,i)/100
+
+                  alb_rf  (jo,io,3,:,:) = alb_rf  (jo,io,3,:,:) + albrf  (3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
+                  alb_wl  (jo,io,3,:,:) = alb_wl  (jo,io,3,:,:) + albwl  (3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
+                  alb_imrd(jo,io,3,:,:) = alb_imrd(jo,io,3,:,:) + albimrd(3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
+                  alb_perd(jo,io,3,:,:) = alb_perd(jo,io,3,:,:) + albperd(3,uxid,:,:)*harea(j,i)!*modur(j,i)/100
+
+                  tk_rf  (jo,io,3,:) = tk_rf  (jo,io,3,:) + tkrf  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
+                  tk_wl  (jo,io,3,:) = tk_wl  (jo,io,3,:) + tkwl  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
+                  DO m = 1, 10
+                     IF (tkimrd(3,uxid,m) .ne. -999.) THEN
+                        tk_imrd(jo,io,3,m) = tk_imrd(jo,io,3,m) + tkimrd(3,uxid,m)*harea(j,i)!*modur(j,i)/100
+                     ENDIF
+                     IF (cvimrd(3,uxid,m) .ne. -999.) THEN
+                        cv_imrd(jo,io,3,m) = cv_imrd(jo,io,3,m) + cvimrd(3,uxid,m)*harea(j,i)!*modur(j,i)/100
+                     ENDIF
+                  ENDDO
+                  cv_rf  (jo,io,3,:) = cv_rf  (jo,io,3,:) + cvrf  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
+                  cv_wl  (jo,io,3,:) = cv_wl  (jo,io,3,:) + cvwl  (3,uxid,:)*harea(j,i)!*modur(j,i)/100
+               ! ENDIF
+               ENDIF
             ENDDO
          ENDDO
 #endif
       ENDDO
    ENDDO
 
-   ! IF (USE_LCZ) THEN
+   DO i = 1, lat_points
+      DO j=1, lon_points
+         io = NINT((90.-latso(i))/0.041666+0.5)
+         jo = NINT((lonso(j)+180.)/0.041666+0.5)
+
+         LUCY_coun(j,i) = LUCY_reg(jo,io)
+      ENDDO
+   ENDDO
+
 #ifdef USE_LCZ
    DO i = 1, lat_points 
       DO j = 1, lon_points
@@ -926,6 +920,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                pct_urwt(j,i,k) = urwt(j,i,k) / ur_dc(j,i,k) !* 100
                ht_rf    (j,i,k) = ht_rf    (j,i,k) / ur_dc(j,i,k)
                wt_rf    (j,i,k) = wt_rf    (j,i,k) / ur_dc(j,i,k)
+               pop_ur   (j,i,k) = pop_ur   (j,i,k) / ur_dc(j,i,k)
                IF (wgt_top(j,i,k) > 0.) THEN
                ! calculate urban tree height
                   htop_ur (j,i,k) = htop(j,i,k) / wgt_top(j,i,k)!tc   (j,i,k-1)
@@ -1016,9 +1011,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_put_att(ncid, mon_vid , "long_name", "month"           ) )
    CALL nccheck( nf90_put_att(ncid, mon_vid , "units"    , "month"           ) )
 
+   XY2D = (/lon_dimid, lat_dimid/)
    XY3D = (/lon_dimid, lat_dimid, den_dimid/)
    XY4D = (/lon_dimid, lat_dimid, den_dimid, mon_dimid/)
 
+   CALL nccheck( nf90_def_var(ncid, "LCZ_LUCY_id"   , NF90_INT   , XY2D, LUCY_vid   ) )
+   CALL nccheck( nf90_def_var(ncid, "LCZ_POP_DEN"   , NF90_DOUBLE, XY3D, pop_denvid ) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_TREE_PCT"  , NF90_DOUBLE, XY3D, pct_tcvid  ) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_WATER_PCT" , NF90_DOUBLE, XY3D, pct_urwtvid) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_TREE_TOP"  , NF90_DOUBLE, XY3D, htop_urvid ) )
@@ -1027,6 +1025,14 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_def_var(ncid, "LCZ_HT_ROOF"   , NF90_DOUBLE, XY3D, ht_rfvid   ) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_TREE_LAI"  , NF90_DOUBLE, XY4D, ur_laivid  ) )
    CALL nccheck( nf90_def_var(ncid, "LCZ_TREE_SAI"  , NF90_DOUBLE, XY4D, ur_saivid  ) )
+
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "units"     , "-"                           ) )
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "long_name" , "Country id of LUCY"          ) )
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "_FillValue", 0                             ) )
+
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "units"     , "per/km2"                     ) )
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "long_name" , "Pop density of each LCZ type") )
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "_FillValue", -999.) )
 
    CALL nccheck( nf90_put_att(ncid, pct_urvid , "units"     , "%"                           ) )
    CALL nccheck( nf90_put_att(ncid, pct_urvid , "long_name" , "Percentage of each LCZ type" ) )
@@ -1070,6 +1076,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    CALL nccheck( nf90_inq_varid(ncid, "month"        , mon_vid    ) )
    CALL nccheck( nf90_put_var  (ncid, mon_vid        , n_mon      ) )
+
+   CALL nccheck( nf90_inq_varid(ncid, "LCZ_LUCY_id"  , LUCY_vid   ) )
+   CALL nccheck( nf90_put_var  (ncid, LUCY_vid       , LUCY_coun  ) )
+
+   CALL nccheck( nf90_inq_varid(ncid, "LCZ_POP_DEN"  , pop_denvid ) )
+   CALL nccheck( nf90_put_var  (ncid, pop_denvid     , pop_ur     ) )
 
    CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_PCT" , pct_tcvid  ) )
    CALL nccheck( nf90_put_var  (ncid, pct_tcvid      , pct_tc     ) )
@@ -1132,7 +1144,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                   tb_min   (j,i,k) = tb_min   (j,i,k) / ur_dc(j,i,k)
                   tb_max   (j,i,k) = tb_max   (j,i,k) / ur_dc(j,i,k)
                   ht_rf    (j,i,k) = ht_rf    (j,i,k) / ur_dc(j,i,k)
-   
+                  pop_ur   (j,i,k) = pop_ur   (j,i,k) / ur_dc(j,i,k)
+
                   alb_rf  (j,i,k,:,:) = alb_rf  (j,i,k,:,:) / ur_dc(j,i,k)
                   alb_wl  (j,i,k,:,:) = alb_wl  (j,i,k,:,:) / ur_dc(j,i,k)
                   alb_imrd(j,i,k,:,:) = alb_imrd(j,i,k,:,:) / ur_dc(j,i,k)
@@ -1263,7 +1276,10 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    XY2D = (/ lon_dimid, lat_dimid /)
    XY3D = (/ lon_dimid, lat_dimid, den_dimid /)
+  
+   CALL nccheck( nf90_def_var(ncid, "URBAN_LUCY_id"  , NF90_INT   , XY2D, LUCY_vid   ) )
    CALL nccheck( nf90_def_var(ncid, "URBAN_TREE_PCT" , NF90_DOUBLE, XY3D, pct_tcvid  ) )
+   CALL nccheck( nf90_def_var(ncid, "URBAN_POP_DEN"  , NF90_DOUBLE, XY3D, pop_denvid ) )
    CALL nccheck( nf90_def_var(ncid, "URBAN_WATER_PCT", NF90_DOUBLE, XY3D, pct_urwtvid) )
    CALL nccheck( nf90_def_var(ncid, "URBAN_TREE_TOP" , NF90_DOUBLE, XY3D, htop_urvid ) )
    CALL nccheck( nf90_def_var(ncid, "CANYON_HWR"     , NF90_DOUBLE, XY3D, hwr_canvid ) )
@@ -1298,6 +1314,14 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_def_var(ncid, "ALB_WALL"   , NF90_DOUBLE, XY5D, alb_wlvid   ) )
    CALL nccheck( nf90_def_var(ncid, "ALB_IMPROAD", NF90_DOUBLE, XY5D, alb_imrdvid ) )
    CALL nccheck( nf90_def_var(ncid, "ALB_PERROAD", NF90_DOUBLE, XY5D, alb_perdvid ) )
+
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "units"     , "-"                           ) )
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "long_name" , "Country id of LUCY"          ) )
+   CALL nccheck( nf90_put_att(ncid, LUCY_vid   , "_FillValue", 0                             ) )
+
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "units"     , "per/km2"                     ) )
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "long_name" , "Pop density of each urban type") )
+   CALL nccheck( nf90_put_att(ncid, pop_denvid , "_FillValue", -999.) )
 
    CALL nccheck( nf90_put_att(ncid, pct_urvid , "units"     , "%"                                          ) )
    CALL nccheck( nf90_put_att(ncid, pct_urvid , "long_name" , "Percentage of each urban type (density)"    ) )
@@ -1434,6 +1458,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_inq_varid(ncid, "ulev"           , lev_vid    ) )
    CALL nccheck( nf90_put_var  (ncid, lev_vid          , n_ulev     ) )
 
+   CALL nccheck( nf90_inq_varid(ncid, "URBAN_LUCY_id"  , LUCY_vid   ) )
+   CALL nccheck( nf90_put_var  (ncid, LUCY_vid         , LUCY_coun  ) )
+
+   CALL nccheck( nf90_inq_varid(ncid, "URBAN_POP_DEN"  , pop_denvid ) )
+   CALL nccheck( nf90_put_var  (ncid, pop_denvid       , pop_ur     ) )
+
    CALL nccheck( nf90_inq_varid(ncid, "URBAN_TREE_PCT" , pct_tcvid  ) )
    CALL nccheck( nf90_put_var  (ncid, pct_tcvid        , pct_tc    ) )
 
@@ -1563,6 +1593,10 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    ! ENDIF
 #endif
 
+   deallocate( pop       )
+   deallocate( pop_ur    )
+   deallocate( LUCY_reg  )
+   deallocate( LUCY_coun )
    deallocate( latso     )
    deallocate( lonso     )
    deallocate( area      )

@@ -337,10 +337,10 @@
 ! [2] specific humidity and its derivative at ground surface
 !=======================================================================
 
-      rsr  = 0. !initialization
       qred = 1.
       CALL qsadv(t_grnd,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
+      rsr = 0.
       IF (patchtype<=1) THEN            !soil ground
          wx   = (wliq_soisno(1)/denh2o + wice_soisno(1)/denice)/dz_soisno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
@@ -354,6 +354,8 @@
          psit = max( -1.e8, psit )
          hr   = exp(psit/roverg/t_grnd)
          qred = (1.-fsno)*hr + fsno
+
+         ! rsr = 0. !initialization
 
          IF (lb == 1) THEN !no snow layer exist
 

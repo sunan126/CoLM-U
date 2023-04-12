@@ -124,6 +124,7 @@ CONTAINS
       read(11) f_xy_snow(:,:)   ! snow[mm/s]
       read(11) f_t_room (:,:)   ! temperature of inner building [K]
       read(11) f_tafu   (:,:)   ! temperature of outer building [K]
+      read(11) f_fhah   (:,:)   !
       read(11) f_fhac   (:,:)   ! sensible flux from heat or cool AC [W/m2]
       read(11) f_fwst   (:,:)   ! waste heat flux from heat or cool AC [W/m2]
       read(11) f_fach   (:,:)   ! flux from inner and outter air exchange [W/m2]
@@ -601,6 +602,12 @@ CONTAINS
       CALL sanity( nf90_def_var(ncid, 'f_tafu', nf90_double, (/xid,yid/), varid) )
       CALL sanity( nf90_put_att(ncid, varid, 'long_name','temperature of outer building [K]') )
       CALL sanity( nf90_put_att(ncid, varid, 'units','K') )
+      CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
+      CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
+
+      CALL sanity( nf90_def_var(ncid, 'f_fhah', nf90_double, (/xid,yid/), varid) )
+      CALL sanity( nf90_put_att(ncid, varid, 'long_name','flux from building [W/m2]') )
+      CALL sanity( nf90_put_att(ncid, varid, 'units','W/m2') )
       CALL sanity( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL sanity( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
@@ -1314,6 +1321,10 @@ CONTAINS
       ! temperature of outer building [K]
       CALL sanity( nf90_inq_varid(ncid,'f_tafu',varid) )
       CALL sanity( nf90_put_var(ncid,varid,f_tafu) )
+
+      ! sensible flux from building [W/m2]
+      CALL sanity( nf90_inq_varid(ncid,'f_fhah',varid) )
+      CALL sanity( nf90_put_var(ncid,varid,f_fhah) )
 
       ! sensible flux from heat or cool AC [W/m2]
       CALL sanity( nf90_inq_varid(ncid,'f_fhac',varid) )

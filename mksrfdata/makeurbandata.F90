@@ -3,6 +3,9 @@
 ! Aggreate/screen high-resolution urban dataset
 ! to a lower resolutioin/subset data, suitable for running
 ! regional or point cases.
+!
+! History:
+!   TODO:2022/11?: Wenzong Dong, initial version.
 ! ======================================================
 SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                           lc_year,edgen,edgee,edges,edgew )
@@ -11,7 +14,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    USE netcdf
    USE ncio
    USE omp_lib
- 
+
    IMPLICIT NONE
 
    CHARACTER(LEN=256), intent(in) :: casename
@@ -73,12 +76,12 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), DIMENSION(den_clss,rid)  :: hwrcan, wtrd, emrf, emwl, ncar_wt
    REAL(r8), DIMENSION(den_clss,rid)  :: emimrd, emperd, ncar_ht
    REAL(r8), DIMENSION(den_clss,rid)  :: thrf, thwl, tbmin, tbmax
-   
+
    REAL(r8), DIMENSION(den_clss,rid,ulev ):: cvrf, cvwl, cvimrd, &
                                              tkrf, tkwl, tkimrd
    REAL(r8), DIMENSION(den_clss,rid,nr,ns):: albrf, albwl, albimrd, albperd
 #endif
-   
+
    ! output variables
    REAL(r8), ALLOCATABLE, DIMENSION(:)     :: latso
    REAL(r8), ALLOCATABLE, DIMENSION(:)     :: lonso
@@ -125,8 +128,8 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:)   :: pct_ur
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:,:) :: ur_lai
    REAL(r8), ALLOCATABLE, DIMENSION(:,:,:,:) :: ur_sai
-   
-   REAL(r8), ALLOCATABLE, DIMENSION(:,:,:,:) :: wgt_lai, wgt_sai   
+
+   REAL(r8), ALLOCATABLE, DIMENSION(:,:,:,:) :: wgt_lai, wgt_sai
 !-----------------------------------------------------------------
 
    CHARACTER(len=256) lndname
@@ -155,7 +158,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    REAL(r8) :: ldelta
    REAL(r8) :: pi, deg2rad, re, dx, dy, sumur
    REAL(r8) :: x_delta, y_delta
-   
+
    INTEGER  :: i, j, k, io, jo, m, n, ii, jj, mm, cont, sumth, p, inx, im, jm
    INTEGER  :: n_ns(2), n_nr(2), n_den(3), n_ulev(10), n_mon(12)
    INTEGER  :: XY2D(2), XY3D(3), XY4D(4), UR3D(3), UL3D(4), XY5D(5)
@@ -301,7 +304,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    alb_rf   (:,:,:,:,:) = 0.
    alb_wl   (:,:,:,:,:) = 0.
    alb_imrd (:,:,:,:,:) = 0.
-   alb_perd (:,:,:,:,:) = 0.     
+   alb_perd (:,:,:,:,:) = 0.
    ! ENDIF
 #endif
 
@@ -426,7 +429,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    sreglon = -180 + int((edgew+180)/5.)*5
    ereglon = -180 + int((edgee+180-0.5*ldelta)/5.)*5
-   
+
    DO reglat = sreglat, ereglat, -5
       DO reglon_ = sreglon, ereglon, 5
 
@@ -449,7 +452,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          inquire (file=lndname, exist=fileExists)
          IF (fileExists) THEN
             ! read 500m modis urban data
-            
+
             CALL nccheck( nf90_open(trim(lndname), nf90_nowrite    , ncid       ) )
 
             CALL nccheck( nf90_inq_varid(ncid, "PCT_URBAN"     , upftvid    ) )
@@ -584,10 +587,10 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                   IF (modur(jj,ii)<=0 .and. lcz(j,i) >0) THEN
                      print*, 'lcz= ',lcz(j,i)
                   ENDIF
-                  IF (modur(jj,ii) > 0) THEN                           
+                  IF (modur(jj,ii) > 0) THEN
                      inx = int(lcz(j,i))
                      ur_dc(jo,io,inx) = ur_dc(jo,io,inx) + harea(j,i)
-                     
+
                      IF (htrf(jj,ii) > 0) THEN
                         ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + htrf(jj,ii)*harea(j,i)
                      ENDIF
@@ -634,9 +637,9 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
          ! read NCAR 1km urban class and region id
          lndname = TRIM(dir_rawdata)//'urban_5x5/RG_'//TRIM(adjustL(reg1))//'_'//&
                    TRIM(adjustL(reg2))//'_'//TRIM(adjustL(reg3))//'_'//TRIM(adjustL(reg4))//'.NCAR.nc'
-         
-         PRINT*, ">>> Processing file ", trim(lndname), "..." 
-         
+
+         PRINT*, ">>> Processing file ", trim(lndname), "..."
+
          CALL nccheck( nf90_open(lndname, nf90_nowrite, ncid) )
 
          CALL nccheck( nf90_inq_varid(ncid, "URBAN_DENSITY_CLASS", ur_clssvid) )
@@ -753,7 +756,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
                   uxid             = urrgid(j,i)
                   ur_dc(jo,io,inx) = ur_dc(jo,io,inx) + harea(j,i) !*modur(j,i)/100
-                  
+
                   IF (htrf(j,i) > 0) THEN
                      ht_rf(jo,io,inx) = ht_rf(jo,io,inx) + htrf(j,i)*harea(j,i)
                   ELSE
@@ -910,7 +913,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    ENDDO
 
 #ifdef USE_LCZ
-   DO i = 1, lat_points 
+   DO i = 1, lat_points
       DO j = 1, lon_points
          DO k = 1, 10
             IF (ur_dc(j,i,k) > 0) THEN
@@ -1131,7 +1134,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                         ur_sai (j,i,k,ii) = ur_sai(j,i,k,ii) / wgt_sai(j,i,k,ii)!tc   (j,i,k-1)
                      ENDIF
                   ENDDO
-               
+
                   hwr_can  (j,i,k) = hwr_can  (j,i,k) / ur_dc(j,i,k)
                   wt_rf    (j,i,k) = wt_rf    (j,i,k) / ur_dc(j,i,k)
                   wt_rd    (j,i,k) = wt_rd    (j,i,k) / ur_dc(j,i,k)
@@ -1150,7 +1153,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                   alb_wl  (j,i,k,:,:) = alb_wl  (j,i,k,:,:) / ur_dc(j,i,k)
                   alb_imrd(j,i,k,:,:) = alb_imrd(j,i,k,:,:) / ur_dc(j,i,k)
                   alb_perd(j,i,k,:,:) = alb_perd(j,i,k,:,:) / ur_dc(j,i,k)
-   
+
                   tk_rf  (j,i,k,:) = tk_rf  (j,i,k,:) / ur_dc(j,i,k)
                   tk_wl  (j,i,k,:) = tk_wl  (j,i,k,:) / ur_dc(j,i,k)
                   DO m = 1, 10
@@ -1168,7 +1171,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
          IF (avg(j,i) > 0) THEN
             hgt(j,i) = hgt(j,i) / avg(j,i)
-         ENDIF 
+         ENDIF
 
          sumur = ur_dc(j,i,1) + ur_dc(j,i,2) + ur_dc(j,i,3)
          IF (sumur > 0.) THEN
@@ -1184,9 +1187,9 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
             PRINT *, pct_ur(j,i,1:3)
          ENDIF
       ENDDO
-   ENDDO   
+   ENDDO
 
-   PRINT *, "********************************"   
+   PRINT *, "********************************"
    DO i = 1, lat_points
       DO j = 1, lon_points
          DO k =1, 3
@@ -1276,7 +1279,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 
    XY2D = (/ lon_dimid, lat_dimid /)
    XY3D = (/ lon_dimid, lat_dimid, den_dimid /)
-  
+
    CALL nccheck( nf90_def_var(ncid, "URBAN_LUCY_id"  , NF90_INT   , XY2D, LUCY_vid   ) )
    CALL nccheck( nf90_def_var(ncid, "URBAN_TREE_PCT" , NF90_DOUBLE, XY3D, pct_tcvid  ) )
    CALL nccheck( nf90_def_var(ncid, "URBAN_POP_DEN"  , NF90_DOUBLE, XY3D, pop_denvid ) )
@@ -1436,7 +1439,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    CALL nccheck( nf90_put_att(ncid, alb_perdvid, "_FillValue", -999.) )
 
    CALL nccheck( nf90_enddef(ncid) )
-   
+
    CALL nccheck( nf90_inq_varid(ncid, "lat"            , urlat_vid  ) )
    CALL nccheck( nf90_put_var  (ncid, urlat_vid        , latso     ) )
 
@@ -1552,7 +1555,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
 #endif
 
    PRINT*, "*** SUCCESS write surface file ***"
-   
+
    deallocate( hlat    )
    deallocate( hlats   )
    deallocate( hlatn   )

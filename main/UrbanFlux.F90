@@ -684,7 +684,7 @@ MODULE UrbanFlux
            ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg)
-           
+
            ! 06/20/2021, yuan: 考虑人为热
            ! 92% heat release as SH, Pigeon et al., 2007
 
@@ -693,20 +693,20 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
            tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/& 
+           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
                     (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2)) / &
                     fact
-           
-           IF ((qaf(2)-qgper) < 0.) THEN 
+
+           IF ((qaf(2)-qgper) < 0.) THEN
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
            ENDIF
 
            cgw_imp= cgw(2) !fwet_gimp*cgw(2)
-           
+
 
            ! 考虑土壤阻抗，qgper与qgimp分开计算
            l_vec  = 0!vehc*0.08
@@ -1416,6 +1416,7 @@ MODULE UrbanFlux
      !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
      !IF (displau < displav_lay) displau = displav_lay
      IF (z0mu < z0mg) z0mu = z0mg
+     IF (displau >= hroof-z0mg) displau = hroof-z0mg
 
      displa = displau
      z0m    = z0mu
@@ -1819,7 +1820,7 @@ MODULE UrbanFlux
            ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
-           
+
            ! 06/20/2021, yuan: 考虑人为热
            ! 92% heat release as SH, Pigeon et al., 2007
 
@@ -1828,20 +1829,20 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
            tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + cfh(3)*tu(3)*fc(3)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/& 
+           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
                     (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
                     fact
-           
-           IF ((qaf(2)-qgper) < 0.) THEN 
+
+           IF ((qaf(2)-qgper) < 0.) THEN
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
            ENDIF
 
            cgw_imp= cgw(2) !fwet_gimp*cgw(2)
-           
+
 
            ! 考虑土壤阻抗，qgper与qgimp分开计算
            l_vec  = 0!vehc*0.08
@@ -1873,7 +1874,7 @@ MODULE UrbanFlux
            !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
            ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
            !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-           
+
            ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
            !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&
@@ -2086,7 +2087,7 @@ MODULE UrbanFlux
            ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
-           
+
            ! 06/20/2021, yuan: 考虑人为热
            ! 92% heat release as SH, Pigeon et al., 2007
 
@@ -2095,20 +2096,20 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
            tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + cfh(3)*tu(3)*fc(3)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/& 
+           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
                     (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
                     fact
-           
-           IF ((qaf(2)-qgper) < 0.) THEN 
+
+           IF ((qaf(2)-qgper) < 0.) THEN
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
            ENDIF
 
            cgw_imp= fwet_gimp*cgw(2)
-           
+
            ! 考虑土壤阻抗，qgper与qgimp分开计算
            l_vec  = 0!vehc*0.08
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
@@ -2139,7 +2140,7 @@ MODULE UrbanFlux
            !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
            ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
            !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-           
+
            ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
            !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&

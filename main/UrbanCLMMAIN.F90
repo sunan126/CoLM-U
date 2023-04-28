@@ -324,7 +324,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         Fhac       ,&! sensible flux from heat or cool AC [W/m2]
         Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
-        Fahe       ,&
+        Fahe       ,&! TODO: 添加注释，确定变量命名
         Fhah       ,&
         vehc       ,&
         meta       ,&
@@ -379,7 +379,7 @@ SUBROUTINE UrbanCLMMAIN ( &
         assim      ,&! canopy assimilation
         respc      ,&! canopy respiration
 
-        fsen_roof  ,&
+        fsen_roof  ,&! TODO: 添加注释，确定变量命名
         fsen_wsun  ,&
         fsen_wsha  ,&
         fsen_gimp  ,&
@@ -778,11 +778,11 @@ SUBROUTINE UrbanCLMMAIN ( &
          sabgimp              ,sabgper              ,sablake              ,sabv                 ,&
          par                  ,Fhac                 ,Fwst                 ,Fach                 ,&
          Fahe                 ,Fhah                 ,vehc                 ,meta                 ,&
-         ! LUCY输入变量
+         ! LUCY INPUT PARAMETERS
          fix_holiday          ,week_holiday         ,hum_prof             ,popcell              ,&
          vehicle              ,weh_prof             ,wdh_prof             ,idate                ,&
          patchlonr                                                                              ,&
-         ! 地面参数
+         ! GROUND PARAMETERS
          froof                ,flake                ,hroof                ,hwr                  ,&
          fgper                ,pondmx               ,em_roof              ,em_wall              ,&
          em_gimp              ,em_gper              ,trsmx0               ,zlnd                 ,&

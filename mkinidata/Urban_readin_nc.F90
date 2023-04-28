@@ -14,7 +14,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       USE MOD_UrbanTimeInvars
       USE ncio
       USE omp_lib
-      USE LCZ_Const
+      USE UrbanLCZ_Const
 
       IMPLICIT NONE
 
@@ -147,22 +147,23 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CALL nccheck( nf90_get_var  (ncid, htroof_vid     , htroof_vid     ) )
 
       CALL nccheck( nf90_close(ncid) )
-      do i=1,360
+      !TODO: change 360, 720 to parameters
+      do i=1, 360
          do j=1,720
             !wtlunitroof (j,i,:) = rooffrac(:)
             !htroof      (j,i,:) = roofhgt (:)
             canyonhwr   (j,i,:) = h2w     (:)
-            wtroadperv  (j,i,:) = perfrac (:) 
-            emroof      (j,i,:) = roofem  (:) 
+            wtroadperv  (j,i,:) = perfrac (:)
+            emroof      (j,i,:) = roofem  (:)
             emwall      (j,i,:) = wallem  (:)
             emimproad   (j,i,:) = roadem  (:)
             emperroad   (j,i,:) = perem   (:)
-            tbuildingmax(j,i,:) = 299.15
-            tbuildingmin(j,i,:) = 296.15
-            thickroof   (j,i,:) = rooftk  (:) 
+            tbuildingmax(j,i,:) = 299.15  !TODO: check
+            tbuildingmin(j,i,:) = 296.15  !TODO: check
+            thickroof   (j,i,:) = rooftk  (:)
             thickwall   (j,i,:) = walltk  (:)
             !thickroad   (j,i,:) = roadtk  (:)
-            
+
             albroof     (j,i,:,1,1) = roofalb(:)
             albroof     (j,i,:,1,2) = roofalb(:)
             albroof     (j,i,:,2,1) = roofalb(:)
@@ -332,7 +333,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
             wdh_prof(u,:)     = lvehc_prof(lucy_id,:,1)
             hum_prof(u,:)     = lhum_prof(lucy_id,:)
             fix_holiday(u,:)  = lfix_holiday(lucy_id,:)
-         ENDIF 
+         ENDIF
 
          popcell(u)      = urbanpop      (i,j,t)
          froof(u)        = wtlunitroof   (i,j,t) !roof fractional cover
@@ -360,7 +361,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
          thick_roof      = thickroof     (i,j,t) !thickness of roof [m]
          thick_wall      = thickwall     (i,j,t) !thickness of wall [m]
-        
+
 #ifdef URBAN_BEM
          t_roommax(u)    = tbuildingmax  (i,j,t) !maximum temperature of inner room [K]
          t_roommin(u)    = tbuildingmin  (i,j,t) !minimum temperature of inner room [K]
@@ -431,7 +432,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       ! print*,'hwr   = ', hwr
       ! print*,'fveg  = ', fveg
       ! print*,'flake = ', flake
-      ! print*,'htop  = ', htop  
+      ! print*,'htop  = ', htop
       ! print*,'albroof= ', alb_roof
       ! print*,'albwall= ', alb_wall
 

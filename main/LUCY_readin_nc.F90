@@ -1,7 +1,7 @@
 #include <define.h>
 
 SUBROUTINE LUCY_readin_nc(dir_srfdata)
-      
+
       USE precision
       USE GlobalVars
       USE MOD_TimeVariables
@@ -15,19 +15,18 @@ SUBROUTINE LUCY_readin_nc(dir_srfdata)
       CHARACTER(LEN=256), INTENT(in) :: dir_srfdata
 
       CHARACTER(LEN=256) :: lndname
-      
+
       INTEGER :: ncid
       INTEGER :: reg_vid, pop_vid, veh_vid, wed_vid, weh_vid, wdh_vid, met_vid, hol_vid
       INTEGER :: i, j, t, u, npatch, r
 
       REAL(r8), allocatable :: lreg_id(:,:)
       REAL(r8), allocatable :: lpopcell(:,:,:)
-      REAL(r8):: lweek_holiday(231,7)   , &  ! weekday and weekendday
-                 lvehc_prof   (231,24,2), &  ! diurnal traffic profile
-                 lhum_prof    (231,24 ) , &  ! diurnal metabolize profile
-                 lfix_holiday (231,365) , &  ! public holiday
-                 lvehicle     (231,3)        ! number of cars/mobike/freight
-
+      REAL(r8):: lweek_holiday(231,7)    ,&  !weekday and weekendday
+                 lvehc_prof   (231,24,2) ,&  !diurnal traffic profile
+                 lhum_prof    (231,24 )  ,&  !diurnal metabolize profile
+                 lfix_holiday (231,365)  ,&  !public holiday
+                 lvehicle     (231,3)        !number of cars/mobike/freight
 
 
       ! READ in inputdata for LUCY
@@ -73,12 +72,12 @@ SUBROUTINE LUCY_readin_nc(dir_srfdata)
          r = reg_id(u)
          popcell(u)        = 13000!lpopcell(i,j,t)
          IF (r > 0) THEN
-            vehicle(u,:)      = 669!lvehicle(r,:)
+            vehicle     (u,:) = 669!lvehicle(r,:)
             week_holiday(u,:) = lweek_holiday(r,:)
-            weh_prof(u,:)     = lvehc_prof(r,:,2)
-            wdh_prof(u,:)     = lvehc_prof(r,:,1)
-            hum_prof(u,:)     = lhum_prof(r,:)
-            fix_holiday(u,:)  = lfix_holiday(r,:)
+            weh_prof    (u,:) = lvehc_prof   (r,:,2)
+            wdh_prof    (u,:) = lvehc_prof   (r,:,1)
+            hum_prof    (u,:) = lhum_prof    (r,:)
+            fix_holiday (u,:) = lfix_holiday (r,:)
          ENDIF
 
       ENDDO

@@ -212,26 +212,22 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
 
 ! 添加城市数据读取，目前仅支持MODIS IGBP数据
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
+
+      allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
+      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
+      print*,trim(lndname)
+
+      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
+      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
+
 #ifdef USE_LCZ
-      allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
-      !lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
-      print*,trim(lndname)
-
-      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
-      CALL nccheck( nf90_inq_varid(ncid, "LCZ_PCT", urbanpct_vid ) )
-      CALL nccheck( nf90_get_var(ncid, urbanpct_vid, urbanpct) )
-      CALL nccheck( nf90_close(ncid) )
+      CALL nccheck( nf90_inq_varid(ncid, "LCZ_PCT"  , urbanpct_vid ) )
 #else
-      allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
-      lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
-      print*,trim(lndname)
-
-      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
       CALL nccheck( nf90_inq_varid(ncid, "URBAN_PCT", urbanpct_vid ) )
+#endif
+
       CALL nccheck( nf90_get_var(ncid, urbanpct_vid, urbanpct) )
       CALL nccheck( nf90_close(ncid) )
-#endif
       urbanpct = urbanpct / 100.
 #endif
 

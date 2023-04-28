@@ -75,6 +75,7 @@ CONTAINS
          dz_soi(nsl) = 0.5*(z_soi(nsl+1)-z_soi(nsl-1))
       ENDDO
 
+      !TODO: z_soih and zi_soi are the same
       z_soih(nl_soil) = z_soi(nl_soil) + 0.5*dz_soi(nl_soil)
       DO nsl = 1, nl_soil-1
          z_soih(nsl) = 0.5*(z_soi(nsl)+z_soi(nsl+1)) !interface depths

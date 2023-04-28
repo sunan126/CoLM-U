@@ -56,8 +56,8 @@
         lfevpa         ,fsenl          ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
         fsen_roof      ,fsen_wsun      ,fsen_wsha      ,fsen_gimp      ,&
-        fsen_gper      ,fsen_url       ,troof          ,twall          ,&
-        lfevp_roof     ,lfevp_gimp     ,lfevp_gper     ,lfevp_url      ,&
+        fsen_gper      ,fsen_urbl      ,troof          ,twall          ,&
+        lfevp_roof     ,lfevp_gimp     ,lfevp_gper     ,lfevp_urbl     ,&
         qseva_roof     ,qseva_gimp     ,qseva_gper     ,qseva_lake     ,&
         qsdew_roof     ,qsdew_gimp     ,qsdew_gper     ,qsdew_lake     ,&
         qsubl_roof     ,qsubl_gimp     ,qsubl_gper     ,qsubl_lake     ,&
@@ -105,14 +105,14 @@
         patchlatr    ! latitude in radians
 
   REAL(r8), intent(in) :: &
-        patchlonr       , &
-        fix_holiday(365), &
-        week_holiday(7) , &
-        hum_prof(24)    , &
-        weh_prof(24)    , &
-        wdh_prof(24)    , &
-        popcell         , &
-        vehicle(3)
+        patchlonr       , &! longitude of patch [radian]
+        fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
+        week_holiday(7) , &! week holidays
+        hum_prof(24)    , &! Diurnal metabolic heat profile
+        weh_prof(24)    , &! Diurnal vehicle heat profile of weekend
+        wdh_prof(24)    , &! Diurnal vehicle heat profile of weekday
+        popcell         , &! population density
+        vehicle(3)         ! vehicle numbers per thousand people
 
   REAL(r8), intent(in) :: &
         ! atmospherical variables and observational height
@@ -285,17 +285,17 @@
         olrg       ,&! outgoing long-wave radiation from ground+canopy
         fgrnd      ,&! ground heat flux [W/m2]
 
-        fsen_roof  ,&
-        fsen_wsun  ,&
-        fsen_wsha  ,&
-        fsen_gimp  ,&
-        fsen_gper  ,&
-        fsen_url   ,&
+        fsen_roof  ,&! sensible heat from roof [W/m2]
+        fsen_wsun  ,&! sensible heat from sunlit wall [W/m2]
+        fsen_wsha  ,&! sensible heat from shaded wall [W/m2]
+        fsen_gimp  ,&! sensible heat from impervious road [W/m2]
+        fsen_gper  ,&! sensible heat from pervious road [W/m2]
+        fsen_urbl  ,&! sensible heat from urban vegetation [W/m2]
 
-        lfevp_roof ,&
-        lfevp_gimp ,&
-        lfevp_gper ,&
-        lfevp_url  ,&
+        lfevp_roof ,&! latent heat flux from roof [W/m2]
+        lfevp_gimp ,&! latent heat flux from impervious road [W/m2]
+        lfevp_gper ,&! latent heat flux from pervious road [W/m2]
+        lfevp_urbl ,&! latent heat flux from urban vegetation [W/m2]
 
         troof      ,&! temperature of roof
         twall      ,&! temperature of wall
@@ -339,8 +339,8 @@
         respc      ,&! respiration
         errore     ,&! energy balnce error [w/m2]
 
-        vehc       ,&
-        meta       ,&
+        vehc       ,&! flux from vehicle
+        meta       ,&! flux from metabolic
         ! additionalvariables required by coupling with WRF or RSM model
         emis       ,&! averaged bulk surface emissivity
         z0m        ,&! effective roughness [m]
@@ -403,7 +403,7 @@
         olrb       ,&! olrg assuming blackbody emission [W/m2]
         psit       ,&! negative potential of soil
 
-        rsr        ,&
+        rsr        ,&! soil resistance
         qroof      ,&! roof specific humudity [kg/kg]
         qgimp      ,&! ground impervious road specific humudity [kg/kg]
         qgper      ,&! ground pervious specific humudity [kg/kg]
@@ -414,7 +414,6 @@
         th         ,&! potential temperature (kelvin)
         thv        ,&! virtual potential temperature (kelvin)
 
-        !troof      ,&! temperature of roof
         twsun      ,&! temperature of sunlit wall
         twsha      ,&! temperature of shaded wall
         tgimp      ,&! temperature of impervious road
@@ -586,7 +585,9 @@
       qred = 1.
       CALL qsadv(tgper,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
+      ! initialization for rsr
       rsr = 0.
+
       IF (patchtype <=1 ) THEN          !soil ground
          wx = (wliq_gpersno(1)/denh2o + wice_gpersno(1)/denice)/dz_gpersno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
@@ -603,7 +604,7 @@
 
          IF (lbp == 1) THEN !no snow layer exist
 
-         ! calculate soil resistance for evaporation
+            ! calculate soil resistance for evaporation
             wx   = (sum(wliq_gpersno(1:2))/denh2o + sum(wice_gpersno(1:2))/denice)/sum(dz_gpersno(1:2))
             IF (sum(porsl(1:2)) < 1.e-6) THEN     !bed rock
                fac  = 0.001
@@ -612,7 +613,7 @@
                fac  = max( fac, 0.001 )
             ENDIF
 
-         ! Sellers et al., 1992
+            ! Sellers et al., 1992
             rsr = (1-fsno_gper)*exp(8.206-4.255*fac)
          ENDIF
       ENDIF
@@ -1031,8 +1032,9 @@
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
-         fsen_url = fsenl
-         lfevp_url= hvap*fevpl
+         
+         fsen_urbl = fsenl
+         lfevp_urbl= hvap*fevpl
       ELSE
          fsena  = fseng
          fevpa  = fevpg

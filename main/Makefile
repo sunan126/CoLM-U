@@ -11,12 +11,12 @@ EXECUTABLE = clmu.x
 ####################################################################
 .DEFAULT :
 
-OBJS =  precision.o                 \
+OBJS =  precision.o             \
 	GlobalVars.o                \
 	PhysicalConstants.o         \
 	LC_Const.o                  \
 	PFT_Const.o                 \
-	LCZ_Const.o                 \
+	UrbanLCZ_Const.o            \
 	ncio.o                      \
 	MOD_PFTimeInvars.o          \
 	MOD_PCTimeInvars.o          \

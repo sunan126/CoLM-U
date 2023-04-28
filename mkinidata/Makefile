@@ -10,7 +10,7 @@ EXECUTABLE = initial.x
 OBJS =  precision.o              \
 	GlobalVars.o             \
 	PhysicalConstants.o      \
-	LCZ_Const.o              \
+	UrbanLCZ_Const.o         \
 	LC_Const.o               \
 	PFT_Const.o              \
 	ncio.o                   \

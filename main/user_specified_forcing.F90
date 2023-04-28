@@ -585,10 +585,10 @@ CONTAINS
  ! not applied for POINT
    integer, parameter :: nlats   = 2              ! number of latitudes
    integer, parameter :: nlons   = 2              ! number of longitudes
-   integer, parameter :: startyr = 1994!1993!2009!1993!1991!1994!1993           ! start year of forcing data
-   integer, parameter :: startsec= 1800!5400!34200!64800!34200 
-   integer, parameter :: startmo = 1!12!1!12!1              ! start month of forcing data
-   integer, parameter :: startday= 1!31!1!31!1
+   integer, parameter :: startyr = 1994           ! start year of forcing data
+   integer, parameter :: startmo = 1              ! start month of forcing data
+   integer, parameter :: startday= 1              ! start day of forcing data
+   integer, parameter :: startsec= 1800           ! start seconds of forcing data
    integer, parameter :: endyr   = 2020           ! end year of forcing data
    integer, parameter :: endmo   = 12             ! end month of forcing data
    integer, parameter :: dtime(NVAR)  = 3600      ! temporal resolution
@@ -613,14 +613,10 @@ CONTAINS
  ! prefix of forcing data file
    character(len=256), parameter :: fprefix = 'NC'
 
- ! not applied for POINT
-!#ifdef USE_NCARATM_DATA
-!   character(len=256), parameter :: vname(NVAR) = [character(len=256) :: &
-!      'TBOT', 'RH', 'PSRF', 'PRECTmms', 'Wind', 'NULL', 'FSDS', 'FLDS']
-!#else
+
    character(len=256), parameter :: vname(NVAR) = [character(len=256) :: &
       'Tair', 'Qair', 'PSurf', 'Rainf', 'Wind_E', 'Wind_N', 'SWdown', 'LWdown']
-!#endif
+
  ! not applied for POINT
    character(len=256), parameter :: tintalgo(NVAR) = 'NULL'
 

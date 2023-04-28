@@ -86,8 +86,8 @@ MODULE UrbanFlux
         rhoair     ! density air [kg/m3]
 
      REAL(r8), intent(in) :: &
-        vehc,     &
-        meta,     &
+        vehc,     &! flux from vehicle
+        meta,     &! flux from metabolic
         Fhac,     &! flux from heat or cool AC
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
@@ -103,7 +103,7 @@ MODULE UrbanFlux
 
      ! 地面状态
      REAL(r8), intent(in) :: &
-        rsr,      &
+        rsr,      &! soil resistance
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
         obug,     &! monin-obukhov length for bare ground (m)
         ustarg,   &! friction velocity for bare ground [m/s]
@@ -342,49 +342,47 @@ MODULE UrbanFlux
 
      ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
-     qg = qgimp*fgimp + qgper*fgper
 
-     ! 这部分有点问题导致部分patch通量跟屋顶和不透水面温度计算有点问题，最后长波为负，UrbanVegFlux/UrbanGroundFlux同样，暂时注释掉。
      ! wet fraction for roof and impervious ground
      !-------------------------------------------
      ! roof
-     ! IF (lbr < 1) THEN
-     !    fwet_roof_ = fsno_roof !for snow layer exist
-     ! ELSE
-     !    ! surface wet fraction. assuming max ponding = 1 kg/m2
-     !    fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
-     !    fwet_roof_ = min(1., fwet_roof_)
-     ! ENDIF
+     IF (lbr < 1) THEN
+        fwet_roof_ = fsno_roof !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
+        fwet_roof_ = min(1., fwet_roof_)
+     ENDIF
 
-     ! ! impervious ground
-     ! IF (lbi < 1) THEN
-     !    fwet_gimp_ = fsno_gimp !for snow layer exist
-     ! ELSE
-     !    ! surface wet fraction. assuming max ponding = 1 kg/m2
-     !    fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
-     !    fwet_gimp_ = min(1., fwet_gimp_)
-     ! ENDIF
+     ! impervious ground
+     IF (lbi < 1) THEN
+        fwet_gimp_ = fsno_gimp !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+        fwet_gimp_ = min(1., fwet_gimp_)
+     ENDIF
 
      ! dew case
-     ! IF (qm > qroof) THEN
-     !    fwet_roof = 1.
-     ! ELSE
-     !    fwet_roof = fwet_roof_
-     ! ENDIF
+     IF (qm > qroof) THEN
+        fwet_roof = 1.
+     ELSE
+        fwet_roof = fwet_roof_
+     ENDIF
 
      ! ! dew case
-     ! IF (qm > qgimp) THEN
-     !    fwet_gimp = 1.
-     ! ELSE
-     !    fwet_gimp = fwet_gimp_
-     ! ENDIF
+     IF (qm > qgimp) THEN
+        fwet_gimp = 1.
+     ELSE
+        fwet_gimp = fwet_gimp_
+     ENDIF
 
      ! 加权后的qg
      ! NOTE: IF fwet_gimp=1, same as previous
-     ! fwetfac = fgimp*fwet_gimp + fgper
-     ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+     fwetfac = fgimp*fwet_gimp + fgper
+     qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
 
-     ! fgw(2) = fg*fwetfac
+     fgw(2) = fg*fwetfac
 
 !-----------------------------------------------------------------------
 ! initial for fluxes profile
@@ -597,14 +595,13 @@ MODULE UrbanFlux
 
         DO i = 0, nurb
            cfh(i) = 1 / rb(i)
-           cfw(i) = 1 / rb(i)
 
-           ! IF (i == 0) THEN !roof
-           !    ! account for fwet
-           !    cfw(i) = fwet_roof / rb(i)
-           ! ELSE
-           !    cfw(i) = 1 / rb(i)
-           ! ENDIF
+           IF (i == 0) THEN !roof
+              ! account for fwet
+              cfw(i) = fwet_roof / rb(i)
+           ELSE
+              cfw(i) = 1 / rb(i)
+           ENDIF
         ENDDO
 
         ! 为了简单处理，墙面没有水交换
@@ -676,7 +673,7 @@ MODULE UrbanFlux
            ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + AHE/(rho*cp))/ &
            !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2))
 
-
+           ! - Equations:
            ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + AHE/rho)/ &
            !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg)
@@ -685,10 +682,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg)
 
-           ! 06/20/2021, yuan: 考虑人为热
-           ! 92% heat release as SH, Pigeon et al., 2007
-
-           h_vec  = vehc!*0.92
+           h_vec  = vehc
            tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
@@ -700,16 +694,17 @@ MODULE UrbanFlux
                     fact
 
            IF ((qaf(2)-qgper) < 0.) THEN
+             ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
            ENDIF
 
-           cgw_imp= cgw(2) !fwet_gimp*cgw(2)
+           cgw_imp= fwet_gimp*cgw(2)
 
 
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
-           l_vec  = 0!vehc*0.08
+           ! with soil resistance, qgper and qgimp are calculated separately
+           l_vec  = 0
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
            tmpw2  = l_vec/(rhoair)
@@ -726,31 +721,30 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0))
            qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0))
-
         ENDIF
 
         !------------------------------------------------
         ! update fwet for roof and impervious ground
         ! to check whether dew happens
-        ! IF (qaf(3) > qroof) THEN
-        !    fwet_roof = 1. !dew case
-        ! ELSE
-        !    fwet_roof = fwet_roof_
-        ! ENDIF
+        IF (qaf(3) > qroof) THEN
+           fwet_roof = 1. !dew case
+        ELSE
+           fwet_roof = fwet_roof_
+        ENDIF
 
-        ! ! to check whether dew happens
-        ! IF (qaf(2) > qgimp) THEN
-        !    fwet_gimp = 1. !dew case
-        ! ELSE
-        !    fwet_gimp = fwet_gimp_
-        ! ENDIF
+        ! to check whether dew happens
+        IF (qaf(2) > qgimp) THEN
+           fwet_gimp = 1. !dew case
+        ELSE
+           fwet_gimp = fwet_gimp_
+        ENDIF
 
         ! 加权后的qg
         ! NOTE: IF fwet_gimp=1, same as previous
-        ! fwetfac = fgimp*fwet_gimp + fgper
-        ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+        fwetfac = fgimp*fwet_gimp + fgper
+        qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
 
-        ! fgw(2) = fg*fwetfac
+        fgw(2) = fg*fwetfac
 
 !-----------------------------------------------------------------------
 ! Update monin-obukhov length and wind speed including the stability effect
@@ -803,7 +797,7 @@ MODULE UrbanFlux
 
      ! latent heat fluxes
      fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
-     ! fevproof = fevproof*fwet_roof
+     fevproof = fevproof*fwet_roof
 
      ! fact   = 1. - wta0(2)*wtg0(3)
      ! facq   = 1. - wtaq0(2)*wtgq0(3)
@@ -812,7 +806,7 @@ MODULE UrbanFlux
      cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
      ! deduce: croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
      croofl = rhoair*cfw(0)*(1.-wtlq0(0)/facq)*qsatldT(0)
-     ! croofl = croofl*fwet_roof
+     croofl = croofl*fwet_roof
 
      croof = croofs + croofl*htvp_roof
 
@@ -838,7 +832,7 @@ MODULE UrbanFlux
 
      fevpgper = rhoair*cgw(2)*(qgper-qaf(2))
      fevpgimp = rhoair*cgw(2)*(qgimp-qaf(2))
-     ! fevpgimp = fevpgimp*fwet_gimp
+     fevpgimp = fevpgimp*fwet_gimp
 
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature (cgrnd)
@@ -847,7 +841,7 @@ MODULE UrbanFlux
      cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
      cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
      cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
-     ! cgimpl = cgimpl*fwet_gimp
+     cgimpl = cgimpl*fwet_gimp
 
      cgimp  = cgrnds + cgimpl*htvp_gimp
      cgper  = cgrnds + cgperl*htvp_gper
@@ -944,8 +938,8 @@ MODULE UrbanFlux
         po2m,     &! atmospheric partial pressure  o2 (pa)
         pco2m,    &! atmospheric partial pressure co2 (pa)
 
-        vehc,     &
-        meta,     &
+        vehc,     &! flux from vehicle
+        meta,     &! flux from metabolic
         Fhac,     &! flux from heat or cool AC
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
@@ -1332,48 +1326,47 @@ MODULE UrbanFlux
 
      ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
-     qg = qgimp*fgimp + qgper*fgper
 
      ! wet fraction for roof and impervious ground
      !-------------------------------------------
      ! roof
-     ! IF (lbr < 1) THEN
-     !    fwet_roof_ = fsno_roof !for snow layer exist
-     ! ELSE
-     !    ! surface wet fraction. assuming max ponding = 1 kg/m2
-     !    fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
-     !    fwet_roof_ = min(1., fwet_roof_)
-     ! ENDIF
+     IF (lbr < 1) THEN
+        fwet_roof_ = fsno_roof !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_roof_ = (max(0., wliq_roofsno+wice_roofsno))**(2/3.)
+        fwet_roof_ = min(1., fwet_roof_)
+     ENDIF
 
-     ! ! impervious ground
-     ! IF (lbi < 1) THEN
-     !    fwet_gimp_ = fsno_gimp !for snow layer exist
-     ! ELSE
-     !    ! surface wet fraction. assuming max ponding = 1 kg/m2
-     !    fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
-     !    fwet_gimp_ = min(1., fwet_gimp_)
-     ! ENDIF
-
-     ! dew case
-     ! IF (qm > qroof) THEN
-     !    fwet_roof = 1.
-     ! ELSE
-     !    fwet_roof = fwet_roof_
-     ! ENDIF
+     ! impervious ground
+     IF (lbi < 1) THEN
+        fwet_gimp_ = fsno_gimp !for snow layer exist
+     ELSE
+        ! surface wet fraction. assuming max ponding = 1 kg/m2
+        fwet_gimp_ = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+        fwet_gimp_ = min(1., fwet_gimp_)
+     ENDIF
 
      ! dew case
-     ! IF (qm > qgimp) THEN
-     !    fwet_gimp = 1.
-     ! ELSE
-     !    fwet_gimp = fwet_gimp_
-     ! ENDIF
+     IF (qm > qroof) THEN
+        fwet_roof = 1.
+     ELSE
+        fwet_roof = fwet_roof_
+     ENDIF
+
+     ! dew case
+     IF (qm > qgimp) THEN
+        fwet_gimp = 1.
+     ELSE
+        fwet_gimp = fwet_gimp_
+     ENDIF
 
      ! 加权后的qg
      ! NOTE: IF fwet_gimp=1, same as previous
-     ! fwetfac = fgimp*fwet_gimp + fgper
-     ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+     fwetfac = fgimp*fwet_gimp + fgper
+     qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
 
-     ! fgw(2) = fg*fwetfac
+     fgw(2) = fg*fwetfac
 
 !-----------------------------------------------------------------------
 ! initial for fluxes profile
@@ -1401,10 +1394,9 @@ MODULE UrbanFlux
      faiv = fc(3)*(1. - exp(-0.5*lsai))
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
-     !新的计算方法会导致fmtop计算为负，所以ueff_veg会小于0
-     ! lambda = fcover(0) + faiv*htop/hroof
-     displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
-     ! displau = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
+     lambda = fcover(0) + faiv*htop/hroof
+     ! displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     displau = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
         !exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
@@ -1441,7 +1433,7 @@ MODULE UrbanFlux
 
      ! Kondo, 1971
      alphav = htop/(htop-displav_lay)/(vonkar/sqrtdragc)
-     ! alphav = alphav*htop/hroof
+     alphav = alphav*htop/hroof
 
      ! Masson, 2000; Oleson et al., 2008 plus tree (+)
      IF (alpha_opt == 1) alpha = 0.5*hwr + alphav
@@ -1648,7 +1640,6 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
         rb(:) = 0.
 
-        ! print*, ueff_veg, utop, hroof, htop
         DO i = 0, nurb
            IF (i == 3) THEN
               cf = 0.01*sqrtdi*sqrt(ueff_veg)
@@ -1722,13 +1713,13 @@ MODULE UrbanFlux
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
            ELSE
               cfh(i) = 1 / rb(i)
-              cfw(i) = 1 / rb(i)
-              ! IF (i == 0) THEN !roof
-              !    ! account for fwet
-              !    cfw(i) = fwet_roof / rb(i)
-              ! ELSE
-              !    cfw(i) = 1 / rb(i)
-              ! ENDIF
+              
+              IF (i == 0) THEN !roof
+                 ! account for fwet
+                 cfw(i) = fwet_roof / rb(i)
+              ELSE
+                 cfw(i) = 1 / rb(i)
+              ENDIF
            ENDIF
         ENDDO
 
@@ -1811,8 +1802,7 @@ MODULE UrbanFlux
            ! taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*troof*fc(0))/(cah(3) + cah(2) + cfh(0)*fc(0))
            ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + cfh(3)*tl*fc(3) + AHE/(rho*cp))/ &
            !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3))
-
-
+           ! - Equations:
            ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + lsai/(rb(3)+rs)*ql*fc(3) + AHE/rho)/ &
            !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg + lsai/(rb(3)+rs)*fc(3))
@@ -1821,10 +1811,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
 
-           ! 06/20/2021, yuan: 考虑人为热
-           ! 92% heat release as SH, Pigeon et al., 2007
-
-           h_vec  = vehc!*0.92
+           h_vec  = vehc
            tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
@@ -1836,15 +1823,15 @@ MODULE UrbanFlux
                     fact
 
            IF ((qaf(2)-qgper) < 0.) THEN
+             ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
            ENDIF
 
-           cgw_imp= cgw(2) !fwet_gimp*cgw(2)
+           cgw_imp= fwet_gimp*cgw(2)
 
-
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
+           ! with soil resistance, qgper and qgimp are calculated separately
            l_vec  = 0!vehc*0.08
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
@@ -1862,7 +1849,6 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0))
            qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0))
-
         ENDIF
 
         IF (numlay .eq. 3) THEN
@@ -1874,7 +1860,7 @@ MODULE UrbanFlux
            !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
            ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
            !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-
+           ! - Equations:
            ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
            !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&
@@ -1905,14 +1891,15 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0))
 
            IF ((qaf(1)-qgper) < 0.) THEN
+             ! dew case. no soil resistance
              cgw_per= cgw(1)
            ELSE
              cgw_per= 1/(1/cgw(1)+rsr)
            ENDIF
 
-           cgw_imp= cgw(1) !fwet_gimp*cgw(1)
+           cgw_imp= fwet_gimp*cgw(1)
 
-           l_vec   = 0!vehc*0.08
+           l_vec   = 0
            tmpw1  = caw(1)*(cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + l_vec/(rhoair))/&
                     (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))
            tmpw2  = caw(2)*(caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
@@ -2079,7 +2066,7 @@ MODULE UrbanFlux
            ! taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*troof*fc(0))/(cah(3) + cah(2) + cfh(0)*fc(0))
            ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + cfh(3)*tl*fc(3) + AHE/(rho*cp))/ &
            !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3))
-
+           ! - Equations:
            ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + lsai/(rb(3)+rs)*ql*fc(3) + AHE/rho)/ &
            !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg + lsai/(rb(3)+rs)*fc(3))
@@ -2088,10 +2075,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
 
-           ! 06/20/2021, yuan: 考虑人为热
-           ! 92% heat release as SH, Pigeon et al., 2007
-
-           h_vec  = vehc!*0.92
+           h_vec  = vehc
            tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
                     (cah(3) + cah(2) + cfh(0)*fc(0)))
            tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
@@ -2103,6 +2087,7 @@ MODULE UrbanFlux
                     fact
 
            IF ((qaf(2)-qgper) < 0.) THEN
+             ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
              cgw_per= 1/(1/cgw(2)+rsr)
@@ -2110,8 +2095,8 @@ MODULE UrbanFlux
 
            cgw_imp= fwet_gimp*cgw(2)
 
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
-           l_vec  = 0!vehc*0.08
+           ! with soil resistance, qgper and qgimp are calculated separately
+           l_vec  = 0
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
            tmpw2  = l_vec/(rhoair)
@@ -2128,7 +2113,6 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0))
            qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0))
-
         ENDIF
 
         IF (numlay .eq. 3) THEN
@@ -2140,7 +2124,7 @@ MODULE UrbanFlux
            !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
            ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
            !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-
+           ! - Equations:
            ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
            !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
            ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&
@@ -2171,12 +2155,13 @@ MODULE UrbanFlux
                     (cah(3) + cah(2) + cfh(0)*fc(0))
 
            IF ((qaf(1)-qgper) < 0.) THEN
+             ! dew case. no soil resistance
              cgw_per= cgw(1)
            ELSE
              cgw_per= 1/(1/cgw(1)+rsr)
            ENDIF
 
-           cgw_imp= cgw(1) !fwet_gimp*cgw(1)
+           cgw_imp= fwet_gimp*cgw(1)
 
            l_vec   = 0!vehc*0.08
            tmpw1  = caw(1)*(cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + l_vec/(rhoair))/&
@@ -2205,24 +2190,24 @@ MODULE UrbanFlux
 
         !------------------------------------------------
         ! account for fwet for roof and impervious ground
-        ! IF (qaf(3) > qroof) THEN
-        !    fwet_roof = 1. !dew case
-        ! ELSE
-        !    fwet_roof = fwet_roof_
-        ! ENDIF
+        IF (qaf(3) > qroof) THEN
+           fwet_roof = 1. !dew case
+        ELSE
+           fwet_roof = fwet_roof_
+        ENDIF
 
-        ! IF (qaf(botlay) > qgimp) THEN
-        !    fwet_gimp = 1. !dew case
-        ! ELSE
-        !    fwet_gimp = fwet_gimp_
-        ! ENDIF
+        IF (qaf(botlay) > qgimp) THEN
+           fwet_gimp = 1. !dew case
+        ELSE
+           fwet_gimp = fwet_gimp_
+        ENDIF
 
         ! 加权后的qg
         ! NOTE: IF fwet_gimp=1, same as previous
-        ! fwetfac = fgimp*fwet_gimp + fgper
-        ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
+        fwetfac = fgimp*fwet_gimp + fgper
+        qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
 
-        ! fgw(2) = fg*fwetfac
+        fgw(2) = fg*fwetfac
 
 ! update co2 partial pressure within canopy air
         ! 05/02/2016: may have some problem with gdh2o, however,
@@ -2407,12 +2392,12 @@ MODULE UrbanFlux
 
      ! latent heat fluxes
      fevproof = rhoair*cfw(0)*(qsatl(0)-qaf(3))
-     ! fevproof = fevproof*fwet_roof
+     fevproof = fevproof*fwet_roof
 
      croofs = rhoair*cpair*cfh(0)*(1.-wtg0(3)*wta0(2)*wtl0(0)/fact-wtl0(0))
      cwalls = rhoair*cpair*cfh(1)*(1.-wtl0(1)/fact)
      croofl = rhoair*cfw(0)*(1.-wtgq0(3)*wtaq0(2)*wtlq0(0)/facq-wtlq0(0))*qsatldT(0)
-     ! croofl = croofl*fwet_roof
+     croofl = croofl*fwet_roof
 
      croof = croofs + croofl*htvp_roof
 
@@ -2426,7 +2411,7 @@ MODULE UrbanFlux
      fevpgimp = rhoair*cgw(botlay)*(qgimp-qaf(botlay))
      fevpgper = rhoair*cgw(botlay)*(qgper-qaf(botlay))
 
-     ! fevpgimp = fevpgimp*fwet_gimp
+     fevpgimp = fevpgimp*fwet_gimp
 
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature
@@ -2436,12 +2421,12 @@ MODULE UrbanFlux
         cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
         cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
         cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
-        ! cgimpl = cgimpl*fwet_gimp
+        cgimpl = cgimpl*fwet_gimp
      ELSE !botlay == 1
         cgrnds = cpair*rhoair*cgh(1)*(1.-wta0(1)*wtg0(2)*wtg0(1)/fact-wtg0(1))
         cgperl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgperdT
         cgimpl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
-        ! cgimpl = cgimpl*fwet_gimp
+        cgimpl = cgimpl*fwet_gimp
      ENDIF
 
      cgimp = cgrnds + cgimpl*htvp_gimp

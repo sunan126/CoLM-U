@@ -211,8 +211,8 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
         lfevpa(i)       ,fsenl(i)        ,fevpl(i)        ,etr(i)          ,&
         fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
         fsen_roof(u)    ,fsen_wsun(u)    ,fsen_wsha(u)    ,fsen_gimp(u)    ,&
-        fsen_gper(u)    ,fsen_url(u)     ,troof(u)        ,twall(u)        ,&
-        lfevp_roof(u)   ,lfevp_gimp(u)   ,lfevp_gper(u)   ,lfevp_url(u)    ,&
+        fsen_gper(u)    ,fsen_urbl(u)    ,troof(u)        ,twall(u)        ,&
+        lfevp_roof(u)   ,lfevp_gimp(u)   ,lfevp_gper(u)   ,lfevp_urbl(u)   ,&
         trad(i)         ,tref(i)         ,tmax(i)         ,tmin(i)         ,&
         qref(i)         ,rsur(i)         ,rnof(i)         ,qintr(i)        ,&
         qinfl(i)        ,qdrip(i)        ,rst(i)          ,assim(i)        ,&

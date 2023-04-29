@@ -119,7 +119,7 @@ SUBROUTINE soil_parameters_readin (dir_srfdata,lc_year)
          do npatch = 1, numpatch
             i = patch2lon(npatch)
             j = patch2lat(npatch)
-! yuan, 12/28/2019: Bug, add patchtype
+! 12/28/2019, yuan: Bug, add patchtype
             t = patchtype(npatch)
             m = patchclass(npatch)
 ! for PFT structure, all the patches share the same soil data, storted at
@@ -267,7 +267,7 @@ SUBROUTINE soil_parameters_readin (dir_srfdata,lc_year)
       !DO npatch = 275192,275192
          i = patch2lon(npatch)
          j = patch2lat(npatch)
-! yuan, 12/28/2019: Bug, add patchtype
+! 12/28/2019, yuan: Bug, add patchtype
          t = patchtype(npatch)
          m = patchclass(npatch)
          !if( m == 0 )then

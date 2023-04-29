@@ -88,8 +88,8 @@ CONTAINS
 
   !=================================================================
   !
-  ! o 求解以下联立方程组
-  ! o 隐式求解troom, troof_inner, twsun_inner, twsha_innter
+  ! o Solve the following equations
+  ! o variables: troom, troof_inner, twsun_inner, twsha_innter
   !
   !    Hc_roof = Fn_roof        .................................(1)
   !    Hc_wsun = Fn_wsun        .................................(2)
@@ -98,9 +98,9 @@ CONTAINS
   !                   Troom' - Troom
   !    H*rhoair*cpair*-------------- =
   !                         dt
-  !     ACH
-  !    -----*H*rhoair*cpair*(Taf-Troom') + Hc_roof + Hc_wsun + Hc_wsha
-  !    3600? dt?
+  !      ACH
+  !    ------*H*rhoair*cpair*(Taf-Troom') + Hc_roof + Hc_wsun + Hc_wsha
+  !     3600
   !                             .................................(4)
   !=================================================================
 

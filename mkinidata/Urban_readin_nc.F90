@@ -18,7 +18,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
       IMPLICIT NONE
 
-      INTEGER, intent(in) :: lc_year    ! which year of land cover data used
+      INTEGER, intent(in) :: lc_year    !which year of land cover data used
       CHARACTER(LEN=256), intent(in) :: dir_srfdata
       CHARACTER(LEN=256), intent(in) :: nam_urbdata
       CHARACTER(LEN=256), intent(in) :: dir_atmdata
@@ -44,12 +44,13 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
       ! define variables for reading in
       ! -------------------------------------------
-      ! 城市形态结构参数
+      ! Urban Morphological Parameters
 #ifdef USE_POINT_DATA
 #ifdef USE_OBS_PARA
       REAL(r8) :: rfwt, rfht, tpct, wpct, hw_point, htop_point, prwt
 #endif
 #endif
+
       ! parameters for LUCY
       INTEGER , allocatable :: urbanlucy(:,:)  ! LUCY region id
 
@@ -70,7 +71,6 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       REAL(r8), allocatable :: urbantreepct  (:,:,:) ! urban tree fraction [-]
       REAL(r8), allocatable :: urbantreetop  (:,:,:) ! urban tree height [m]
       
-
       ! albedo
       REAL(r8), allocatable :: albroof   (:,:,:,:,:) ! albedo of roof [-]
       REAL(r8), allocatable :: albwall   (:,:,:,:,:) ! albedo of wall[-]
@@ -149,7 +149,8 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CALL nccheck( nf90_get_var  (ncid, htroof_vid     , htroof_vid     ) )
 
       CALL nccheck( nf90_close(ncid) )
-      !TODO: change 360, 720 to parameters
+
+      !TODO@wenzong: change 360, 720 to parameters
       do i=1, 360
          do j=1,720
             canyonhwr   (j,i,:) = h2w     (:)
@@ -256,6 +257,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
       CALL nccheck( nf90_close(ncid) )
 
+      !TODO@wenzong: change to input parameters
       lndname = trim("/stu01/dongwz/data/CLMrawdata/urban_5x5/LUCY_rawdata.nc")
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
@@ -274,6 +276,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CALL nccheck( nf90_get_var(ncid, hol_vid, lfix_holiday) )
 
       CALL nccheck( nf90_close(ncid) )
+
 #ifdef USE_POINT_DATA
 #ifdef USE_OBS_PARA
 
@@ -306,7 +309,6 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       htroof       (1,1,:) = rfht
       urbantreetop (1,1,:) = htop_point
       canyonhwr    (1,1,:) = hw_point
-      !albroof(:,:,:,:,:) = 0.4
 #endif
 #endif
 #endif
@@ -377,14 +379,15 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
 
 #ifdef URBAN_TREE
          ! set tree fractional cover (<= 1.-froof)
-         ! 植被覆盖占非水体面积部分的比例
+         ! Vegetation cover as a proportion of non-water body area
          fveg(npatch) = urbantreepct(i,j,t)/100. !urban tree percent
          IF (flake(u) < 1.) THEN
             fveg(npatch) = fveg(npatch)/(1.-flake(u))
          ELSE
             fveg(npatch) = 0.
          ENDIF
-         ! 假设树的覆盖比例小于等于地面比例(屋顶没有树)
+         ! Assuming that the tree coverage ratio is less than or
+         ! equal to the ground cover (i.e. no trees on the roof)
          fveg(npatch) = min(fveg(npatch), 1.-froof(u))
 #else
          fveg(npatch) = 0.
@@ -418,6 +421,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
          dz_wall(nl_wall,u) = z_wall(nl_wall,u)-z_wall(nl_wall-1,u)
 
          ! lake depth and layer depth
+         !NOTE: USE global lake depth right now, the below set to 1m
          !lakedepth(npatch) = 1.
          !dz_lake(:,npatch) = lakedepth(npatch) / nl_lake
 
@@ -451,5 +455,4 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       deallocate ( thickroof     )
       deallocate ( thickwall     )
 
-!      CALL nccheck( nf90_close(ncid) )
 END SUBROUTINE Urban_readin_nc

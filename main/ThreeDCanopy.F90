@@ -1,11 +1,24 @@
+#include <define.h>
 !-----------------------------------------------------------------------
 !BOP
-!
-!IROUTINE: ThreeDCanopy
-!
-! !INTERFACE:
 
 SUBROUTINE ThreeDCanopy_wrap (ipatch, czen, albg, albv, ssun, ssha)
+
+!
+! !DESCRIPTION:
+! This is a wrap SUBROUTINE to CALL 3D canopy radiative model below 
+!   CALL ThreeDCanopy()
+!
+! Created by Hua Yuan, 08/2019
+!
+! REFERENCE:
+! Yuan, H., R. E. Dickinson, Y. Dai, M. J. Shaikh, L. Zhou, W. Shangguan,
+! and D. Ji, 2014: A 3D canopy radiative transfer model for global climate
+! modeling: Description, validation, and application. Journal of Climate,
+! 27, 1168–1192, https://doi.org/10.1175/JCLI-D-13-00155.1.
+!
+! REVISIONS:
+!
 
    USE precision
    USE GlobalVars
@@ -79,11 +92,6 @@ SUBROUTINE ThreeDCanopy_wrap (ipatch, czen, albg, albv, ssun, ssha)
    fsun_id(:) = 0.
    fsun_ii(:) = 0.
 
-   ! lai还是lsai? 应该是lsai. 吸收的辐射都算在叶子上? curr. no.
-   ! par for lai or lai+sai. curr. lai+sai
-   ! 如果lai比较小，sai比较大时，会不会造成虚假par吸收?
-   ! 一般来讲，叶子在阳面的概率会更高，但并不能把所有阳面
-   ! 的吸收都算在叶子上
    DO p = 1, N_PFT-1
       IF (lsai(p) > 0.) THEN
          fsun_id(p) = (1._r8 - exp(-2._r8*extkb_c(p,pc)*lsai(p))) / &
@@ -978,8 +986,8 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    frii = DH*(phi_tot_i - DH*cosd*phi_dif_i)
 
    IF (runmode) THEN
-      frid = frid + ald !- DH*ac
-      frii = frii + ali !- DH*ac
+      frid = frid + ald - DH*ac
+      frii = frii + ali - DH*ac
    ENDIF
 
    frid = max(min(frid,D1),D0)
@@ -992,8 +1000,8 @@ SUBROUTINE CanopyRad(tau_d, tau_i, ftdd, ftdi, cosz,cosd, &
    ftii = DH*(phi_tot_i + DH*cosd*phi_dif_i)+ftdi
 
    IF (runmode) THEN
-      ftid = ftid - ald - ac
-      ftii = ftii - ali - ac
+      ftid = ftid - DH*ald - DH*ac
+      ftii = ftii - DH*ali - DH*ac
    ENDIF
 
    ftid = max(min(ftid,D1),D0)

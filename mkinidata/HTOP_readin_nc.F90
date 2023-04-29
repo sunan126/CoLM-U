@@ -20,7 +20,7 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
 
       IMPLICIT NONE
 
-      INTEGER, intent(in) :: lc_year    ! which year of land cover data used
+      INTEGER, intent(in) :: lc_year    !which year of land cover data used
       character(LEN=256), INTENT(in) :: dir_srfdata
       character(LEN=256), INTENT(in) :: nam_srfdata
 
@@ -108,7 +108,7 @@ SUBROUTINE HTOP_readin_nc (dir_srfdata,nam_srfdata,lc_year)
 ! 01/06/2020, yuan: adjust htop reading
 ! 11/15/2021, yuan: adjust htop setting
 ! 05/22/2022, yuan: hbot_p setting bug
-               ! trees
+               ! for trees
                IF ( n>0 .and. n<9 ) THEN
                   htop_p(p) = max(2., htoppft(i,j,n))
                   hbot_p(p) = htop_p(p)*hbot0_p(n)/htop0_p(n)

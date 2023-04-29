@@ -23,7 +23,7 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
    CHARACTER(len=256), intent(in) :: dir_rawdata
    CHARACTER(len=256), intent(in) :: dir_srfdata
 
-   INTEGER,  intent(in) :: lc_year    ! which year of land cover data used
+   INTEGER,  intent(in) :: lc_year    !which year of land cover data used
    REAL(r8), intent(in) :: edgen      !northern edge of grid (degrees)
    REAL(r8), intent(in) :: edgee      !eastern edge of grid (degrees)
    REAL(r8), intent(in) :: edges      !southern edge of grid (degrees)
@@ -377,7 +377,7 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
                   pct_land(jo,io) = pct_land(jo,io) + sarea(j,i)
 
                   ! aggregate on lc level
-                  ! need more nccheck for htop_lc: 是否需要排除非植被区域
+                  ! need more nccheck for htop_lc: Do we need to exclude non-vegetated areas?
                   pct_lc (jo,io,lc)   = pct_lc (jo,io,lc)   + sarea(j,i)
                   lai_lc (jo,io,lc,:) = lai_lc (jo,io,lc,:) + sarea(j,i)*lclai(j,i,:)
                   sai_lc (jo,io,lc,:) = sai_lc (jo,io,lc,:) + sarea(j,i)*lcsai(j,i,:)
@@ -395,8 +395,9 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
                   ENDDO
 
                   ! aggregate on PFT level
-                  ! 隐含的假设: 水体、冰川、城市、湿地和作物可由专业化的数据或高分辨率数据获得
-                  ! 下面的代码具有兼容性，但目前并没有进行如上更新
+                  !NOTE: Implicit assumptions: water bodies, glaciers, cities,
+                  ! wetlands and crops can be obtained from high-resolution data,
+                  ! the following code is compatible, but it is not currently updated.
                   ! exclude water, ice, urban, wetland, and crop
                   wgt = max(0., 1.-pwater(j,i)-pglacier(j,i)-purban(j,i)-pwetland(j,i)-pcrop(j,i))
 
@@ -441,7 +442,7 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
       DO jo = 1, lon_points
 
          ! calculate LAI
-         ! NOTE: Currently, LAI is not conserved to the LC LAIs
+         !NOTE: Currently, LAI is not conserved to the LC LAIs
          ! ----------------------------------
 
          ! LC level
@@ -559,8 +560,6 @@ SUBROUTINE makesurfacedata ( casename,dir_rawdata,dir_srfdata, &
                gsai_pft = gsai_pft + pct_lc(jo,io,URBAN)*sum(pct_pc(jo,io,:,URBAN)*sai_pc(jo,io,:,URBAN,im)/100.)
             ENDIF
 
-! yuan, 01/05/2020: BUG!!!!
-! 把il写成nlc,没有考虑pct_lc%,需要除以100
             DO il = 1, nlc
                glai_pc = glai_pc + pct_lc(jo,io,il)*sum(pct_pc(jo,io,:,il)*lai_pc(jo,io,:,il,im)/100.)
                gsai_pc = gsai_pc + pct_lc(jo,io,il)*sum(pct_pc(jo,io,:,il)*sai_pc(jo,io,:,il,im)/100.)

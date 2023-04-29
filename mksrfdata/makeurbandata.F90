@@ -1,4 +1,5 @@
 #include <define.h>
+
   ! -----------------------------------------------------------------------
   SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                             lc_year,edgen,edgee,edges,edgew  )
@@ -193,7 +194,6 @@
        year = FLOOR(lc_year*1./5.)*5
        write(cyear,'(i4.4)') year
     ENDIF
-
 
     print*, ">>> allocating memory..."
 #ifdef USE_LCZ

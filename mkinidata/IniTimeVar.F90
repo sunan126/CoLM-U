@@ -142,7 +142,7 @@ SUBROUTINE IniTimeVar(ipatch, patchtype&
      sag    = 0.
      scv    = snowdp*rhosno_ini
 
-! yuan, 08/02/2019: TODO: need to be changed in future
+! 08/02/2019, yuan: !TODO need to be changed in future
 ! for PFT_CLASSIFICATION or PC_CLASSIFICATION
 ! have done but not for SOILINI right now
      CALL snowfraction (lai,sai,z0m,zlnd,scv,snowdp,wt,sigf,fsno)
@@ -252,7 +252,7 @@ ENDIF
      t_grnd = t_soisno(1)
 #endif
 
-! surface albedo
+     ! surface albedo
      ssw = min(1.,1.e-3*wliq_soisno(1)/dz_soisno(1))
      CALL albland (ipatch,patchtype,soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
                    chil,rho,tau,fveg,green,lai,sai,coszen,wt,fsno,scv,sag,ssw,t_grnd,&

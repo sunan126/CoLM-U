@@ -37,9 +37,11 @@ SUBROUTINE UrbanLAI_readin_nc (year, month, dir_srfdata, nam_urbdata)
       allocate ( urbantreelai(1:lon_points,1:lat_points,N_URB) )
       allocate ( urbantreesai(1:lon_points,1:lat_points,N_URB) )
 #ifdef USE_LCZ
+      !TODO@wenzong: change to input parameter
       lndname = '/hard/dongwz/LCZS/global/global/colm_LCZ_data_modis_v1_'//trim(cyear)//'.nc' !'/'//trim(nam_urbdata)
       print*,trim(lndname)
 
+      !TODO@wenzong: combine the same code lines below
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
       CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_LAI", urbantreelai_vid) )
       CALL nccheck( nf90_inq_varid(ncid, "LCZ_TREE_SAI", urbantreesai_vid) )
@@ -59,11 +61,6 @@ SUBROUTINE UrbanLAI_readin_nc (year, month, dir_srfdata, nam_urbdata)
       CALL nccheck( nf90_get_var(ncid, urbantreesai_vid, urbantreesai, &
            start=(/1,1,1,month/), count=(/lon_points,lat_points,N_URB,1/)) )
 #endif
-
-      !CALL nccheck( nf90_get_var(ncid, urbantreelai_vid, urbantreelai, &
-      !     start=(/1,1,1,month/), count=(/lon_points,lat_points,N_URB,1/)) )
-      !CALL nccheck( nf90_get_var(ncid, urbantreesai_vid, urbantreesai, &
-      !     start=(/1,1,1,month/), count=(/lon_points,lat_points,N_URB,1/)) )
 
 #ifdef OPENMP
 !$OMP PARALLEL DO NUM_THREADS(OPENMP) &

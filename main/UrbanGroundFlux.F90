@@ -39,7 +39,6 @@
         zlnd,     &! roughness length for soil [m]
         zsno,     &! roughness length for snow [m]
         fsno_gimp,&! fraction of impervious ground covered by snow
-        !lbi,      &! lower bound of array
         fcover(0:5),&! coverage of aboveground urban components [-]
 
         wliq_gimpsno,&! liqui water [kg/m2]
@@ -96,11 +95,11 @@
         z0mg,     &! roughness length over ground, momentum [m]
         z0qg       ! roughness length over ground, latent heat [m]
 
-  REAL(r8) fwet_gimp, fwet_gimp_
+  REAL(r8) fwet_gimp
 
 !----------------------- Dummy argument --------------------------------
 ! initial roughness length
-      !TODO: change to original
+      !NOTE: change to original
       !z0mg = (1.-fsno)*zlnd + fsno*zsno
       IF (fsno_gimp > 0) THEN
          z0mg = zsno
@@ -119,7 +118,7 @@
       fgimp = fcover(3)/fg
       fgper = fcover(4)/fg
 
-      ! 加权后的tg
+      ! weighted tg
       tg = tgimp*fgimp + tgper*fgper
       qg = qgimp*fgimp + qgper*fgper
 
@@ -134,7 +133,7 @@
       !    fwet_gimp = min(1., fwet_gimp)
       ! ENDIF
 
-      ! 加权后的qg
+      ! weighted qg
       ! qg = qgimp*fgimp*fwet_gimp + qgper*fgper
 
 !-----------------------------------------------------------------------

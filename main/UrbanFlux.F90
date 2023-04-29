@@ -29,16 +29,16 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
   SUBROUTINE UrbanOnlyFlux ( &
-        ! 模型运行信息
+        ! Model running information
         ipatch      ,deltim      ,lbr         ,lbi         ,&
-        ! 外强迫
+        ! Forcing
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
         qm          ,psrf        ,rhoair      ,Fhac        ,&
         Fwst        ,Fach        ,vehc        ,meta        ,&
-        ! 城市参数
+        ! Urban parameters
         hroof       ,hwr         ,nurb        ,fcover      ,&
-        ! 地面状态
+        ! Status of surface
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
         wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
@@ -46,7 +46,7 @@ MODULE UrbanFlux
         twsun       ,twsha       ,tgimp       ,tgper       ,&
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
         dqgimpdT    ,dqgperdT    ,rsr                      ,&
-        ! 输出
+        ! Output
         taux        ,tauy        ,fsenroof    ,fsenwsun    ,&
         fsenwsha    ,fsengimp    ,fsengper    ,fevproof    ,&
         fevpgimp    ,fevpgper    ,croofs      ,cwalls      ,&
@@ -92,7 +92,6 @@ MODULE UrbanFlux
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
 
-     ! 城市参数
      INTEGER, intent(in) :: &
         nurb       ! number of aboveground urban components [-]
 
@@ -101,9 +100,8 @@ MODULE UrbanFlux
         hwr,      &! average building height to their distance [-]
         fcover(0:4)! coverage of aboveground urban components [-]
 
-     ! 地面状态
      REAL(r8), intent(in) :: &
-        rsr,      &
+        rsr,      &! bare soil resistance for evaporation
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
         obug,     &! monin-obukhov length for bare ground (m)
         ustarg,   &! friction velocity for bare ground [m/s]
@@ -133,7 +131,7 @@ MODULE UrbanFlux
         dqgimpdT, &! d(qgimp)/dT
         dqgperdT   ! d(qgper)/dT
 
-     ! 输出
+     ! Output
      REAL(r8), intent(out) :: &
         taux,     &! wind stress: E-W [kg/m/s**2]
         tauy,     &! wind stress: N-S [kg/m/s**2]
@@ -306,10 +304,9 @@ MODULE UrbanFlux
 
 !-----------------------------------------------------------------------
 ! initial roughness length for z0mg, z0hg, z0qg
-! 计算城市仅地面(不含建筑物、植被)的粗糙度
-!TODO: 不透水面的粗糙度怎么定义？
+! Roughness of the city ground only (excluding buildings and vegetation)
 
-     !TODO: change to original
+     !NOTE: change to original
      !z0mg = (1.-fsno)*zlnd + fsno*zsno
      IF (fsno_gper > 0) THEN
         z0mg = zsno
@@ -331,20 +328,21 @@ MODULE UrbanFlux
      ENDDO
 
 !-----------------------------------------------------------------------
-! 计算加权系数
+! set weight
 !-----------------------------------------------------------------------
 
-     ! 设定权重
+     ! set weighting factor
      fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
      faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
      fgh(1) = 1.; fgh(2) = fg; fgh(3) = 1.
      fgw(1) = 1.; fgw(2) = fg; fgw(3) = 1.
 
-     ! 加权后的tg
+     ! weighted tg
      tg = tgimp*fgimp + tgper*fgper
      qg = qgimp*fgimp + qgper*fgper
 
-     ! 这部分有点问题导致部分patch通量跟屋顶和不透水面温度计算有点问题，最后长波为负，UrbanVegFlux/UrbanGroundFlux同样，暂时注释掉。
+     ! 这部分有点问题导致部分patch通量跟屋顶和不透水面温度计算有点问题，
+     ! 最后长波为负，UrbanVegFlux/UrbanGroundFlux同样，暂时注释掉。
      ! wet fraction for roof and impervious ground
      !-------------------------------------------
      ! roof
@@ -379,7 +377,7 @@ MODULE UrbanFlux
      !    fwet_gimp = fwet_gimp_
      ! ENDIF
 
-     ! 加权后的qg
+     ! weighted qg
      ! NOTE: IF fwet_gimp=1, same as previous
      ! fwetfac = fgimp*fwet_gimp + fgper
      ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -411,7 +409,7 @@ MODULE UrbanFlux
      z0mu = (hroof - displau) * &
           exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
 
-     ! 比较地面和城市的z0m和displa大小，取大者
+     ! to compare z0 of urban and only the surface
      ! maximum assumption
      IF (z0mu < z0mg) z0mu = z0mg
 
@@ -426,7 +424,7 @@ MODULE UrbanFlux
 ! calculate layer decay coefficient
 !-----------------------------------------------------------------------
 
-     !NOTE: 引文研究对象为植被，对城市计算结果偏大
+     !NOTE: the below is for vegetation, may not suitable for urban
      ! Raupach, 1992
      !sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
@@ -462,7 +460,7 @@ MODULE UrbanFlux
      dqh  =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
-     ! 确保观测高度 >= hroof+10.
+     ! to ensure the obs height >= hroof+10.
      huu = max(hroof+10., hu)
      htu = max(hroof+10., ht)
      hqu = max(hroof+10., hq)
@@ -560,7 +558,7 @@ MODULE UrbanFlux
         !print *, "rd :", rd
         !print *, "rd_:", rd_
 
-        !TODO: 计算ra2m, rd2m
+        ! calculate ra2m, rd2m
         ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -607,7 +605,7 @@ MODULE UrbanFlux
            ! ENDIF
         ENDDO
 
-        ! 为了简单处理，墙面没有水交换
+        ! For simplicity, there is no water exchange on the wall
         cfw(1:2) = 0.
 
         ! initialization
@@ -616,7 +614,7 @@ MODULE UrbanFlux
         cgh(:) = 0.
         cgw(:) = 0.
 
-        ! 计算每层的阻抗
+        ! conductance for each layer
         DO i = 3, 2, -1
            IF (i == 3) THEN
               cah(i) = 1. / rah
@@ -685,7 +683,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg)
 
-           ! 06/20/2021, yuan: 考虑人为热
+           ! 06/20/2021, yuan: account for Anthropogenic heat
            ! 92% heat release as SH, Pigeon et al., 2007
 
            h_vec  = vehc!*0.92
@@ -708,7 +706,7 @@ MODULE UrbanFlux
            cgw_imp= cgw(2) !fwet_gimp*cgw(2)
 
 
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
+           ! account for soil resistance, separate qgper and qgimp
            l_vec  = 0!vehc*0.08
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
@@ -745,7 +743,7 @@ MODULE UrbanFlux
         !    fwet_gimp = fwet_gimp_
         ! ENDIF
 
-        ! 加权后的qg
+        ! weighted qg
         ! NOTE: IF fwet_gimp=1, same as previous
         ! fwetfac = fgimp*fwet_gimp + fgper
         ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -756,8 +754,8 @@ MODULE UrbanFlux
 ! Update monin-obukhov length and wind speed including the stability effect
 !-----------------------------------------------------------------------
 
-        ! 这里使用的是最高层的taf和qaf
-        !TODO: 是否合理，运行单点模型测试
+        ! USE the top layer taf and qaf
+        !TODO: need more check
         dth = thm - taf(2)
         dqh =  qm - qaf(2)
 
@@ -829,8 +827,7 @@ MODULE UrbanFlux
      tauy = - rhoair*vs/ram
 
 !-----------------------------------------------------------------------
-! fluxes from ground to canopy space
-! 计算城市地面各组分的感热、潜热
+! fluxes from urban ground to canopy space
 !-----------------------------------------------------------------------
 
      fsengper = cpair*rhoair*cgh(2)*(tgper-taf(2))
@@ -863,16 +860,16 @@ MODULE UrbanFlux
 
 
   SUBROUTINE  UrbanVegFlux ( &
-        ! 模型运行信息
+        ! Model running information
         ipatch      ,deltim      ,lbr         ,lbi         ,&
-        ! 外强迫
+        ! Forcing
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
         qm          ,psrf        ,rhoair      ,frl         ,&
         po2m        ,pco2m       ,par         ,sabv        ,&
         rstfac      ,Fhac        ,Fwst        ,Fach        ,&
         vehc        ,meta                                  ,&
-        ! 城市和植被参数
+        ! Urban and vegetation parameters
         hroof       ,hwr         ,nurb        ,fcover      ,&
         ewall       ,egimp       ,egper       ,ev          ,&
         htop        ,hbot        ,lai         ,sai         ,&
@@ -880,7 +877,7 @@ MODULE UrbanFlux
         hlti        ,shti        ,hhti        ,trda        ,&
         trdm        ,trop        ,gradm       ,binter      ,&
         extkd       ,dewmx       ,etrc                     ,&
-        ! 地面状态
+        ! Status of surface
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
         wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
@@ -889,10 +886,10 @@ MODULE UrbanFlux
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
         dqgimpdT    ,dqgperdT    ,sigf        ,tl          ,&
         ldew        ,rsr                                   ,&
-        ! 长波辐射
+        ! Longwave information
         Ainv        ,B           ,B1          ,dBdT        ,&
         SkyVF       ,VegVF                                 ,&
-        ! 输出
+        ! Output
         taux        ,tauy        ,fsenroof    ,fsenwsun    ,&
         fsenwsha    ,fsengimp    ,fsengper    ,fevproof    ,&
         fevpgimp    ,fevpgper    ,croofs      ,cwalls      ,&
@@ -922,7 +919,7 @@ MODULE UrbanFlux
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
 
-     ! 外强迫
+     ! Forcing
      REAL(r8), intent(in) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
@@ -950,7 +947,7 @@ MODULE UrbanFlux
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
 
-     ! 城市和植被参数
+     ! Urban and vegetation parameters
      INTEGER,  intent(in) :: &
         nurb       ! number of aboveground urban components [-]
 
@@ -989,7 +986,7 @@ MODULE UrbanFlux
         dewmx,    &! maximum dew
         etrc       ! maximum possible transpiration rate (mm/s)
 
-     ! 地面状态
+     ! Status of surface
      REAL(r8), intent(in) :: &
         rsr,      &! bare soil resistance for evaporation
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
@@ -1295,7 +1292,6 @@ MODULE UrbanFlux
 
      fg     = 1 - fcover(0)
      fc(:)  = fcover(0:nurb)
-     !fc(0)  = 0.
      fc(3)  = fcover(5)
      fgimp  = fcover(3)/fg
      fgper  = fcover(4)/fg
@@ -1314,23 +1310,24 @@ MODULE UrbanFlux
         CALL qsadv(tu(i),psrf,ei(i),deiDT(i),qsatl(i),qsatldT(i))
      ENDDO
 
-     ! 保留上次长波辐射
+     ! Save the longwave for the last time
      lwsun_bef = lwsun
      lwsha_bef = lwsha
      lgimp_bef = lgimp
      lgper_bef = lgper
      lveg_bef  = lveg
+
 !-----------------------------------------------------------------------
-! 计算加权平均的qg, tg
+! Calculate the weighted qg, tg
 !-----------------------------------------------------------------------
 
-     ! 设定权重
+     ! set weghting factor
      fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
      faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
      fgh(1) = 1.; fgh(2) = 1.; fgh(3) = 1.
      fgw(1) = 1.; fgw(2) = 1.; fgw(3) = 1.
 
-     ! 加权后的tg
+     ! weighted tg and qg
      tg = tgimp*fgimp + tgper*fgper
      qg = qgimp*fgimp + qgper*fgper
 
@@ -1395,6 +1392,7 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! 计算自身和整个面积的z0和displa (不考虑建筑物的存在)
+     ! Calculate z0 and displa for vegetation only and the whole area
      CALL cal_z0_displa(lsai, htop, 1., z0mv, displav)
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
@@ -1410,7 +1408,7 @@ MODULE UrbanFlux
         !exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
         exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
-     ! 比较植被、裸地和建筑物的z0m和displa大小，取大者
+     ! to compare z0 of urban and only the surface
      ! maximum assumption
      ! 11/26/2021, yuan: remove the below
      !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
@@ -1423,7 +1421,7 @@ MODULE UrbanFlux
 
      displau = max(hroof/2., displau)
 
-     ! 层次设定
+     ! Layer setting
      !IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
         fgh(2) = fg; fgw(2) = fg;
@@ -1495,7 +1493,7 @@ MODULE UrbanFlux
      dqh =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
-     ! 确保观测高度 >= hroof+10.
+     ! To ensure the obs height >= hroof+10.
      huu = max(hroof+10., hu)
      htu = max(hroof+10., ht)
      hqu = max(hroof+10., hq)
@@ -1600,7 +1598,7 @@ MODULE UrbanFlux
            rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           !TODO: 计算ra2m, rd2m
+           ! 计算ra2m, rd2m
            ra2m = frd(ktop, hroof, 0., displav+z0mv, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -1612,7 +1610,7 @@ MODULE UrbanFlux
            rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           !TODO: 计算ra2m, rd2m
+           ! 计算ra2m, rd2m
            ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -1650,13 +1648,16 @@ MODULE UrbanFlux
 
         ! print*, ueff_veg, utop, hroof, htop
         DO i = 0, nurb
+
            IF (i == 3) THEN
               cf = 0.01*sqrtdi*sqrt(ueff_veg)
               rb(i) = 1./cf
               cycle
            ENDIF
+
            clev = canlev(i)
            rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
+
            ! Cole & Sturrock (1977) Building and Environment, 12, 207–214.
            ! rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
            !IF (ueff_lay(clev) > 5.) THEN
@@ -1712,12 +1713,12 @@ MODULE UrbanFlux
               delta = 0.0
               IF (qsatl(i)-qaf(clev) .gt. 0.) delta = 1.0
 
-              ! 计算感热阻抗
+              ! calculate sensible heat conductance
               cfh(i) = lsai / rb(i)
 
               ! for building walls, cfw=0., no water transfer
               ! for canopy, keep the same but for one leaf
-              ! 计算潜热阻抗
+              ! calculate latent heat conductance
               cfw(i) = (1.-delta*(1.-fwet))*lsai/rb(i) + &
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
            ELSE
@@ -1732,7 +1733,7 @@ MODULE UrbanFlux
            ENDIF
         ENDDO
 
-        ! 为了简单处理，墙面没有水交换
+        ! For simplicity, there is no water exchange on the wall
         cfw(1:2) = 0.
 
         ! initialization
@@ -1741,7 +1742,7 @@ MODULE UrbanFlux
         cgh(:) = 0.
         cgw(:) = 0.
 
-        ! 计算每层的阻抗
+        ! conductance for each layer
         DO i = 3, botlay, -1
            IF (i == 3) THEN
               cah(i) = 1. / rah
@@ -1798,7 +1799,6 @@ MODULE UrbanFlux
            wtlql(clev) = wtlql(clev) + wtlq0(i)*qsatl(i)
         ENDDO
 
-        ! 根据层数来计算空气温度、湿度
         ! to solve taf(:) and qaf(:)
 
         IF (numlay .eq. 2) THEN
@@ -1821,7 +1821,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
 
-           ! 06/20/2021, yuan: 考虑人为热
+           ! 06/20/2021, yuan: account for Anthropogenic heat
            ! 92% heat release as SH, Pigeon et al., 2007
 
            h_vec  = vehc!*0.92
@@ -1844,7 +1844,7 @@ MODULE UrbanFlux
            cgw_imp= cgw(2) !fwet_gimp*cgw(2)
 
 
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
+           ! account for soil resistance, separate qgper and qgimp
            l_vec  = 0!vehc*0.08
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
@@ -2005,19 +2005,19 @@ MODULE UrbanFlux
 ! difference of temperatures by quasi-newton-raphson method for the non-linear system equations
 !-----------------------------------------------------------------------
 
-        ! 计算irab, dirab_dtl
+        ! calculate irab, dirab_dtl
         B(5)    = B_5*tl**4
         B1(5)   = B1_5*tl**4
         dBdT(5) = dBdT_5*tl**3
         X  = matmul(Ainv, B)
-        ! dBdT前5项为0, dBdT*(0,0,0,0,0,1)
+        ! first 5 items of dBdT is 0, dBdT*(0,0,0,0,0,1)
         dX = matmul(Ainv, dBdT*uvec)
 
-        ! 每步温度迭代进行计算, 最后一次应为tlbef
+        ! calculate longwave for vegetation
         irab = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5))/fcover(5)*fg
         dirab_dtl = ( sum(dX(1:4)*VegVF(1:4))*ev - dBdT(5) )/fcover(5)*fg
 
-        ! 迭代叶片温度变化
+        ! solve for leaf temperature
         dtl(it) = (sabv + irab - fsenl - hvap*fevpl) &
            / (lsai*clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl)
         dtl_noadj = dtl(it)
@@ -2088,7 +2088,7 @@ MODULE UrbanFlux
            ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
            !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
 
-           ! 06/20/2021, yuan: 考虑人为热
+           ! 06/20/2021, yuan: account for AH
            ! 92% heat release as SH, Pigeon et al., 2007
 
            h_vec  = vehc!*0.92
@@ -2110,7 +2110,7 @@ MODULE UrbanFlux
 
            cgw_imp= fwet_gimp*cgw(2)
 
-           ! 考虑土壤阻抗，qgper与qgimp分开计算
+           ! account for soil resistance, separate qgper and qgimp
            l_vec  = 0!vehc*0.08
            tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
                     (caw(3) + caw(2) + cfw(0)*fc(0)))
@@ -2217,7 +2217,7 @@ MODULE UrbanFlux
         !    fwet_gimp = fwet_gimp_
         ! ENDIF
 
-        ! 加权后的qg
+        ! weighted qg
         ! NOTE: IF fwet_gimp=1, same as previous
         ! fwetfac = fgimp*fwet_gimp + fgper
         ! qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -2239,9 +2239,8 @@ MODULE UrbanFlux
 ! Update monin-obukhov length and wind speed including the stability effect
 !-----------------------------------------------------------------------
 
-        ! 这里使用的是最高层的taf和qaf
-        ! 如何进行限制?是不是梯度太大的问题?运行单点模型测试
-        !TODO:
+        ! USE the top layer taf and qaf
+        !TODO: need more check
         dth = thm - taf(2)
         dqh =  qm - qaf(2)
 
@@ -2345,12 +2344,8 @@ MODULE UrbanFlux
         i,it-1,err,sabv,irab,fsenl,hvap*fevpl
 #endif
 
-!-----------------------------------------------------------------------
-! 植被温度变化计算长波辐射改变
-! 包括墙壁、地面吸收和向上长波辐射
-!-----------------------------------------------------------------------
 
-     ! 各组分长波辐射吸收值
+     ! calculate longwave absorption
      lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall)
      lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall)
      lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp)
@@ -2358,7 +2353,7 @@ MODULE UrbanFlux
      lveg  = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5) )
      lout  = sum( X * SkyVF )
 
-     ! +因叶片温度变化，各组分长波辐射吸收值
+     ! longwave absorption due to leaf temperature change
      lwsun = lwsun + ( ewall*dX(1) ) / (1-ewall) * dtl(it-1)
      lwsha = lwsha + ( ewall*dX(2) ) / (1-ewall) * dtl(it-1)
      lgimp = lgimp + ( egimp*dX(3) ) / (1-egimp) * dtl(it-1)
@@ -2373,14 +2368,14 @@ MODULE UrbanFlux
         print *, "Longwave - Energy Balance Check error!", err-frl
      ENDIF
 
-     ! 计算单位面积
+     ! convert to per unit area
      IF (fcover(1) > 0.) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
      IF (fcover(2) > 0.) lwsha = lwsha / fcover(2) * fg !/ (4*fwsha*HL*fb/fg)
      IF (fcover(3) > 0.) lgimp = lgimp / fcover(3) * fg !/ fgimp
      IF (fcover(4) > 0.) lgper = lgper / fcover(4) * fg !/ fgper
      IF (fcover(5) > 0.) lveg  = lveg  / fcover(5) * fg !/ fv/fg
 
-     ! 加上上次余量
+     ! add previous longwave
      lwsun = lwsun + lwsun_bef
      lwsha = lwsha + lwsha_bef
      lgimp = lgimp + lgimp_bef
@@ -2417,7 +2412,7 @@ MODULE UrbanFlux
      croof = croofs + croofl*htvp_roof
 
 !-----------------------------------------------------------------------
-! 计算城市地面各组分的感热、潜热
+! fluxes from urban ground to canopy space
 !-----------------------------------------------------------------------
 
      fsengimp = cpair*rhoair*cgh(botlay)*(tgimp-taf(botlay))
@@ -2563,8 +2558,6 @@ MODULE UrbanFlux
      ! 02/07/2018: changed combination
      fac  = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
-     !TODO: 检查fac的设定，为什么设置为0
-     ! fac  = 0.
      kcob = 1. / (fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
 
      kexp     = ktop*exp(-alpha*(htop-z)/(htop-hbot))
@@ -2612,8 +2605,9 @@ MODULE UrbanFlux
         u = max(0._r8, u)
         !uintegral = uintegral + sqrt(u)*dz / (htop-hbot)
 ! 03/04/2020, yuan: TODO-hard to solve
-        ! u开根号后不能解析求解积分，可近似直接对u积分
-        ! 如此，最后就不用平方
+        !NOTE: The integral cannot be solved analytically after
+        !the square root sign of u, and the integral can be approximated
+        !directly for u, In this way, there is no need to square
         uintegral = uintegral + u*dz / (ztop-zbot)
      ENDDO
 
@@ -2890,7 +2884,6 @@ MODULE UrbanFlux
      ! yuan, 12/28/2020:
      fac = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
-     !TODO: 检查fac的设定，为什么设定为0
      !11/18/2022, NOTE: fac=0 may have some problems
      ! fac = 0.
      roots(:) = 0.

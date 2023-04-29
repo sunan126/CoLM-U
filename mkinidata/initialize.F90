@@ -91,10 +91,9 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
   REAL(r8), allocatable :: soil_w(:,:)
 #endif
 
-! 定义城市读取数据变量
 #if(defined URBAN_MODEL)
   INTEGER urbanpct_vid
-  REAL(r8), allocatable :: urbanpct(:,:,:) !percent urban TYPE (density)
+  REAL(r8), allocatable :: urbanpct(:,:,:) !percent urban TYPE
 #endif
 
   REAL(r8), allocatable :: z_soisno (:,:)
@@ -210,14 +209,13 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       write(6,*) 'Total land patches = ', numpatch
 #endif
 
-! 添加城市数据读取，目前仅支持MODIS IGBP数据
+! Read urban data, currently only support MODIS IGBP data
 #if(!defined USGS_CLASSIFICATION && defined URBAN_MODEL)
 
       allocate (urbanpct(1:lon_points,1:lat_points,N_URB))
       lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
 
-      CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
 #ifdef USE_LCZ
@@ -231,7 +229,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       urbanpct = urbanpct / 100.
 #endif
 
-! yuan, 07/31/2019: read land grid info from nc file
+! 07/31/2019, yuan: read land grid info from nc file
 #ifdef IGBP_CLASSIFICATION
 
       allocate (landfrac(1:lon_points,1:lat_points))
@@ -257,7 +255,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
 !#endif
 
       DO np = 1, N_land_classification
-         ! sum(pctlc) = 100%, landfrac: land%
+         !NOTE: sum(pctlc) = 100%, landfrac: land%
          fraction_patches(:,:,np) = pctlc(:,:,np) * landfrac(:,:)
       ENDDO
 
@@ -268,7 +266,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       numpatch_lat(:) = 0
       nurb = 0
 
-      ! NOTE: support for land ONLY right now
+      !NOTE: support for land ONLY right now
       DO j = 1, lat_points
          DO i = 1, lon_points
             DO np = 1, N_land_classification
@@ -345,7 +343,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       npft = 0
       nurb = 0
 
-      ! NOTE: support for land ONLY right now
+      !NOTE: support for land ONLY right now
       DO j = 1, lat_points
          DO i = 1, lon_points
 
@@ -366,7 +364,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
                npatch = npatch + 1
                numpatch_lat(j) = numpatch_lat(j) + 1
 #else
-               ! 进行细分，对不同城市类型计数
+               ! count for different urban types
                DO t = 1, N_URB
                   IF (urbanpct(i,j,t) > 0.) THEN
                      npatch = npatch + 1
@@ -448,7 +446,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
                   numpatch_lat(j) = numpatch_lat(j) + 1
 #else
                   IF (np == URBAN) THEN
-                     ! 需要进行细分，对不同城市类型计数
+                     ! count for different urban types
                      DO t = 1, N_URB
                         IF (urbanpct(i,j,t) > 0.) THEN
                            npatch = npatch + 1 !subgrid patch number
@@ -936,7 +934,6 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
 
 ! ...............................................................
 ! 3.3+ Urban time-invariant variables (based on the look-up tables or global map)
-! CALL Urban_readin_nc() !包含htop, fveg. TODO: 设置lakedepth为常数1m?
 ! ...............................................................
 
 #ifdef URBAN_MODEL
@@ -1077,7 +1074,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
       Julian_8day = int(calendarday(idate)-1)/8*8 + 1
       CALL LAI_readin (Julian_8day,numpatch,dir_srfdata)
 #else
-! yuan, 08/03/2019: read global LAI/SAI data
+! 08/03/2019, yuan: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
 #ifdef LAICHANGE
       CALL LAI_readin_nc      (   year,month,dir_srfdata,nam_srfdata)
@@ -1141,7 +1138,6 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
       IF (m == URBAN) THEN
 
          u = patch2urb(i)
-         !print *, "patch:", i, "urban:", u, "coszen:", coszen(i)
          lwsun         (u) = 0.   !net longwave radiation of sunlit wall
          lwsha         (u) = 0.   !net longwave radiation of shaded wall
          lgimp         (u) = 0.   !net longwave radiation of impervious road

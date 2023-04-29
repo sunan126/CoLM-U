@@ -3,7 +3,7 @@
 SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
 
 ! ===========================================================
-! Read in the LAI, the LAI dataset was created by Yuan et al. (2019)
+! Read in the LAI, the LAI dataset
 ! http://globalchange.bnu.edu.cn
 ! ===========================================================
 
@@ -242,7 +242,7 @@ SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
             tsai(npatch) = sum(tsai_c(:,pc)*pcfrac(:,pc))
          ELSE
 ! 12/28/2019, yuan: Bug
-            ! pctpc from 1-100% -> 0-1
+            !NOTE: pctpc from 1-100% -> 0-1
             tlai(npatch) = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.)
             tsai(npatch) = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.)
          ENDIF

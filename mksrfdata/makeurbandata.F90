@@ -5,8 +5,9 @@
 ! regional or point cases.
 !
 ! History:
-!   TODO:2022/11?: Wenzong Dong, initial version.
+!   !TODO:2022/11?: Wenzong Dong, initial version.
 ! ======================================================
+
 SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                           lc_year,edgen,edgee,edges,edgew )
 
@@ -174,7 +175,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    write(cyear,'(i4.4)') lc_year
 
    print*, ">>> allocating memory..."
-   ! IF (USE_LCZ) THEN
+
 #ifdef USE_LCZ
    allocate( hlat  (hxy) )
    allocate( hlats (hxy) )
@@ -206,7 +207,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    allocate( ur_lai    (lon_points, lat_points, nlcz, mon ) )
    allocate( wgt_sai   (lon_points, lat_points, nlcz, mon ) )
    allocate( wgt_lai   (lon_points, lat_points, nlcz, mon ) )
-   ! ELSE
+
 #else
    allocate( hlat  (nxy) )
    allocate( hlats (nxy) )
@@ -305,7 +306,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
    alb_wl   (:,:,:,:,:) = 0.
    alb_imrd (:,:,:,:,:) = 0.
    alb_perd (:,:,:,:,:) = 0.
-   ! ENDIF
+
 #endif
 
    allocate( gfcc_tc (nxy, nxy) )
@@ -602,6 +603,7 @@ SUBROUTINE makeurbandata( casename,dir_rawdata,dir_srfdata, &
                      IF (wtrf(jj,ii) > 0) THEN
                         wt_rf(jo,io,inx) = wt_rf(jo,io,inx) + wtrf(jj,ii)*harea(j,i)
                      ENDIF
+                     !TODO: change to English
                      ! 加权：
                      ! 粗网格城市水体(植被)覆盖度=粗网格城市水体(植被)覆盖度+500m城市格点水体(植被)覆盖度*500m城市格点面积
                      ! 加权系数；粗网格城市格点面积

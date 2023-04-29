@@ -17,8 +17,8 @@ MODULE MOD_UrbanTimeInvars
    REAL(r8), allocatable :: popcell(:)       !pop density
    REAL(r8), allocatable :: vehicle(:,:)     !vehicle numbers per thousand people
    REAL(r8), allocatable :: week_holiday(:,:)!week holidays
-   REAL(r8), allocatable :: weh_prof(:,:)    !Diurnal vehicle heat profile of weekend
-   REAL(r8), allocatable :: wdh_prof(:,:)    !Diurnal vehicle heat profile of weekday
+   REAL(r8), allocatable :: weh_prof(:,:)    !Diurnal traffic flow profile of weekend
+   REAL(r8), allocatable :: wdh_prof(:,:)    !Diurnal traffic flow profile of weekday
    REAL(r8), allocatable :: hum_prof(:,:)    !Diurnal metabolic heat profile
    REAL(r8), allocatable :: fix_holiday(:,:) !Fixed public holidays, holiday(0) or workday(1)
 

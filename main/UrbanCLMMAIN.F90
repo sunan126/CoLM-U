@@ -133,8 +133,8 @@ SUBROUTINE UrbanCLMMAIN ( &
        fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
        week_holiday(7) , &! week holidays
        hum_prof(24)    , &! Diurnal metabolic heat profile
-       weh_prof(24)    , &! Diurnal vehicle heat profile of weekend
-       wdh_prof(24)    , &! Diurnal vehicle heat profile of weekday
+       weh_prof(24)    , &! Diurnal traffic flow profile of weekend
+       wdh_prof(24)    , &! Diurnal traffic flow profile of weekday
        popcell         , &! population density
        vehicle(3)         ! vehicle numbers per thousand people
 

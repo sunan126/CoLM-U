@@ -409,8 +409,8 @@ MODULE MOD_TimeInvariants
            popcell,         &! population density
            vehicle,         &! vehicle numbers per thousand people
            week_holiday,    &! week holidays
-           weh_prof,        &! Diurnal vehicle heat profile of weekend
-           wdh_prof,        &! Diurnal vehicle heat profile of weekday
+           weh_prof,        &! Diurnal traffic flow profile of weekend
+           wdh_prof,        &! Diurnal traffic flow profile of weekday
            hum_prof,        &! Diurnal metabolic heat profile
            fix_holiday       ! Fixed public holidays, holiday(0) or workday(1)
 #endif

@@ -109,8 +109,8 @@
         fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
         week_holiday(7) , &! week holidays
         hum_prof(24)    , &! Diurnal metabolic heat profile
-        weh_prof(24)    , &! Diurnal vehicle heat profile of weekend
-        wdh_prof(24)    , &! Diurnal vehicle heat profile of weekday
+        weh_prof(24)    , &! Diurnal traffic flow profile of weekend
+        wdh_prof(24)    , &! Diurnal traffic flow profile of weekday
         popcell         , &! population density
         vehicle(3)         ! vehicle numbers per thousand people
 
@@ -264,8 +264,8 @@
         troommax   ,&! maximum temperature of inner building
         troommin   ,&! minimum temperature of inner building
         tafu       ,&! temperature of outer building
-        Fahe       ,&
-        Fhah       ,&
+        Fahe       ,&! flux from metabolic and vehicle
+        Fhah       ,&! flux from heating
         Fhac       ,&! flux from heat or cool AC
         Fwst       ,&! waste heat from cool or heat
         Fach         ! flux from air exchange
@@ -297,8 +297,8 @@
         lfevp_gper ,&! latent heat flux from pervious road [W/m2]
         lfevp_urbl ,&! latent heat flux from urban vegetation [W/m2]
 
-        troof      ,&! temperature of roof
-        twall      ,&! temperature of wall
+        troof      ,&! temperature of roof [K]
+        twall      ,&! temperature of wall [K]
 
         qseva_roof ,&! ground soil surface evaporation rate (mm h2o/s)
         qseva_gimp ,&! ground soil surface evaporation rate (mm h2o/s)
@@ -1242,8 +1242,10 @@
                        Fhac, Fwst, Fach, Fhah )
 
 #ifdef USE_LUCY
-      CALL LUCY(idate,deltim,patchlonr,fix_holiday,week_holiday,hum_prof, &
-                wdh_prof,weh_prof,popcell,vehicle,Fahe,vehc,meta)
+      ! Anthropogenic heat flux for the rest (vehicle heat flux and metabolic heat flux)
+      CALL LUCY(idate       , deltim  , patchlonr, fix_holiday, &
+                week_holiday, hum_prof, wdh_prof , weh_prof   ,popcell, &
+                vehicle     , Fahe    , vehc     , meta)
 #endif
       deallocate ( fcover )
 

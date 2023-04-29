@@ -73,8 +73,8 @@ SUBROUTINE UrbanCLMMAIN ( &
            lfevpa       ,fsenl        ,fevpl        ,etr          ,&
            fseng        ,fevpg        ,olrg         ,fgrnd        ,&
            fsen_roof    ,fsen_wsun    ,fsen_wsha    ,fsen_gimp    ,&
-           fsen_gper    ,fsen_l       ,troof        ,twall        ,&
-           lfevp_roof   ,lfevp_gimp   ,lfevp_gper   ,lfevp_l      ,&
+           fsen_gper    ,fsen_urbl    ,troof        ,twall        ,&
+           lfevp_roof   ,lfevp_gimp   ,lfevp_gper   ,lfevp_urbl   ,&
            trad         ,tref         ,tmax         ,tmin         ,&
            qref         ,rsur         ,rnof         ,qintr        ,&
            qinfl        ,qdrip        ,rst          ,assim        ,&
@@ -129,15 +129,15 @@ SUBROUTINE UrbanCLMMAIN ( &
 
 ! Parameters
 ! ----------------------
-
   REAL(r8), intent(in) :: &
-       fix_holiday(365), &
-       week_holiday(7) , &
-       hum_prof(24)    , &
-       weh_prof(24)    , &
-       wdh_prof(24)    , &
-       popcell         , &
-       vehicle(3)
+       fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
+       week_holiday(7) , &! week holidays
+       hum_prof(24)    , &! Diurnal metabolic heat profile
+       weh_prof(24)    , &! Diurnal traffic flow profile of weekend
+       wdh_prof(24)    , &! Diurnal traffic flow profile of weekday
+       popcell         , &! population density
+       vehicle(3)         ! vehicle numbers per thousand people
+
   REAL(r8), intent(in) :: &
         froof      ,&! roof fractional cover [-]
         fgper      ,&! impervious fraction to ground area [-]
@@ -324,10 +324,10 @@ SUBROUTINE UrbanCLMMAIN ( &
         Fhac       ,&! sensible flux from heat or cool AC [W/m2]
         Fwst       ,&! waste heat flux from heat or cool AC [W/m2]
         Fach       ,&! flux from inner and outter air exchange [W/m2]
-        Fahe       ,&! TODO: 添加注释，确定变量命名
-        Fhah       ,&
-        vehc       ,&
-        meta       ,&
+        Fahe       ,&! flux from metabolism and vehicle [W/m2]
+        Fhah       ,&! sensible heat flux from heating [W/m2]
+        vehc       ,&! flux from vehicle [W/m2]
+        meta       ,&! flux from metabolism [W/m2]
 
         alb  (2,2) ,&! averaged albedo [-]
         ssun (2,2) ,&! sunlit canopy absorption for solar radiation
@@ -379,20 +379,20 @@ SUBROUTINE UrbanCLMMAIN ( &
         assim      ,&! canopy assimilation
         respc      ,&! canopy respiration
 
-        fsen_roof  ,&! TODO: 添加注释，确定变量命名
-        fsen_wsun  ,&
-        fsen_wsha  ,&
-        fsen_gimp  ,&
-        fsen_gper  ,&
-        fsen_l     ,&
+        fsen_roof  ,&! sensible heat flux from roof [W/m2]
+        fsen_wsun  ,&! sensible heat flux from sunlit wall [W/m2]
+        fsen_wsha  ,&! sensible heat flux from shaded wall [W/m2]
+        fsen_gimp  ,&! sensible heat flux from impervious road [W/m2]
+        fsen_gper  ,&! sensible heat flux from pervious road [W/m2]
+        fsen_urbl  ,&! sensible heat flux from urban vegetation [W/m2]
 
-        lfevp_roof ,&
-        lfevp_gimp ,&
-        lfevp_gper ,&
-        lfevp_l    ,&
+        lfevp_roof ,&! latent heat flux from roof [W/m2]
+        lfevp_gimp ,&! latent heat flux from impervious road [W/m2]
+        lfevp_gper ,&! latent heat flux from pervious road [W/m2]
+        lfevp_urbl ,&! latent heat flux from urban vegetation [W/m2]
 
-        troof      ,&! temperature of roof
-        twall      ,&! temperature of wall
+        troof      ,&! temperature of roof [K]
+        twall      ,&! temperature of wall [K]
 
         sabvsun    ,&! solar absorbed by sunlit vegetation [W/m2]
         sabvsha    ,&! solar absorbed by shaded vegetation [W/m2]
@@ -450,7 +450,6 @@ SUBROUTINE UrbanCLMMAIN ( &
         sabgper    ,&! solar absorbed by vegetation [W/m2]
         sablake    ,&! solar absorbed by vegetation [W/m2]
         par        ,&! PAR by leaves [W/m2]
-        !troof      ,&! temperature of roof surface [K]
         tgimp      ,&! temperature of impervious surface [K]
         tgper      ,&! temperature of pervious surface [K]
         tlake      ,&! temperature of lake surface [K]
@@ -534,9 +533,6 @@ SUBROUTINE UrbanCLMMAIN ( &
         lbp        ,&! lower bound of arrays
         lbl        ,&! lower bound of arrays
         j            ! do looping index
-   ! REAL(r8) :: &
-   !      car_sp, &
-   !      f_fac
 
       theta = acos(max(coszen,0.001))
 
@@ -817,8 +813,8 @@ SUBROUTINE UrbanCLMMAIN ( &
          lfevpa               ,fsenl                ,fevpl                ,etr                  ,&
          fseng                ,fevpg                ,olrg                 ,fgrnd                ,&
          fsen_roof            ,fsen_wsun            ,fsen_wsha            ,fsen_gimp            ,&
-         fsen_gper            ,fsen_l               ,troof                ,twall                ,&
-         lfevp_roof           ,lfevp_gimp           ,lfevp_gper           ,lfevp_l              ,&
+         fsen_gper            ,fsen_urbl            ,troof                ,twall                ,&
+         lfevp_roof           ,lfevp_gimp           ,lfevp_gper           ,lfevp_urbl           ,&
          qseva_roof           ,qseva_gimp           ,qseva_gper           ,qseva_lake           ,&
          qsdew_roof           ,qsdew_gimp           ,qsdew_gper           ,qsdew_lake           ,&
          qsubl_roof           ,qsubl_gimp           ,qsubl_gper           ,qsubl_lake           ,&

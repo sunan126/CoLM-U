@@ -261,12 +261,12 @@ MODULE MOD_TimeInvariants
 #ifdef USE_LUCY
      read (lhistTimeConst)  &!
            popcell,         &! population density
-           vehicle,         &!
-           week_holiday,    &!
-           weh_prof,        &!
-           wdh_prof,        &!
-           hum_prof,        &!
-           fix_holiday       !
+           vehicle,         &! vehicle numbers per thousand people
+           week_holiday,    &! week holidays
+           weh_prof,        &! Diurnal vehicle heat profile of weekend
+           wdh_prof,        &! Diurnal vehicle heat profile of weekday
+           hum_prof,        &! Diurnal metabolic heat profile
+           fix_holiday       ! Fixed public holidays, holiday(0) or workday(1)
 #endif
 #endif
 
@@ -407,12 +407,12 @@ MODULE MOD_TimeInvariants
 #ifdef USE_LUCY
      write(lhistTimeConst)  &!
            popcell,         &! population density
-           vehicle,         &!
-           week_holiday,    &!
-           weh_prof,        &!
-           wdh_prof,        &!
-           hum_prof,        &!
-           fix_holiday       !  
+           vehicle,         &! vehicle numbers per thousand people
+           week_holiday,    &! week holidays
+           weh_prof,        &! Diurnal traffic flow profile of weekend
+           wdh_prof,        &! Diurnal traffic flow profile of weekday
+           hum_prof,        &! Diurnal metabolic heat profile
+           fix_holiday       ! Fixed public holidays, holiday(0) or workday(1)
 #endif
 #endif
      close(lhistTimeConst)

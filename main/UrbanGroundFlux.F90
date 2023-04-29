@@ -120,18 +120,16 @@
 
       ! weighted tg
       tg = tgimp*fgimp + tgper*fgper
-      qg = qgimp*fgimp + qgper*fgper
 
       ! wet fraction impervious ground
       !-------------------------------------------
-      ! print*, lbi
-      ! IF (lbi < 1) THEN
-      !    fwet_gimp = fsno_gimp !for snow layer exist
-      ! ELSE
-      !    ! surface wet fraction. assuming max ponding = 1 kg/m2
-      !    fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
-      !    fwet_gimp = min(1., fwet_gimp)
-      ! ENDIF
+      IF (lbi < 1) THEN
+         fwet_gimp = fsno_gimp !for snow layer exist
+      ELSE
+         ! surface wet fraction. assuming max ponding = 1 kg/m2
+         fwet_gimp = (max(0., wliq_gimpsno+wice_gimpsno))**(2/3.)
+         fwet_gimp = min(1., fwet_gimp)
+      ENDIF
 
       ! weighted qg
       ! qg = qgimp*fgimp*fwet_gimp + qgper*fgper

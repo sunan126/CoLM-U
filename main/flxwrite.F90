@@ -124,27 +124,27 @@
            IF (f_fhac   (i,j) /= spval) f_fhac   (i,j) = f_fhac   (i,j) / a  ! sensible flux from heat or cool AC [W/m2]
            IF (f_fwst   (i,j) /= spval) f_fwst   (i,j) = f_fwst   (i,j) / a  ! waste heat flux from heat or cool AC [W/m2]
            IF (f_fach   (i,j) /= spval) f_fach   (i,j) = f_fach   (i,j) / a  ! flux from inner and outter air exchange [W/m2]
-           IF (f_fahe   (i,j) /= spval) f_fahe   (i,j) = f_fahe   (i,j) / a
-           IF (f_fhah   (i,j) /= spval) f_fhah   (i,j) = f_fhah   (i,j) / a
-           IF (f_vehc   (i,j) /= spval) f_vehc   (i,j) = f_vehc   (i,j) / a
-           IF (f_meta   (i,j) /= spval) f_meta   (i,j) = f_meta   (i,j) / a
+           IF (f_fahe   (i,j) /= spval) f_fahe   (i,j) = f_fahe   (i,j) / a  ! flux from metabolic and vehicle [W/m2]
+           IF (f_fhah   (i,j) /= spval) f_fhah   (i,j) = f_fhah   (i,j) / a  ! flux from heatiog [W/m2]  
+           IF (f_vehc   (i,j) /= spval) f_vehc   (i,j) = f_vehc   (i,j) / a  ! flux from vehicle [W/m2]
+           IF (f_meta   (i,j) /= spval) f_meta   (i,j) = f_meta   (i,j) / a  ! flux from metabolic [W/m2]
            IF (f_xy_rain(i,j) /= spval) f_xy_rain(i,j) = f_xy_rain(i,j) / a  ! rain [mm/s]
            IF (f_xy_snow(i,j) /= spval) f_xy_snow(i,j) = f_xy_snow(i,j) / a  ! snow [mm/s]
 
-           IF (f_senroof(i,j) /= spval) f_senroof   (i,j) = f_senroof   (i,j) / a
-           IF (f_senwsun(i,j) /= spval) f_senwsun   (i,j) = f_senwsun   (i,j) / a
-           IF (f_senwsha(i,j) /= spval) f_senwsha   (i,j) = f_senwsha   (i,j) / a
-           IF (f_sengimp(i,j) /= spval) f_sengimp   (i,j) = f_sengimp   (i,j) / a
-           IF (f_sengper(i,j) /= spval) f_sengper   (i,j) = f_sengper   (i,j) / a
-           IF (f_senurl (i,j) /= spval) f_senurl    (i,j) = f_senurl    (i,j) / a
+           IF (f_senroof(i,j) /= spval) f_senroof   (i,j) = f_senroof   (i,j) / a  ! sensible heat flux from roof [W/m2]
+           IF (f_senwsun(i,j) /= spval) f_senwsun   (i,j) = f_senwsun   (i,j) / a  ! sensible heat flux from sunlit wall [W/m2]
+           IF (f_senwsha(i,j) /= spval) f_senwsha   (i,j) = f_senwsha   (i,j) / a  ! sensible heat flux from shaded wall [W/m2]
+           IF (f_sengimp(i,j) /= spval) f_sengimp   (i,j) = f_sengimp   (i,j) / a  ! sensible heat flux from impervious road [W/m2]
+           IF (f_sengper(i,j) /= spval) f_sengper   (i,j) = f_sengper   (i,j) / a  ! sensible heat flux from pervious road [W/m2]
+           IF (f_senurbl(i,j) /= spval) f_senurbl   (i,j) = f_senurbl   (i,j) / a  ! sensible heat flux from urban vegetation [W/m2]
 
-           IF (f_lfevproof(i,j) /= spval) f_lfevproof   (i,j) = f_lfevproof   (i,j) / a
-           IF (f_lfevpgimp(i,j) /= spval) f_lfevpgimp   (i,j) = f_lfevpgimp   (i,j) / a
-           IF (f_lfevpgper(i,j) /= spval) f_lfevpgper   (i,j) = f_lfevpgper   (i,j) / a
-           IF (f_lfevpurl (i,j) /= spval) f_lfevpurl    (i,j) = f_lfevpurl    (i,j) / a
+           IF (f_lfevproof(i,j) /= spval) f_lfevproof   (i,j) = f_lfevproof   (i,j) / a  ! latent heat flux from roof [W/m2]
+           IF (f_lfevpgimp(i,j) /= spval) f_lfevpgimp   (i,j) = f_lfevpgimp   (i,j) / a  ! latent heat flux from impervious road [W/m2]
+           IF (f_lfevpgper(i,j) /= spval) f_lfevpgper   (i,j) = f_lfevpgper   (i,j) / a  ! latent heat flux from pervious road [W/m2]
+           IF (f_lfevpurbl(i,j) /= spval) f_lfevpurbl   (i,j) = f_lfevpurbl   (i,j) / a  ! latent heat flux from urban vegetation [W/m2]
 
-           IF (f_troof   (i,j) /= spval) f_troof   (i,j) = f_troof   (i,j) / a
-           IF (f_twall   (i,j) /= spval) f_twall   (i,j) = f_twall   (i,j) / a
+           IF (f_troof   (i,j) /= spval) f_troof   (i,j) = f_troof   (i,j) / a  ! temperature of roof [K]
+           IF (f_twall   (i,j) /= spval) f_twall   (i,j) = f_twall   (i,j) / a  ! temperature of wall [K]
 
            IF (f_sabvdt  (i,j) /= spval) f_sabvdt  (i,j) = f_sabvdt  (i,j) / nac_dt(i,j)  ! solar absorbed by sunlit canopy [w/m2]
            IF (f_sabgdt  (i,j) /= spval) f_sabgdt  (i,j) = f_sabgdt  (i,j) / nac_dt(i,j)  ! solar absorbed by ground [w/m2]
@@ -697,24 +697,28 @@
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
+      ! flux from metabolism [W/m2]
       CALL nccheck( nf90_def_var(ncid, 'f_fahe', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from people and cars [W/m2]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
+      ! flux from heatiog [W/m2]
       CALL nccheck( nf90_def_var(ncid, 'f_fhah', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from heating/cooling [W/m2]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
+      ! flux from vehicle [W/m2]
       CALL nccheck( nf90_def_var(ncid, 'f_vehc', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from cars [W/m2]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
+      ! flux from metabolism [W/m2]
       CALL nccheck( nf90_def_var(ncid, 'f_meta', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','flux from people [W/m2]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','W/m2') )
@@ -805,13 +809,15 @@
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
-      CALL nccheck( nf90_def_var(ncid, 'f_troof', nf90_double, (/xid,yid/), varid) )
+      ! temperature of roof [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_roof', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of roof [K]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
       CALL nccheck( nf90_put_att(ncid, varid, '_FillValue', spval) )
 
-      CALL nccheck( nf90_def_var(ncid, 'f_troom', nf90_double, (/xid,yid/), varid) )
+      ! temperature of wall [K]
+      CALL nccheck( nf90_def_var(ncid, 'f_t_wall', nf90_double, (/xid,yid/), varid) )
       CALL nccheck( nf90_put_att(ncid, varid, 'long_name','temperature of wall [K]') )
       CALL nccheck( nf90_put_att(ncid, varid, 'units','K') )
       CALL nccheck( nf90_put_att(ncid, varid, 'missing_value', spval) )
@@ -1248,8 +1254,8 @@
       CALL nccheck( nf90_inq_varid(ncid,'f_fsengper',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_sengper) )
 
-      CALL nccheck( nf90_inq_varid(ncid,'f_fsenurl',varid) )
-      CALL nccheck( nf90_put_var(ncid,varid,f_senurl) )
+      CALL nccheck( nf90_inq_varid(ncid,'f_fsenurbl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_senurbl) )
 
       ! latent heat flux from canopy height to atmosphere [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_lfevpa',varid) )
@@ -1264,8 +1270,8 @@
       CALL nccheck( nf90_inq_varid(ncid,'f_lfevpgper',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_lfevpgper) )
 
-      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpurl',varid) )
-      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpurl) )
+      CALL nccheck( nf90_inq_varid(ncid,'f_lfevpurbl',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_lfevpurbl) )
 
       ! evapotranspiration from canopy to atmosphere [mm/s]
       CALL nccheck( nf90_inq_varid(ncid,'f_fevpa',varid) )
@@ -1448,11 +1454,13 @@
       CALL nccheck( nf90_inq_varid(ncid,'f_tafu',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_tafu) )
 
-      CALL nccheck( nf90_inq_varid(ncid,'f_troof',varid) )
+      ! temperature of roof [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_roof',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_troof) )
 
-      CALL nccheck( nf90_inq_varid(ncid,'f_troof',varid) )
-      CALL nccheck( nf90_put_var(ncid,varid,f_troof) )
+      ! temperature of wall [K]
+      CALL nccheck( nf90_inq_varid(ncid,'f_t_wall',varid) )
+      CALL nccheck( nf90_put_var(ncid,varid,f_twall) )
 
       ! sensible flux from heat or cool AC [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_fhac',varid) )
@@ -1466,15 +1474,19 @@
       CALL nccheck( nf90_inq_varid(ncid,'f_fach',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_fach) )
 
+      ! flux from metabolism and vehicle [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_fahe',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_fahe) )
 
+      ! flux from heating [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_fhah',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_fhah) )
 
+      ! flux from vehicle [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_vehc',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_vehc) )
 
+      ! flux from metabolism [W/m2]
       CALL nccheck( nf90_inq_varid(ncid,'f_meta',varid) )
       CALL nccheck( nf90_put_var(ncid,varid,f_meta) )
 
@@ -1807,11 +1819,11 @@
      write(luout) f_xy_snow(:,:)  ! snow [mm/s]
      write(luout) f_t_room (:,:)  ! temperature of inner building [K]
      write(luout) f_tafu   (:,:)  ! temperature of outer building [K]
-     write(luout) f_fhah   (:,:)  ! 
+     write(luout) f_fhah   (:,:)  ! flux from heation [W/m2]
      write(luout) f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
      write(luout) f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
      write(luout) f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
-     write(luout) f_fahe   (:,:)  ! flux from metabolism and vehicle
+     write(luout) f_fahe   (:,:)  ! flux from metabolism and vehicle [W/m2]
 
      write(luout) f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [w/m2]
      write(luout) f_sabgdt  (:,:) ! solar absorbed by ground [w/m2]

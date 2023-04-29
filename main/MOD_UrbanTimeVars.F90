@@ -85,25 +85,25 @@ MODULE MOD_UrbanTimeVars
    REAL(r8), allocatable :: Fhac           (:) !sensible flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fwst           (:) !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: Fach           (:) !flux from inner and outter air exchange [W/m2]
-   REAL(r8), allocatable :: Fahe           (:) !flux from metabolism and vehicle
-   REAL(r8), allocatable :: Fhah           (:)
-   REAL(r8), allocatable :: vehc           (:)
-   REAL(r8), allocatable :: meta           (:)
+   REAL(r8), allocatable :: Fahe           (:) !flux from metabolism and vehicle [W/m2]
+   REAL(r8), allocatable :: Fhah           (:) !sensible heat flux from heating [W/m2]
+   REAL(r8), allocatable :: vehc           (:) !flux from vehicle [W/m2]
+   REAL(r8), allocatable :: meta           (:) !flux from metabolism [W/m2]
    
-   REAL(r8), allocatable :: fsen_roof      (:)
-   REAL(r8), allocatable :: fsen_wsun      (:)
-   REAL(r8), allocatable :: fsen_wsha      (:)
-   REAL(r8), allocatable :: fsen_gimp      (:)
-   REAL(r8), allocatable :: fsen_gper      (:)
-   REAL(r8), allocatable :: fsen_url       (:)
+   REAL(r8), allocatable :: fsen_roof      (:) !sensible heat flux from roof [W/m2]
+   REAL(r8), allocatable :: fsen_wsun      (:) !sensible heat flux from sunlit wall [W/m2]
+   REAL(r8), allocatable :: fsen_wsha      (:) !sensible heat flux from shaded wall [W/m2]
+   REAL(r8), allocatable :: fsen_gimp      (:) !sensible heat flux from impervious road [W/m2]
+   REAL(r8), allocatable :: fsen_gper      (:) !sensible heat flux from pervious road [W/m2]
+   REAL(r8), allocatable :: fsen_urbl      (:) !sensible heat flux from urban vegetation [W/m2]
 
-   REAL(r8), allocatable :: lfevp_roof     (:)
-   REAL(r8), allocatable :: lfevp_gimp     (:)
-   REAL(r8), allocatable :: lfevp_gper     (:)
-   REAL(r8), allocatable :: lfevp_url      (:)
+   REAL(r8), allocatable :: lfevp_roof     (:) !latent heat flux from roof [W/m2]
+   REAL(r8), allocatable :: lfevp_gimp     (:) !latent heat flux from impervious road [W/m2]
+   REAL(r8), allocatable :: lfevp_gper     (:) !latent heat flux from pervious road [W/m2]
+   REAL(r8), allocatable :: lfevp_urbl     (:) !latent heat flux from urban vegetation [W/m2]
 
-   REAL(r8), allocatable :: troof          (:)
-   REAL(r8), allocatable :: twall          (:)
+   REAL(r8), allocatable :: troof          (:) !temperature of roof [K]
+   REAL(r8), allocatable :: twall          (:) !temperature of wall [K]
 
 
 ! PUBLIC MEMBER FUNCTIONS:
@@ -204,12 +204,12 @@ CONTAINS
       allocate (fsen_wsha                     (numurban))
       allocate (fsen_gimp                     (numurban))
       allocate (fsen_gper                     (numurban))
-      allocate (fsen_url                      (numurban))
+      allocate (fsen_urbl                     (numurban))
 
       allocate (lfevp_roof                    (numurban))
       allocate (lfevp_gimp                    (numurban))
       allocate (lfevp_gper                    (numurban))
-      allocate (lfevp_url                     (numurban))
+      allocate (lfevp_urbl                    (numurban))
 
       allocate (troof                         (numurban))
       allocate (twall                         (numurban))
@@ -292,12 +292,12 @@ CONTAINS
       deallocate (fsen_wsha    )
       deallocate (fsen_gimp    )
       deallocate (fsen_gper    )
-      deallocate (fsen_url     )
+      deallocate (fsen_urbl    )
 
       deallocate (lfevp_roof   )
       deallocate (lfevp_gimp   )
       deallocate (lfevp_gper   )
-      deallocate (lfevp_url    )
+      deallocate (lfevp_urbl   )
 
       deallocate (troof        )
       deallocate (twall        )

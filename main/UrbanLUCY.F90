@@ -1,7 +1,15 @@
 #include <define.h>
 
 MODULE UrbanAnthropogenic
-
+  ! -----------------------------------------------------------------------
+  ! !DESCRIPTION:
+  ! Anthropogenic model to calculate anthropogenic heat flux for the rest
+  !
+  ! ORIGINAL:
+  ! Wenzong Dong, May, 2022
+  !
+  ! -----------------------------------------------------------------------
+  ! !USE
   USE precision
   USE GlobalVars
   USE PhysicalConstants
@@ -9,189 +17,163 @@ MODULE UrbanAnthropogenic
   IMPLICIT NONE
   SAVE
   PRIVATE :: timeweek, gmt2local
-  PUBLIC :: LUCY 
+  PUBLIC  :: LUCY 
 
 CONTAINS
 
-  ! Using LUCY model to calculate vehicle heat and metabolic heat
-  ! Allen et al., 2011
+  ! -----------------------------------------------------------------------
+  SUBROUTINE LUCY( idate       , deltim  , patchlonr, fix_holiday, &
+                   week_holiday, hum_prof, wdh_prof , weh_prof   , popcell, &
+                   vehicle     , Fahe    , vehc     , meta        )
 
-  Subroutine LUCY(idate,deltim,patchlonr,fix_holiday,week_holiday,hum_prof, &
-               wdh_prof,weh_prof,popcell,vehicle,Fahe,vehc,meta)
-
+  ! !DESCRIPTION:
+  ! Anthropogenic heat fluxes other than building heat were calculated
+  ! 
+  ! The calling sequence is:
+  ! -> gmt2local: convert GMT time to local time
+  ! -> timeweek : calculate the day of the week
+  !
+  ! REFERENCES:
+  ! 1) Grimmond, C. S. B. (1992). The suburban energy balance: Methodological considerations and results
+  ! for a mid-latitude west coast city under winter and spring conditions. International Journal of Climatology,
+  ! 12(5), 481–497. https://doi.org/10.1002/joc.3370120506
+  ! 2) Allen, L., Lindberg, F., & Grimmond, C. S. B. (2011). Global to city scale urban anthropogenic
+  ! heat flux: Model and variability. International Journal of Climatology, 31(13),
+  ! 1990–2005. https://doi.org/10.1002/joc.2210
+  !
+  ! -----------------------------------------------------------------------
 
    IMPLICIT NONE
 
-   ! input vars
-   INTEGER , INTENT(in) :: &
-      idate(3)             ! calendar (year, julian day, seconds)
-   REAL(r8), INTENT(in) :: &
-      fix_holiday(365) , & ! Fixed public holidays, holiday(0) or workday(1)
-      week_holiday(7)
+   INTEGER , intent(in) :: &
+      idate(3)   ! calendar (year, julian day, seconds)
 
-   REAL(r8), INTENT(in) :: &
-      deltim      , &
-      patchlonr   , &
-      ! f_fac       , &    ! factor multiplying total vehicles to get number of vehicles on road
-      hum_prof(24), & ! Diurnal metabolic heat profile
-      wdh_prof(24), &
-      weh_prof(24), &
-      popcell     , & ! grid population
-      vehicle(3)
+   REAL(r8), intent(in) :: &
+      fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
+      week_holiday(7)    ! week holidays
+
+   REAL(r8), intent(in) :: &
+      deltim      , &! seconds in a time step [second]
+      patchlonr   , &! longitude of patch [radian]
+      hum_prof(24), &! Diurnal metabolic heat profile [W/person]
+      wdh_prof(24), &! Diurnal traffic flow profile of weekday
+      weh_prof(24), &! Diurnal traffic flow profile of weekend
+      popcell     , &! population density [person per square kilometer]
+      vehicle(3)     ! vehicle numbers per thousand people
 
    REAL(r8) :: &
       vehc_prof(24,2), &
-      carscell , & ! number of cars
-      frescell , & ! number of freights
-      mbkscell     ! nukber of motobikes
+      carscell, &! cars numbers per thousand people
+      frescell, &! freights numbers per thousand people
+      mbkscell   ! motobikes numbers per thousand people
    
-   REAL(r8), INTENT(out) :: &
-      Fahe, &
-      vehc, &
-      meta
-
-   REAL(r8) :: & 
-      ahf_flx , &  ! metabolic heat + vehicle heat
-      vehc_tot, &  
-      vehc_flx     ! vehicle heat
+   REAL(r8), intent(out) :: &
+      Fahe, &! flux from metabolic and vehicle
+      vehc, &! flux from vehicle
+      meta   ! flux from metabolic
 
    REAL(r8) ::  &
-      londeg   , &
-      car_sp   , &
-      traf_frac, & ! vehicle heat profile of time step
-      meta_prof, & ! metabolic heat profile of time step
-      meta_flx , &
-      carflx   , & ! heat from car
-      motflx   , & ! heat from motorbike
-      freflx       ! heat from freight
-      !vehc_tot    ! total vehicle
+      londeg   , &! longitude of path [degree]
+      car_sp   , &! distance traveled [km]
+      traf_frac, &! vehicle heat profile of hour [-]
+      meta_prof, &! metabolic heat profile of hour [-]
+      carflx   , &! flux from car [W/m2]
+      motflx   , &! flux from motorbike [W/m2]
+      freflx      ! flux from freight [W/m2]
+
 
    ! local vars
    INTEGER :: &
-         ldate(3), &
-         iweek   , &
-         ihour   , &
-         day     , &
-         month   , &
-         day_inx , &
-         H2City  , &
-         k       , &
-         n       , &
-         EC      , &
-         EF      , &
-         EM
+         ldate(3), &! local time (year, julian day, seconds)
+         iweek   , &! day of week
+         ihour   , &! hour of day
+         day     , &! day of mmonth
+         month   , &! month of year
+         day_inx , &! holiday index, day=1(workday), day=1(holiday)
+         EC      , &! emission factor of car [J/m]
+         EF      , &! emission factor of freight [J/m]
+         EM         ! emission factor of motorbike [J/m]
 
+   ! set vehicle distance traveled
    car_sp = 50
-   EC = 3975  ! Sailor and Lu, 2004, J/m
+   
+   ! emission factor Sailor and Lu (2004), 
+   ! all vehicle are set to same value
+   EC = 3975  
    EM = 3975
    EF = 3975
 
 #ifndef USE_POINT_DATA
+   ! convert GMT time to local time
    londeg = patchlonr*180/PI
    CALL gmt2local(idate, londeg, ldate)
 #endif
-   ! emmission factor of cars/mobike/freight in different speed
-   !IF (car_sp == 16) THEN
-   !   EC = 41.21
-   !   EF = 162.13
-   !   EM = 22.01
-   !ELSE IF (car_sp == 24) THEN
-   !   EC = 35.4
-   !   EF = 141.21
-   !   EM = 18.805
-   !ELSE IF (car_sp == 32) THEN
-   !   EC = 29.59
-   !   EF = 120.29
-   !   EM = 15.6
-   !ELSE IF (car_sp == 40) THEN
-   !   EC = 27.755
-   !   EF = 114.355
-   !   EM = 14.38
-   !ELSE IF (car_sp == 48) THEN
-   !   EC = 25.92
-   !   EF = 108.42
-   !   EM = 13.16
-   !ELSE IF (car_sp == 56) THEN
-   !   EC = 25.33
-   !   EF = 106.685
-   !   EM = 14.815
-   !ELSE IF (car_sp == 64) THEN
-   !   EC = 24.74
-   !   EF = 104.95
-   !   EM = 16.47
-   !ELSE
-      ! user difine
-      ! EC =
-      ! EF =
-      ! EM =
-   !ENDIF
 
    vehc_prof(:,1) = wdh_prof
    vehc_prof(:,2) = weh_prof
-   !
+
    CALL julian2monthday(ldate(1), ldate(2), month, day)
    CALL timeweek(ldate(1), month, day, iweek)
-
-   ! which hour of the day
-   ! print*, 'lon is',londeg
-   ! print*, 'gmt time', idate(:)
-   ! print*, 'local time',ldate(:)
-   ! print*, month, day, iweek
    
    ihour = CEILING(ldate(3)*1./3600)
-   ! print*, ihour, ldate(3), idate(3), londeg
 
-   ! public holiday or weekendday
-   ! print*, day, iweek
    IF (day==366)  day=365
    IF (fix_holiday(day)==0 .or. week_holiday(iweek)==0) THEN
-   !   H2city  = 1
       day_inx = 1
    ELSE
-   !   H2city  = 0.8
       day_inx = 2
    ENDIF
 
+   ! set traffic flow to be used of this time step
    traf_frac = vehc_prof(ihour,day_inx)
+   ! set heat release per people of this time step
    meta_prof = hum_prof (ihour)
 
-   carscell = vehicle(1) !*popcell
-   mbkscell = vehicle(2) !*popcell
-   frescell = vehicle(3) !*popcell
+   carscell = vehicle(1)
+   mbkscell = vehicle(2)
+   frescell = vehicle(3)
 
-   ! metabolic heat
-   meta_flx= popcell*meta_prof/1e6
-   ! Cars
+   ! heat release of metabolism [W/m2]
+   meta = popcell*meta_prof/1e6
+   ! heat release of cars [W/m2]
    IF (carscell > 0) THEN
-      carflx = carscell*popcell/1000!(carscell*24*f_fac)*(popcell/1000)
+      carflx = carscell*popcell/1000
       carflx = carflx*traf_frac &
                *EC*(car_sp*1000)/1e6
       carflx = carflx/3600
    ENDIF
-   ! Motorbikes
+
+   ! heat release of motorbikes [W/m2]
    IF (mbkscell > 0) THEN
       motflx = mbkscell*popcell/1000
       motflx = motflx*traf_frac &
                *EM*(car_sp*1000)/1e6
       motflx   = motflx/3600
    ENDIF
-   ! Freight
+
+   ! heat release of freight [W/m2]
    IF (frescell > 0)THEN
       freflx = frescell*popcell/1000
       freflx = freflx*traf_frac &
                *EF*(car_sp*1000)/1e6
       freflx = freflx/3600
    ENDIF
-   !
+
+   ! total vehicle heat flux
    vehc = carflx + motflx + freflx
-   meta = meta_flx
-   Fahe = meta_flx + vehc !vehc_flx
+   ! total anthropogenic heat flux exclude building part
+   Fahe = meta + vehc
    
-   ! print*, Fahe
-  
   END Subroutine LUCY
 
+  ! -----------------------------------------------------------------------
   SUBROUTINE gmt2local(idate, long, ldate)
+
+  ! !DESCRIPTION:
+  ! A subroutine to calculate local time
+  ! !PURPOSE
+  ! Convert GMT time to local time in global run 
+  ! -----------------------------------------------------------------------
     
     IMPLICIT NONE
 
@@ -241,8 +223,14 @@ CONTAINS
     ENDIF
    END SUBROUTINE gmt2local
 
-
+  ! -----------------------------------------------------------------------
   SUBROUTINE timeweek(year, month, day, iweek)
+
+  ! !DESCRIPTION:
+  ! A subroutine to calculate day of week
+  ! !PURPOSE
+  ! Calculate day of week to determine if the day is week holiday
+  ! -----------------------------------------------------------------------
 
     IMPLICIT NONE
 
@@ -273,14 +261,6 @@ CONTAINS
          DayOfMonth(2) = 28
       ENDIF
     ENDIF
-
-!#ifdef USE_POINT_DATA
-!    IF (leap) THEN
-!       DayOfMonth(2) = 29
-!    ELSE
-!       DayOfMonth(2) = 28
-!    ENDIF
-!#endif
 
     IF (month==1 .or. month==2) THEN
       mmonth = month + 12

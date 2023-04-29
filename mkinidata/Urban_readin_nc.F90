@@ -28,7 +28,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CHARACTER(len=256) :: cyear
 
       INTEGER :: ncid
-      INTEGER :: wtlunitroof_vid, htroof_vid, canyonhwr_vid, wtroadperv_vid
+      INTEGER :: wtlunitroof_vid, htroof_vid, canyonhwr_vid, wtroadperv_vid, wtroadimperv_vid
       INTEGER :: urbanwaterpct_vid, urbantreepct_vid, urbantreetop_vid
       INTEGER :: albroof_vid, albwall_vid, albimproad_vid, albperroad_vid
       INTEGER :: emroof_vid, emwall_vid, emimproad_vid, emperroad_vid
@@ -50,55 +50,57 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       REAL(r8) :: rfwt, rfht, tpct, wpct, hw_point, htop_point, prwt
 #endif
 #endif
-      REAL(r8):: lweek_holiday(231,7)   , &  !weekday and weekendday
-                 lvehc_prof   (231,24,2), &  !diurnal traffic profile
-                 lhum_prof    (231,24 ) , &  !diurnal metabolize profile
-                 lfix_holiday (231,365) , &  !public holiday
-                 lvehicle     (231,3)        !number of cars/mobike/freight
-
-      REAL(r8), allocatable :: wtlunitroof   (:,:,:)
-      REAL(r8), allocatable :: htroof        (:,:,:)
-      REAL(r8), allocatable :: canyonhwr     (:,:,:)
-      REAL(r8), allocatable :: wtroadperv    (:,:,:)
-      REAL(r8), allocatable :: urbanwaterpct (:,:,:)
-      REAL(r8), allocatable :: urbantreepct  (:,:,:)
-      REAL(r8), allocatable :: urbantreetop  (:,:,:)
-      REAL(r8), allocatable :: urbanpop      (:,:,:)
-
-      ! albedo
-      REAL(r8), allocatable :: albroof   (:,:,:,:,:)
-      REAL(r8), allocatable :: albwall   (:,:,:,:,:)
-      REAL(r8), allocatable :: albimproad(:,:,:,:,:)
-      REAL(r8), allocatable :: albperroad(:,:,:,:,:)
-
-      ! emissivity
-      REAL(r8), allocatable :: emroof        (:,:,:)
-      REAL(r8), allocatable :: emwall        (:,:,:)
-      REAL(r8), allocatable :: emimproad     (:,:,:)
-      REAL(r8), allocatable :: emperroad     (:,:,:)
-
-      ! thermal pars of roof, wall, impervious
-      REAL(r8), allocatable :: cvroof      (:,:,:,:)
-      REAL(r8), allocatable :: cvwall      (:,:,:,:)
-      REAL(r8), allocatable :: cvimproad   (:,:,:,:)
-
-      ! thermal pars of roof, wall, impervious
-      REAL(r8), allocatable :: tkroof      (:,:,:,:)
-      REAL(r8), allocatable :: tkwall      (:,:,:,:)
-      REAL(r8), allocatable :: tkimproad   (:,:,:,:)
-
-      ! room maximum and minimum temperature
-      REAL(r8), allocatable :: tbuildingmax  (:,:,:)
-      REAL(r8), allocatable :: tbuildingmin  (:,:,:)
-
-      ! thickness of roof and wall
-      REAL(r8), allocatable :: thickroof     (:,:,:)
-      REAL(r8), allocatable :: thickwall     (:,:,:)
 
       ! parameters for LUCY
-      INTEGER , allocatable :: urbanlucy(:,:)
+      INTEGER , allocatable :: urbanlucy(:,:)  ! LUCY region id
 
-      print*, N_URB
+      REAL(r8), allocatable :: urbanpop (:,:,:)! population density [person/km2]
+
+      REAL(r8):: lweek_holiday(231,7)   , &  ! week holidays
+                 lvehc_prof   (231,24,2), &  ! Diurnal traffic flow profile [-]
+                 lhum_prof    (231,24 ) , &  ! Diurnal metabolic heat profile profile [W/person]
+                 lfix_holiday (231,365) , &  ! Fixed public holidays, holiday(0) or workday(1)
+                 lvehicle     (231,3)        ! vehicle numbers per thousand people
+
+      ! morphological parameter
+      REAL(r8), allocatable :: wtlunitroof   (:,:,:) ! roof fraction [-]
+      REAL(r8), allocatable :: htroof        (:,:,:) ! height of roof [m]
+      REAL(r8), allocatable :: canyonhwr     (:,:,:) ! height/width ratio [-]
+      REAL(r8), allocatable :: wtroadperv    (:,:,:) ! pervious road fraction [-]
+      REAL(r8), allocatable :: urbanwaterpct (:,:,:) ! urban water fraction [-]
+      REAL(r8), allocatable :: urbantreepct  (:,:,:) ! urban tree fraction [-]
+      REAL(r8), allocatable :: urbantreetop  (:,:,:) ! urban tree height [m]
+      
+      ! albedo
+      REAL(r8), allocatable :: albroof   (:,:,:,:,:) ! albedo of roof [-]
+      REAL(r8), allocatable :: albwall   (:,:,:,:,:) ! albedo of wall[-]
+      REAL(r8), allocatable :: albimproad(:,:,:,:,:) ! albedo of impervious road [-]
+      REAL(r8), allocatable :: albperroad(:,:,:,:,:) ! albedo of pervious road [-]
+
+      ! emissivity
+      REAL(r8), allocatable :: emroof        (:,:,:) ! emissivity of roof [-]
+      REAL(r8), allocatable :: emwall        (:,:,:) ! emissivity of wall [-]
+      REAL(r8), allocatable :: emimproad     (:,:,:) ! emissivity of impervious road [-]
+      REAL(r8), allocatable :: emperroad     (:,:,:) ! emissivity of pervious road [-]
+
+      ! thermal pars of roof, wall, impervious
+      REAL(r8), allocatable :: cvroof      (:,:,:,:) ! volumetric heat capacity of roof [J/m3*K]
+      REAL(r8), allocatable :: cvwall      (:,:,:,:) ! volumetric heat capacity of wall [J/m3*K]
+      REAL(r8), allocatable :: cvimproad   (:,:,:,:) ! volumetric heat capacity of impervious road [J/m3*K]
+
+      ! thermal pars of roof, wall, impervious
+      REAL(r8), allocatable :: tkroof      (:,:,:,:) ! thermal conductivity of roof [W/m*K]
+      REAL(r8), allocatable :: tkwall      (:,:,:,:) ! thermal conductivity of wall [W/m*K]
+      REAL(r8), allocatable :: tkimproad   (:,:,:,:) ! thermal conductivity of impervious road [W/m*K]
+
+      ! room maximum and minimum temperature
+      REAL(r8), allocatable :: tbuildingmax  (:,:,:) ! maximum interior building temperature [K]
+      REAL(r8), allocatable :: tbuildingmin  (:,:,:) ! minimum interior building temperature [K]
+
+      ! thickness of roof and wall
+      REAL(r8), allocatable :: thickroof     (:,:,:) ! thickness of roof [m]
+      REAL(r8), allocatable :: thickwall     (:,:,:) ! thickness of wall [m]
+
       allocate ( wtlunitroof   (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( htroof        (1:lon_points,1:lat_points,1:N_URB) )
       allocate ( canyonhwr     (1:lon_points,1:lat_points,1:N_URB) )
@@ -151,19 +153,16 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       !TODO@wenzong: change 360, 720 to parameters
       do i=1, 360
          do j=1,720
-            !wtlunitroof (j,i,:) = rooffrac(:)
-            !htroof      (j,i,:) = roofhgt (:)
             canyonhwr   (j,i,:) = h2w     (:)
             wtroadperv  (j,i,:) = perfrac (:)
             emroof      (j,i,:) = roofem  (:)
             emwall      (j,i,:) = wallem  (:)
             emimproad   (j,i,:) = roadem  (:)
             emperroad   (j,i,:) = perem   (:)
-            tbuildingmax(j,i,:) = 299.15  !TODO@wenzong: check
-            tbuildingmin(j,i,:) = 296.15  !TODO@wenzong: check
+            tbuildingmax(j,i,:) = 297.65  !TODO: check from WRF TBL, =TARGTEMP(294.15)+GAPTEMP(3.5)
+            tbuildingmin(j,i,:) = 290.65  !TODO: check from WRF TBL, =TARGTEMP(294.15)-GAPTEMP(3.5)
             thickroof   (j,i,:) = rooftk  (:)
             thickwall   (j,i,:) = walltk  (:)
-            !thickroad   (j,i,:) = roadtk  (:)
 
             albroof     (j,i,:,1,1) = roofalb(:)
             albroof     (j,i,:,1,2) = roofalb(:)
@@ -193,7 +192,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
          enddo
       enddo
 #else
-! READ in urban data
+      ! READ in urban data
       write(cyear,'(i4.4)') lc_year
       lndname = trim(dir_srfdata)//trim(cyear)//'/'//trim(nam_urbdata)
       print*,trim(lndname)
@@ -285,7 +284,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       print*, lndname
       CALL nccheck( nf90_open(lndname, nf90_nowrite, ncid) )
 
-      CALL nccheck( nf90_inq_varid(ncid, "impervious_area_fraction" , wtroadperv_vid   ) ) ! imperivous area fraciton
+      CALL nccheck( nf90_inq_varid(ncid, "impervious_area_fraction" , wtroadimperv_vid ) ) ! imperivous area fraciton
       CALL nccheck( nf90_inq_varid(ncid, "tree_area_fraction"       , urbantreepct_vid ) ) ! tree area fraction
       CALL nccheck( nf90_inq_varid(ncid, "water_area_fraction"      , urbanwaterpct_vid) ) ! water area fraction
       CALL nccheck( nf90_inq_varid(ncid, "roof_area_fraction"       , wtlunitroof_vid  ) ) ! roof area fraction
@@ -293,7 +292,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
       CALL nccheck( nf90_inq_varid(ncid, "tree_mean_height"         , urbantreetop_vid ) ) ! tree mean height
       CALL nccheck( nf90_inq_varid(ncid, "canyon_height_width_ratio", canyonhwr_vid    ) ) ! H2W
 
-      CALL nccheck( nf90_get_var(ncid, wtroadperv_vid,    prwt      ) )
+      CALL nccheck( nf90_get_var(ncid, wtroadimperv_vid,  prwt      ) )
       CALL nccheck( nf90_get_var(ncid, urbantreepct_vid,  tpct      ) )
       CALL nccheck( nf90_get_var(ncid, urbanwaterpct_vid, wpct      ) )
       CALL nccheck( nf90_get_var(ncid, wtlunitroof_vid,   rfwt      ) )
@@ -337,7 +336,7 @@ SUBROUTINE Urban_readin_nc (dir_srfdata,dir_atmdata,nam_urbdata,nam_atmdata,lc_y
             fix_holiday(u,:)  = lfix_holiday(lucy_id,:)
          ENDIF
 
-         popcell(u)      = urbanpop      (i,j,t)
+         popcell(u)      = urbanpop      (i,j,t) !population density [person/km2]
          froof(u)        = wtlunitroof   (i,j,t) !roof fractional cover
          hroof(u)        = htroof        (i,j,t) !average building height
          hwr(u)          = canyonhwr     (i,j,t) !average building height to their distance

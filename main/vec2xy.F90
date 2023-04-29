@@ -85,25 +85,25 @@ MODULE MOD_vec2xy
    REAL(r8), allocatable :: a_fhac   (:,:)    !sensible flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: a_fwst   (:,:)    !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: a_fach   (:,:)    !flux from inner and outter air exchange [W/m2]
-   REAL(r8), allocatable :: a_fahe   (:,:)
-   REAL(r8), allocatable :: a_fhah   (:,:)
-   REAL(r8), allocatable :: a_vehc   (:,:)
-   REAL(r8), allocatable :: a_meta   (:,:)
+   REAL(r8), allocatable :: a_fahe   (:,:)    !flux from metabolic and vehicle [W/m2]
+   REAL(r8), allocatable :: a_fhah   (:,:)    !sensible flux from heating [W/m2]
+   REAL(r8), allocatable :: a_vehc   (:,:)    !flux from vehicle [W/m2]
+   REAL(r8), allocatable :: a_meta   (:,:)    !flux from metabolic [W/m2]
 
-   REAL(r8), allocatable :: a_senroof(:,:)
-   REAL(r8), allocatable :: a_senwsun(:,:)
-   REAL(r8), allocatable :: a_senwsha(:,:)
-   REAL(r8), allocatable :: a_sengimp(:,:)
-   REAL(r8), allocatable :: a_sengper(:,:)
-   REAL(r8), allocatable :: a_senurl (:,:)
+   REAL(r8), allocatable :: a_senroof(:,:)    !sensible heat flux from roof [W/m2]
+   REAL(r8), allocatable :: a_senwsun(:,:)    !sensible heat flux from sunlit wall [W/m2]
+   REAL(r8), allocatable :: a_senwsha(:,:)    !sensible heat flux from shaded wall [W/m2]
+   REAL(r8), allocatable :: a_sengimp(:,:)    !sensible heat flux from impervious road [W/m2]
+   REAL(r8), allocatable :: a_sengper(:,:)    !sensible heat flux from pervious road [W/m2]
+   REAL(r8), allocatable :: a_senurbl(:,:)    !sensible heat flux from urban vegetation [W/m2]
 
-   REAL(r8), allocatable :: a_lfevproof(:,:)
-   REAL(r8), allocatable :: a_lfevpgimp(:,:)
-   REAL(r8), allocatable :: a_lfevpgper(:,:)
-   REAL(r8), allocatable :: a_lfevpurl (:,:)
+   REAL(r8), allocatable :: a_lfevproof(:,:)    !latent heat flux from roof [W/m2]
+   REAL(r8), allocatable :: a_lfevpgimp(:,:)    !latent heat flux from impervious road [W/m2]
+   REAL(r8), allocatable :: a_lfevpgper(:,:)    !latent heat flux from pervious road [W/m2]
+   REAL(r8), allocatable :: a_lfevpurbl(:,:)    !latent heat flux from urban vegetation [W/m2]
 
-   REAL(r8), allocatable :: a_troof    (:,:)
-   REAL(r8), allocatable :: a_twall    (:,:)
+   REAL(r8), allocatable :: a_troof    (:,:)    !temperature of roof [K]
+   REAL(r8), allocatable :: a_twall    (:,:)    !temperature of wall [K]
 
    REAL(r8), allocatable :: a_sabvdt  (:,:)   !solar absorbed by sunlit canopy [W/m2]
    REAL(r8), allocatable :: a_sabgdt  (:,:)   !solar absorbed by ground [W/m2]
@@ -312,12 +312,12 @@ CONTAINS
             a_senwsha (i,j) = 0.!spval
             a_sengimp (i,j) = 0.!spval
             a_sengper (i,j) = 0.!spval
-            a_senurl  (i,j) = 0.!spval
+            a_senurbl (i,j) = 0.!spval
 
             a_lfevproof(i,j)= 0.!spval
             a_lfevpgimp(i,j)= 0.!spval
             a_lfevpgper(i,j)= 0.!spval
-            a_lfevpurl (i,j)= 0.!spval
+            a_lfevpurbl(i,j)= 0.!spval
 
             a_troof   (i,j) = 0.!spval
             a_twall   (i,j) = 0.!spval
@@ -464,12 +464,12 @@ CONTAINS
                   a_senwsha(i,j) = a_senwsha(i,j) + patchfrac(np)*fsen_wsha(u)
                   a_sengimp(i,j) = a_sengimp(i,j) + patchfrac(np)*fsen_gimp(u)
                   a_sengper(i,j) = a_sengper(i,j) + patchfrac(np)*fsen_gper(u)
-                  a_senurl (i,j) = a_senurl (i,j) + patchfrac(np)*fsen_url (u)
+                  a_senurbl(i,j) = a_senurbl(i,j) + patchfrac(np)*fsen_urbl(u)
 
                   a_lfevproof(i,j) = a_lfevproof(i,j) + patchfrac(np)*lfevp_roof(u)
                   a_lfevpgimp(i,j) = a_lfevpgimp(i,j) + patchfrac(np)*lfevp_gimp(u)
                   a_lfevpgper(i,j) = a_lfevpgper(i,j) + patchfrac(np)*lfevp_gper(u)
-                  a_lfevpurl (i,j) = a_lfevpurl (i,j) + patchfrac(np)*lfevp_url (u)
+                  a_lfevpurbl(i,j) = a_lfevpurbl(i,j) + patchfrac(np)*lfevp_urbl(u)
 
                   ! print*, troof
                   a_troof  (i,j) = a_troof  (i,j) + patchfrac(np)*troof  (u)
@@ -634,12 +634,12 @@ CONTAINS
                   a_senwsha(i,j) = a_senwsha(i,j) / urbwt(i,j)
                   a_sengimp(i,j) = a_sengimp(i,j) / urbwt(i,j)
                   a_sengper(i,j) = a_sengper(i,j) / urbwt(i,j)
-                  a_senurl (i,j) = a_senurl (i,j) / urbwt(i,j)
+                  a_senurbl(i,j) = a_senurbl(i,j) / urbwt(i,j)
 
                   a_lfevproof(i,j) = a_lfevproof(i,j) / urbwt(i,j)
                   a_lfevpgimp(i,j) = a_lfevpgimp(i,j) / urbwt(i,j)
                   a_lfevpgper(i,j) = a_lfevpgper(i,j) / urbwt(i,j)
-                  a_lfevpurl (i,j) = a_lfevpurl (i,j) / urbwt(i,j)
+                  a_lfevpurbl(i,j) = a_lfevpurbl(i,j) / urbwt(i,j)
 
                   a_troof  (i,j) = a_troof  (i,j) / urbwt(i,j)
                   a_twall  (i,j) = a_twall  (i,j) / urbwt(i,j)
@@ -655,12 +655,12 @@ CONTAINS
                   a_senwsha(i,j) = spval
                   a_sengimp(i,j) = spval
                   a_sengper(i,j) = spval
-                  a_senurl (i,j) = spval
+                  a_senurbl(i,j) = spval
 
                   a_lfevproof(i,j) = spval
                   a_lfevpgimp(i,j) = spval
                   a_lfevpgper(i,j) = spval
-                  a_lfevpurl (i,j) = spval
+                  a_lfevpurbl(i,j) = spval
 
                   a_troof  (i,j) = spval
                   a_twall  (i,j) = spval
@@ -1238,12 +1238,12 @@ CONTAINS
             CALL acc(a_senwsha   (i,j), 1., f_senwsha   (i,j))
             CALL acc(a_sengimp   (i,j), 1., f_sengimp   (i,j))
             CALL acc(a_sengper   (i,j), 1., f_sengper   (i,j))
-            CALL acc(a_senurl    (i,j), 1., f_senurl    (i,j))
+            CALL acc(a_senurbl   (i,j), 1., f_senurbl   (i,j))
 
             CALL acc(a_lfevproof (i,j), 1., f_lfevproof (i,j))
             CALL acc(a_lfevpgimp (i,j), 1., f_lfevpgimp (i,j))
             CALL acc(a_lfevpgper (i,j), 1., f_lfevpgper (i,j))
-            CALL acc(a_lfevpurl  (i,j), 1., f_lfevpurl  (i,j))
+            CALL acc(a_lfevpurbl (i,j), 1., f_lfevpurbl (i,j))
 
             CALL acc(a_troof     (i,j), 1., f_troof     (i,j))
             CALL acc(a_twall     (i,j), 1., f_twall     (i,j))
@@ -1413,12 +1413,12 @@ CONTAINS
       allocate (a_senwsha   (lon_points,lat_points))
       allocate (a_sengimp   (lon_points,lat_points))
       allocate (a_sengper   (lon_points,lat_points))
-      allocate (a_senurl    (lon_points,lat_points))
+      allocate (a_senurbl   (lon_points,lat_points))
 
       allocate (a_lfevproof (lon_points,lat_points))
       allocate (a_lfevpgimp (lon_points,lat_points))
       allocate (a_lfevpgper (lon_points,lat_points))
-      allocate (a_lfevpurl  (lon_points,lat_points))
+      allocate (a_lfevpurbl (lon_points,lat_points))
 
       allocate (a_troof     (lon_points,lat_points))
       allocate (a_twall     (lon_points,lat_points))
@@ -1579,12 +1579,12 @@ CONTAINS
       deallocate ( a_senwsha      )
       deallocate ( a_sengimp      )
       deallocate ( a_sengper      )
-      deallocate ( a_senurl       )
+      deallocate ( a_senurbl      )
 
       deallocate ( a_lfevproof    )
       deallocate ( a_lfevpgimp    )
       deallocate ( a_lfevpgper    )
-      deallocate ( a_lfevpurl     )
+      deallocate ( a_lfevpurbl    )
 
       deallocate ( a_troof        )
       deallocate ( a_twall        )

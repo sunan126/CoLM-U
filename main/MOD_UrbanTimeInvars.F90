@@ -15,12 +15,12 @@ MODULE MOD_UrbanTimeInvars
    INTEGER , allocatable :: urb2patch   (:)  !projection from Urban to patch
 
    REAL(r8), allocatable :: popcell(:)       !pop density
-   REAL(r8), allocatable :: vehicle(:,:)     !number of different vehicl
-   REAL(r8), allocatable :: week_holiday(:,:)!weekday or weekend day
-   REAL(r8), allocatable :: weh_prof(:,:)    !traffic profile of weekendday
-   REAL(r8), allocatable :: wdh_prof(:,:)    !traffic profile of weekday
-   REAL(r8), allocatable :: hum_prof(:,:)    !diurnal metabolism profile
-   REAL(r8), allocatable :: fix_holiday(:,:) !fix public holiday
+   REAL(r8), allocatable :: vehicle(:,:)     !vehicle numbers per thousand people
+   REAL(r8), allocatable :: week_holiday(:,:)!week holidays
+   REAL(r8), allocatable :: weh_prof(:,:)    !Diurnal traffic flow profile of weekend
+   REAL(r8), allocatable :: wdh_prof(:,:)    !Diurnal traffic flow profile of weekday
+   REAL(r8), allocatable :: hum_prof(:,:)    !Diurnal metabolic heat profile
+   REAL(r8), allocatable :: fix_holiday(:,:) !Fixed public holidays, holiday(0) or workday(1)
 
    ! 城市形态结构参数
    REAL(r8), allocatable :: froof       (:)  !roof fractional cover [-]
@@ -79,14 +79,7 @@ CONTAINS
       USE GlobalVars
       IMPLICIT NONE
 
-      allocate (popcell      (numurban) )
 
-      allocate (vehicle      (numurban,3  ) )
-      allocate (week_holiday (numurban,7  ) ) 
-      allocate (weh_prof     (numurban,24 ) ) 
-      allocate (wdh_prof     (numurban,24 ) )
-      allocate (hum_prof     (numurban,24 ) )
-      allocate (fix_holiday  (numurban,365) )
       
       allocate (urbclass             (numurban))
       allocate (patch2urb            (numpatch))
@@ -122,6 +115,14 @@ CONTAINS
 
       allocate (t_roommax            (numurban))
       allocate (t_roommin            (numurban))
+      allocate (popcell              (numurban))
+      
+      allocate (vehicle          (numurban,3  ))
+      allocate (week_holiday     (numurban,7  )) 
+      allocate (weh_prof         (numurban,24 )) 
+      allocate (wdh_prof         (numurban,24 ))
+      allocate (hum_prof         (numurban,24 ))
+      allocate (fix_holiday      (numurban,365))
 
    END SUBROUTINE allocate_UrbanTimeInvars
 

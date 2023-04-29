@@ -96,7 +96,7 @@ CONTAINS
 #ifdef USE_POINT_DATA
       if (fid(1) > 0) then
          ! close(fid(1))
-         if (fprefix=='NC') then
+         if (trim(fprefix)=='NC') then
             call sanity( nf90_close(fid(1)) )
             fid(1) = -1
          else
@@ -644,7 +644,7 @@ CONTAINS
 
       rtime = deltim !dtime(1)
 #ifdef USE_POINT_DATA      
-      IF(fprefix=='NC') THEN
+      IF(trim(fprefix)=='NC') THEN
          IF(time_i <= 0) THEN
             IF (s_year==startyr .and. s_month==startmo .and. s_day==startday .and. s_seconds==startsec) THEN
                IF (idate(1) == s_year) THEN
@@ -707,7 +707,7 @@ CONTAINS
             firstread = .False.
          ENDIF
 
-         print*, time_i
+         ! print*, time_i
 
          IF (firstread) THEN
             CALL sanity( nf90_open(filename, nf90_nowrite, fid(1)) )

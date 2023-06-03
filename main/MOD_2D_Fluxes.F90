@@ -89,27 +89,11 @@ REAL(r8), allocatable :: f_qref   (:,:)  ! 2 m height air specific humidity [kg/
 REAL(r8), allocatable :: f_t_room (:,:)  ! temperature of inner building [K]
 REAL(r8), allocatable :: f_tafu   (:,:)  ! temperature of outer building [K]
 REAL(r8), allocatable :: f_fhac   (:,:)  ! sensible flux from heat or cool AC [W/m2]
+REAL(r8), allocatable :: f_fhah   (:,:)
 REAL(r8), allocatable :: f_fwst   (:,:)  ! waste heat flux from heat or cool AC [W/m2]
 REAL(r8), allocatable :: f_fach   (:,:)  ! flux from inner and outter air exchange [W/m2]
-REAL(r8), allocatable :: f_fahe   (:,:)  ! flux from metabolism and vehicle [W/m2]
-REAL(r8), allocatable :: f_fhah   (:,:)  ! sensible flux from heating [W/m2]
-REAL(r8), allocatable :: f_vehc   (:,:)  ! flux from vehicle [W/m2]
-REAL(r8), allocatable :: f_meta   (:,:)  ! flux from metabolism [W/m2]
+REAL(r8), allocatable :: f_fahe   (:,:)
 
-REAL(r8), allocatable :: f_senroof(:,:)  ! sensible heat flux from roof [W/m2]
-REAL(r8), allocatable :: f_senwsun(:,:)  ! sensible heat flux from sunlit wall [W/m2]
-REAL(r8), allocatable :: f_senwsha(:,:)  ! sensible heat flux from shaded wall [W/m2]
-REAL(r8), allocatable :: f_sengimp(:,:)  ! sensible heat flux from impervious road [W/m2]
-REAL(r8), allocatable :: f_sengper(:,:)  ! sensible heat flux from pervious road [W/m2]
-REAL(r8), allocatable :: f_senurbl(:,:)  ! sensible heat flux from urban vegetation [W/m2]
-
-REAL(r8), allocatable :: f_lfevproof(:,:)  ! latent heat flux from roof [W/m2]
-REAL(r8), allocatable :: f_lfevpgimp(:,:)  ! latent heat flux from impervious road [W/m2]
-REAL(r8), allocatable :: f_lfevpgper(:,:)  ! latent heat flux from pervious road [W/m2]
-REAL(r8), allocatable :: f_lfevpurbl(:,:)  ! latent heat flux from urban vegetation [W/m2]
-
-REAL(r8), allocatable :: f_troof    (:,:)  ! temperature of roof [K]
-REAL(r8), allocatable :: f_twall    (:,:)  ! temperature of wall [K]
 ! 分daytime(dt) and nighttime(nt)
 REAL(r8), allocatable :: f_sabvdt  (:,:) ! solar absorbed by sunlit canopy [W/m2]
 REAL(r8), allocatable :: f_sabgdt  (:,:) ! solar absorbed by ground [W/m2]
@@ -270,28 +254,10 @@ allocate ( f_qref   (lon_points,lat_points) )  ! 2 m height air specific humidit
 allocate ( f_t_room (lon_points,lat_points) )  ! temperature of inner building [K]
 allocate ( f_tafu   (lon_points,lat_points) )  ! temperature of outer building [K]
 allocate ( f_fhac   (lon_points,lat_points) )  ! sensible flux from heat or cool AC [W/m2]
+allocate ( f_fhah   (lon_points,lat_points) )
 allocate ( f_fwst   (lon_points,lat_points) )  ! waste heat flux from heat or cool AC [W/m2]
 allocate ( f_fach   (lon_points,lat_points) )  ! flux from inner and outter air exchange [W/m2]
-allocate ( f_fahe   (lon_points,lat_points) )  ! flux from metabolism and vehicle [W/m2]
-
-allocate ( f_fhah   (lon_points,lat_points) )  ! sensible heat flux from heating [W/m2]
-allocate ( f_vehc   (lon_points,lat_points) )  ! flux from vehicle [W/m2]
-allocate ( f_meta   (lon_points,lat_points) )  ! flux from metabolism [W/m2]
-
-allocate ( f_senroof (lon_points,lat_points) )  ! sensible heat flux from roof [W/m2]
-allocate ( f_senwsun (lon_points,lat_points) )  ! sensible heat flux from sunlit wall [W/m2]
-allocate ( f_senwsha (lon_points,lat_points) )  ! sensible heat flux from shaded wall [W/m2]
-allocate ( f_sengimp (lon_points,lat_points) )  ! sensible heat flux from impervious road [W/m2]
-allocate ( f_sengper (lon_points,lat_points) )  ! sensible heat flux from pervious road [W/m2]
-allocate ( f_senurbl (lon_points,lat_points) )  ! sensible heat flux from urban vegetation [W/m2]
-
-allocate ( f_lfevproof(lon_points,lat_points) )  ! latent heat flux from roof [W/m2]
-allocate ( f_lfevpgimp(lon_points,lat_points) )  ! latent heat flux from impervious road [W/m2]
-allocate ( f_lfevpgper(lon_points,lat_points) )  ! latent heat flux from pervious road [W/m2]
-allocate ( f_lfevpurbl(lon_points,lat_points) )  ! latent heat flux from urban vegetation [W/m2]
-
-allocate ( f_troof   (lon_points,lat_points) )  ! temperature of roof [K]
-allocate ( f_twall   (lon_points,lat_points) )  ! temperature of wall [K]
+allocate ( f_fahe   (lon_points,lat_points) )
 
 allocate ( f_sabvdt  (lon_points,lat_points) ) ! solar absorbed by sunlit canopy [W/m2]
 allocate ( f_sabgdt  (lon_points,lat_points) ) ! solar absorbed by ground [W/m2]
@@ -449,27 +415,10 @@ f_qref      (:,:) = spval
 f_t_room    (:,:) = spval
 f_tafu      (:,:) = spval
 f_fhac      (:,:) = spval
+f_fhah      (:,:) = spval
 f_fwst      (:,:) = spval
 f_fach      (:,:) = spval
 f_fahe      (:,:) = spval
-f_fhah      (:,:) = spval
-f_vehc      (:,:) = spval
-f_meta      (:,:) = spval
-
-f_senroof   (:,:) = spval
-f_senwsun   (:,:) = spval
-f_senwsha   (:,:) = spval
-f_sengimp   (:,:) = spval
-f_sengper   (:,:) = spval
-f_senurbl   (:,:) = spval
-
-f_lfevproof (:,:) = spval
-f_lfevpgimp (:,:) = spval
-f_lfevpgper (:,:) = spval
-f_lfevpurbl (:,:) = spval
-
-f_troof     (:,:) = spval
-f_twall     (:,:) = spval
 
 f_sabvdt    (:,:) = spval
 f_sabgdt    (:,:) = spval
@@ -602,27 +551,10 @@ deallocate ( f_qref   )  ! 2 m height air specific humidity [kg/kg]
 deallocate ( f_t_room )  ! temperature of inner building [K]
 deallocate ( f_tafu   )  ! temperature of outer building [K]
 deallocate ( f_fhac   )  ! sensible flux from heat or cool AC [W/m2]
+deallocate ( f_fhah   )
 deallocate ( f_fwst   )  ! waste heat flux from heat or cool AC [W/m2]
 deallocate ( f_fach   )  ! flux from inner and outter air exchange [W/m2]
-deallocate ( f_fahe   )  ! flux from metabolism and vehicle [W/m2]
-deallocate ( f_fhah   )  ! sensible heat flux from heating [W/m2]
-deallocate ( f_vehc   )  ! flux from vehicle [W/m2]
-deallocate ( f_meta   )  ! flux from metabolism [W/m2]
-
-deallocate ( f_senroof  )  ! sensible heat flux from roof [W/m2]
-deallocate ( f_senwsun  )  ! sensible heat flux from sunlit wall [W/m2]
-deallocate ( f_senwsha  )  ! sensible heat flux from shaded wall [W/m2]
-deallocate ( f_sengimp  )  ! sensible heat flux from impervious road [W/m2]
-deallocate ( f_sengper  )  ! sensible heat flux from pervious road [W/m2]
-deallocate ( f_senurbl  )  ! sensible heat flux from urban vegetation [W/m2]
-
-deallocate ( f_lfevproof )  ! latent heat flux from roof [W/m2]
-deallocate ( f_lfevpgimp )  ! latent heat flux from impervious road [W/m2]
-deallocate ( f_lfevpgper )  ! latent heat flux from pervious road [W/m2]
-deallocate ( f_lfevpurbl )  ! latent heat flux from urban vegetation [W/m2]
-
-deallocate ( f_troof    )  ! temperature of roof [K]
-deallocate ( f_twall    )  ! temperature of wall [K]
+deallocate ( f_fahe   )  
 
 deallocate ( f_sabvdt   )! solar absorbed by sunlit canopy [W/m2]
 deallocate ( f_sabgdt   )! solar absorbed by ground [W/m2]

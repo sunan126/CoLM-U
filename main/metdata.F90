@@ -23,10 +23,10 @@ MODULE METDAT
    integer  :: fid(NVAR)                         ! file id of nc file
    integer  :: vid(NVAR)                         ! variable id of nc file
    integer  :: land(nlands)                      ! coordinate infor
-   real(r4) :: dlats(nlats)                      ! latitude values
-   real(r4) :: dlons(nlons)                      ! longitude values
-   real(r8) :: rlats(nlats)                      ! latitude values
-   real(r8) :: rlons(nlons)                      ! longitude values
+   ! real(r4) :: dlats(nlats)                      ! latitude values
+   ! real(r4) :: dlons(nlons)                      ! longitude values
+   ! real(r8) :: rlats(nlats)                      ! latitude values
+   ! real(r8) :: rlons(nlons)                      ! longitude values
    real(r4), allocatable :: latxy(:,:)           ! latitude values in 2d
    real(r4), allocatable :: lonxy(:,:)           ! longitude values in 2d
    real(r4), allocatable :: metdata(:,:)         ! forcing data
@@ -35,6 +35,15 @@ MODULE METDAT
    real(r8), allocatable :: avgcos(:,:)          ! time-average of cos(zenith)
    type(timestamp) :: tstamp_LB(NVAR)            ! time stamp of low boundary data
    type(timestamp) :: tstamp_UB(NVAR)            ! time stamp of up boundary data
+#ifdef USE_ERA5LAND_DATA
+   real(r4), allocatable :: metdata_int(:,:)     ! forcing data 
+   real(r4) :: dlats_int(nlats+1)                ! latitude values
+   real(r4) :: dlons_int(nlons)                ! latitude values
+   real(r4) :: dlats(nlats/5)                      ! latitude values
+   real(r4) :: dlons(nlons/5)                      ! longitude values
+   real(r8) :: rlats(nlats/5)                      ! latitude values
+   real(r8) :: rlons(nlons/5)                      ! longitude values
+#endif
 
  ! external functions
    real(r8), external :: orb_coszen              ! cosine of solar zenith angle
@@ -78,10 +87,13 @@ CONTAINS
     ! allocate memory for forcing data
       allocate(latxy(nlons,nlats))       ! latitudes for each point
       allocate(lonxy(nlons,nlats))       ! longitude for each point
-      allocate(metdata(nlons,nlats))     ! forcing data
-      allocate(metdatatmp(nlons,nlats))  ! forcing data
+      allocate(metdata(nlons/5,nlats/5))     ! forcing data
+      allocate(metdatatmp(nlons/5,nlats/5))  ! forcing data
+#ifdef USE_ERA5LAND_DATA
+      allocate(metdata_int(nlons,nlats+1)) ! forcing data
+#endif
       allocate(metdata1d(nlands))        ! forcing data
-      allocate(avgcos(nlons,nlats))      ! time-average of cos(zenith)
+      allocate(avgcos(nlons/5,nlats/5))      ! time-average of cos(zenith)
 
    END SUBROUTINE metinit
 
@@ -95,13 +107,8 @@ CONTAINS
     ! close POINT data file
 #ifdef USE_POINT_DATA
       if (fid(1) > 0) then
-         ! close(fid(1))
-         if (trim(fprefix)=='NC') then
-            call sanity( nf90_close(fid(1)) )
-            fid(1) = -1
-         else
-            fid(1) = -1
-         endif
+         close(fid(1))
+         fid(1) = -1
       end if
 #endif
 
@@ -120,6 +127,9 @@ CONTAINS
       deallocate(metdata)
       deallocate(metdatatmp)
       deallocate(metdata1d)
+#ifdef USE_ERA5LAND_DATA
+      deallocate(metdata_int)
+#endif
       deallocate(avgcos)
 
    END SUBROUTINE metfinal
@@ -187,6 +197,22 @@ CONTAINS
             end if
          end if
 
+         ! modified by wanyi for fixed year
+         if (mtstamp%day == 1 .AND. mtstamp%sec == 0) then
+            call setstampLB(mtstamp, i, year, month, time_i)
+            call openmetfile(year, month, i)
+            call readvar(i, time_i)
+            forcn_LB(:,:,i) = metdata(lon_i:(lon_i+lon_n-1), lat_i:(lat_i+lat_n-1))
+            ! set upper boundary
+            tstamp_UB(i) = tstamp_LB(i) + dtime(i)
+            call openmetfile(year, month, i)
+            call readvar(i, time_i)
+            forcn_UB(:,:,i) = metdata(lon_i:(lon_i+lon_n-1), lat_i:(lat_i+lat_n-1))
+            if (i == 7) then  ! calculate time average coszen, for shortwave radiation
+               call calavgcos(lat_i, lon_i, lat_n, lon_n)
+            end if
+         end if
+
       end do
 
    END SUBROUTINE metreadLBUB
@@ -204,16 +230,18 @@ CONTAINS
       character(256) :: filename
 
       filename = trim(fmetdat)//trim(getfilename(year, month, var_i))
-      if (fname(var_i) .NE. filename) then
+      !print*, filename
+      if (fname(var_i) .NE. filename) then  !通常情况下，代表该打开下一个时间段的气象文件了；否则退出
 
-       ! close the old file first
+       ! close the old file first;  先关闭上一个时间段的气象文件
          if (fname(var_i) .NE. 'NULL' .AND. fid(var_i) > 0) then
             call sanity( nf90_close(fid(var_i)) )
          end if
 
        ! open the new file and set the fid/vid
+         print*, 'check: metfilename=',filename
          fname(var_i) = filename
-         if (fname(var_i) .NE. 'NULL' .AND. vname(var_i) .NE. 'NULL') then
+         if (fname(var_i) .NE. 'NULL' .AND. vname(var_i) .NE. 'NULL') then !代表该时间段的气象文件存在
             call sanity( nf90_open(path=trim(fname(var_i)), mode=nf90_nowrite, ncid=fid(var_i)) )
             call sanity( nf90_inq_varid(fid(var_i), trim(vname(var_i)), vid(var_i)) )
          end if
@@ -231,7 +259,7 @@ CONTAINS
       integer             :: latid
       integer             :: lonid
       integer             :: landid
-      integer             :: i, lati, loni
+      integer             :: i, lati, loni, j
       real(r8)            :: pi
       logical, save       :: firstcall = .true.
 
@@ -248,11 +276,26 @@ CONTAINS
                dlats = latxy(1,:)
                dlons = lonxy(:,1)
             else
-               call sanity( nf90_get_var(fid(var_i), latid, dlats) )
-               call sanity( nf90_get_var(fid(var_i), lonid, dlons) )
+#ifdef USE_ERA5LAND_DATA
+                call sanity( nf90_get_var(fid(var_i), latid, dlats_int) )
+                call sanity( nf90_get_var(fid(var_i), lonid, dlons_int) )
+                DO j = 1,nlats,5
+                   dlats((j+4)/5) = sum(dlats_int(j:(j+4)))/5.0
+                END do
+                DO j = 1,nlons,5
+                   dlons((j+4)/5) = sum(dlons_int(j:(j+4)))/5.0
+                ENDDO
+#else
+                call sanity( nf90_get_var(fid(var_i), latid, dlats) )
+                call sanity( nf90_get_var(fid(var_i), lonid, dlons) )
+#endif
+               
             end if
-
+#ifdef USE_ERA5LAND_DATA
+            if (latrev) dlats = dlats(360:1:-1)
+#else
             if (latrev) dlats = dlats(nlats:1:-1) ! reverse in latitude for axis
+#endif
             if (lonadj) dlons = dlons - 180.      ! adjust in longitude for axis
 
             pi = 4._r8 * atan(1._r8)  ! get PI
@@ -273,8 +316,74 @@ CONTAINS
                call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata(:,:), &
                                          start=(/1,1,1,time_i/), count=(/nlons,nlats,1,1/)) )
             else
+#ifdef USE_ERA5LAND_DATA
+               call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata_int(:,:), &
+                                         start=(/1,1,time_i/), count=(/nlons,nlats+1,1/)) )
+               ! do j = 1,nlats
+               !    metdata(:,j) = (metdata_int(:,j) + metdata_int(:,j+9))/10.0
+               ! END DO
+               IF (var_i==1) THEN
+                  ! >-100
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=280. 
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==2) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0.01
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==3) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=96000.
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==4) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==5) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=2
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==6) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=2
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==7) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==8) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=300
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ENDIF
+#else
                call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata(:,:), &
                                          start=(/1,1,time_i/), count=(/nlons,nlats,1/)) )
+#endif
             end if
          else
             call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata1d(:), &
@@ -291,8 +400,13 @@ CONTAINS
          if (latrev) metdata(:,:) = metdata(:,nlats:1:-1) ! reverse in latitude for data
          if (lonadj) then
             metdatatmp(:,:) = metdata(:,:)
+#ifdef USE_ERA5LAND_DATA
+            metdata(1:nlons/5/2,:) = metdatatmp((nlons/5/2+1):nlons/5,:) ! adjust in longitude for data
+            metdata((nlons/5/2+1):nlons/5,:) = metdatatmp(1:nlons/5/2,:) ! 0.5E~359.5E -> 179.5W~179.5E
+#else
             metdata(1:nlons/2,:) = metdatatmp((nlons/2+1):nlons,:) ! adjust in longitude for data
             metdata((nlons/2+1):nlons,:) = metdatatmp(1:nlons/2,:) ! 0.5E~359.5E -> 179.5W~179.5E
+#endif
          end if
       end if
 
@@ -634,116 +748,109 @@ CONTAINS
       REAL(r8) :: rain(1), snow(1)
       REAL(r8) :: rtime
       REAL(r8) :: metadata(1)
-      LOGICAL  :: firstread
-
-      save time_i, firstread
 
       character(256) :: filename
-
       filename = trim(fmetdat)//trim(fmetnam)
 
-      rtime = deltim !dtime(1)
-#ifdef USE_POINT_DATA      
-      IF(trim(fprefix)=='NC') THEN
-         IF(time_i <= 0) THEN
-            IF (s_year==startyr .and. s_month==startmo .and. s_day==startday .and. s_seconds==startsec) THEN
-               IF (idate(1) == s_year) THEN
-                  IF (idate(2) == s_julian) THEN
-                     time_i = (idate(3)-s_seconds)/rtime+1
-                  ELSE
-                     time_i = ((86400-s_seconds)/rtime+1)+(idate(2)-1-s_julian)*(86400/rtime)+((idate(3)/rtime))
-                  ENDIF
-               ELSE
-                  IF (isleapyear(s_year)) THEN
-                     months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
-                  ELSE
-                     months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
-                  ENDIF
+      if (fid(1) == -1) then
+         open(unit=11, file=filename, form='formatted', status='old', action='read')
+         fid(1) = 11
+      end if
 
-                  time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))+ &
-                           ((86400-s_seconds)/rtime)+(months(12)-months(s_month-1)-s_day)*(86400/rtime)
-                  
-                  DO i = s_year+1, idate(1)
-                     IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
-                        time_i = time_i+(86400/rtime)*366
-                     ENDIF
-
-                     IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
-                        time_i = time_i+(86400/rtime)*365
-                     ENDIF
-                  ENDDO
-               ENDIF
-            ELSE
-               ! restart case
-               print*, idate(:)
-               IF (s_year==startyr) THEN
-                  time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1)) - startsec/rtime
-               ELSE
-                  IF (isleapyear(startyr)) THEN
-                     months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
-                     time_i = (86400/rtime)*366 - ((months(startmo-1)+startday-1)*(86400/rtime)+startsec/rtime)
-                  ELSE
-                     months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
-                     time_i = (86400/rtime)*365 - ((months(startmo-1)+startday-1)*(86400/rtime)+startsec/rtime)
-                  ENDIF
-                ! print*, time_i, ((months(startmo)+startday-1)*(86400/rtime)+startsec/rtime)
-                  time_i = time_i + (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))
-
-                  DO i = startyr+1, idate(1)
-
-                     IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
-                        time_i = time_i+(86400/rtime)*366
-                     ENDIF
-
-                     IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
-                        time_i = time_i+(86400/rtime)*365
-                     ENDIF
-                  ENDDO
-               ENDIF
-            ENDIF
-            firstread = .True.
-         ELSE
-            time_i = time_i + 1
-            firstread = .False.
-         ENDIF
-
-         ! print*, time_i
-
-         IF (firstread) THEN
-            CALL sanity( nf90_open(filename, nf90_nowrite, fid(1)) )
-            firstread = .False.
-         ENDIF
-
-         DO i = 1, NVAR
-
-            IF (vname(i)=='Rainf') THEN
-               CALL sanity( nf90_inq_varid(fid(1), 'Rainf', prid) )
-               CALL sanity( nf90_inq_varid(fid(1), 'Snowf', snid) )
-               CALL sanity( nf90_get_var  (fid(1), prid, rain(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
-               CALL sanity( nf90_get_var  (fid(1), snid, snow(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
-               
-               forcn(1,1,4) = rain(1) + snow(1)
-            ELSE
-               CALL sanity( nf90_inq_varid(fid(1), vname(i), varid) )
-               CALL sanity( nf90_get_var  (fid(1), varid   , metadata(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
-
-               forcn(1,1,i) = metadata(1)
-            ENDIF
-         ENDDO
-         ! close in metfina     
-         ! CALL sanity( nf90_close(ncid) )
-      ELSE
-         IF(fid(1) ==  -1) THEN
-            open(unit=11, file=filename, form='formatted', status='old', action='read')
-            fid(1) = 11
-         ENDIF
-
-         read (fid(1), 10) forcn(1,1,7), forcn(1,1,8), forcn(1,1,4), forcn(1,1,1), &
+      read (fid(1), 10) forcn(1,1,7), forcn(1,1,8), forcn(1,1,4), forcn(1,1,1), &
                         forcn(1,1,5), forcn(1,1,6), forcn(1,1,3), forcn(1,1,2)
 
-10       format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
-      ENDIF
-#endif
+10    format (2f7.1, e14.3, 3f10.3, f10.1, e12.3)
+
+!      rtime = deltim !dtime(1)
+!      time_i = (86400/rtime)*(idate(2)-1)+((idate(3)-s_seconds)/rtime+1)
+      
+
+!      IF (idate(1) == s_year) THEN
+!         IF (idate(2) == s_julian) THEN
+!            time_i = (idate(3)-s_seconds)/rtime+1
+!         ELSE
+!            time_i = ((86400-s_seconds)/rtime+1)+(idate(2)-1-s_julian)*(86400/rtime)+((idate(3)/rtime))
+!         ENDIF
+!      ELSE
+!         IF (isleapyear(s_year)) THEN
+!            months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
+!         ELSE
+!            months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
+!         ENDIF
+
+!         time_i = (idate(2)-1)*(86400/rtime)+((idate(3)/rtime+1))+ &
+!                  ((86400-s_seconds)/rtime)+(months(12)-months(s_month-1)-s_day)*(86400/rtime)
+         
+!         DO i = s_year+1, idate(1)
+!            IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
+!               time_i = time_i+(86400/rtime)*366
+!            ENDIF
+
+!            IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
+!               time_i = time_i+(86400/rtime)*365
+!            ENDIF
+!         ENDDO
+!      ENDIF
+
+      !IF (isleapyear(idate(1))) THEN
+         !months = (/0,31,60,91,121,152,182,213,244,274,305,335,366/)
+      !   days = 366
+      !   time_i = (idate(1)-startyr)*(86400/rtime)*days+(86400/rtime)*(idate(2)-1) + (idate(3)/rtime+1)
+      !ELSE
+         !months = (/0,31,59,90,120,151,181,212,243,273,304,334,365/)
+      !   days = 365
+      !   time_i = (idate(1)-startyr)*(86400/rtime)*days+(86400/rtime)*(idate(2)-1) + (idate(3)/rtime+1)
+      !ENDIF
+
+      !print*, idate(3)
+!      print*, time_i
+
+!      CALL sanity( nf90_open(filename, nf90_nowrite, ncid) )
+!      DO i = 1, NVAR
+
+         !rtime = dtime(i)
+         !time_i = (86400/rtime)*(idate(2)-1)+(idate(3)/rtime+1)
+
+         !DO i = startyr, idate(1)
+         !   IF (isleapyear(i) .and. (idate(1)-i)>0) THEN
+         !      time_i = time_i+(86400/rtime)*366
+         !   ENDIF
+
+         !   IF (.NOT. isleapyear(i) .and. (idate(1)-i)>0) THEN
+         !      time_i = time_i+(86400/rtime)*365
+         !   ENDIF
+         !ENDDO
+!#ifdef USE_NCARATM_DATA
+!         IF (vname(i)/='NULL') THEN
+!            CALL sanity( nf90_inq_varid(ncid, vname(i), varid) )
+!            CALL sanity( nf90_get_var  (ncid, varid   , metadata(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+
+!            forcn(1,1,i) = metadata(1)
+!         ENDIF
+!      ENDDO
+
+!      es = 6.112*exp((17.67*forcn(1,1,1))/(forcn(1,1,1)+243.5))
+!      forcn(1,1,2) = 1/(1/(forcn(1,1,2)*es/forcn(1,1,3))-0.378)
+
+!#else
+!         IF (vname(i)=='Rainf') THEN
+!            CALL sanity( nf90_inq_varid(ncid, 'Rainf', prid) )
+!            CALL sanity( nf90_inq_varid(ncid, 'Snowf', snid) )
+!            CALL sanity( nf90_get_var  (ncid, prid, rain(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+!            CALL sanity( nf90_get_var  (ncid, snid, snow(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+            
+!            forcn(1,1,4) = rain(1) + snow(1)
+!         ELSE
+!            CALL sanity( nf90_inq_varid(ncid, vname(i), varid) )
+!            CALL sanity( nf90_get_var  (ncid, varid   , metadata(:), start=(/1,1,time_i/), count=(/1,1,1/)) )
+
+!            forcn(1,1,i) = metadata(1)
+!         ENDIF
+!      ENDDO
+!#endif     
+!      CALL sanity( nf90_close(ncid) )
+
    END SUBROUTINE metreadpoint
 
 

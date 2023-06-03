@@ -575,6 +575,7 @@ MODULE LEAF_temperature
              * (wtaq0 + wtgq0)*qsatlDT
 
          IF(etr.ge.etrc)THEN
+            ! print*,'etr=',etr,'etrc=',etrc
             etr = etrc
             etr_dtl = 0.
          ENDIF

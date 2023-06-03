@@ -258,16 +258,6 @@ MODULE MOD_TimeInvariants
            tk_gimp,         &! thermal conductivity of impervious [W/m-K]
            t_roommax,       &! maximum temperature of inner room [K]
            t_roommin         ! minimum temperature of inner room [K]
-#ifdef USE_LUCY
-     read (lhistTimeConst)  &!
-           popcell,         &! population density
-           vehicle,         &! vehicle numbers per thousand people
-           week_holiday,    &! week holidays
-           weh_prof,        &! Diurnal vehicle heat profile of weekend
-           wdh_prof,        &! Diurnal vehicle heat profile of weekday
-           hum_prof,        &! Diurnal metabolic heat profile
-           fix_holiday       ! Fixed public holidays, holiday(0) or workday(1)
-#endif
 #endif
 
      close(lhistTimeConst)
@@ -404,16 +394,6 @@ MODULE MOD_TimeInvariants
            tk_gimp,         &! thermal conductivity of impervious [W/m-K]
            t_roommax,       &! maximum temperature of inner room [K]
            t_roommin         ! minimum temperature of inner room [K]
-#ifdef USE_LUCY
-     write(lhistTimeConst)  &!
-           popcell,         &! population density
-           vehicle,         &! vehicle numbers per thousand people
-           week_holiday,    &! week holidays
-           weh_prof,        &! Diurnal traffic flow profile of weekend
-           wdh_prof,        &! Diurnal traffic flow profile of weekday
-           hum_prof,        &! Diurnal metabolic heat profile
-           fix_holiday       ! Fixed public holidays, holiday(0) or workday(1)
-#endif
 #endif
      close(lhistTimeConst)
 

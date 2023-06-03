@@ -1,6 +1,6 @@
 #include <define.h>
 
- MODULE GLACIER
+ MODULE MOD_GLACIER
 
 !-----------------------------------------------------------------------
 ! Energy and Mass Balance Model of LAND ICE (GLACIER / ICE SHEET)
@@ -850,4 +850,4 @@
 
 
 
- END MODULE GLACIER
+ END MODULE MOD_GLACIER

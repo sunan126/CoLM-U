@@ -83,27 +83,10 @@ MODULE MOD_vec2xy
    REAL(r8), allocatable :: a_t_room (:,:)    !temperature of inner building [K]
    REAL(r8), allocatable :: a_tafu   (:,:)    !temperature of outer building [K]
    REAL(r8), allocatable :: a_fhac   (:,:)    !sensible flux from heat or cool AC [W/m2]
+   REAL(r8), allocatable :: a_fhah   (:,:)
    REAL(r8), allocatable :: a_fwst   (:,:)    !waste heat flux from heat or cool AC [W/m2]
    REAL(r8), allocatable :: a_fach   (:,:)    !flux from inner and outter air exchange [W/m2]
-   REAL(r8), allocatable :: a_fahe   (:,:)    !flux from metabolic and vehicle [W/m2]
-   REAL(r8), allocatable :: a_fhah   (:,:)    !sensible flux from heating [W/m2]
-   REAL(r8), allocatable :: a_vehc   (:,:)    !flux from vehicle [W/m2]
-   REAL(r8), allocatable :: a_meta   (:,:)    !flux from metabolic [W/m2]
-
-   REAL(r8), allocatable :: a_senroof(:,:)    !sensible heat flux from roof [W/m2]
-   REAL(r8), allocatable :: a_senwsun(:,:)    !sensible heat flux from sunlit wall [W/m2]
-   REAL(r8), allocatable :: a_senwsha(:,:)    !sensible heat flux from shaded wall [W/m2]
-   REAL(r8), allocatable :: a_sengimp(:,:)    !sensible heat flux from impervious road [W/m2]
-   REAL(r8), allocatable :: a_sengper(:,:)    !sensible heat flux from pervious road [W/m2]
-   REAL(r8), allocatable :: a_senurbl(:,:)    !sensible heat flux from urban vegetation [W/m2]
-
-   REAL(r8), allocatable :: a_lfevproof(:,:)    !latent heat flux from roof [W/m2]
-   REAL(r8), allocatable :: a_lfevpgimp(:,:)    !latent heat flux from impervious road [W/m2]
-   REAL(r8), allocatable :: a_lfevpgper(:,:)    !latent heat flux from pervious road [W/m2]
-   REAL(r8), allocatable :: a_lfevpurbl(:,:)    !latent heat flux from urban vegetation [W/m2]
-
-   REAL(r8), allocatable :: a_troof    (:,:)    !temperature of roof [K]
-   REAL(r8), allocatable :: a_twall    (:,:)    !temperature of wall [K]
+   REAL(r8), allocatable :: a_fahe   (:,:)
 
    REAL(r8), allocatable :: a_sabvdt  (:,:)   !solar absorbed by sunlit canopy [W/m2]
    REAL(r8), allocatable :: a_sabgdt  (:,:)   !solar absorbed by ground [W/m2]
@@ -300,27 +283,10 @@ CONTAINS
             a_t_room  (i,j) = 0.
             a_tafu    (i,j) = 0.
             a_fhac    (i,j) = 0.
+            a_fhah    (i,j) = 0.
             a_fwst    (i,j) = 0.
             a_fach    (i,j) = 0.
             a_fahe    (i,j) = 0.
-            a_fhah    (i,j) = 0.
-            a_vehc    (i,j) = 0.
-            a_meta    (i,j) = 0.
-
-            a_senroof (i,j) = 0.!spval
-            a_senwsun (i,j) = 0.!spval
-            a_senwsha (i,j) = 0.!spval
-            a_sengimp (i,j) = 0.!spval
-            a_sengper (i,j) = 0.!spval
-            a_senurbl (i,j) = 0.!spval
-
-            a_lfevproof(i,j)= 0.!spval
-            a_lfevpgimp(i,j)= 0.!spval
-            a_lfevpgper(i,j)= 0.!spval
-            a_lfevpurbl(i,j)= 0.!spval
-
-            a_troof   (i,j) = 0.!spval
-            a_twall   (i,j) = 0.!spval
 
             a_sabvdt  (i,j) = spval
             a_sabgdt  (i,j) = spval
@@ -451,29 +417,10 @@ CONTAINS
                   a_t_room (i,j) = a_t_room (i,j) + patchfrac(np)*t_room (u)
                   a_tafu   (i,j) = a_tafu   (i,j) + patchfrac(np)*tafu   (u)
                   a_fhac   (i,j) = a_fhac   (i,j) + patchfrac(np)*fhac   (u)
+                  a_fhah   (i,j) = a_fhah   (i,j) + patchfrac(np)*fhah   (u)
                   a_fwst   (i,j) = a_fwst   (i,j) + patchfrac(np)*fwst   (u)
                   a_fach   (i,j) = a_fach   (i,j) + patchfrac(np)*fach   (u)
                   a_fahe   (i,j) = a_fahe   (i,j) + patchfrac(np)*fahe   (u)
-                  a_fhah   (i,j) = a_fhah   (i,j) + patchfrac(np)*fhah   (u)
-                  a_vehc   (i,j) = a_vehc   (i,j) + patchfrac(np)*vehc   (u)
-                  a_meta   (i,j) = a_meta   (i,j) + patchfrac(np)*meta   (u)
-
-                  ! print*, fsen_roof, patchfrac(np)
-                  a_senroof(i,j) = a_senroof(i,j) + patchfrac(np)*fsen_roof(u)
-                  a_senwsun(i,j) = a_senwsun(i,j) + patchfrac(np)*fsen_wsun(u)
-                  a_senwsha(i,j) = a_senwsha(i,j) + patchfrac(np)*fsen_wsha(u)
-                  a_sengimp(i,j) = a_sengimp(i,j) + patchfrac(np)*fsen_gimp(u)
-                  a_sengper(i,j) = a_sengper(i,j) + patchfrac(np)*fsen_gper(u)
-                  a_senurbl(i,j) = a_senurbl(i,j) + patchfrac(np)*fsen_urbl(u)
-
-                  a_lfevproof(i,j) = a_lfevproof(i,j) + patchfrac(np)*lfevp_roof(u)
-                  a_lfevpgimp(i,j) = a_lfevpgimp(i,j) + patchfrac(np)*lfevp_gimp(u)
-                  a_lfevpgper(i,j) = a_lfevpgper(i,j) + patchfrac(np)*lfevp_gper(u)
-                  a_lfevpurbl(i,j) = a_lfevpurbl(i,j) + patchfrac(np)*lfevp_urbl(u)
-
-                  ! print*, troof
-                  a_troof  (i,j) = a_troof  (i,j) + patchfrac(np)*troof  (u)
-                  a_twall  (i,j) = a_twall  (i,j) + patchfrac(np)*twall  (u)
                ENDIF
 #endif
                ! 根据coszen(np)的正负->daytime or nighttime
@@ -622,48 +569,18 @@ CONTAINS
                   a_t_room (i,j) = a_t_room (i,j) / urbwt(i,j)
                   a_tafu   (i,j) = a_tafu   (i,j) / urbwt(i,j)
                   a_fhac   (i,j) = a_fhac   (i,j) / urbwt(i,j)
+                  a_fhah   (i,j) = a_fhah   (i,j) / urbwt(i,j)
                   a_fwst   (i,j) = a_fwst   (i,j) / urbwt(i,j)
                   a_fach   (i,j) = a_fach   (i,j) / urbwt(i,j)
                   a_fahe   (i,j) = a_fahe   (i,j) / urbwt(i,j)
-                  a_fhah   (i,j) = a_fhah   (i,j) / urbwt(i,j)
-                  a_vehc   (i,j) = a_vehc   (i,j) / urbwt(i,j)
-                  a_meta   (i,j) = a_meta   (i,j) / urbwt(i,j)
-
-                  a_senroof(i,j) = a_senroof(i,j) / urbwt(i,j)
-                  a_senwsun(i,j) = a_senwsun(i,j) / urbwt(i,j)
-                  a_senwsha(i,j) = a_senwsha(i,j) / urbwt(i,j)
-                  a_sengimp(i,j) = a_sengimp(i,j) / urbwt(i,j)
-                  a_sengper(i,j) = a_sengper(i,j) / urbwt(i,j)
-                  a_senurbl(i,j) = a_senurbl(i,j) / urbwt(i,j)
-
-                  a_lfevproof(i,j) = a_lfevproof(i,j) / urbwt(i,j)
-                  a_lfevpgimp(i,j) = a_lfevpgimp(i,j) / urbwt(i,j)
-                  a_lfevpgper(i,j) = a_lfevpgper(i,j) / urbwt(i,j)
-                  a_lfevpurbl(i,j) = a_lfevpurbl(i,j) / urbwt(i,j)
-
-                  a_troof  (i,j) = a_troof  (i,j) / urbwt(i,j)
-                  a_twall  (i,j) = a_twall  (i,j) / urbwt(i,j)
                ELSE
                   a_t_room (i,j) = spval
                   a_tafu   (i,j) = spval
                   a_fhac   (i,j) = spval
+                  a_fhah   (i,j) = spval
                   a_fwst   (i,j) = spval
                   a_fach   (i,j) = spval
                   a_fahe   (i,j) = spval
-                  a_senroof(i,j) = spval
-                  a_senwsun(i,j) = spval
-                  a_senwsha(i,j) = spval
-                  a_sengimp(i,j) = spval
-                  a_sengper(i,j) = spval
-                  a_senurbl(i,j) = spval
-
-                  a_lfevproof(i,j) = spval
-                  a_lfevpgimp(i,j) = spval
-                  a_lfevpgper(i,j) = spval
-                  a_lfevpurbl(i,j) = spval
-
-                  a_troof  (i,j) = spval
-                  a_twall  (i,j) = spval
                ENDIF
 #endif
                IF (a_sabvdt  (i,j) /= spval) a_sabvdt  (i,j) = a_sabvdt  (i,j) / sumwt(i,j)
@@ -1074,8 +991,13 @@ CONTAINS
                qm = forc_xy_q(i,j)
                psrf = forc_xy_psrf(i,j)
                rhoair = (psrf - 0.378*qm*psrf/(0.622+0.378*qm)) / (rgas*tm)
-
+               IF (rhoair<=0) THEN 
+                  print*, psrf, qm, tm, rhoair
+               ENDIF
+               !print*, 'a_taux(i,j)=',a_taux(i,j),'a_tauy(i,j)=',a_tauy(i,j),'rhoair=', rhoair
                a_ustar(i,j) = sqrt(max(1.e-6,sqrt(a_taux(i,j)**2+a_tauy(i,j)**2))/rhoair)
+               !print*, 'a_ustar(i,j)=',a_ustar(i,j)
+
                a_tstar(i,j) = -a_fsena(i,j)/(rhoair*a_ustar(i,j))/cpair
                a_qstar(i,j) = -a_fevpa(i,j)/(rhoair*a_ustar(i,j))
 
@@ -1226,27 +1148,10 @@ CONTAINS
             CALL acc(a_t_room    (i,j), 1., f_t_room    (i,j))
             CALL acc(a_tafu      (i,j), 1., f_tafu      (i,j))
             CALL acc(a_fhac      (i,j), 1., f_fhac      (i,j))
+            CALL acc(a_fhah      (i,j), 1., f_fhah      (i,j))
             CALL acc(a_fwst      (i,j), 1., f_fwst      (i,j))
             CALL acc(a_fach      (i,j), 1., f_fach      (i,j))
             CALL acc(a_fahe      (i,j), 1., f_fahe      (i,j))
-            CALL acc(a_fhah      (i,j), 1., f_fhah      (i,j))
-            CALL acc(a_vehc      (i,j), 1., f_vehc      (i,j))
-            CALL acc(a_meta      (i,j), 1., f_meta      (i,j))
-
-            CALL acc(a_senroof   (i,j), 1., f_senroof   (i,j))
-            CALL acc(a_senwsun   (i,j), 1., f_senwsun   (i,j))
-            CALL acc(a_senwsha   (i,j), 1., f_senwsha   (i,j))
-            CALL acc(a_sengimp   (i,j), 1., f_sengimp   (i,j))
-            CALL acc(a_sengper   (i,j), 1., f_sengper   (i,j))
-            CALL acc(a_senurbl   (i,j), 1., f_senurbl   (i,j))
-
-            CALL acc(a_lfevproof (i,j), 1., f_lfevproof (i,j))
-            CALL acc(a_lfevpgimp (i,j), 1., f_lfevpgimp (i,j))
-            CALL acc(a_lfevpgper (i,j), 1., f_lfevpgper (i,j))
-            CALL acc(a_lfevpurbl (i,j), 1., f_lfevpurbl (i,j))
-
-            CALL acc(a_troof     (i,j), 1., f_troof     (i,j))
-            CALL acc(a_twall     (i,j), 1., f_twall     (i,j))
 
             CALL acc(a_sabvdt    (i,j), 1., f_sabvdt    (i,j))
             CALL acc(a_sabgdt    (i,j), 1., f_sabgdt    (i,j))
@@ -1401,27 +1306,10 @@ CONTAINS
       allocate (a_t_room    (lon_points,lat_points))
       allocate (a_tafu      (lon_points,lat_points))
       allocate (a_fhac      (lon_points,lat_points))
+      allocate (a_fhah      (lon_points,lat_points))
       allocate (a_fwst      (lon_points,lat_points))
       allocate (a_fach      (lon_points,lat_points))
       allocate (a_fahe      (lon_points,lat_points))
-      allocate (a_fhah      (lon_points,lat_points))
-      allocate (a_vehc      (lon_points,lat_points))
-      allocate (a_meta      (lon_points,lat_points))
-
-      allocate (a_senroof   (lon_points,lat_points))
-      allocate (a_senwsun   (lon_points,lat_points))
-      allocate (a_senwsha   (lon_points,lat_points))
-      allocate (a_sengimp   (lon_points,lat_points))
-      allocate (a_sengper   (lon_points,lat_points))
-      allocate (a_senurbl   (lon_points,lat_points))
-
-      allocate (a_lfevproof (lon_points,lat_points))
-      allocate (a_lfevpgimp (lon_points,lat_points))
-      allocate (a_lfevpgper (lon_points,lat_points))
-      allocate (a_lfevpurbl (lon_points,lat_points))
-
-      allocate (a_troof     (lon_points,lat_points))
-      allocate (a_twall     (lon_points,lat_points))
 
       allocate (a_sabvdt    (lon_points,lat_points))
       allocate (a_sabgdt    (lon_points,lat_points))
@@ -1567,27 +1455,10 @@ CONTAINS
       deallocate ( a_t_room       )
       deallocate ( a_tafu         )
       deallocate ( a_fhac         )
+      deallocate ( a_fhah         )
       deallocate ( a_fwst         )
       deallocate ( a_fach         )
       deallocate ( a_fahe         )
-      deallocate ( a_fhah         )
-      deallocate ( a_vehc         )
-      deallocate ( a_meta         )
-
-      deallocate ( a_senroof      )
-      deallocate ( a_senwsun      )
-      deallocate ( a_senwsha      )
-      deallocate ( a_sengimp      )
-      deallocate ( a_sengper      )
-      deallocate ( a_senurbl      )
-
-      deallocate ( a_lfevproof    )
-      deallocate ( a_lfevpgimp    )
-      deallocate ( a_lfevpgper    )
-      deallocate ( a_lfevpurbl    )
-
-      deallocate ( a_troof        )
-      deallocate ( a_twall        )
 
       deallocate ( a_sabvdt       )
       deallocate ( a_sabgdt       )

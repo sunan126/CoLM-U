@@ -45,9 +45,9 @@ SUBROUTINE LuLccDRIVER (casename,dir_srfdata,dir_restart,&
 
    ! conserved method for variable revocery
    print *, ">>> LULCC: Mass&Energy conserve for variable recovery..."
-   !CALL READ_LuLccTMatrix()
-   !CALL LuLccEnergyConserve()
-   !CALL LuLccWaterConserve()
+   CALL READ_LuLccTMatrix()
+   CALL LuLccEnergyConserve()
+   ! CALL LuLccWaterConserve()
 
    ! deallocate LuLcc memory
    CALL deallocate_LuLccTimeInvars()

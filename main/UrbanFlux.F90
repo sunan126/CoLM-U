@@ -29,24 +29,24 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
   SUBROUTINE UrbanOnlyFlux ( &
-        ! Model running information
+        ! 模型运行信息
         ipatch      ,deltim      ,lbr         ,lbi         ,&
-        ! Forcing
+        ! 外强迫
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
         qm          ,psrf        ,rhoair      ,Fhac        ,&
-        Fwst        ,Fach        ,vehc        ,meta        ,&
-        ! Urban parameters
+        Fwst        ,Fach                                  ,&
+        ! 城市参数
         hroof       ,hwr         ,nurb        ,fcover      ,&
-        ! Status of surface
+        ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
         wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
         htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
         twsun       ,twsha       ,tgimp       ,tgper       ,&
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
-        dqgimpdT    ,dqgperdT    ,rsr                      ,&
-        ! Output
+        dqgimpdT    ,dqgperdT                              ,&
+        ! 输出
         taux        ,tauy        ,fsenroof    ,fsenwsun    ,&
         fsenwsha    ,fsengimp    ,fsengper    ,fevproof    ,&
         fevpgimp    ,fevpgper    ,croofs      ,cwalls      ,&
@@ -86,12 +86,11 @@ MODULE UrbanFlux
         rhoair     ! density air [kg/m3]
 
      REAL(r8), intent(in) :: &
-        vehc,     &! flux from vehicle
-        meta,     &! flux from metabolic
         Fhac,     &! flux from heat or cool AC
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
 
+     ! 城市参数
      INTEGER, intent(in) :: &
         nurb       ! number of aboveground urban components [-]
 
@@ -100,8 +99,8 @@ MODULE UrbanFlux
         hwr,      &! average building height to their distance [-]
         fcover(0:4)! coverage of aboveground urban components [-]
 
+     ! 地面状态
      REAL(r8), intent(in) :: &
-        rsr,      &! bare soil resistance for evaporation
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
         obug,     &! monin-obukhov length for bare ground (m)
         ustarg,   &! friction velocity for bare ground [m/s]
@@ -131,7 +130,7 @@ MODULE UrbanFlux
         dqgimpdT, &! d(qgimp)/dT
         dqgperdT   ! d(qgper)/dT
 
-     ! Output
+     ! 输出
      REAL(r8), intent(out) :: &
         taux,     &! wind stress: E-W [kg/m/s**2]
         tauy,     &! wind stress: N-S [kg/m/s**2]
@@ -284,7 +283,6 @@ MODULE UrbanFlux
 
      ! temporal
      INTEGER i
-     REAL(r8) h_vec, l_vec, tmpw3, cgw_per, cgw_imp
      REAL(r8) bee, tmpw1, tmpw2, fact, facq
      REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
      REAL(r8) fwetfac
@@ -304,9 +302,10 @@ MODULE UrbanFlux
 
 !-----------------------------------------------------------------------
 ! initial roughness length for z0mg, z0hg, z0qg
-! Roughness of the city ground only (excluding buildings and vegetation)
+! 计算城市仅地面(不含建筑物、植被)的粗糙度
+!TODO: 不透水面的粗糙度怎么定义？
 
-     !NOTE: change to original
+     !TODO: change to original
      !z0mg = (1.-fsno)*zlnd + fsno*zsno
      IF (fsno_gper > 0) THEN
         z0mg = zsno
@@ -328,16 +327,16 @@ MODULE UrbanFlux
      ENDDO
 
 !-----------------------------------------------------------------------
-! set weight
+! 计算加权系数
 !-----------------------------------------------------------------------
 
-     ! set weighting factor
+     ! 设定权重
      fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
      faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
      fgh(1) = 1.; fgh(2) = fg; fgh(3) = 1.
      fgw(1) = 1.; fgw(2) = fg; fgw(3) = 1.
 
-     ! weighted tg
+     ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
 
      ! wet fraction for roof and impervious ground
@@ -367,14 +366,14 @@ MODULE UrbanFlux
         fwet_roof = fwet_roof_
      ENDIF
 
-     ! ! dew case
+     ! dew case
      IF (qm > qgimp) THEN
         fwet_gimp = 1.
      ELSE
         fwet_gimp = fwet_gimp_
      ENDIF
 
-     ! weighted qg
+     ! 加权后的qg
      ! NOTE: IF fwet_gimp=1, same as previous
      fwetfac = fgimp*fwet_gimp + fgper
      qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -406,7 +405,7 @@ MODULE UrbanFlux
      z0mu = (hroof - displau) * &
           exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
 
-     ! to compare z0 of urban and only the surface
+     ! 比较地面和城市的z0m和displa大小，取大者
      ! maximum assumption
      IF (z0mu < z0mg) z0mu = z0mg
 
@@ -421,7 +420,7 @@ MODULE UrbanFlux
 ! calculate layer decay coefficient
 !-----------------------------------------------------------------------
 
-     !NOTE: the below is for vegetation, may not suitable for urban
+     !NOTE: 引文研究对象为植被，对城市计算结果偏大
      ! Raupach, 1992
      !sqrtdragc = min( (0.003+0.3*fai)**0.5, 0.3 )
 
@@ -457,7 +456,7 @@ MODULE UrbanFlux
      dqh  =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
-     ! to ensure the obs height >= hroof+10.
+     ! 确保观测高度 >= hroof+10.
      huu = max(hroof+10., hu)
      htu = max(hroof+10., ht)
      hqu = max(hroof+10., hq)
@@ -555,7 +554,7 @@ MODULE UrbanFlux
         !print *, "rd :", rd
         !print *, "rd_:", rd_
 
-        ! calculate ra2m, rd2m
+        !TODO: 计算ra2m, rd2m
         ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
            obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -601,7 +600,7 @@ MODULE UrbanFlux
            ENDIF
         ENDDO
 
-        ! For simplicity, there is no water exchange on the wall
+        ! 为了简单处理，墙面没有水交换
         cfw(1:2) = 0.
 
         ! initialization
@@ -610,7 +609,7 @@ MODULE UrbanFlux
         cgh(:) = 0.
         cgw(:) = 0.
 
-        ! conductance for each layer
+        ! 计算每层的阻抗
         DO i = 3, 2, -1
            IF (i == 3) THEN
               cah(i) = 1. / rah
@@ -662,65 +661,28 @@ MODULE UrbanFlux
         IF (numlay .eq. 2) THEN
 
            ! - Equations:
-           ! taf(3) = (1/rah*thm + 1/rd(3)*taf(2) + 1/rb(0)*troof*fc(0) + AHE/(rho*cp))/(1/rah + 1/rd(3) + 1/rb(0)*fc(0))
-           ! taf(2) = (1/rd(3)*taf(3) + 1/rd(2)*tg*fg + 1/rb(1)*twsun*fc(1) + 1/rb(2)*twsha*fc(2) + AHE/(rho*cp))/ &
-           !          (1/rd(3) + 1/rd(2)*fg + 1/rb(1)*fc(1) + 1/rb(2)*fc(2))
-           ! Also written as:
-           ! taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*troof*fc(0))/(cah(3) + cah(2) + cfh(0)*fc(0))
-           ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + AHE/(rho*cp))/ &
-           !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2))
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
-           ! - Equations:
-           ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
-           ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + AHE/rho)/ &
-           !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg)
-           ! Also written as:
-           ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
-           ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + AHE/rho)/ &
-           !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg)
+           ! 06/20/2021, yuan: 考虑人为热
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           ! 06/20/2021, yuan: 考虑人为热
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           ! 06/20/2021, yuan: account for Anthropogenic heat
-           ! 92% heat release as SH, Pigeon et al., 2007
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
-           h_vec  = vehc
-           tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0)))
-           tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
-           tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
-                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2)))
-           taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2)) / &
-                    fact
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
-           IF ((qaf(2)-qgper) < 0.) THEN
-             ! dew case. no soil resistance
-             cgw_per= cgw(2)
-           ELSE
-             cgw_per= 1/(1/cgw(2)+rsr)
-           ENDIF
-
-           cgw_imp= fwet_gimp*cgw(2)
-
-
-           ! account for soil resistance, qgper and qgimp are calculated separately
-           l_vec  = 0
-           tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0)))
-           tmpw2  = l_vec/(rhoair)
-           tmpw3  = cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg
-           facq   = 1. - (caw(2)*caw(2)/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg))
-           qaf(2) = (tmpw1 + tmpw2 + tmpw3)/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg)/&
-                    facq
-
-           tmpw1  = 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair)
-           taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
-           qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
         ENDIF
 
         !------------------------------------------------
@@ -739,7 +701,7 @@ MODULE UrbanFlux
            fwet_gimp = fwet_gimp_
         ENDIF
 
-        ! weighted qg
+        ! 加权后的qg
         ! NOTE: IF fwet_gimp=1, same as previous
         fwetfac = fgimp*fwet_gimp + fgper
         qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -750,8 +712,8 @@ MODULE UrbanFlux
 ! Update monin-obukhov length and wind speed including the stability effect
 !-----------------------------------------------------------------------
 
-        ! USE the top layer taf and qaf
-        !TODO: need more check
+        ! 这里使用的是最高层的taf和qaf
+        !TODO: 是否合理，运行单点模型测试
         dth = thm - taf(2)
         dqh =  qm - qaf(2)
 
@@ -823,7 +785,8 @@ MODULE UrbanFlux
      tauy = - rhoair*vs/ram
 
 !-----------------------------------------------------------------------
-! fluxes from urban ground to canopy space
+! fluxes from ground to canopy space
+! 计算城市地面各组分的感热、潜热
 !-----------------------------------------------------------------------
 
      fsengper = cpair*rhoair*cgh(2)*(tgper-taf(2))
@@ -856,16 +819,15 @@ MODULE UrbanFlux
 
 
   SUBROUTINE  UrbanVegFlux ( &
-        ! Model running information
+        ! 模型运行信息
         ipatch      ,deltim      ,lbr         ,lbi         ,&
-        ! Forcing
+        ! 外强迫
         hu          ,ht          ,hq          ,us          ,&
         vs          ,thm         ,th          ,thv         ,&
         qm          ,psrf        ,rhoair      ,frl         ,&
         po2m        ,pco2m       ,par         ,sabv        ,&
         rstfac      ,Fhac        ,Fwst        ,Fach        ,&
-        vehc        ,meta                                  ,&
-        ! Urban and vegetation parameters
+        ! 城市和植被参数
         hroof       ,hwr         ,nurb        ,fcover      ,&
         ewall       ,egimp       ,egper       ,ev          ,&
         htop        ,hbot        ,lai         ,sai         ,&
@@ -873,7 +835,7 @@ MODULE UrbanFlux
         hlti        ,shti        ,hhti        ,trda        ,&
         trdm        ,trop        ,gradm       ,binter      ,&
         extkd       ,dewmx       ,etrc                     ,&
-        ! Status of surface
+        ! 地面状态
         z0h_g       ,obug        ,ustarg      ,zlnd        ,&
         zsno        ,fsno_roof   ,fsno_gimp   ,fsno_gper   ,&
         wliq_roofsno,wliq_gimpsno,wice_roofsno,wice_gimpsno,&
@@ -881,11 +843,11 @@ MODULE UrbanFlux
         twsun       ,twsha       ,tgimp       ,tgper       ,&
         qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
         dqgimpdT    ,dqgperdT    ,sigf        ,tl          ,&
-        ldew        ,rsr                                   ,&
-        ! Longwave information
+        ldew                                               ,&
+        ! 长波辐射
         Ainv        ,B           ,B1          ,dBdT        ,&
         SkyVF       ,VegVF                                 ,&
-        ! Output
+        ! 输出
         taux        ,tauy        ,fsenroof    ,fsenwsun    ,&
         fsenwsha    ,fsengimp    ,fsengper    ,fevproof    ,&
         fevpgimp    ,fevpgper    ,croofs      ,cwalls      ,&
@@ -915,7 +877,7 @@ MODULE UrbanFlux
      REAL(r8), intent(in) :: &
         deltim     ! seconds in a time step [second]
 
-     ! Forcing
+     ! 外强迫
      REAL(r8), intent(in) :: &
         hu,       &! observational height of wind [m]
         ht,       &! observational height of temperature [m]
@@ -937,13 +899,11 @@ MODULE UrbanFlux
         po2m,     &! atmospheric partial pressure  o2 (pa)
         pco2m,    &! atmospheric partial pressure co2 (pa)
 
-        vehc,     &! flux from vehicle
-        meta,     &! flux from metabolic
         Fhac,     &! flux from heat or cool AC
         Fwst,     &! waste heat from cool or heat
         Fach       ! flux from air exchange
 
-     ! Urban and vegetation parameters
+     ! 城市和植被参数
      INTEGER,  intent(in) :: &
         nurb       ! number of aboveground urban components [-]
 
@@ -982,9 +942,8 @@ MODULE UrbanFlux
         dewmx,    &! maximum dew
         etrc       ! maximum possible transpiration rate (mm/s)
 
-     ! Status of surface
+     ! 地面状态
      REAL(r8), intent(in) :: &
-        rsr,      &! bare soil resistance for evaporation
         z0h_g,    &! roughness length for bare ground, sensible heat [m]
         obug,     &! monin-obukhov length for bare ground (m)
         ustarg,   &! friction velocity for bare ground [m/s]
@@ -1238,12 +1197,10 @@ MODULE UrbanFlux
 
      ! temporal
      INTEGER i
-     REAL(r8) bee, cf, tmpw1, tmpw2, tmpw3, tmpw4, fact, facq, taftmp
+     REAL(r8) bee, cf, tmpw1, tmpw2, fact, facq
      REAL(r8) B_5, B1_5, dBdT_5, X(5), dX(5)
      REAL(r8) fwet_roof, fwet_roof_, fwet_gimp, fwet_gimp_
      REAL(r8) fwetfac, lambda
-     REAL(r8) cgw_imp, cgw_per
-     REAL(r8) h_vec, l_vec
 
 !-----------------------End Variable List-------------------------------
 
@@ -1288,6 +1245,7 @@ MODULE UrbanFlux
 
      fg     = 1 - fcover(0)
      fc(:)  = fcover(0:nurb)
+     !fc(0)  = 0.
      fc(3)  = fcover(5)
      fgimp  = fcover(3)/fg
      fgper  = fcover(4)/fg
@@ -1306,24 +1264,23 @@ MODULE UrbanFlux
         CALL qsadv(tu(i),psrf,ei(i),deiDT(i),qsatl(i),qsatldT(i))
      ENDDO
 
-     ! Save the longwave for the last time
+     ! 保留上次长波辐射
      lwsun_bef = lwsun
      lwsha_bef = lwsha
      lgimp_bef = lgimp
      lgper_bef = lgper
      lveg_bef  = lveg
-
 !-----------------------------------------------------------------------
-! Calculate the weighted qg, tg
+! 计算加权平均的qg, tg
 !-----------------------------------------------------------------------
 
-     ! set weghting factor
+     ! 设定权重
      fah(1) = 1.; fah(2) = 1.; fah(3) = 1.
      faw(1) = 1.; faw(2) = 1.; faw(3) = 1.
      fgh(1) = 1.; fgh(2) = 1.; fgh(3) = 1.
      fgw(1) = 1.; fgw(2) = 1.; fgw(3) = 1.
 
-     ! weighted tg and qg
+     ! 加权后的tg
      tg = tgimp*fgimp + tgper*fgper
 
      ! wet fraction for roof and impervious ground
@@ -1387,7 +1344,6 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      ! 计算自身和整个面积的z0和displa (不考虑建筑物的存在)
-     ! Calculate z0 and displa for vegetation only and the whole area
      CALL cal_z0_displa(lsai, htop, 1., z0mv, displav)
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
@@ -1395,27 +1351,26 @@ MODULE UrbanFlux
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
      lambda = fcover(0) + faiv*htop/hroof
-     ! displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     !displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
      displau = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
         !exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
         exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
-     ! to compare z0 of urban and only the surface
+     ! 比较植被、裸地和建筑物的z0m和displa大小，取大者
      ! maximum assumption
      ! 11/26/2021, yuan: remove the below
      !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
      !IF (displau < displav_lay) displau = displav_lay
      IF (z0mu < z0mg) z0mu = z0mg
-     IF (displau >= hroof-z0mg) displau = hroof-z0mg
 
      displa = displau
      z0m    = z0mu
 
      displau = max(hroof/2., displau)
 
-     ! Layer setting
+     ! 层次设定
      !IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
         fgh(2) = fg; fgw(2) = fg;
@@ -1487,7 +1442,7 @@ MODULE UrbanFlux
      dqh =  qm - qaf(2)
      dthv = dth*(1.+0.61*qm) + 0.61*th*dqh
 
-     ! To ensure the obs height >= hroof+10.
+     ! 确保观测高度 >= hroof+10.
      huu = max(hroof+10., hu)
      htu = max(hroof+10., ht)
      hqu = max(hroof+10., hq)
@@ -1554,7 +1509,6 @@ MODULE UrbanFlux
 
         ! calculate canopy top wind speed (utop) and exchange coefficient (ktop)
         ! need to update each time as obu changed after each iteration
-        ! print*, ustar, fmtop
         utop = ustar/vonkar * fmtop
         ktop = vonkar * (hroof-displa) * ustar / phih
 
@@ -1584,7 +1538,7 @@ MODULE UrbanFlux
            !      displah, htop, hbot, obu, ustar, ztop, zbot)
            !rd(2)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
            !   hroof, 0., obug, ustarg, displau+z0mu, displav+z0mv)
-           rd(2) = frd(ktop, hroof, 0., displau+z0mu, displav+z0mv, displa/hroof, z0h_g, &
+           rd(2) = frd(ktop, hroof, 0., displau+z0mu, displav+z0mv,displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
            !rd(1)  = kintegral(ktop, 1., bee, alpha, z0mg, displa/hroof, &
@@ -1592,7 +1546,7 @@ MODULE UrbanFlux
            rd(1) = frd(ktop, hroof, 0., displav+z0mv, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           ! 计算ra2m, rd2m
+           !TODO: 计算ra2m, rd2m
            ra2m = frd(ktop, hroof, 0., displav+z0mv, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -1604,7 +1558,7 @@ MODULE UrbanFlux
            rd(2) = frd(ktop, hroof, 0., displau+z0mu, z0qg, displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
-           ! 计算ra2m, rd2m
+           !TODO: 计算ra2m, rd2m
            ra2m = frd(ktop, hroof, 0., displau+z0mu, 2., displa/hroof, z0h_g, &
               obug, ustarg, z0mg, alpha, bee, 1.)
 
@@ -1627,7 +1581,7 @@ MODULE UrbanFlux
            rd(:)       = PI/2*rd(:)
         ENDIF
 
-        ! ueff_lay(3) = ueff_lay(2)
+        !ueff_lay(3) = ueff_lay(2)
 
         !print *, "ueff_lay :", ueff_lay
         !print *, "ueff_lay_:", ueff_lay_
@@ -1641,24 +1595,15 @@ MODULE UrbanFlux
         rb(:) = 0.
 
         DO i = 0, nurb
-
            IF (i == 3) THEN
               cf = 0.01*sqrtdi*sqrt(ueff_veg)
               rb(i) = 1./cf
               cycle
            ENDIF
-
            clev = canlev(i)
-           rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
-
+           !rb(i) = rhoair * cpair / ( 11.8 + 4.2*ueff_lay(clev) )
            ! Cole & Sturrock (1977) Building and Environment, 12, 207–214.
-           ! rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
-           !IF (ueff_lay(clev) > 5.) THEN
-           !   rb(i) = rhoair * cpair / (7.51*ueff_lay(clev)**0.78)
-           !ELSE
-           !   rb(i) = rhoair * cpair / (5.8 + 4.1*ueff_lay(clev))
-           !ENDIF
-           !rb(i) = rhoair * cpair / (cpair*vonkar*vonkar*ueff_lay(clev)/(log(0.1*hroof/)*(2.3+log(0.1*hroof/))))
+           rb(i) = rhoair * cpair / ( 5.8 + 4.1*ueff_lay(clev) )
         ENDDO
 
 !-----------------------------------------------------------------------
@@ -1668,7 +1613,7 @@ MODULE UrbanFlux
         IF (lai > 0.) THEN
 
            ! only for vegetation
-           ! rb(3) = rb(3)
+           !rb(3) = rb(3) / lai
 
            clev = canlev(3)
            eah = qaf(clev) * psrf / ( 0.622 + 0.378 * qaf(clev) )    !pa
@@ -1680,7 +1625,7 @@ MODULE UrbanFlux
               shti    ,hhti    ,trda   ,trdm   ,trop   ,&
               gradm   ,binter  ,thm    ,psrf   ,po2m   ,&
               pco2m   ,pco2a   ,eah    ,ei(3)  ,tu(3)  ,&
-              par     ,rb(3)/lai,raw    ,rstfac ,cint(:),&
+              par     ,rb(3)/lai,raw   ,rstfac ,cint(:),&
               assim   ,respc   ,rs     )
         ELSE
            rs = 2.e4; assim = 0.; respc = 0.
@@ -1706,17 +1651,16 @@ MODULE UrbanFlux
               delta = 0.0
               IF (qsatl(i)-qaf(clev) .gt. 0.) delta = 1.0
 
-              ! calculate sensible heat conductance
+              ! 计算感热阻抗
               cfh(i) = lsai / rb(i)
 
               ! for building walls, cfw=0., no water transfer
               ! for canopy, keep the same but for one leaf
-              ! calculate latent heat conductance
+              ! 计算潜热阻抗
               cfw(i) = (1.-delta*(1.-fwet))*lsai/rb(i) + &
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
            ELSE
               cfh(i) = 1 / rb(i)
-              
               IF (i == 0) THEN !roof
                  ! account for fwet
                  cfw(i) = fwet_roof / rb(i)
@@ -1726,7 +1670,7 @@ MODULE UrbanFlux
            ENDIF
         ENDDO
 
-        ! For simplicity, there is no water exchange on the wall
+        ! 为了简单处理，墙面没有水交换
         cfw(1:2) = 0.
 
         ! initialization
@@ -1735,26 +1679,26 @@ MODULE UrbanFlux
         cgh(:) = 0.
         cgw(:) = 0.
 
-        ! conductance for each layer
+        ! 计算每层的阻抗
         DO i = 3, botlay, -1
            IF (i == 3) THEN
               cah(i) = 1. / rah
               caw(i) = 1. / raw
-           ! ELSE IF (i == 2) THEN
-           !    cah(i) = 1e6
-           !    caw(i) = 1e6
+           !ELSE IF (i == 2) THEN
+           !   cah(i) = 1e6
+           !   caw(i) = 1e6
            ELSE
               cah(i) = 1. / rd(i+1)
               caw(i) = 1. / rd(i+1)
            ENDIF
 
-           ! IF (i == 3) THEN
-           !    cgh(i) = 1e6
-           !    cgw(i) = 1e6
-           ! ELSE
+           !IF (i == 3) THEN
+           !   cgh(i) = 1e6
+           !   cgw(i) = 1e6
+           !ELSE
               cgh(i) = 1. / rd(i)
               cgw(i) = 1. / rd(i)
-           ! ENDIF
+           !ENDIF
         ENDDO
 
         ! claculate wtshi, wtsqi
@@ -1792,140 +1736,66 @@ MODULE UrbanFlux
            wtlql(clev) = wtlql(clev) + wtlq0(i)*qsatl(i)
         ENDDO
 
+        ! 根据层数来计算空气温度、湿度
         ! to solve taf(:) and qaf(:)
 
         IF (numlay .eq. 2) THEN
 
            ! - Equations:
-           ! taf(3) = (1/rah*thm + 1/rd(3)*taf(2) + 1/rb(0)*troof*fc(0) + AHE/(rho*cp))/(1/rah + 1/rd(3) + 1/rb(0)*fc(0))
-           ! taf(2) = (1/rd(3)*taf(3) + 1/rd(2)*tg*fg + 1/rb(1)*twsun*fc(1) + 1/rb(2)*twsha*fc(2) + lsai/rb(3)*tl*fc(3) + AHE/(rho*cp))/ &
-           !          (1/rd(3) + 1/rd(2)*fg + 1/rb(1)*fc(1) + 1/rb(2)*fc(2) + lsai/rb(3)*fc(3))
-           ! Also written as:
-           ! taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*troof*fc(0))/(cah(3) + cah(2) + cfh(0)*fc(0))
-           ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + cfh(3)*tl*fc(3) + AHE/(rho*cp))/ &
-           !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3))
-           ! - Equations:
-           ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
-           ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + lsai/(rb(3)+rs)*ql*fc(3) + AHE/rho)/ &
-           !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg + lsai/(rb(3)+rs)*fc(3))
-           ! Also written as:
-           ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
-           ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
-           !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
-           ! 06/20/2021, yuan: account for Anthropogenic heat
-           ! 92% heat release as SH, Pigeon et al., 2007
+           ! 06/20/2021, yuan: 考虑人为热
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           ! 06/20/2021, yuan: 考虑人为热
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           h_vec  = vehc!
-           tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0)))
-           tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
-           tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + cfh(3)*tu(3)*fc(3)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
-                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
-           taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
-                    fact
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
-           IF ((qaf(2)-qgper) < 0.) THEN
-             ! dew case. no soil resistance
-             cgw_per= cgw(2)
-           ELSE
-             cgw_per= 1/(1/cgw(2)+rsr)
-           ENDIF
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
-           cgw_imp= fwet_gimp*cgw(2)
-
-           ! account for soil resistance, qgper and qgimp are calculated separately
-           l_vec  = 0
-           tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0)))
-           tmpw2  = l_vec/(rhoair)
-           tmpw3  = cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3)
-           facq   = 1. - (caw(2)*caw(2)/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3)))
-           qaf(2) = (tmpw1 + tmpw2 + tmpw3)/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))/&
-                    facq
-
-           tmpw1  = 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair)
-           taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
-           qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
         ENDIF
 
         IF (numlay .eq. 3) THEN
 
            ! - Equations:
-           ! taf(3) = (thm/rah+1/rd(3)*taf(2)+AHE2/rho/cpair+1/rb(0)*troof*fc(0))/&
-           !          (1/rah+1/rd(3)+1/rb(0)*fc(0))
-           ! taf(2) = (1/rd(3)*taf(3)+1/rd(2)*taf1+1/rb(1)*twsun*fc(1)+1/rb(2)*twsha*fc(2)+AHE1/rho/cpair)/&
-           !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
-           ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
-           !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-           ! - Equations:
-           ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
-           !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
-           ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&
-           !          (1/rd(3) + 1/rd(2))
-           ! qaf(1) = (1/rd(2)*qaf(2)+1/(rd(1)+rsr)*qgper*fgper*fg+1/rd(1)*qimp*fgimp*fg+1/(rb(3)+rs)*ql*fc(3)+h_veh/rho))/&
-           !          (1/rd(2)+1/(rd(1)+rsr)*fgper*fg+1/rd(1)*fgimp*fg+1/(rb(3)+rs)*fc(3))
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*taf(1) + wtll(2)
+           ! taf(1) = wta0(1)*taf(2) + wtg0(1)*tg     + wtll(1)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtaq0(2)*qaf(1) + wtlql(2)
+           ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
 
-           tmpw1  = cah(1)*(cgh(1)*tg*fg + cfh(3)*tu(3)*fc(3) + (vehc+meta)/rhoair/cpair)/&
-                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))
-           tmpw2  = cah(2)*(cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
-           tmpw3  = cah(1)*cah(1)/&
-                    (cah(1) + cfh(1)*fg + cfh(3)*fc(3))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
-           tmpw4  = cah(2)*cah(2)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
-           fact   = 1. - tmpw3 - tmpw4
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1)
+           fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           taf(2) = (tmpw1 + tmpw2 + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))/&
-                    fact
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           tmpw2  = wtgq0(1)*qg + wtlql(1)
+           facq   = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
-           taf(1) = (cah(1)*taf(2) + cgh(1)*tg*fg + cfh(3)*tu(3)*fc(3) + (vehc+meta)/rhoair/cpair)/&
-                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))
-           tmpw1  = 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair)
-           taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
+           qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
+           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1)
 
-           IF ((qaf(1)-qgper) < 0.) THEN
-             ! dew case. no soil resistance
-             cgw_per= cgw(1)
-           ELSE
-             cgw_per= 1/(1/cgw(1)+rsr)
-           ENDIF
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
-           cgw_imp= fwet_gimp*cgw(1)
-
-           l_vec   = 0
-           tmpw1  = caw(1)*(cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + l_vec/(rhoair))/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))
-           tmpw2  = caw(2)*(caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
-           tmpw3  = caw(1)*caw(1)/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))/&
-                    (caw(2) + caw(1))
-           tmpw4  = caw(2)*caw(2)/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))/&
-                    (caw(2) + caw(1))
-           facq   = 1. - tmpw3 - tmpw4
-
-           qaf(2) = (tmpw1 + tmpw2)/&
-                    (caw(2) + caw(1))/&
-                    facq
-
-           tmpw1  = l_vec/(rhoair)
-           qaf(1) = (caw(1)*qaf(2) + qgper*cgw_per*fgper*fg + qgimp*cgw_imp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + tmpw1)/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))
-           qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
         ENDIF
 
 !-----------------------------------------------------------------------
@@ -1997,19 +1867,19 @@ MODULE UrbanFlux
 ! difference of temperatures by quasi-newton-raphson method for the non-linear system equations
 !-----------------------------------------------------------------------
 
-        ! calculate irab, dirab_dtl
+        ! 计算irab, dirab_dtl
         B(5)    = B_5*tl**4
         B1(5)   = B1_5*tl**4
         dBdT(5) = dBdT_5*tl**3
         X  = matmul(Ainv, B)
-        ! first 5 items of dBdT is 0, dBdT*(0,0,0,0,0,1)
+        ! dBdT前5项为0, dBdT*(0,0,0,0,0,1)
         dX = matmul(Ainv, dBdT*uvec)
 
-        ! calculate longwave for vegetation
+        ! 每步温度迭代进行计算, 最后一次应为tlbef
         irab = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5))/fcover(5)*fg
         dirab_dtl = ( sum(dX(1:4)*VegVF(1:4))*ev - dBdT(5) )/fcover(5)*fg
 
-        ! solve for leaf temperature
+        ! 迭代叶片温度变化
         dtl(it) = (sabv + irab - fsenl - hvap*fevpl) &
            / (lsai*clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl)
         dtl_noadj = dtl(it)
@@ -2064,135 +1934,57 @@ MODULE UrbanFlux
         IF (numlay .eq. 2) THEN
 
            ! - Equations:
-           ! taf(3) = (1/rah*thm + 1/rd(3)*taf(2) + 1/rb(0)*troof*fc(0) + AHE/(rho*cp))/(1/rah + 1/rd(3) + 1/rb(0)*fc(0))
-           ! taf(2) = (1/rd(3)*taf(3) + 1/rd(2)*tg*fg + 1/rb(1)*twsun*fc(1) + 1/rb(2)*twsha*fc(2) + lsai/rb(3)*tl*fc(3) + AHE/(rho*cp))/ &
-           !          (1/rd(3) + 1/rd(2)*fg + 1/rb(1)*fc(1) + 1/rb(2)*fc(2) + lsai/rb(3)*fc(3))
-           ! Also written as:
-           ! taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*troof*fc(0))/(cah(3) + cah(2) + cfh(0)*fc(0))
-           ! taf(2) = (cah(2)*taf(3) + cgh(2)*tg*fg + cfh(1)*twsun*fc(1) + cfh(2)*twsha*fc(2) + cfh(3)*tl*fc(3) + AHE/(rho*cp))/ &
-           !          (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3))
-           ! - Equations:
-           ! qaf(3) = (1/raw*qm + 1/rd(3)*qaf(2) + 1/rb(0)*qroof*fc(0))/(1/raw + 1/rd(3) + 1/rb(0)*fc(0))
-           ! qaf(2) = (1/rd(3)*qaf(3) + 1/(rd(2)+rsr)*qper*fgper*fg + fwetimp/rd(2)*qimp*fgimp*fg + lsai/(rb(3)+rs)*ql*fc(3) + AHE/rho)/ &
-           !          (1/rd(3) + 1/(rd(2)+rsr)*fgper*fg + fwetimp/rd(2)*fgimp*fg + lsai/(rb(3)+rs)*fc(3))
-           ! Also written as:
-           ! qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qroof*fc(0))/(caw(3) + caw(2) + cfw(0)*fc(0))
-           ! qaf(2) = (caw(2)*qaf(3) + cgwper*qper*fgper*fg + cgwimp*qimp*fgimp*fg + cfw(3)*ql*fc(3) + AHE/rho)/ &
-           !          (caw(2) + cgwper*fgper*fg + cgwimp*fgimp*fg + cfw(3)*fc(3))
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*tg     + wtll(2)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtgq0(2)*qg     + wtlql(2)
 
-           ! 06/20/2021, yuan: account for AH
-           ! 92% heat release as SH, Pigeon et al., 2007
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           fact   = 1. - wta0(2)*wtg0(3)
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tg + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           h_vec  = vehc
-           tmpw1  = cah(2)*((cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0)))
-           tmpw2  = (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair) + (h_vec+meta)/(rhoair*cpair)
-           tmpw3  = cgh(2)*fg*tg + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + cfh(3)*tu(3)*fc(3)
-           fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
-                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
-           taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
-                    fact
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           facq   = 1. - wtaq0(2)*wtgq0(3)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*qg + wtlql(2)) / facq
 
-           IF ((qaf(2)-qgper) < 0.) THEN
-             ! dew case. no soil resistance
-             cgw_per= cgw(2)
-           ELSE
-             cgw_per= 1/(1/cgw(2)+rsr)
-           ENDIF
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm + wtg0 (3)*taf(2) + wtll (3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
-           cgw_imp= fwet_gimp*cgw(2)
-
-           ! account for soil resistance, qgper and qgimp are calculated separately
-           l_vec  = 0
-           tmpw1  = caw(2)*((caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0)))
-           tmpw2  = l_vec/(rhoair)
-           tmpw3  = cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3)
-           facq   = 1. - (caw(2)*caw(2)/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3)))
-           qaf(2) = (tmpw1 + tmpw2 + tmpw3)/&
-                    (caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))/&
-                    facq
-
-           tmpw1  = 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair)
-           taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
-           qaf(3) = (caw(3)*qm  + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
         ENDIF
 
         IF (numlay .eq. 3) THEN
 
            ! - Equations:
-           ! taf(3) = (thm/rah+1/rd(3)*taf(2)+AHE2/rho/cpair+1/rb(0)*troof*fc(0))/&
-           !          (1/rah+1/rd(3)+1/rb(0)*fc(0))
-           ! taf(2) = (1/rd(3)*taf(3)+1/rd(2)*taf1+1/rb(1)*twsun*fc(1)+1/rb(2)*twsha*fc(2)+AHE1/rho/cpair)/&
-           !          (1/rd(3)+1/rd(2)+1/rb(1)*fc(1)+1/rb(2)*fc(2))
-           ! taf(1) = (1/rd(2)*taf(2)+1/rd(1)*tg*fg+1/rb(3)*tl*fc(3)+Hveh/rhoair/cpair)/&
-           !          (1/rd(2)+1/rd(1)*fg+1/rb(3)*fc(3))
-           ! - Equations:
-           ! qaf(3) = (1/raw*qm+1/rd(3)*qaf(2)+1/rb(0)*qroof*fc(0))/&
-           !          (1/raw+1/rd(3)+1/rb(0)*fc(0))
-           ! qaf(2) = (1/rd(3)*qaf(3)+1/rd(2)*qaf(1))/&
-           !          (1/rd(3) + 1/rd(2))
-           ! qaf(1) = (1/rd(2)*qaf(2)+1/(rd(1)+rsr)*qgper*fgper*fg+1/rd(1)*qimp*fgimp*fg+1/(rb(3)+rs)*ql*fc(3)+h_veh/rho))/&
-           !          (1/rd(2)+1/(rd(1)+rsr)*fgper*fg+1/rd(1)*fgimp*fg+1/(rb(3)+rs)*fc(3))
+           ! taf(3) = wta0(3)*thm    + wtg0(3)*taf(2) + wtll(3)
+           ! taf(2) = wta0(2)*taf(3) + wtg0(2)*taf(1) + wtll(2)
+           ! taf(1) = wta0(1)*taf(2) + wtg0(1)*tg     + wtll(1)
+           !
+           ! qaf(3) = wtaq0(3)*qm     + wtgq0(3)*qaf(2) + wtlql(3)
+           ! qaf(2) = wtaq0(2)*qaf(3) + wtaq0(2)*qaf(1) + wtlql(2)
+           ! qaf(1) = wtaq0(1)*qaf(2) + wtaq0(1)*qg     + wtlql(1)
 
-           tmpw1  = cah(1)*(cgh(1)*tg*fg + cfh(3)*tu(3)*fc(3) + (vehc+meta)/rhoair/cpair)/&
-                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))
-           tmpw2  = cah(2)*(cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
-           tmpw3  = cah(1)*cah(1)/&
-                    (cah(1) + cfh(1)*fg + cfh(3)*fc(3))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
-           tmpw4  = cah(2)*cah(2)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
-           fact   = 1. - tmpw3 - tmpw4
+           tmpw1  = wta0(3)*thm + wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
+           tmpw2  = wtg0(1)*tg  + wtll(1)
+           fact   = 1. - wta0(2)*wtg0(3) - wtg0(2)*wta0(1)
+           taf(2) = (wta0(2)*tmpw1 + wtg0(2)*tmpw2 + wtll(2) &
+                  + wtshi(2)*(4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/rhoair/cpair) / fact
 
-           taf(2) = (tmpw1 + tmpw2 + cfh(1)*tu(1)*fc(1) + cfh(2)*tu(2)*fc(2) + (4*hlr/(4*hlr+1)*(Fhac+Fwst)+Fach)/(rhoair*cpair))/&
-                    (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))/&
-                    fact
+           tmpw1  = wtaq0(3)*qm + wtlql(3)
+           tmpw2  = wtgq0(1)*qg + wtlql(1)
+           facq   = 1. - wtaq0(2)*wtgq0(3) - wtgq0(2)*wtaq0(1)
+           qaf(2) = (wtaq0(2)*tmpw1 + wtgq0(2)*tmpw2 + wtlql(2)) / facq
 
-           taf(1) = (cah(1)*taf(2) + cgh(1)*tg*fg + cfh(3)*tu(3)*fc(3) + (vehc+meta)/rhoair/cpair)/&
-                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))
-           tmpw1  = 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair)
-           taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
-                    (cah(3) + cah(2) + cfh(0)*fc(0))
+           qaf(1) = wtaq0(1)*qaf(2) + wtgq0(1)*qg + wtlql(1)
+           taf(1) =  wta0(1)*taf(2) +  wtg0(1)*tg +  wtll(1)
 
-           IF ((qaf(1)-qgper) < 0.) THEN
-             ! dew case. no soil resistance
-             cgw_per= cgw(1)
-           ELSE
-             cgw_per= 1/(1/cgw(1)+rsr)
-           ENDIF
-
-           cgw_imp= fwet_gimp*cgw(1)
-
-           l_vec   = 0!vehc*0.08
-           tmpw1  = caw(1)*(cgw_per*qgper*fgper*fg + cgw_imp*qgimp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + l_vec/(rhoair))/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))
-           tmpw2  = caw(2)*(caw(3)*qm + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
-           tmpw3  = caw(1)*caw(1)/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))/&
-                    (caw(2) + caw(1))
-           tmpw4  = caw(2)*caw(2)/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))/&
-                    (caw(2) + caw(1))
-           facq   = 1. - tmpw3 - tmpw4
-
-           qaf(2) = (tmpw1 + tmpw2)/&
-                    (caw(2) + caw(1))/&
-                    facq
-
-           tmpw1  = l_vec/(rhoair)
-           qaf(1) = (caw(1)*qaf(2) + qgper*cgw_per*fgper*fg + qgimp*cgw_imp*fgimp*fg + cfw(3)*qsatl(3)*fc(3) + tmpw1)/&
-                    (caw(1) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3))
-           qaf(3) = (caw(3)*qm + caw(2)*qaf(2) + cfw(0)*qsatl(0)*fc(0))/&
-                    (caw(3) + caw(2) + cfw(0)*fc(0))
+           qaf(3) = wtaq0(3)*qm + wtgq0(3)*qaf(2) + wtlql(3)
+           taf(3) = wta0(3)*thm +  wtg0(3)*taf(2) +  wtll(3) &
+                  + wtshi(3)/(4*hlr+1)*(Fhac+Fwst)/rhoair/cpair
 
         ENDIF
 
@@ -2210,7 +2002,7 @@ MODULE UrbanFlux
            fwet_gimp = fwet_gimp_
         ENDIF
 
-        ! weighted qg
+        ! 加权后的qg
         ! NOTE: IF fwet_gimp=1, same as previous
         fwetfac = fgimp*fwet_gimp + fgper
         qg = (qgimp*fgimp*fwet_gimp + qgper*fgper) / fwetfac
@@ -2232,8 +2024,9 @@ MODULE UrbanFlux
 ! Update monin-obukhov length and wind speed including the stability effect
 !-----------------------------------------------------------------------
 
-        ! USE the top layer taf and qaf
-        !TODO: need more check
+        ! 这里使用的是最高层的taf和qaf
+        ! 如何进行限制?是不是梯度太大的问题?运行单点模型测试
+        !TODO:
         dth = thm - taf(2)
         dqh =  qm - qaf(2)
 
@@ -2337,8 +2130,12 @@ MODULE UrbanFlux
         i,it-1,err,sabv,irab,fsenl,hvap*fevpl
 #endif
 
+!-----------------------------------------------------------------------
+! 植被温度变化计算长波辐射改变
+! 包括墙壁、地面吸收和向上长波辐射
+!-----------------------------------------------------------------------
 
-     ! calculate longwave absorption
+     ! 各组分长波辐射吸收值
      lwsun = ( ewall*X(1) - B1(1) ) / (1-ewall)
      lwsha = ( ewall*X(2) - B1(2) ) / (1-ewall)
      lgimp = ( egimp*X(3) - B1(3) ) / (1-egimp)
@@ -2346,7 +2143,7 @@ MODULE UrbanFlux
      lveg  = ( (sum(X(1:4)*VegVF(1:4)) + frl*VegVF(5))*ev - B1(5) )
      lout  = sum( X * SkyVF )
 
-     ! longwave absorption due to leaf temperature change
+     ! +因叶片温度变化，各组分长波辐射吸收值
      lwsun = lwsun + ( ewall*dX(1) ) / (1-ewall) * dtl(it-1)
      lwsha = lwsha + ( ewall*dX(2) ) / (1-ewall) * dtl(it-1)
      lgimp = lgimp + ( egimp*dX(3) ) / (1-egimp) * dtl(it-1)
@@ -2361,14 +2158,14 @@ MODULE UrbanFlux
         print *, "Longwave - Energy Balance Check error!", err-frl
      ENDIF
 
-     ! convert to per unit area
+     ! 计算单位面积
      IF (fcover(1) > 0.) lwsun = lwsun / fcover(1) * fg !/ (4*fwsun*HL*fb/fg)
      IF (fcover(2) > 0.) lwsha = lwsha / fcover(2) * fg !/ (4*fwsha*HL*fb/fg)
      IF (fcover(3) > 0.) lgimp = lgimp / fcover(3) * fg !/ fgimp
      IF (fcover(4) > 0.) lgper = lgper / fcover(4) * fg !/ fgper
      IF (fcover(5) > 0.) lveg  = lveg  / fcover(5) * fg !/ fv/fg
 
-     ! add previous longwave
+     ! 加上上次余量
      lwsun = lwsun + lwsun_bef
      lwsha = lwsha + lwsha_bef
      lgimp = lgimp + lgimp_bef
@@ -2405,7 +2202,7 @@ MODULE UrbanFlux
      croof = croofs + croofl*htvp_roof
 
 !-----------------------------------------------------------------------
-! fluxes from urban ground to canopy space
+! 计算城市地面各组分的感热、潜热
 !-----------------------------------------------------------------------
 
      fsengimp = cpair*rhoair*cgh(botlay)*(tgimp-taf(botlay))
@@ -2551,6 +2348,8 @@ MODULE UrbanFlux
      ! 02/07/2018: changed combination
      fac  = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
+     !TODO: 检查fac的设定，为什么设置为0
+     !fac  = 0.
      kcob = 1. / (fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
 
      kexp     = ktop*exp(-alpha*(htop-z)/(htop-hbot))
@@ -2598,9 +2397,8 @@ MODULE UrbanFlux
         u = max(0._r8, u)
         !uintegral = uintegral + sqrt(u)*dz / (htop-hbot)
 ! 03/04/2020, yuan: TODO-hard to solve
-        !NOTE: The integral cannot be solved analytically after
-        !the square root sign of u, and the integral can be approximated
-        !directly for u, In this way, there is no need to square
+        ! u开根号后不能解析求解积分，可近似直接对u积分
+        ! 如此，最后就不用平方
         uintegral = uintegral + u*dz / (ztop-zbot)
      ENDDO
 
@@ -2877,8 +2675,9 @@ MODULE UrbanFlux
      ! yuan, 12/28/2020:
      fac = 1. / (1.+exp(-(displah-com1)/com2))
 ! 05/29/2021, yuan: bug. not initialized
+     !TODO: 检查fac的设定，为什么设定为0
      !11/18/2022, NOTE: fac=0 may have some problems
-     ! fac = 0.
+     !fac = 0.
      roots(:) = 0.
 
      CALL kfindroots(ztop,zbot,(ztop+zbot)/2., &

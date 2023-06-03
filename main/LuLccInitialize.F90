@@ -86,6 +86,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
   REAL(r8) sumpctpft
   REAL(r8), external :: orb_coszen     !cosine of the solar zenith angle
 
+! print*, 'LINE89 year=', year, 'idate=', idate
 
 ! initial time of model run
 ! ............................
@@ -94,12 +95,15 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
       year = idate(1)
       jday = idate(2)
       msec = idate(3)
+      ! print*, 'LINE98 year=', year
 
 #ifdef USGS_CLASSIFICATION
       cyear = ''
 #else
       write(cyear,'(i4.4)') year
 #endif
+
+      ! print*, 'LINE106 cyear=', cyear
 
 ! ----------------------------------------------------------------------
 ! [1] READ IN LAND INFORMATION
@@ -464,8 +468,8 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 ! Build 1d land vector and 1d patch vector mapping components
 ! --------------------------------------------------------------------
 
-      grid_patch_s(:,:) = -1
-      grid_patch_e(:,:) = -1
+      grid_patch_s(:,:) = -1  !每个经纬度网格对应的第一个subgrid patch的编号
+      grid_patch_e(:,:) = -1  !每个经纬度网格对应的最后一个subgrid patch的编号
 
 ! Determine land vector and patch vector mapping components
 
@@ -795,7 +799,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
                   ! for soil patches
                   IF (patchtypes(np) == 0) THEN
                      npc              = npc + 1
-                     pcfrac(:,npc)    = pctpc(i,j,:,np)
+                     pcfrac(:,npc)    = pctpc(i,j,:,np)  !npc是i,j,np的累加
                      patch2pc(npatch) = npc
                      pc2patch(npc)    = npatch
                   ENDIF
@@ -911,7 +915,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 #endif
 
 ! ................................
-! 3.4 Initialize TUNABLE constants
+! 3.4 Initialize TUNABLE constants 初始化可调谐常数
 ! ................................
       zlnd   = 0.01    !Roughness length for soil [m]
       zsno   = 0.0024  !Roughness length for snow [m]
@@ -987,6 +991,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
 ! yuan, 08/03/2019: read global LAI/SAI data
       CALL julian2monthday (year, jday, month, mday)
       CALL LAI_readin_nc (year,month,dir_srfdata,nam_srfdata)
+      ! print*, 'LINE990 year=', year
 
 #ifdef URBAN_MODEL
       ! 读取城市LAI/SAI数据

@@ -26,7 +26,7 @@
                      trad        ,rst         ,assim       ,respc      ,&
                      errore      ,emis        ,z0m         ,zol        ,&
                      rib         ,ustar       ,qstar       ,tstar      ,&
-                     fm          ,fh          ,fq                       )
+                     fm          ,fh          ,fq          ,cvsoil      )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -152,7 +152,8 @@
         wliq_soisno(lb:nl_soil),&! liqui water [kg/m2]
         ldew,        &! depth of water on foliage [kg/(m2 s)]
         scv,         &! snow cover, water equivalent [mm, kg/m2]
-        snowdp        ! snow depth [m]
+        snowdp,      &! snow depth [m]
+        cvsoil(1:nl_soil)        ! heat capacity [J/(m2 K)]
 
   INTEGER, intent(out) :: &
        imelt(lb:nl_soil) ! flag for melting or freezing [-]
@@ -340,8 +341,7 @@
       qred = 1.
       CALL qsadv(t_grnd,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
-      ! initialization for rsr
-      rsr = 0.
+      rsr = 0. !initialization
       IF (patchtype<=1) THEN            !soil ground
          wx   = (wliq_soisno(1)/denh2o + wice_soisno(1)/denice)/dz_soisno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
@@ -355,6 +355,8 @@
          psit = max( -1.e8, psit )
          hr   = exp(psit/roverg/t_grnd)
          qred = (1.-fsno)*hr + fsno
+
+         
 
          IF (lb == 1) THEN !no snow layer exist
 
@@ -810,7 +812,7 @@ ENDIF
                       sigf,dz_soisno,z_soisno,zi_soisno,&
                       t_soisno,wice_soisno,wliq_soisno,scv,snowdp,&
                       frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg,&
-                      imelt,sm,xmf,fact,psi0,bsw)
+                      imelt,sm,xmf,fact,psi0,bsw,cvsoil)
 
 !=======================================================================
 ! [6] Correct fluxes to present soil temperature
@@ -824,7 +826,7 @@ ENDIF
       fevpg  = fevpg + tinc*cgrndl
 
 ! calculation of evaporative potential; flux in kg m-2 s-1.
-! egidif holds the excess energy IF all water is evaporated
+! egidif holds the excess energy IF all water is evaporated 超过能够蒸发的水分，把这部分潜热加到感热。
 ! during the timestep.  this energy is later added to the sensible heat flux.
 
       egsmax = (wice_soisno(lb)+wliq_soisno(lb)) / deltim

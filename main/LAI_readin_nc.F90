@@ -3,7 +3,7 @@
 SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
 
 ! ===========================================================
-! Read in the LAI, the LAI dataset
+! Read in the LAI, the LAI dataset was created by Yuan et al. (2019)
 ! http://globalchange.bnu.edu.cn
 ! ===========================================================
 
@@ -91,20 +91,20 @@ SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
 #ifdef URBAN_MODEL
          IF (m == URBAN) cycle
 #endif
-         IF( m == 0 )THEN
+         IF( m == 0 )THEN  !ocean
              fveg(npatch)  = 0.
              tlai(npatch)  = 0.
              tsai(npatch)  = 0.
              green(npatch) = 0.
          ELSE
-             fveg(npatch)  = fveg0(m)           !fraction of veg. cover
+             fveg(npatch)  = fveg0(m)           !fraction of veg. cover 每种IGBP有植被裸土比例参数
              IF (fveg0(m) > 0) THEN
 ! 05/19/2022, yuan: in case of land cover TYPE change
 #if(defined USE_POINT_DATA)
-                tlai(npatch)  = glai(i,j)             !leaf area index
+                tlai(npatch)  = glai(i,j)             !leaf area index 单点模拟会被赋予网格LAI
                 tsai(npatch)  = gsai(i,j)             !stem area index
 #else
-                tlai(npatch)  = lclai(i,j,m)/fveg0(m) !leaf area index
+                tlai(npatch)  = lclai(i,j,m)/fveg0(m) !leaf area index  !把IGBP里的植被的裸地分开，LAI完全给植被
                 tsai(npatch)  = lcsai(i,j,m)/fveg0(m) !stem area index
 #endif
                 green(npatch) = 1.                    !fraction of green leaf
@@ -242,7 +242,7 @@ SUBROUTINE LAI_readin_nc (year, month, dir_srfdata, nam_srfdata)
             tsai(npatch) = sum(tsai_c(:,pc)*pcfrac(:,pc))
          ELSE
 ! 12/28/2019, yuan: Bug
-            !NOTE: pctpc from 1-100% -> 0-1
+            ! pctpc from 1-100% -> 0-1
             tlai(npatch) = sum(pclai(i,j,:,m)*pctpc(i,j,:,m)/100.)
             tsai(npatch) = sum(pcsai(i,j,:,m)*pctpc(i,j,:,m)/100.)
          ENDIF

@@ -127,21 +127,23 @@ CONTAINS
     ! read lower and upper boundary forcing data
       CALL metreadLBUB(idate, lat_i, lon_i, lat_n, lon_n, forcn_LB, forcn_UB)
 
+      print*, "idate=", idate
     ! set model time stamp
       id(:) = idate(:)
       call adj2end(id)
       mtstamp = id
+      print*,"mtstamp=",mtstamp
+      print*, "tstamp_LB(1), tstamp_UB(1) =", tstamp_LB(1), tstamp_UB(1)
 
 !TODO: USE openmp
     ! loop for variables
       do i = 1, NVAR
-
+         
          if (tintalgo(i) == 'NULL') cycle
-
        ! to make sure the forcing data calculated is in the range of time
        ! interval [LB, UB]
          if ( .NOT. (tstamp_LB(i)<=mtstamp .AND. mtstamp<=tstamp_UB(i)) ) then
-            write(6, *) "the data required is out of range! stop!"; stop
+            write(6, *) "the data required is out of range! stop!" ; stop
          end if
 
        ! calcualte distance to lower/upper boundary

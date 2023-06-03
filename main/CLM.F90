@@ -211,6 +211,14 @@
     ! Initialize meteorological forcing data module
       CALL GETMETINI(dir_atmdata, nam_atmdata, deltim)
 
+    ! read LUCY data
+#ifdef URBAN_MODEL
+#ifndef USE_LCZ
+#ifdef USE_LUCY
+      CALL LUCY_readin_nc     (dir_srfdata)
+#endif
+#endif
+#endif
 ! ======================================================================
 ! begin time stepping loop
 ! ======================================================================
@@ -235,7 +243,7 @@
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian)
+         CALL rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian,lc_year)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------
@@ -247,11 +255,12 @@
        ! Call clm driver
        ! ----------------------------------------------------------------------
          CALL CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
-       
+
+     
        ! Get leaf area index
        ! ----------------------------------------------------------------------
 #if(!defined DYN_PHENOLOGY)
-       ! READ in Leaf area index and stem area index
+       ! READ in Leaf area index and stem area index 
        ! Update every 8 days (time interval of the MODIS LAI data)
        ! ----------------------------------------------------------------------
 #ifdef USGS_CLASSIFICATION
@@ -265,17 +274,20 @@
 ! 08/03/2019, yuan: read global LAI/SAI data
          CALL julian2monthday (ldate(1), ldate(2), month, mday)
          year = ldate(1)
-         IF (month /= month_p) THEN
+         IF (month /= month_p) THEN ! month_p may be the month of previous timestep
 #ifdef LAICHANGE
             CALL LAI_readin_nc      (   year,month,dir_srfdata,nam_srfdata)
+
 #ifdef URBAN_MODEL
             CALL UrbanLAI_readin_nc (   year,month,dir_srfdata,nam_urbdata)
 #endif
+
 #else
             CALL LAI_readin_nc      (lc_year,month,dir_srfdata,nam_srfdata)
 #ifdef URBAN_MODEL
             CALL UrbanLAI_readin_nc (lc_year,month,dir_srfdata,nam_urbdata)
 #endif
+
 #endif
          ENDIF
 #endif
@@ -288,6 +300,7 @@
             dolai = .true.
          ENDIF
 #endif
+
 
        ! Mapping subgrid patch [numpatch] vector of subgrid points to
        !     -> [lon_points]x[lat_points] grid average

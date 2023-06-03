@@ -14,11 +14,8 @@
         theta          ,sabroof        ,sabwsun        ,sabwsha        ,&
         sabgimp        ,sabgper        ,sablake        ,sabv           ,&
         par            ,Fhac           ,Fwst           ,Fach           ,&
-        Fahe           ,Fhah           ,vehc           ,meta           ,&
-        ! LUCY输入变量
-        fix_holiday    ,week_holiday   ,hum_prof       ,popcell        ,&
-        vehicle        ,weh_prof       ,wdh_prof       ,idate          ,&
-        patchlonr                                                      ,&
+        Fhah           ,&
+
         ! 地面参数
         froof          ,flake          ,hroof          ,hwr            ,&
         fgper          ,pondmx         ,eroof          ,ewall          ,&
@@ -55,9 +52,6 @@
         taux           ,tauy           ,fsena          ,fevpa          ,&
         lfevpa         ,fsenl          ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
-        fsen_roof      ,fsen_wsun      ,fsen_wsha      ,fsen_gimp      ,&
-        fsen_gper      ,fsen_urbl      ,troof          ,twall          ,&
-        lfevp_roof     ,lfevp_gimp     ,lfevp_gper     ,lfevp_urbl     ,&
         qseva_roof     ,qseva_gimp     ,qseva_gper     ,qseva_lake     ,&
         qsdew_roof     ,qsdew_gimp     ,qsdew_gper     ,qsdew_lake     ,&
         qsubl_roof     ,qsubl_gimp     ,qsubl_gper     ,qsubl_lake     ,&
@@ -85,13 +79,11 @@
   USE UrbanFlux
   USE LAKE
   USE UrbanBEM
-  USE UrbanAnthropogenic, only: LUCY
 
   IMPLICIT NONE
 
 !---------------------Argument------------------------------------------
   INTEGER,  intent(in) :: &
-        idate(3)   ,&
         ipatch     ,&! patch index
         patchtype  ,&! land cover type (0=soil, 1=urban or built-up, 2=wetland,
                      ! 3=glacier/ice sheet, 4=land water bodies)
@@ -103,16 +95,6 @@
   REAL(r8), intent(in) :: &
         deltim     ,&! seconds in a time step [second]
         patchlatr    ! latitude in radians
-
-  REAL(r8), intent(in) :: &
-        patchlonr       , &! longitude of patch [radian]
-        fix_holiday(365), &! Fixed public holidays, holiday(0) or workday(1)
-        week_holiday(7) , &! week holidays
-        hum_prof(24)    , &! Diurnal metabolic heat profile
-        weh_prof(24)    , &! Diurnal traffic flow profile of weekend
-        wdh_prof(24)    , &! Diurnal traffic flow profile of weekday
-        popcell         , &! population density
-        vehicle(3)         ! vehicle numbers per thousand people
 
   REAL(r8), intent(in) :: &
         ! atmospherical variables and observational height
@@ -264,10 +246,9 @@
         troommax   ,&! maximum temperature of inner building
         troommin   ,&! minimum temperature of inner building
         tafu       ,&! temperature of outer building
-        Fahe       ,&! flux from metabolic and vehicle
-        Fhah       ,&! flux from heating
         Fhac       ,&! flux from heat or cool AC
         Fwst       ,&! waste heat from cool or heat
+        Fhah       ,&! flux from heat
         Fach         ! flux from air exchange
 
        ! Output
@@ -284,21 +265,6 @@
         fevpg      ,&! evaporation heat flux from ground [mm/s]
         olrg       ,&! outgoing long-wave radiation from ground+canopy
         fgrnd      ,&! ground heat flux [W/m2]
-
-        fsen_roof  ,&! sensible heat from roof [W/m2]
-        fsen_wsun  ,&! sensible heat from sunlit wall [W/m2]
-        fsen_wsha  ,&! sensible heat from shaded wall [W/m2]
-        fsen_gimp  ,&! sensible heat from impervious road [W/m2]
-        fsen_gper  ,&! sensible heat from pervious road [W/m2]
-        fsen_urbl  ,&! sensible heat from urban vegetation [W/m2]
-
-        lfevp_roof ,&! latent heat flux from roof [W/m2]
-        lfevp_gimp ,&! latent heat flux from impervious road [W/m2]
-        lfevp_gper ,&! latent heat flux from pervious road [W/m2]
-        lfevp_urbl ,&! latent heat flux from urban vegetation [W/m2]
-
-        troof      ,&! temperature of roof [K]
-        twall      ,&! temperature of wall [K]
 
         qseva_roof ,&! ground soil surface evaporation rate (mm h2o/s)
         qseva_gimp ,&! ground soil surface evaporation rate (mm h2o/s)
@@ -339,8 +305,6 @@
         respc      ,&! respiration
         errore     ,&! energy balnce error [w/m2]
 
-        vehc       ,&! flux from vehicle
-        meta       ,&! flux from metabolic
         ! additionalvariables required by coupling with WRF or RSM model
         emis       ,&! averaged bulk surface emissivity
         z0m        ,&! effective roughness [m]
@@ -403,7 +367,6 @@
         olrb       ,&! olrg assuming blackbody emission [W/m2]
         psit       ,&! negative potential of soil
 
-        rsr        ,&! soil resistance
         qroof      ,&! roof specific humudity [kg/kg]
         qgimp      ,&! ground impervious road specific humudity [kg/kg]
         qgper      ,&! ground pervious specific humudity [kg/kg]
@@ -414,6 +377,7 @@
         th         ,&! potential temperature (kelvin)
         thv        ,&! virtual potential temperature (kelvin)
 
+        troof      ,&! temperature of roof
         twsun      ,&! temperature of sunlit wall
         twsha      ,&! temperature of shaded wall
         tgimp      ,&! temperature of impervious road
@@ -585,9 +549,6 @@
       qred = 1.
       CALL qsadv(tgper,forc_psrf,eg,degdT,qsatg,qsatgdT)
 
-      ! initialization for rsr
-      rsr = 0.
-
       IF (patchtype <=1 ) THEN          !soil ground
          wx = (wliq_gpersno(1)/denh2o + wice_gpersno(1)/denice)/dz_gpersno(1)
          IF (porsl(1) < 1.e-6) THEN     !bed rock
@@ -601,23 +562,8 @@
          psit = max( -1.e8, psit )
          hr   = exp(psit/roverg/tgper)
          qred = (1.-fsno_gper)*hr + fsno_gper
-
-         IF (lbp == 1) THEN !no snow layer exist
-
-            ! calculate soil resistance for evaporation
-            wx   = (sum(wliq_gpersno(1:2))/denh2o + sum(wice_gpersno(1:2))/denice)/sum(dz_gpersno(1:2))
-            IF (sum(porsl(1:2)) < 1.e-6) THEN     !bed rock
-               fac  = 0.001
-            ELSE
-               fac  = min(1.,sum(dz_gpersno(1:2))*wx/(dz_gpersno(1)*porsl(1)+dz_gpersno(2)*porsl(2)))
-               fac  = max( fac, 0.001 )
-            ENDIF
-
-            ! Sellers et al., 1992
-            rsr = (1-fsno_gper)*exp(8.206-4.255*fac)
-         ENDIF
       ENDIF
-      
+
       qgper = qred*qsatg
       dqgperdT = qred*qsatgdT
 
@@ -758,7 +704,6 @@
             forc_q      ,forc_psrf   ,forc_rhoair ,forc_frl    ,&
             forc_po2m   ,forc_pco2m  ,par         ,sabv        ,&
             rstfac      ,Fhac        ,Fwst        ,Fach        ,&
-            vehc        ,meta                                  ,&
             ! 城市和植被参数
             hroof       ,hwr         ,nurb        ,fcover      ,&
             ewall       ,egimp       ,egper       ,ev          ,&
@@ -775,7 +720,7 @@
             twsun       ,twsha       ,tgimp       ,tgper       ,&
             qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
             dqgimpdT    ,dqgperdT    ,sigf        ,tleaf       ,&
-            ldew        ,rsr                                   ,&
+            ldew                                               ,&
             ! 长波辐射
             Ainv        ,B           ,B1          ,dBdT        ,&
             SkyVF       ,VegVF                                 ,&
@@ -803,7 +748,7 @@
             forc_hgt_u  ,forc_hgt_t  ,forc_hgt_q  ,forc_us     ,&
             forc_vs     ,thm         ,th          ,thv         ,&
             forc_q      ,forc_psrf   ,forc_rhoair ,Fhac        ,&
-            Fwst        ,Fach        ,vehc        ,meta        ,&
+            Fwst        ,Fach                                  ,&
             ! 地面参数
             hroof       ,hwr         ,nurb        ,fcover      ,&
             ! 地面状态变量
@@ -813,7 +758,7 @@
             htvp_roof   ,htvp_gimp   ,htvp_gper   ,troof       ,&
             twsun       ,twsha       ,tgimp       ,tgper       ,&
             qroof       ,qgimp       ,qgper       ,dqroofdT    ,&
-            dqgimpdT    ,dqgperdT    ,rsr                      ,&
+            dqgimpdT    ,dqgperdT                              ,&
             ! 输出
             taux        ,tauy        ,fsenroof    ,fsenwsun    ,&
             fsenwsha    ,fsengimp    ,fsengper    ,fevproof    ,&
@@ -888,7 +833,7 @@
       troof = t_roofsno(lbr)
       tgimp = t_gimpsno(lbi)
       tgper = t_gpersno(lbp)
-      twall = twsun*fwsun + twsha*fwsha
+
       ! 计算湖泊温度及感热潜热
       CALL laketem ( &
            ! "in" laketem arguments
@@ -1007,21 +952,11 @@
       fseng = fsenroof*fcover(0) + fsenwsun*fcover(1) + fsenwsha*fcover(2) + &
               fsengimp*fcover(3) + fsengper*fcover(4)
 
-      fsen_roof = fsenroof*fcover(0)
-      fsen_wsun = fsenwsun*fcover(1)
-      fsen_wsha = fsenwsha*fcover(2)
-      fsen_gimp = fsengimp*fcover(3)
-      fsen_gper = fsengper*fcover(4)
-
       fevpg = fevproof*fcover(0) + fevpgimp*fcover(3) + fevpgper*fcover(4)
 
       lfevpa = htvp_roof*fevproof*fcover(0) + &
                htvp_gimp*fevpgimp*fcover(3) + &
                htvp_gper*fevpgper*fcover(4)
-
-      lfevp_roof = htvp_roof*fevproof*fcover(0)
-      lfevp_gimp = htvp_gimp*fevpgimp*fcover(3)
-      lfevp_gper = htvp_gper*fevpgper*fcover(4)
 
       IF ( doveg ) THEN
          assim  = assim * fveg
@@ -1032,9 +967,6 @@
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
-         
-         fsen_urbl = fsenl
-         lfevp_urbl= hvap*fevpl
       ELSE
          fsena  = fseng
          fevpa  = fevpg
@@ -1178,7 +1110,7 @@
       olrg = olrg*(1-flake) + olrg_lake*flake
 
       IF (olrg < 0) THEN !fordebug
-         print*, ipatch, olrg
+         print *, ipatch, olrg
          write(6,*) ipatch,sabv,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa
       ENDIF
 
@@ -1227,7 +1159,7 @@
 #endif
 
       ! diagnostic sabg only for pervious and impervious ground
-      sabg = sabgper*fgper + sabgimp*(1-fgper)
+      !sabg = sabgper*fgper + sabgimp*(1-fgper)
 
 !=======================================================================
 ! [11] a simple building energy model
@@ -1239,14 +1171,8 @@
                        t_roofsno(nl_roof), t_wallsun(nl_wall), t_wallsha(nl_wall), &
                        tkdz_roof, tkdz_wsun, tkdz_wsha, tafu, troom, &
                        troof_inner, twsun_inner, twsha_inner, &
-                       Fhac, Fwst, Fach, Fhah )
+                       Fhac, Fwst, Fach, Fhah)
 
-#ifdef USE_LUCY
-      ! Anthropogenic heat flux for the rest (vehicle heat flux and metabolic heat flux)
-      CALL LUCY(idate       , deltim  , patchlonr, fix_holiday, &
-                week_holiday, hum_prof, wdh_prof , weh_prof   ,popcell, &
-                vehicle     , Fahe    , vehc     , meta)
-#endif
       deallocate ( fcover )
 
  END SUBROUTINE UrbanTHERMAL

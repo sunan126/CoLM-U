@@ -41,7 +41,7 @@ SUBROUTINE CLMMAIN ( &
 
          ! additional diagnostic variables for output
            laisun,       laisha,                                   &
-           rstfac,       h2osoi,       wat,                        &
+           rstfac,       h2osoi,       cvsoil,       wat,          &
 
          ! FLUXES
            taux,         tauy,         fsena,        fevpa,        &
@@ -113,7 +113,7 @@ SUBROUTINE CLMMAIN ( &
   USE MOD_PCTimeVars
   USE SOIL_SNOW_hydrology
   USE SNOW_Layers_CombineDivide
-  USE GLACIER
+  USE MOD_GLACIER
   USE LAKE
   USE SIMPLE_OCEAN
   USE ALBEDO
@@ -266,7 +266,8 @@ SUBROUTINE CLMMAIN ( &
         laisha      ,&! shaded leaf area index
         rstfac      ,&! factor of soil water stress
         wat         ,&! total water storage
-        h2osoi(nl_soil)! volumetric soil water in layers [m3/m3]
+        h2osoi(nl_soil),&! volumetric soil water in layers [m3/m3]
+        cvsoil(nl_soil)! heat capacity [J/(m2 K)]
 
 ! Fluxes
 ! ----------------------------------------------------------------------
@@ -429,9 +430,9 @@ IF (patchtype <= 2) THEN ! <=== is - URBAN and BUILT-UP   (patchtype = 1)
 
       zi_soisno(0)=0.
       IF (snl < 0) THEN
-      DO j = -1, snl, -1
-         zi_soisno(j)=zi_soisno(j+1)-dz_soisno(j+1)
-      ENDDO
+         DO j = -1, snl, -1
+            zi_soisno(j)=zi_soisno(j+1)-dz_soisno(j+1)
+         ENDDO
       ENDIF
       DO j = 1,nl_soil
          zi_soisno(j)=zi_soisno(j-1)+dz_soisno(j)
@@ -514,7 +515,7 @@ ENDIF
            trad              ,rst               ,assim             ,respc             ,&
            errore            ,emis              ,z0m               ,zol               ,&
            rib               ,ustar             ,qstar             ,tstar             ,&
-           fm                ,fh                ,fq                                    )
+           fm                ,fh                ,fq                ,cvsoil             )
 
       CALL WATER (ipatch     ,patchtype         ,lb                ,nl_soil           ,&
            deltim            ,z_soisno(lb:)     ,dz_soisno(lb:)    ,zi_soisno(lb-1:)  ,&
@@ -620,7 +621,7 @@ ELSE IF (patchtype == 3) THEN   ! <=== is LAND ICE (glacier/ice sheet) (patchtyp
       pg_snow = prc_snow + prl_snow
 
       !----------------------------------------------------------------
-      ! Initilize new snow nodes for snowfall / sleet
+      ! Initilize new snow nodes for snowfall / sleet; [:0应该是一直到0的意思，雪层最大的ind是0。]
       !----------------------------------------------------------------
 
       CALL newsnow (patchtype,maxsnl,deltim,t_grnd,pg_rain,pg_snow,bifall,&
@@ -930,6 +931,8 @@ ENDIF
        zwt = 0.
        wa = 4800.
        qcharge = 0.
+
+       cvsoil = 0.
     ENDIF
 
     h2osoi = wliq_soisno(1:)/(dz_soisno(1:)*denh2o) + wice_soisno(1:)/(dz_soisno(1:)*denice)

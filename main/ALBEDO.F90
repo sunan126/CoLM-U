@@ -613,10 +613,17 @@ ENDIF
 
 !-----------------------------------------------------------------------
 !
-!     calculation of canopy albedos via two stream approximation (direct
-!     and diffuse ) and partition of incident solar
+! !DESCRIPTION:
+!     An improved two stream approximation
 !
 ! Original author: Yongjiu Dai, June 11, 2001
+!                  Hua Yuan, 03/2020
+!
+! REFERENCES:
+! 1) Yuan, H., Dai, Y., Dickinson, R. E., Pinty, B., Shangguan, W., Zhang, S.,
+! et al. (2017). Reexamination and further development of two-stream canopy
+! radiative transfer models for global land modeling. Journal of Advances in
+! Modeling Earth Systems, 9(1), 113–129. https://doi.org/10.1002/2016MS000773
 !
 !-----------------------------------------------------------------------
 
@@ -773,8 +780,6 @@ ENDIF
       wrho = lai/lsai*rho(iw,1) + sai/lsai*rho(iw,2)
 
       scat = wtau + wrho
-      !scat = lai/lsai * ( tau(iw,1) + rho(iw,1) ) + &
-      !       sai/lsai * ( tau(iw,2) + rho(iw,2) )
 
       as = scat / 2. * proj / ( proj + cosz * phi2 )
       as = as * ( 1. - cosz * phi1 / ( proj + cosz * phi2 ) * &
@@ -819,8 +824,6 @@ ENDIF
       p3 = be + zmu * extkb
       p4 = be - zmu * extkb
 
-      !f1 = 1. - albg(iw,2)*p1/ce
-      !f2 = 1. - albg(iw,2)*p2/ce
       f1 = 1. - albgblk*p1/ce
       f2 = 1. - albgblk*p2/ce
 
@@ -841,7 +844,6 @@ ENDIF
 
          m1 = f1 * s1
          m2 = f2 / s1
-         !m3 = ( albg(iw,1) - ( hh1 - albg(iw,2) * hh4 ) ) * s2
          m3 = ( albgblk - ( hh1 - albgblk * hh4 ) ) * s2
 
          n1 = p1 / ce
@@ -869,10 +871,6 @@ ENDIF
 
          m1 = f1 * s1
          m2 = f2 / s1
-         !m3 = h1 / zmu2 * ( lsai + 1. / (2.*extkb) ) * s2 &
-         !   + albg(iw,2) / ce * ( - h1 / (2.*extkb) / zmu2 * &
-         !     ( p3*lsai + p4 / (2.*extkb) ) - de ) * s2 &
-         !   + albg(iw,1) * s2
          m3 = h1 / zmu2 * ( lsai + 1. / (extkb+extkbd) ) * s2 &
             + albgblk / ce * ( - h1 / (extkb+extkbd) / zmu2 * &
               ( p3*lsai + p4 / (extkb+extkbd) ) - de ) * s2 &
@@ -909,10 +907,6 @@ ENDIF
 
       IF (ic == 1) THEN
          ssun(iw,ic) = (1.-scat) * ( 1.-s2 + 1. / zmu * (eup + edw) )
-         !ssha(iw,ic) = scat * (1.-s2) &
-         !+ ( albg(iw,2)*tran(iw,ic) + albg(iw,1)*s2 - tran(iw,ic) ) - albv(iw,ic) &
-         !- tran(iw,ic) - albv(iw,ic) &
-         !- ( 1. - scat ) / zmu * ( eup + edw )
       ELSE
          ssun(iw,ic) = (1.-scat) * ( extkb*(1.-s2*s2d)/(extkb+extkbd) + 1. / zmu * (eup + edw) )
       ENDIF
@@ -933,23 +927,22 @@ ENDIF
       ssun_rev = s2d * (1._r8 - scat) * &
          ( extkb*(1._r8-s2/s2d)/(extkb-extkbd) + 1._r8 / zmu * (eup + edw ) )
 
-      ! ++++++++++++++++++++++++++++++++++++
+      ! -----------------------------------------------------------
       ! consider the multiple reflectance between canopy and ground
-      ! ++++++++++++++++++++++++++++++++++++
+      ! -----------------------------------------------------------
 
       ! common ratio for geometric series
       q = albg(iw,2) * albv(iw,2)
 
-      ! black soil case
-      !sall(iw,:) = ssun(iw,:) + ssha(iw,:)
-
       DO ic = 1, 2 ! from 1 to 2, cannot be reversed
-         ! ++++++++++++++++++++++++++++++++++++
+
+         ! -----------------------------------------------------------
          ! re-calculate the absorption, transmission and albedo
          ! for direct radiation
 
-! 03/06/2020, yuan: tran原来是表示漫射流，现在把直射透射率也算在内
-! 03/14/2020, yuan: TODO-done, treat soil albedo in direct/diffuse cases
+! 03/06/2020, yuan: tran originally meant diffuse flow, now the direct
+!                   transmittance is also included
+! 03/14/2020, yuan: treat soil albedo in direct/diffuse cases
          IF (ic == 1) THEN
             tran(iw,ic) = (s2d*albg(iw,1)*albv(iw,2) + tran(iw,ic)) / (1.-q)
 
@@ -1025,7 +1018,6 @@ ENDIF
       DO i = ps, pe
          p = pftclass(i)
          IF (lai_p(i)+sai_p(i) > 1.e-6) THEN
-! 03/06/2020, yuan: TODO, not twostream_mod?
             CALL twostream_mod (chil_p(p),rho_p(:,:,p),tau_p(:,:,p),1.,lai_p(i),sai_p(i),&
                coszen,albg,albv_p(:,:,i),tran_p(:,:,i),thermk_p(i),&
                extkb_p(i),extkd_p(i),ssun_p(:,:,i),ssha_p(:,:,i))
@@ -1059,7 +1051,7 @@ ENDIF
       tran(2,1) = sum( tran_p(2,1,ps:pe)*pftfrac(ps:pe) )
       tran(2,2) = sum( tran_p(2,2,ps:pe)*pftfrac(ps:pe) )
 
-      ! fordebug ONLY below
+      !NOTE: fordebug ONLY below
       IF (ssun(1,1)<0 .or. ssun(1,2)<0 .or. ssun(2,1)<0 .or. ssun(2,2)<0) THEN
          print *, ipatch
          print *, ssun

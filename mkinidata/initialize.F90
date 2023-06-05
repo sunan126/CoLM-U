@@ -903,6 +903,7 @@ SUBROUTINE initialize (casename,dir_srfdata,dir_restart,dir_atmdata,nam_srfdata,
 ! ---------------------------------------------------------------
 ! 3.1 Define the soil and lake layers's thickness
 ! ...............................................................
+      !TODO: can be removed as CLMDRIVER.F90 yuan@
       allocate ( z_soisno (maxsnl+1:nl_soil,numpatch) )
       allocate ( dz_soisno(maxsnl+1:nl_soil,numpatch) )
 

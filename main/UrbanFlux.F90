@@ -2550,7 +2550,6 @@ MODULE UrbanFlux
 
      ! 02/07/2018: changed combination
      fac  = 1. / (1.+exp(-(displah-com1)/com2))
-! 05/29/2021, yuan: bug. not initialized
      kcob = 1. / (fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
 
      kexp     = ktop*exp(-alpha*(htop-z)/(htop-hbot))
@@ -2580,7 +2579,7 @@ MODULE UrbanFlux
      REAL(r8) :: dz, z, u
 
      ! 09/26/2017: change fixed n -> fixed dz
-     dz = 0.001 ! fordebug
+     dz = 0.001 !fordebug only
      n  = int( (ztop-zbot) / dz ) + 1
 
      uintegral = 0.
@@ -2611,7 +2610,7 @@ MODULE UrbanFlux
   END FUNCTION uintegral
 
 
-  !TODO: 计算ztop到zbot之间的effective wind speed
+  ! Calculate the effective wind speed between ztop and zbot
   REAL(r8) FUNCTION ueffect(utop, htop, hbot, &
         ztop, zbot, z0mg, alpha, bee, fc)
      USE precision
@@ -2633,11 +2632,12 @@ MODULE UrbanFlux
      rootn = 0
      uint  = 0.
 
-     !二分法去找根，满足一定精度，假设最多2个根
+     ! The dichotomy method to find the root satisfies a certain accuracy,
+     ! assuming that there are at most 2 roots
      CALL ufindroots(ztop,zbot,(ztop+zbot)/2., &
         utop, htop, hbot, z0mg, alpha, roots, rootn)
 
-! 03/10/2020, yuan: TODO-done, 编写函数fuint
+! 03/10/2020, yuan: integration for wind speed
      IF (rootn == 0) THEN ! no root
         uint = uint + fuint(utop, ztop, zbot, &
            htop, hbot, z0mg, alpha, bee, fc)
@@ -2787,7 +2787,6 @@ MODULE UrbanFlux
      REAL(r8) :: uexp, ulog
 
      ! yuan, 12/28/2020:
-     !uexp = utop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
      uexp = utop*exp(-alpha*(htop-z)/(htop-hbot))
      ulog = utop*log(z/z0mg)/log(htop/z0mg)
 
@@ -2798,7 +2797,7 @@ MODULE UrbanFlux
   END FUNCTION udif
 
 
-  ! 03/08/2020, yuan: TODO-done, change it to analytical solution
+  ! 03/08/2020, yuan: change it to analytical solution
   REAL(r8) FUNCTION kintegral(ktop, fc, bee, alpha, z0mg, &
         displah, htop, hbot, obu, ustar, ztop, zbot)
      USE precision
@@ -2827,8 +2826,7 @@ MODULE UrbanFlux
      ENDIF
 
      ! 09/26/2017: change fixed n -> fixed dz
-     ! 10/05/2017: need to improve
-     dz = 0.001 ! fordebug
+     dz = 0.001 ! fordebug only
      n  = int( (ztop-zbot) / dz ) + 1
 
      DO i = 1, n
@@ -2876,9 +2874,6 @@ MODULE UrbanFlux
      ! calculate fac
      ! yuan, 12/28/2020:
      fac = 1. / (1.+exp(-(displah-com1)/com2))
-! 05/29/2021, yuan: bug. not initialized
-     !11/18/2022, NOTE: fac=0 may have some problems
-     ! fac = 0.
      roots(:) = 0.
 
      CALL kfindroots(ztop,zbot,(ztop+zbot)/2., &
@@ -2928,8 +2923,9 @@ MODULE UrbanFlux
      ! local variables
      REAL(r8) :: fkexpint, fkcobint
 
-     !klin = ktop*z/htop
-     !kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
+     !NOTE:
+     ! klin = ktop*z/htop
+     ! kcob = 1./(fac/klin + (1.-fac)/kmoninobuk(0.,obu,ustar,z))
      fkcobint = fac*htop/ktop*(log(ztop)-log(zbot)) +&
         (1.-fac)*kintmoninobuk(0.,z0h,obu,ustar,ztop,zbot)
 
@@ -3037,8 +3033,6 @@ MODULE UrbanFlux
 
      REAL(r8) :: kexp, klin, kcob
 
-     ! yuan, 12/28/2020:
-     !kexp = ktop*exp(-alpha*(1-(z-hbot)/(htop-hbot)))
      kexp = ktop*exp(-alpha*(htop-z)/(htop-hbot))
 
      klin = ktop*z/htop

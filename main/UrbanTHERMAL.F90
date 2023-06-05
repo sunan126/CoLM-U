@@ -3,10 +3,10 @@
 
  SUBROUTINE UrbanTHERMAL ( &
 
-        ! 模型运行信息
+        ! model running information
         ipatch         ,patchtype      ,lbr            ,lbi            ,&
         lbp            ,lbl            ,deltim         ,patchlatr      ,&
-        ! 外强迫
+        ! forcing
         forc_hgt_u     ,forc_hgt_t     ,forc_hgt_q     ,forc_us        ,&
         forc_vs        ,forc_t         ,forc_q         ,forc_psrf      ,&
         forc_rhoair    ,forc_frl       ,forc_po2m      ,forc_pco2m     ,&
@@ -15,11 +15,11 @@
         sabgimp        ,sabgper        ,sablake        ,sabv           ,&
         par            ,Fhac           ,Fwst           ,Fach           ,&
         Fahe           ,Fhah           ,vehc           ,meta           ,&
-        ! LUCY输入变量
+        ! LUCY model input parameters
         fix_holiday    ,week_holiday   ,hum_prof       ,popcell        ,&
         vehicle        ,weh_prof       ,wdh_prof       ,idate          ,&
         patchlonr                                                      ,&
-        ! 地面参数
+        ! surface parameters
         froof          ,flake          ,hroof          ,hwr            ,&
         fgper          ,pondmx         ,eroof          ,ewall          ,&
         egimp          ,egper          ,trsmx0         ,zlnd           ,&
@@ -36,7 +36,7 @@
         hhti           ,trda           ,trdm           ,trop           ,&
         gradm          ,binter                                         ,&
 
-        ! 地面状态变量
+        ! surface status
         fsno_roof      ,fsno_gimp      ,fsno_gper      ,scv_roof       ,&
         scv_gimp       ,scv_gper       ,scv_lake       ,snowdp_roof    ,&
         snowdp_gimp    ,snowdp_gper    ,snowdp_lake    ,fwsun          ,&
@@ -51,7 +51,7 @@
         troom          ,troof_inner    ,twsun_inner    ,twsha_inner    ,&
         troommax       ,troommin       ,tafu                           ,&
 
-        ! 输出变量
+        ! output
         taux           ,tauy           ,fsena          ,fevpa          ,&
         lfevpa         ,fsenl          ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
@@ -617,7 +617,7 @@
             rsr = (1-fsno_gper)*exp(8.206-4.255*fac)
          ENDIF
       ENDIF
-      
+
       qgper = qred*qsatg
       dqgperdT = qred*qsatgdT
 
@@ -1032,7 +1032,7 @@
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
-         
+
          fsen_urbl = fsenl
          lfevp_urbl= hvap*fevpl
       ELSE

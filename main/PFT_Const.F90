@@ -1,10 +1,15 @@
 #include <define.h>
 
+!-----------------------------------------------------------------------
 MODULE PFT_Const
-! -------------------------------
-! Created by Hua Yuan, 08/2019
-! -------------------------------
 
+! 
+! !DESCRIPTION:
+! Set constants for plant functional types (PFTs)
+! 
+! Created by Hua Yuan, 08/2019
+!
+! !USES:
    USE precision
    USE GlobalVars
 
@@ -31,49 +36,50 @@ MODULE PFT_Const
 !15  c3 crop
 
    ! canopy layer number
-   INTEGER , parameter :: canlay(0:15) &
+   INTEGER , parameter :: canlay(0:N_PFT-1) &
       = (/0, 2, 2, 2, 2, 2, 2, 2, &
           2, 1, 1, 1, 1, 1, 1, 1 /)
 
    ! canopy top height
-   REAL(r8), parameter :: htop0_p(0:15) &
+   REAL(r8), parameter :: htop0_p(0:N_PFT-1) &
       =(/ 0.5,  17.0,  17.0,  14.0,  35.0,  35.0,  18.0,  20.0,&
          20.0,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5,   0.5/)
 
    ! canopy bottom height
-   REAL(r8), parameter :: hbot0_p(0:15) &
+   REAL(r8), parameter :: hbot0_p(0:N_PFT-1) &
 ! 01/06/2020, yuan: adjust htop: grass/shrub -> 0, tree->1
+      !TODO: need check
       !=(/0.01,   8.5,   8.5,   7.0,   1.0,   1.0,  10.0,  11.5,&
       !   11.5,   0.1,   0.1,   0.1,  0.01,  0.01,  0.01,  0.01/)
       =(/0.00,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,   1.0,&
           1.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0/)
 
    ! defulat vegetation fractional cover
-   REAL(r8), parameter :: fveg0_p(0:15) &
+   REAL(r8), parameter :: fveg0_p(0:N_PFT-1) &
       = 1.0 !(/.../)
 
    ! default stem area index
-   REAL(r8), parameter :: sai0_p(0:15) &
+   REAL(r8), parameter :: sai0_p(0:N_PFT-1) &
       =(/0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,&
          2.0, 0.5, 0.5, 0.5, 0.2, 0.2, 0.2, 0.2/)
 
    ! ratio to calculate roughness length z0m
-   REAL(r8), parameter :: z0mr_p(0:15) = 0.1
+   REAL(r8), parameter :: z0mr_p(0:N_PFT-1) = 0.1
 
    ! ratio to calculate displacement height d
-   REAL(r8), parameter :: displar_p(0:15) = 0.667
+   REAL(r8), parameter :: displar_p(0:N_PFT-1) = 0.667
 
    ! inverse&sqrt leaf specific dimension size 4 cm
-   REAL(r8), parameter :: sqrtdi_p(0:15) = 5.0
+   REAL(r8), parameter :: sqrtdi_p(0:N_PFT-1) = 5.0
 
 #if(defined PC_CLASSIFICATION)
    ! leaf angle distribution parameter adapted from Majasalmi and Bright (2019)
-   REAL(r8), parameter :: chil_p(0:15) &
+   REAL(r8), parameter :: chil_p(0:N_PFT-1) &
       = (/-0.300,  0.010,  0.010,  0.010,  0.320,  0.320,  0.200,  0.590,&
            0.590,  0.320,  0.590,  0.590, -0.230, -0.230, -0.230,  0.250/)
 #else
    ! leaf angle distribution parameter
-   REAL(r8), parameter :: chil_p(0:15) &
+   REAL(r8), parameter :: chil_p(0:N_PFT-1) &
       = (/-0.300,  0.010,  0.010,  0.010,  0.100,  0.100,  0.010,  0.250,&
            0.250,  0.010,  0.250,  0.250, -0.300, -0.300, -0.300, -0.300/)
 #endif
@@ -81,150 +87,150 @@ MODULE PFT_Const
    ! reflectance of green leaf in virsible band
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
-   REAL(r8), parameter :: rhol_vis_p(0:15) &
+   REAL(r8), parameter :: rhol_vis_p(0:N_PFT-1) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.110,  0.100,  0.100,&
           0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
 #else
-   REAL(r8), parameter :: rhol_vis_p(0:15) &
+   REAL(r8), parameter :: rhol_vis_p(0:N_PFT-1) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.100,  0.100,  0.100,&
           0.100,  0.070,  0.100,  0.100,  0.110,  0.110,  0.110,  0.110/)
 #endif
 
    ! reflectance of dead leaf in virsible band
-   REAL(r8), parameter :: rhos_vis_p(0:15) &
+   REAL(r8), parameter :: rhos_vis_p(0:N_PFT-1) &
       = (/0.310,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,  0.160,&
           0.160,  0.160,  0.160,  0.160,  0.310,  0.310,  0.310,  0.310/)
 
    ! reflectance of green leaf in near infrared band
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
-   REAL(r8), parameter :: rhol_nir_p(0:15) &
+   REAL(r8), parameter :: rhol_nir_p(0:N_PFT-1) &
       = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420,&
           0.400,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #else
-   REAL(r8), parameter :: rhol_nir_p(0:15) &
+   REAL(r8), parameter :: rhol_nir_p(0:N_PFT-1) &
       = (/0.350,  0.350,  0.350,  0.350,  0.450,  0.450,  0.450,  0.450,&
           0.450,  0.350,  0.450,  0.450,  0.350,  0.350,  0.350,  0.350/)
 #endif
 
    ! reflectance of dead leaf in near infrared band
-   REAL(r8), parameter :: rhos_nir_p(0:15) &
+   REAL(r8), parameter :: rhos_nir_p(0:N_PFT-1) &
       = (/0.530,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,  0.390,&
           0.390,  0.390,  0.390,  0.390,  0.530,  0.530,  0.530,  0.530/)
 
    ! transmittance of green leaf in visible band
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adpated from measured data (Dong et al., 2021)
-   REAL(r8), parameter :: taul_vis_p(0:15) &
+   REAL(r8), parameter :: taul_vis_p(0:N_PFT-1) &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.060,  0.050,  0.060,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
 #else
-   REAL(r8), parameter :: taul_vis_p(0:15) &
+   REAL(r8), parameter :: taul_vis_p(0:N_PFT-1) &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,&
           0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050,  0.050/)
 #endif
 
    ! transmittance of dead leaf in visible band
-   REAL(r8), parameter :: taus_vis_p(0:15) &
+   REAL(r8), parameter :: taus_vis_p(0:N_PFT-1) &
       = (/0.120,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.001,  0.001,  0.001,  0.120,  0.120,  0.120,  0.120/)
 
    ! transmittance of green leaf in near infrared band
 #if(defined PC_CLASSIFICATION)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
-   REAL(r8), parameter :: taul_nir_p(0:15) &
+   REAL(r8), parameter :: taul_nir_p(0:N_PFT-1) &
       = (/0.340,  0.280,  0.290,  0.380,  0.250,  0.330,  0.250,  0.430,&
           0.420,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 #else
-   REAL(r8), parameter :: taul_nir_p(0:15) &
+   REAL(r8), parameter :: taul_nir_p(0:N_PFT-1) &
       = (/0.340,  0.100,  0.100,  0.100,  0.250,  0.250,  0.250,  0.250,&
           0.250,  0.100,  0.250,  0.250,  0.340,  0.340,  0.340,  0.340/)
 #endif
 
    ! transmittance of dead leaf in near infrared band
-   REAL(r8), parameter :: taus_nir_p(0:15) &
+   REAL(r8), parameter :: taus_nir_p(0:N_PFT-1) &
       = (/0.250,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,  0.001,&
           0.001,  0.001,  0.001,  0.001,  0.250,  0.250,  0.250,  0.250/)
 
    ! maximum carboxylation rate at 25 C at canopy top
    ! /06/03/2014/ based on Bonan et al., 2011 (Table 2)
-   !REAL(r8), parameter :: vmax25_p(0:15) &
+   !REAL(r8), parameter :: vmax25_p(0:N_PFT-1) &
    !   = (/ 52.0, 61.0, 54.0, 57.0, 72.0, 72.0, 52.0, 52.0,&
    !        52.0, 72.0, 52.0, 52.0, 52.0, 52.0, 52.0, 57.0/) * 1.e-6
 
    ! /07/27/2022/ based on Bonan et al., 2011 (Table 2, VmaxF(N))
-   REAL(r8), parameter :: vmax25_p(0:15) &
+   REAL(r8), parameter :: vmax25_p(0:N_PFT-1) &
       = (/ 52.0, 55.0, 42.0, 29.0, 41.0, 51.0, 36.0, 30.0,&
            40.0, 36.0, 30.0, 19.0, 21.0, 26.0, 25.0, 57.0/) * 1.e-6
 
    ! quantum efficiency
-   REAL(r8), parameter :: effcon_p(0:15) &
+   REAL(r8), parameter :: effcon_p(0:N_PFT-1) &
       = (/0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.05, 0.08/)
 
    ! conductance-photosynthesis slope parameter
-   REAL(r8), parameter :: gradm_p(0:15) &
+   REAL(r8), parameter :: gradm_p(0:N_PFT-1) &
       = (/9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0,&
           9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 4.0, 9.0/)
 
    ! conductance-photosynthesis intercept
-   REAL(r8), parameter :: binter_p(0:15) &
+   REAL(r8), parameter :: binter_p(0:N_PFT-1) &
       = (/0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01,&
           0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.04, 0.01/)
 
    ! respiration fraction
-   REAL(r8), parameter :: respcp_p(0:15) &
+   REAL(r8), parameter :: respcp_p(0:N_PFT-1) &
       = (/0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015,&
           0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.025, 0.015/)
 
    ! slope of high temperature inhibition FUNCTION (s1)
-   REAL(r8), parameter :: shti_p(0:15) = 0.3
+   REAL(r8), parameter :: shti_p(0:N_PFT-1) = 0.3
 
    ! slope of low temperature inhibition FUNCTION (s3)
-   REAL(r8), parameter :: slti_p(0:15) = 0.2
+   REAL(r8), parameter :: slti_p(0:N_PFT-1) = 0.2
 
    ! temperature coefficient in gs-a model (s5)
-   REAL(r8), parameter :: trda_p(0:15) = 1.3
+   REAL(r8), parameter :: trda_p(0:N_PFT-1) = 1.3
 
    ! temperature coefficient in gs-a model (s6)
-   REAL(r8), parameter :: trdm_p(0:15) = 328.0
+   REAL(r8), parameter :: trdm_p(0:N_PFT-1) = 328.0
 
    ! temperature coefficient in gs-a model (273.16+25)
-   REAL(r8), parameter :: trop_p(0:15) = 298.0
+   REAL(r8), parameter :: trop_p(0:N_PFT-1) = 298.0
 
    ! 1/2 point of high temperature inhibition FUNCTION (s2)
-   REAL(r8), parameter :: hhti_p(0:15) &
+   REAL(r8), parameter :: hhti_p(0:N_PFT-1) &
       =(/308.0, 303.0, 303.0, 303.0, 313.0, 313.0, 311.0, 311.0,&
          311.0, 313.0, 313.0, 303.0, 303.0, 308.0, 313.0, 308.0/)
 
    ! 1/2 point of low temperature inhibition FUNCTION (s4)
-   REAL(r8), parameter :: hlti_p(0:15) &
+   REAL(r8), parameter :: hlti_p(0:N_PFT-1) &
       =(/281.0, 278.0, 278.0, 278.0, 288.0, 288.0, 283.0, 283.0,&
          283.0, 283.0, 283.0, 278.0, 278.0, 281.0, 288.0, 281.0/)
 
    ! coefficient of leaf nitrogen allocation
-   REAL(r8), parameter :: extkn_p(0:15) = 0.5
+   REAL(r8), parameter :: extkn_p(0:N_PFT-1) = 0.5
 
    REAL(r8) :: &
-      rho_p(2,2,0:15), &!leaf reflectance
-      tau_p(2,2,0:15)   !leaf transmittance
+      rho_p(2,2,0:N_PFT-1), &!leaf reflectance
+      tau_p(2,2,0:N_PFT-1)   !leaf transmittance
 
    ! depth at 50% roots
-   REAL(r8), parameter, dimension(0:15) :: d50_p &
+   REAL(r8), parameter, dimension(0:N_PFT-1) :: d50_p &
       =(/27.0,  21.0,  12.0,  12.0,  15.0,  23.0,  16.0,  23.0,&
          12.0,  23.5,  23.5,  23.5,   9.0,   7.0,  16.0,  22.0/)
 
    ! coefficient of root profile
-   REAL(r8), parameter, dimension(0:15) :: beta_p &
+   REAL(r8), parameter, dimension(0:N_PFT-1) :: beta_p &
       =(/-2.051, -1.835, -1.880, -1.880, -1.632, -1.757, -1.681, -1.757,&
          -1.880, -1.623, -1.623, -1.623, -2.621, -1.176, -1.452, -1.796/)
 
    !设定PFT的根分布参数
-   REAL(r8), PRIVATE, parameter :: roota(0:15) &
+   REAL(r8), PRIVATE, parameter :: roota(0:N_PFT-1) &
       =(/  0.0,   7.0,   7.0,   7.0,   7.0,   7.0,   6.0,   6.0,&
            6.0,   7.0,   7.0,   7.0,  11.0,  11.0,  11.0,   6.0/)
 
-   REAL(r8), PRIVATE, parameter :: rootb(0:15) &
+   REAL(r8), PRIVATE, parameter :: rootb(0:N_PFT-1) &
       =(/  0.0,   2.0,   2.0,   2.0,   1.0,   1.0,   2.0,   2.0,&
            2.0,   1.5,   1.5,   1.5,   2.0,   2.0,   2.0,   3.0/)
 
@@ -232,8 +238,8 @@ MODULE PFT_Const
    INTEGER, PRIVATE :: ROOTFR_SCHEME = 1
 
    !fraction of roots in each soil layer
-   REAL(r8), dimension(nl_soil,16) :: &
-      rootfr_p(1:nl_soil, 0:15)
+   REAL(r8), dimension(nl_soil,N_PFT) :: &
+      rootfr_p(1:nl_soil, 0:N_PFT-1)
 
    INTEGER, PRIVATE :: i, nsl
 

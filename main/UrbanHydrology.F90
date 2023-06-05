@@ -1,12 +1,12 @@
 #include <define.h>
 
  SUBROUTINE UrbanHydrology ( &
-        ! 模型运行信息
+        ! model running information
         ipatch         ,patchtype      ,lbr            ,lbi            ,&
         lbp            ,lbl            ,snll           ,deltim         ,&
-        ! 外强迫
+        ! forcing
         pg_rain        ,pgper_rain     ,pg_snow                        ,&
-        ! 地表参数及状态变量
+        ! surface parameters or status
         froof          ,fgper          ,flake          ,bsw            ,&
         porsl          ,psi0           ,hksati         ,wtfact         ,&
         pondmx         ,ssi            ,wimp           ,smpmin         ,&
@@ -23,7 +23,7 @@
         sm_roof        ,sm_gimp        ,sm_gper        ,sm_lake        ,&
         lake_icefrac   ,scv_lake       ,snowdp_lake    ,imelt_lake     ,&
         fioldl         ,w_old                                          ,&
-        ! 输出
+        ! output
         rsur           ,rnof           ,qinfl          ,zwt            ,&
         wa             ,qcharge                                         )
 

@@ -4,7 +4,7 @@
                        sigf,dz_soisno,z_soisno,zi_soisno,&
                        t_soisno,wice_soisno,wliq_soisno,scv,snowdp, &
                        frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg, &
-                       imelt,sm,xmf,fact,psi0,bsw)
+                       imelt,sm,xmf,fact,psi0,bsw,cvsoil)
                        !TODO: not used, psi0, bsw
 
 !=======================================================================
@@ -68,6 +68,7 @@
   real(r8), INTENT(inout) :: t_soisno (lb:nl_soil)   !soil temperature [K]
   real(r8), INTENT(inout) :: wice_soisno(lb:nl_soil) !ice lens [kg/m2]
   real(r8), INTENT(inout) :: wliq_soisno(lb:nl_soil) !liqui water [kg/m2]
+  real(r8), INTENT(inout) :: cvsoil(1:nl_soil)       !heat capacity [J/(m2 K)]
   real(r8), INTENT(inout) :: scv      !snow cover, water equivalent [mm, kg/m2]
   real(r8), INTENT(inout) :: snowdp   !snow depth [m]
 
@@ -100,7 +101,8 @@
 !=======================================================================
 ! heat capacity 
       call hCapacity (patchtype,lb,nl_soil,csol,porsl,wice_soisno,wliq_soisno,scv,dz_soisno,cv)
-
+! heat content 
+      cvsoil = cv(1:nl_soil)
 ! thermal conductivity
       if(zi_soisno(0) < 0.)then
          print*,'[groundtem],zi_soisno(0)',zi_soisno(0)

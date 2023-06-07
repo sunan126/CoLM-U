@@ -20,6 +20,138 @@ MODULE user_specified_forcing
    USE omp_lib
    IMPLICIT NONE
 
+#if(defined USE_ERA5LAND_DATA)
+ ! ------------------------------------------------------------
+ ! parameter setting
+ ! ------------------------------------------------------------
+   integer, parameter :: NVAR    = 8              ! variable number of forcing data
+   integer, parameter :: nlats   = 1800           ! number of latitudes
+   integer, parameter :: nlons   = 3600           ! number of longitudes
+   integer, parameter :: startyr = 1950           ! start year of forcing data
+   integer, parameter :: startmo = 1              ! start month of forcing data
+   integer, parameter :: endyr   = 2021           ! end year of forcing data
+   integer, parameter :: endmo   = 12             ! end month of forcing data
+   integer, parameter :: dtime(NVAR)  = (/ &      ! temporal resolution
+      3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600/)
+   integer, parameter :: offset(NVAR) = (/ &      ! time offset (seconds)
+      1800, 1800, 1800, 1800, 1800, 1800, 0, 1800/)    ! ..
+   integer, parameter :: nlands  = 1              ! land grid number in 1d
+
+   logical, parameter :: leapyear = .true.        ! leapyear calendar
+   logical, parameter :: data2d   = .true.        ! data in 2 dimension (lon, lat)
+   logical, parameter :: hightdim = .false.       ! have "z" dimension
+   logical, parameter :: dim2d    = .false.       ! lat/lon value in 2 dimension (lon, lat)
+   logical, parameter :: latrev   = .false.       ! need to reverse latitudes
+   logical, parameter :: lonadj   = .true.        ! need to adjust longitude, 0~360 -> -180~180
+
+   character(len=256), parameter :: latname = 'latitude'  ! dimension name of latitude
+   character(len=256), parameter :: lonname = 'longitude'  ! dimension name of longitude
+
+ ! file grouped by year/month
+   character(len=256), parameter :: groupby = 'month'
+
+ ! prefix of forcing data file
+   character(len=256), parameter :: fprefix(NVAR) = [character(len=256) :: &
+      '2m_temperature/ERA5LAND_', &
+      'specific_humidity/ERA5LAND_', &
+      'surface_pressure/ERA5LAND_', &
+      'Precipitation_m_hr/ERA5LAND_', &
+      '10m_u_component_of_wind/ERA5LAND_', &
+      '10m_v_component_of_wind/ERA5LAND_', &
+      'surface_solar_radiation_downwards_w_m2/ERA5LAND_', &
+      'surface_thermal_radiation_downwards_w_m2/ERA5LAND_']
+
+ ! suffix of forcing data file
+   character(len=256), parameter :: suffix(NVAR) = [character(len=256) :: &
+      '_2m_temperature.nc', &
+      '_specific_humidity.nc', &
+      '_surface_pressure.nc', &
+      '_total_precipitation_m_hr.nc', &
+      '_10m_u_component_of_wind.nc', &
+      '_10m_v_component_of_wind.nc', &
+      '_surface_solar_radiation_downwards_w_m2.nc', &
+      '_surface_thermal_radiation_downwards_w_m2.nc']
+
+ ! variable name of forcing data file
+   character(len=256), parameter :: vname(NVAR) = [character(len=256) :: &
+      't2m', 'Q', 'sp', 'tp', 'u10', 'v10', 'ssrd', 'strd']
+
+ ! interpolation method
+   character(len=256), parameter :: tintalgo(NVAR) = [character(len=256) :: &
+      'linear', 'linear', 'linear', 'nearest', 'linear', 'linear', 'coszen', 'linear']
+
+   INTERFACE getfilename
+      MODULE procedure getfilename
+   END INTERFACE
+
+   INTERFACE metpreprocess
+      MODULE procedure metpreprocess
+   END INTERFACE
+
+   public metpreprocess
+
+CONTAINS
+
+   FUNCTION getfilename(year, month, var_i)
+
+      implicit none
+      integer, intent(in) :: year
+      integer, intent(in) :: month
+      integer, intent(in) :: var_i
+      character(len=256)  :: getfilename
+      character(len=256)  :: yearstr
+      character(len=256)  :: monthstr
+
+      write(yearstr, '(I4.4)') year
+      write(monthstr, '(I2.2)') month
+      getfilename = '/'//trim(fprefix(var_i))//trim(yearstr)//'_'//trim(monthstr)//trim(suffix(var_i))
+      return
+   END FUNCTION getfilename
+
+ ! preprocess for forcing data
+ ! ------------------------------------------------------------
+   SUBROUTINE metpreprocess(forcn)
+
+      implicit none
+      real(r8), intent(inout) :: forcn(:,:,:)
+
+      integer  :: i, j
+      real(r8) :: es, esdT, qsat_tmp, dqsat_tmpdT
+
+!----------------------------------------------------------------------------
+! use polynomials to calculate saturation vapor pressure and derivative with
+! respect to temperature: over water when t > 0 c and over ice when t <= 0 c
+! required to convert relative humidity to specific humidity
+!----------------------------------------------------------------------------
+#ifdef OPENMP
+!$OMP PARALLEL DO NUM_THREADS(OPENMP) PRIVATE(i,j,es,esdT,qsat_tmp,dqsat_tmpdT)
+#endif
+      do i = 1, lat_points
+         do j = 1, lon_points
+            if (forcn(j,i,1) < 0.0) forcn(j,i,1) = 280.0
+            if (forcn(j,i,2) < 0.0) forcn(j,i,2) = 0.01
+            if (forcn(j,i,3) < 0.0) forcn(j,i,3) = 96000.
+            forcn(j,i,4) = forcn(j,i,4)*1000./3600.
+            if (forcn(j,i,4) < 0.0)   forcn(j,i,4) = 0.0
+            if (forcn(j,i,7) < 0.0)   forcn(j,i,7) = 0.0
+            if (forcn(j,i,5) < -300.0)   forcn(j,i,5) = 2.0
+            if (forcn(j,i,6) < -300.0)   forcn(j,i,6) = 2.0
+            if (abs(forcn(j,i,5)) > 40.0) forcn(j,i,5) = 40.0*forcn(j,i,5)/abs(forcn(j,i,5)) ! 12th grade of Typhoon 32.7-36.9 m/s 
+            if (abs(forcn(j,i,6)) > 40.0) forcn(j,i,6) = 40.0*forcn(j,i,6)/abs(forcn(j,i,6))
+            if (forcn(j,i,8) < -300.0)   forcn(j,i,8) = 300.0
+            call qsadv(forcn(j,i,1),forcn(j,i,3),es,esdT,qsat_tmp,dqsat_tmpdT)
+            if (qsat_tmp < forcn(j,i,2)) then
+               forcn(j,i,2) = qsat_tmp
+            endif
+         end do
+      end do
+#ifdef OPENMP
+!$OMP END PARALLEL DO
+#endif
+   END SUBROUTINE metpreprocess
+
+#endif 
+
 #if (defined USE_PRINCETON_DATA)
 
  ! parameter setting

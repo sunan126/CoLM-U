@@ -1,7 +1,8 @@
 #include <define.h>
 
 SUBROUTINE LuLccDRIVER (casename,dir_srfdata,dir_restart,&
-                        nam_srfdata,nam_urbdata,idate,greenwich)
+                        nam_srfdata,nam_urbdata,idate,greenwich,&
+                        dir_rawdata,edgen,edgee,edges,edgew)
 
 !=======================================================================
 ! PURPOSE:
@@ -25,6 +26,12 @@ SUBROUTINE LuLccDRIVER (casename,dir_srfdata,dir_restart,&
 
    LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
    INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
+   
+   CHARACTER(len=256), intent(in) :: dir_rawdata
+   REAL(r8), intent(in) :: edgen      !northern edge of grid (degrees)
+   REAL(r8), intent(in) :: edgee      !eastern edge of grid (degrees)
+   REAL(r8), intent(in) :: edges      !southern edge of grid (degrees)
+   REAL(r8), intent(in) :: edgew      !western edge of grid (degrees)
 
    ! allocate LuLcc memory
    CALL allocate_LuLccTimeInvars
@@ -39,15 +46,16 @@ SUBROUTINE LuLccDRIVER (casename,dir_srfdata,dir_restart,&
    CALL LuLccInitialize (casename,dir_srfdata,dir_restart,&
                          nam_srfdata,nam_urbdata,idate,greenwich)
 
-   ! simple method for variable recovery
-   print *, ">>> LULCC: simple method for variable recovery..."
-   CALL REST_LuLccTimeVars
+   ! ! simple method for variable recovery
+   ! print *, ">>> LULCC: simple method for variable recovery..."
+   ! CALL REST_LuLccTimeVars
 
    ! conserved method for variable revocery
    print *, ">>> LULCC: Mass&Energy conserve for variable recovery..."
-   !CALL READ_LuLccTMatrix()
-   !CALL LuLccEnergyConserve()
-   !CALL LuLccWaterConserve()
+   CALL MakeLuLccData(casename,idate,dir_rawdata,dir_restart,edgen,edgee,edges,edgew)
+   CALL READ_LuLccTMatrix(casename,idate,dir_restart)
+   CALL LuLccEnergyMassConserve()
+   ! CALL LuLccWaterConserve()
 
    ! deallocate LuLcc memory
    CALL deallocate_LuLccTimeInvars()

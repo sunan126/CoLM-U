@@ -26,7 +26,7 @@
                      trad        ,rst         ,assim       ,respc      ,&
                      errore      ,emis        ,z0m         ,zol        ,&
                      rib         ,ustar       ,qstar       ,tstar      ,&
-                     fm          ,fh          ,fq                       )
+                     fm          ,fh          ,fq          ,cvsoil      )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -152,7 +152,8 @@
         wliq_soisno(lb:nl_soil),&! liqui water [kg/m2]
         ldew,        &! depth of water on foliage [kg/(m2 s)]
         scv,         &! snow cover, water equivalent [mm, kg/m2]
-        snowdp        ! snow depth [m]
+        snowdp,      &! snow depth [m]
+        cvsoil(1:nl_soil)        ! heat capacity [J/(m2 K)]
 
   INTEGER, intent(out) :: &
        imelt(lb:nl_soil) ! flag for melting or freezing [-]
@@ -810,7 +811,7 @@ ENDIF
                       sigf,dz_soisno,z_soisno,zi_soisno,&
                       t_soisno,wice_soisno,wliq_soisno,scv,snowdp,&
                       frl,dlrad,sabg,fseng,fevpg,cgrnd,htvp,emg,&
-                      imelt,sm,xmf,fact,psi0,bsw)
+                      imelt,sm,xmf,fact,psi0,bsw,cvsoil)
 
 !=======================================================================
 ! [6] Correct fluxes to present soil temperature

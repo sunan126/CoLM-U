@@ -4,27 +4,27 @@ RM = rm
 # =======================================================
 # gfortran 
 
-FF = gfortran -fopenmp
+#FF = gfortran -fopenmp
 
-NETCDF_LIB = /usr/lib
-NETCDF_INC = /usr/include
+#NETCDF_LIB = /usr/lib
+#NETCDF_INC = /usr/include
 
-FOPTS = -fdefault-real-8 -ffree-form -C -g -u -xcheck=stkovf \
-	-ffpe-trap=invalid,zero,overflow -fbounds-check \
-	-mcmodel=medium -fbacktrace -fdump-core -cpp
+#FOPTS = -fdefault-real-8 -ffree-form -C -g -u -xcheck=stkovf \
+#	-ffpe-trap=invalid,zero,overflow -fbounds-check \
+#	-mcmodel=medium -fbacktrace -fdump-core -cpp
 # =======================================================
 
 
 # =======================================================
 # ifort
 
-#FF = ifort -openmp
+ FF = ifort -qopenmp
 
-#NETCDF_LIB = /opt/netcdf/lib
-#NETCDF_INC = /opt/netcdf/include
+ NETCDF_LIB = /home/zhwei/software/NETCDF/c-4.7.3-f4.5.2/lib
+ NETCDF_INC = /home/zhwei/software/NETCDF/c-4.7.3-f4.5.2/include
 
-#FOPTS = -r8 -free -g -check uninit -check bounds -check pointers \
-#	-traceback 
+ FOPTS = -r8 -free -g -check uninit -check bounds -check pointers \
+ 	-traceback 
 # =======================================================
 
 

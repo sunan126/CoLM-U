@@ -43,6 +43,7 @@
 
       CHARACTER(LEN=256) :: casename  !casename name
       INTEGER :: lc_year          !which year of land cover data used
+      INTEGER :: met_year         !which year of meterology data used for fixed_year case
       INTEGER :: idate(3)         !calendar (year, julian day, seconds)
       INTEGER :: edate(3)         !calendar (year, julian day, seconds)
       INTEGER :: pdate(3)         !calendar (year, julian day, seconds)
@@ -59,6 +60,12 @@
       CHARACTER(len=256) :: nam_srfdata   !surface data filename
       CHARACTER(len=256) :: nam_urbdata   !urban data filename
       CHARACTER(len=256) :: cdate         !string date format
+      
+      CHARACTER(len=256) :: dir_rawdata, mksrf_file
+      real(r8) :: edgen      ! northern edge of grid (degrees)
+      real(r8) :: edgee      ! eastern edge of grid (degrees)
+      real(r8) :: edges      ! southern edge of grid (degrees)
+      real(r8) :: edgew      ! western edge of grid (degrees)
 
       LOGICAL :: doalb            !true => start up the surface albedo calculation
       LOGICAL :: dolai            !true => start up the time-varying vegetation paramter
@@ -106,6 +113,7 @@
                         nam_urbdata,            &! 3.3
                         deltim,                 &! 5
                         solarin_all_band,       &! 6
+                        met_year,               &
                         lc_year,                &! 7
                         e_year,                 &! 8.1
                         e_month,                &! 8.2
@@ -128,6 +136,13 @@
 !     define the run and open files (for off-line use)
 
       read(5,clmexp)
+
+      namelist /mksrfexp/  casename,dir_rawdata,dir_srfdata,&
+                          lc_year,edgen,edgee,edges,edgew
+
+      mksrf_file = trim(dir_output)//'../'//'mksrf.stdin'
+      open(55, status='OLD', file=mksrf_file, form="FORMATTED")
+      read(55, nml=mksrfexp)
 
       CALL Init_GlovalVars
       CALL Init_LC_Const
@@ -235,7 +250,7 @@
 
        ! Read in the meteorological forcing
        ! ----------------------------------------------------------------------
-         CALL rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian)
+         CALL rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian,met_year)
 
        ! Calendar for NEXT time step
        ! ----------------------------------------------------------------------
@@ -338,7 +353,8 @@
             CALL deallocate_1D_Fluxes
 
             CALL LuLccDRIVER (casename,dir_srfdata,dir_restart,&
-                              nam_srfdata,nam_urbdata,idate,greenwich)
+                              nam_srfdata,nam_urbdata,idate,greenwich,&
+                              dir_rawdata,edgen,edgee,edges,edgew)
 
             CALL allocate_1D_Forcing
             CALL allocate_1D_Fluxes

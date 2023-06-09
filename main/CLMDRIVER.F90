@@ -99,7 +99,7 @@ SUBROUTINE CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
       ! additional diagnostic variables for output
         laisun(i),       laisha(i),                                         &
-        rstfac(i),       h2osoi(1:,i),    wat(i),                           &
+        rstfac(i),       h2osoi(1:,i),    cvsoil(1:,i),    wat(i),          &
 
       ! FLUXES
         taux(i),         tauy(i),         fsena(i),        fevpa(i),        &

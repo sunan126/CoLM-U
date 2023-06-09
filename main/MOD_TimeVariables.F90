@@ -18,6 +18,7 @@ MODULE MOD_TimeVariables
   REAL(r8), allocatable :: wliq_soisno (:,:) !liquid water in layers [kg/m2]
   REAL(r8), allocatable :: wice_soisno (:,:) !ice lens in layers [kg/m2]
   REAL(r8), allocatable :: h2osoi      (:,:) !volumetric soil water in layers [m3/m3]
+  REAL(r8), allocatable :: cvsoil      (:,:) !heat capacity [J/(m2 K)]
   REAL(r8), allocatable :: rstfac        (:) !factor of soil water stress
   REAL(r8), allocatable :: t_grnd        (:) !ground surface temperature [K]
 
@@ -100,6 +101,7 @@ CONTAINS
      allocate (wliq_soisno (maxsnl+1:nl_soil,numpatch))
      allocate (wice_soisno (maxsnl+1:nl_soil,numpatch))
      allocate (h2osoi             (1:nl_soil,numpatch))
+     allocate (cvsoil             (1:nl_soil,numpatch))
      allocate (rstfac                       (numpatch))
      allocate (t_grnd                       (numpatch))
      allocate (tleaf                        (numpatch))
@@ -557,6 +559,7 @@ CONTAINS
      deallocate (wliq_soisno  )
      deallocate (wice_soisno  )
      deallocate (h2osoi       )
+     deallocate (cvsoil       )
      deallocate (rstfac       )
      deallocate (t_grnd       )
      deallocate (tleaf        )

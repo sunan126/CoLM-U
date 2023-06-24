@@ -1,8 +1,8 @@
 #include <define.h>
 
-MODULE MOD_LuLccTMatrix
+MODULE MOD_LuLccTransferMatrix
 ! -------------------------------
-! Created by Hua Yuan, 04/2022
+! Created by Wanyi Lin and Hua Yuan, 05/2023
 ! May be renamed as "MOD_LuLccTransferPair"
 ! -------------------------------
 
@@ -13,18 +13,18 @@ MODULE MOD_LuLccTMatrix
 ! -----------------------------------------------------------------
 
   INTEGER :: nlc = 18
+  !TODO@Wanyi: The below variable is double defined.
   REAL(r8), allocatable :: lccpct(:,:,:)
-  
+
   CHARACTER(len=*), parameter :: DATASRC = "MOD"  !"ESA"
   CHARACTER(len=256) syear, eyear
 
-  !TODO: need coding below...
 
 ! PUBLIC MEMBER FUNCTIONS:
-  PUBLIC :: allocate_LuLccTMatrix
-  PUBLIC :: deallocate_LuLccTMatrix
-  PUBLIC :: READ_LuLccTMatrix
-  PUBLIC :: MakeLuLccData
+  PUBLIC :: allocate_LuLccTransferMatrix
+  PUBLIC :: deallocate_LuLccTransferMatrix
+  PUBLIC :: READ_LuLccTransferMatrix
+  PUBLIC :: MAKE_LuLccTransferMatrix
 
 ! PRIVATE MEMBER FUNCTIONS:
 
@@ -34,7 +34,7 @@ MODULE MOD_LuLccTMatrix
 
 !-----------------------------------------------------------------------
 
-  SUBROUTINE allocate_LuLccTMatrix
+  SUBROUTINE allocate_LuLccTransferMatrix
   ! --------------------------------------------------------------------
   ! Allocates memory for LuLcc time invariant variables
   ! --------------------------------------------------------------------
@@ -44,41 +44,41 @@ MODULE MOD_LuLccTMatrix
      IMPLICIT NONE
 !TODO: need coding below...
 
-  END SUBROUTINE allocate_LuLccTMatrix
+  END SUBROUTINE allocate_LuLccTransferMatrix
 
 
-  SUBROUTINE MakeLuLccData(casename,idate,dir_rawdata,dir_restart,edgen,edgee,edges,edgew)
+  SUBROUTINE MAKE_LuLccTransferMatrix(casename,idate,dir_rawdata,dir_restart,edgen,edgee,edges,edgew)
 
      USE precision
      USE GlobalVars
      USE ncio
 
      IMPLICIT NONE
-      
-     
+
+
      CHARACTER(LEN=256), intent(in) :: casename
      CHARACTER(len=256), intent(in) :: dir_rawdata
      CHARACTER(len=256), intent(in) :: dir_restart
-     
+
      INTEGER,  intent(in) :: idate(3)
      REAL(r8), intent(in) :: edgen      !northern edge of grid (degrees)
      REAL(r8), intent(in) :: edgee      !eastern edge of grid (degrees)
      REAL(r8), intent(in) :: edges      !southern edge of grid (degrees)
      REAL(r8), intent(in) :: edgew      !western edge of grid (degrees)
-     
+
      CHARACTER(len=*), parameter :: Title   = "Land surface model input land cover change data"
-     CHARACTER(len=*), parameter :: Authors = "Dai YJ group at Sun Yat-sen University"
+     CHARACTER(len=*), parameter :: Authors = "Yongjiu Dai's group at Sun Yat-sen University"
      CHARACTER(len=*), parameter :: Address = "School of Atmospheric Sciences, Sun Yat-sen University, Zhuhai, China"
      CHARACTER(len=*), parameter :: Email   = "yuanh25@mail.sysu.edu.cn"
 
-     INTEGER, parameter :: nxy  = 1200
+     INTEGER, parameter :: nxy = 1200
 
      ! define input variables
-     REAL(r8), dimension(:,:)      , allocatable :: lcdatas,lcdatae
+     REAL(r8), dimension(:,:)    , allocatable :: lcdatas,lcdatae
 
      ! define output variables
-     REAL(r8), dimension(:,:)      , allocatable :: area
-     REAL(r8), dimension(:,:,:,:)  , allocatable :: sumarea,lccpct
+     REAL(r8), dimension(:,:)    , allocatable :: area
+     REAL(r8), dimension(:,:,:,:), allocatable :: sumarea,lccpct
 
 
      ! define other variables
@@ -111,15 +111,15 @@ MODULE MOD_LuLccTMatrix
 
      INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), PC4D(4), PC5D(5)
      LOGICAL :: fileExists
-     
-     print*, casename,dir_rawdata,dir_restart,edgen,edgee,edges,edgew 
+
+     print*, casename,dir_rawdata,dir_restart,edgen,edgee,edges,edgew
 
 
      deg2rad = pi/180.
      re = 6.37122e6 * 0.001
 
      write(syear,'(i4.4)') idate(1) - 1
-     write(eyear,'(i4.4)') idate(1) 
+     write(eyear,'(i4.4)') idate(1)
 
      IF (DATASRC == "MOD") THEN
         nlc = 18 !17
@@ -145,10 +145,13 @@ MODULE MOD_LuLccTMatrix
      lccpct  (:,:,:,:) = 0.
      area        (:,:) = 0.
 
-     ! calculate output grid size 
+     !TODO@Wanyi: the below code for reading data need
+     !rewrite for CoLM202X.
+
+     ! calculate output grid size
      dllo = (edgen-edges)/lat_points
 
-     ! calculate the coordinate variable data 
+     ! calculate the coordinate variable data
      DO i = 1, lon_points
         lonso(i) = edgew + i*dllo - 0.5*dllo
         IF (lonso(i) > 180) THEN
@@ -160,10 +163,10 @@ MODULE MOD_LuLccTMatrix
         latso(i) = edgen - i*dllo + 0.5*dllo
      ENDDO
 
-     ! calculate input grid size  
+     ! calculate input grid size
      dll = 5./nxy
 
-     ! calculate start region latitude/longitude  
+     ! calculate start region latitude/longitude
      sreglat = 90 - int((90.-edgen)/5.)*5
      ereglat = 90 - int((90.-edges-0.5*dll)/5.)*5
      IF (ereglat > sreglat) ereglat = sreglat
@@ -216,9 +219,9 @@ MODULE MOD_LuLccTMatrix
            ENDIF
 
            ! get the raw data
-           CALL nccheck( nf90_inq_varid(ncid, "LC"   , lcs_vid      ) )
+           CALL nccheck( nf90_inq_varid(ncid, "LC" , lcs_vid) )
 
-           CALL nccheck( nf90_get_var(ncid, lcs_vid   , lcdatas) )
+           CALL nccheck( nf90_get_var(ncid, lcs_vid, lcdatas) )
 
            ! close file
            CALL nccheck( nf90_close(ncid) )
@@ -234,15 +237,15 @@ MODULE MOD_LuLccTMatrix
            ENDIF
 
            ! get the raw data
-           CALL nccheck( nf90_inq_varid(ncid, "LC"   , lce_vid      ) )
+           CALL nccheck( nf90_inq_varid(ncid, "LC" , lce_vid) )
 
-           CALL nccheck( nf90_get_var(ncid, lce_vid   , lcdatae) )
+           CALL nccheck( nf90_get_var(ncid, lce_vid, lcdatae) )
 
            ! close file
            CALL nccheck( nf90_close(ncid) )
 
 
-           ! calculate the edge of small grids 
+           ! calculate the edge of small grids
            DO i = 1, nxy
               lonw(i) = reg(2) + i*dll - dll
               lone(i) = reg(2) + i*dll
@@ -250,18 +253,18 @@ MODULE MOD_LuLccTMatrix
               lats(i) = reg(1) - i*dll
            ENDDO
 
-           ! calculate the area size of small grids  
+           ! calculate the area size of small grids
            DO i = 1, nxy
               dx = (lone(1)-lonw(1))*deg2rad
               dy = sin(latn(i)*deg2rad) - sin(lats(i)*deg2rad)
               sarea(:,i) = dx*dy*re*re
            ENDDO
 
-           ! default value  
+           ! default value
            si = 1; ei = nxy
            sj = 1; ej = nxy
 
-           ! calculate start i/j and END i/j  
+           ! calculate start i/j and END i/j
            IF (reglat == sreglat) si = int((reg(1)-edgen)*nxy/5)+1
            IF (reglon == sreglon) sj = int((edgew-reg(2))*nxy/5)+1
            IF (reglat == ereglat) ei = int((reg(1)-edges)*nxy/5)
@@ -269,7 +272,7 @@ MODULE MOD_LuLccTMatrix
            IF (ei < si) ei = si
            IF (ej < sj) ej = sj
 
-           ! loop for each small grid for aggregation  
+           ! loop for each small grid for aggregation
            DO i = si, ei
               DO j = sj, ej
 
@@ -338,14 +341,14 @@ MODULE MOD_LuLccTMatrix
      ! Define the dimensions.
      CALL nccheck( nf90_def_dim(ncid, "lat",  lat_points , lat_dimid) )
      CALL nccheck( nf90_def_dim(ncid, "lon",  lon_points , lon_dimid) )
-     CALL nccheck( nf90_def_dim(ncid, "lcs",  nlc , lcs_dimid ) )
-     CALL nccheck( nf90_def_dim(ncid, "lce",  nlc , lce_dimid ) )
+     CALL nccheck( nf90_def_dim(ncid, "lcs",  nlc        , lcs_dimid) )
+     CALL nccheck( nf90_def_dim(ncid, "lce",  nlc        , lce_dimid) )
 
      ! Define the coordinate variables.
      CALL nccheck( nf90_def_var(ncid, "lat" , NF90_FLOAT, lat_dimid , lat_vid) )
      CALL nccheck( nf90_def_var(ncid, "lon" , NF90_FLOAT, lon_dimid , lon_vid) )
-     CALL nccheck( nf90_def_var(ncid, "lcs" , NF90_INT  , lcs_dimid , lcs_vid ) )
-     CALL nccheck( nf90_def_var(ncid, "lce" , NF90_INT  , lce_dimid , lce_vid ) )
+     CALL nccheck( nf90_def_var(ncid, "lcs" , NF90_INT  , lcs_dimid , lcs_vid) )
+     CALL nccheck( nf90_def_var(ncid, "lce" , NF90_INT  , lce_dimid , lce_vid) )
 
 
      ! Assign units attributes to coordinate variables.
@@ -353,22 +356,22 @@ MODULE MOD_LuLccTMatrix
      CALL nccheck( nf90_put_att(ncid, lat_vid , "units"    , "degrees_north" ) )
      CALL nccheck( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"     ) )
      CALL nccheck( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"  ) )
-     CALL nccheck( nf90_put_att(ncid, lcs_vid  , "long_name", "LC start index"      ) )
-     CALL nccheck( nf90_put_att(ncid, lce_vid  , "long_name", "LC end index"      ) )
+     CALL nccheck( nf90_put_att(ncid, lcs_vid , "long_name", "LC start index") )
+     CALL nccheck( nf90_put_att(ncid, lce_vid , "long_name", "LC end index"  ) )
 
 
      ! define output variables
      XY2D = (/ lon_dimid, lat_dimid /)
-     CALL nccheck( nf90_def_var(ncid, "AREA"       , NF90_FLOAT, XY2D, varea       , deflate_level=6) )
+     CALL nccheck( nf90_def_var(ncid, "AREA"         , NF90_FLOAT, XY2D, varea   , deflate_level=6) )
 
      LC4D  = (/ lon_dimid, lat_dimid, lcs_dimid , lce_dimid /)
-     CALL nccheck( nf90_def_var(ncid, "TRANSFER_PCT" , NF90_FLOAT, LC4D , vlccpct , deflate_level=6) )
+     CALL nccheck( nf90_def_var(ncid, "TRANSFER_PCT" , NF90_FLOAT, LC4D, vlccpct , deflate_level=6) )
 
      ! Assign units attributes to the netCDF variables.
-     CALL nccheck( nf90_put_att(ncid, varea       , "units"    , "km^2"                    ) )
-     CALL nccheck( nf90_put_att(ncid, varea       , "long_name", "Area of grid"            ) )
+     CALL nccheck( nf90_put_att(ncid, varea  , "units"    , "km^2"                          ) )
+     CALL nccheck( nf90_put_att(ncid, varea  , "long_name", "Area of grid"                  ) )
 
-     CALL nccheck( nf90_put_att(ncid, vlccpct, "units"    , "%"                         ) )
+     CALL nccheck( nf90_put_att(ncid, vlccpct, "units"    , "%"                             ) )
      CALL nccheck( nf90_put_att(ncid, vlccpct, "long_name", "Percent land cover type change") )
 
      CALL nccheck( nf90_put_att(ncid, NF90_GLOBAL, 'Title'  , Title  ) )
@@ -379,15 +382,15 @@ MODULE MOD_LuLccTMatrix
      ! End define mode.
      CALL nccheck( nf90_enddef(ncid) )
 
-     CALL nccheck( nf90_put_var(ncid, lat_vid,  latso      ) )
-     CALL nccheck( nf90_put_var(ncid, lon_vid,  lonso      ) )
+     CALL nccheck( nf90_put_var(ncid, lat_vid, latso      ) )
+     CALL nccheck( nf90_put_var(ncid, lon_vid, lonso      ) )
 
-     CALL nccheck( nf90_put_var(ncid, lcs_vid ,  lct(1:nlc) ) )
-     CALL nccheck( nf90_put_var(ncid, lce_vid ,  lct(1:nlc) ) )
+     CALL nccheck( nf90_put_var(ncid, lcs_vid, lct(1:nlc) ) )
+     CALL nccheck( nf90_put_var(ncid, lce_vid, lct(1:nlc) ) )
 
      ! put variables
-     CALL nccheck( nf90_put_var(ncid, varea       , area       ) )
-     CALL nccheck( nf90_put_var(ncid, vlccpct     , lccpct   ) )
+     CALL nccheck( nf90_put_var(ncid, varea  , area       ) )
+     CALL nccheck( nf90_put_var(ncid, vlccpct, lccpct     ) )
 
      ! Close the file. This causes netCDF to flush all buffers and make
      ! sure your data are really written to disk.
@@ -402,10 +405,10 @@ MODULE MOD_LuLccTMatrix
      deallocate( sumarea  )
      deallocate( lccpct   )
 
-  END SUBROUTINE MakeLuLccData
+  END SUBROUTINE MAKE_LuLccTransferMatrix
 
 
-  SUBROUTINE READ_LuLccTMatrix(casename,idate,dir_restart)
+  SUBROUTINE READ_LuLccTransferMatrix(casename,idate,dir_restart)
 
       USE precision
       USE GlobalVars
@@ -418,7 +421,7 @@ MODULE MOD_LuLccTMatrix
 
       IMPLICIT NONE
 !TODO: need coding below...
-      
+
       CHARACTER(LEN=256) :: lndname
       INTEGER :: ncid
       INTEGER :: lccpct_vid !lcfr_vid, lcto_vid, dchg_vid, selfchg_vid
@@ -428,27 +431,26 @@ MODULE MOD_LuLccTMatrix
       INTEGER,  intent(in) :: idate(3)
       CHARACTER(LEN=256), intent(in) :: casename
       CHARACTER(LEN=256), intent(in) :: dir_restart
-      
+
       REAL(r8), allocatable :: lccpctin(:,:,:,:)
 
       write(syear,'(i4.4)') idate(1) - 1
-      write(eyear,'(i4.4)') idate(1) 
+      write(eyear,'(i4.4)') idate(1)
 
       lndname = trim(dir_restart)//trim(syear)//'_'//trim(eyear)//'_'//trim(casename)//'.'//DATASRC//'.nc'
       print*,'read lulccdata',trim(lndname)
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
 #ifdef IGBP_CLASSIFICATION
-      allocate ( lccpctin    (1:lon_points, 1:lat_points, 1:nlc, 1:nlc) )
+      allocate ( lccpctin (1:lon_points, 1:lat_points, 1:nlc, 1:nlc) )
 
-      CALL nccheck( nf90_inq_varid(ncid, "TRANSFER_PCT", lccpct_vid ) )
+      CALL nccheck( nf90_inq_varid(ncid, "TRANSFER_PCT", lccpct_vid) )
 
       CALL nccheck( nf90_get_var(ncid, lccpct_vid, lccpctin, &
                     start=(/1,1,1,1/), &
                     count=(/lon_points,lat_points,nlc,nlc/)) )
 
-      allocate ( lccpct  (numpatch,1:nlc, 1:nlc) ) 
-
+      allocate ( lccpct  (numpatch,1:nlc, 1:nlc) )
 
 
 #ifdef OPENMP
@@ -461,7 +463,7 @@ MODULE MOD_LuLccTMatrix
          j = patch2lat(npatch)
          m = patchclass(npatch)
 
-        lccpct  (npatch,:,:) = lccpctin (i,j,:,:) 
+        lccpct  (npatch,:,:) = lccpctin (i,j,:,:)
 
       ENDDO
 
@@ -475,9 +477,9 @@ MODULE MOD_LuLccTMatrix
 
       CALL nccheck( nf90_close(ncid) )
 
-  END SUBROUTINE READ_LuLccTMatrix
+  END SUBROUTINE READ_LuLccTransferMatrix
 
-  SUBROUTINE deallocate_LuLccTMatrix
+  SUBROUTINE deallocate_LuLccTransferMatrix
 ! --------------------------------------------------
 ! Deallocates memory for LuLcc time invariant variables
 ! --------------------------------------------------
@@ -485,7 +487,7 @@ MODULE MOD_LuLccTMatrix
 !TODO: need coding below...
 
 
-  END SUBROUTINE deallocate_LuLccTMatrix
+  END SUBROUTINE deallocate_LuLccTransferMatrix
 
-END MODULE MOD_LuLccTMatrix
+END MODULE MOD_LuLccTransferMatrix
 ! ---------- EOP ------------

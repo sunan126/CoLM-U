@@ -60,7 +60,7 @@
       CHARACTER(len=256) :: nam_srfdata   !surface data filename
       CHARACTER(len=256) :: nam_urbdata   !urban data filename
       CHARACTER(len=256) :: cdate         !string date format
-      
+
       CHARACTER(len=256) :: dir_rawdata, mksrf_file
       real(r8) :: edgen      ! northern edge of grid (degrees)
       real(r8) :: edgee      ! eastern edge of grid (degrees)
@@ -132,13 +132,14 @@
                         s_month,                &!12.2
                         s_day,                  &!12.3
                         s_seconds                !12.4
+
+      namelist /mksrfexp/  casename,dir_rawdata,dir_srfdata,&
+                           lc_year,edgen,edgee,edges,edgew
+
 ! ======================================================================
 !     define the run and open files (for off-line use)
 
       read(5,clmexp)
-
-      namelist /mksrfexp/  casename,dir_rawdata,dir_srfdata,&
-                          lc_year,edgen,edgee,edges,edgew
 
       mksrf_file = trim(dir_output)//'../'//'mksrf.stdin'
       open(55, status='OLD', file=mksrf_file, form="FORMATTED")
@@ -262,7 +263,7 @@
        ! Call clm driver
        ! ----------------------------------------------------------------------
          CALL CLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
-       
+
        ! Get leaf area index
        ! ----------------------------------------------------------------------
 #if(!defined DYN_PHENOLOGY)

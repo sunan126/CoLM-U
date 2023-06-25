@@ -46,6 +46,7 @@ SUBROUTINE LuLccDRIVER (casename,dir_srfdata,dir_restart,&
    CALL LuLccInitialize (casename,dir_srfdata,dir_restart,&
                          nam_srfdata,nam_urbdata,idate,greenwich)
 
+   !TODO: to be an option using namelist
    ! ! simple method for variable recovery
    ! print *, ">>> LULCC: simple method for variable recovery..."
    ! CALL REST_LuLccTimeVars

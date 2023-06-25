@@ -7,12 +7,11 @@ MODULE MOD_LuLccTransferMatrix
 ! -------------------------------
 
   USE precision
-  USE GlobalVars
+  USE GlobalVars, only: nlc => N_land_classification
   IMPLICIT NONE
   SAVE
 ! -----------------------------------------------------------------
 
-  INTEGER :: nlc = 18
   !TODO@Wanyi: The below variable is double defined.
   REAL(r8), allocatable :: lccpct(:,:,:)
 
@@ -74,7 +73,7 @@ MODULE MOD_LuLccTransferMatrix
      INTEGER, parameter :: nxy = 1200
 
      ! define input variables
-     REAL(r8), dimension(:,:)    , allocatable :: lcdatas,lcdatae
+     REAL(r8), dimension(:,:)    , allocatable :: lcdatafr,lcdatato
 
      ! define output variables
      REAL(r8), dimension(:,:)    , allocatable :: area
@@ -91,12 +90,12 @@ MODULE MOD_LuLccTransferMatrix
 
      ! variable ids
      INTEGER :: lon_vid, lat_vid, lc_vid
-     INTEGER :: lat_dimid, lon_dimid, lcs_dimid, lce_dimid
+     INTEGER :: lat_dimid, lon_dimid, lc_dimid
 
      ! output variables/ids
-     INTEGER :: varea,lcs_vid, lce_vid
+     INTEGER :: varea, lcfr_vid, lcto_vid
      INTEGER :: vlccpct
-     INTEGER :: lct(22)
+     INTEGER :: lc(0:nlc)
 
      REAL(r8) :: deg2rad, re, dx, dy, wgt, sumpct
      REAL(r8) :: sarea(nxy,nxy)
@@ -104,11 +103,11 @@ MODULE MOD_LuLccTransferMatrix
      REAL(r8) :: dll, lone(nxy), lonw(nxy), latn(nxy), lats(nxy)
      REAL(r8) :: dllo, latso(lat_points), lonso(lon_points)
 
-     INTEGER :: nlc
-     INTEGER :: lcs,lce
+     INTEGER :: lcfr,lcto
      INTEGER :: i, j, io, jo, si, sj, ei, ej
      INTEGER :: reglat,reglon,reglon_,sreglat,sreglon,ereglat,ereglon
 
+     !TODO: remove unused variables
      INTEGER :: XY2D(2), GRID3d(3), LC3D(3), PFT3D(3), LC4D(4), PFT4D(4), PC4D(4), PC5D(5)
      LOGICAL :: fileExists
 
@@ -121,23 +120,17 @@ MODULE MOD_LuLccTransferMatrix
      write(syear,'(i4.4)') idate(1) - 1
      write(eyear,'(i4.4)') idate(1)
 
-     IF (DATASRC == "MOD") THEN
-        nlc = 18 !17
-     ELSE
-        nlc = 22
-     ENDIF
-
      ! allocate memory
      print *, ">>> allocating memory..."
-     allocate( lcdatas    (nxy, nxy) )
-     allocate( lcdatae    (nxy, nxy) )
+     allocate( lcdatafr (nxy, nxy) )
+     allocate( lcdatato (nxy, nxy) )
 
-     allocate( sumarea    (lon_points,lat_points,nlc,nlc))
-     allocate( lccpct     (lon_points,lat_points,nlc,nlc))
-     allocate( area       (lon_points,lat_points        ))
+     allocate( sumarea (lon_points,lat_points,0:nlc,0:nlc) )
+     allocate( lccpct  (lon_points,lat_points,0:nlc,0:nlc) )
+     allocate( area    (lon_points,lat_points        ) )
 
-     DO i = 1, 22
-        lct(i) = i
+     DO i = 0, nlc
+        lc(i) = i
      ENDDO
 
      ! initialization
@@ -219,9 +212,9 @@ MODULE MOD_LuLccTransferMatrix
            ENDIF
 
            ! get the raw data
-           CALL nccheck( nf90_inq_varid(ncid, "LC" , lcs_vid) )
+           CALL nccheck( nf90_inq_varid(ncid, "LC"  , lcfr_vid) )
 
-           CALL nccheck( nf90_get_var(ncid, lcs_vid, lcdatas) )
+           CALL nccheck( nf90_get_var(ncid, lcfr_vid, lcdatafr) )
 
            ! close file
            CALL nccheck( nf90_close(ncid) )
@@ -237,9 +230,9 @@ MODULE MOD_LuLccTransferMatrix
            ENDIF
 
            ! get the raw data
-           CALL nccheck( nf90_inq_varid(ncid, "LC" , lce_vid) )
+           CALL nccheck( nf90_inq_varid(ncid, "LC"  , lcto_vid) )
 
-           CALL nccheck( nf90_get_var(ncid, lce_vid, lcdatae) )
+           CALL nccheck( nf90_get_var(ncid, lcto_vid, lcdatato) )
 
            ! close file
            CALL nccheck( nf90_close(ncid) )
@@ -294,14 +287,10 @@ MODULE MOD_LuLccTransferMatrix
                  ! total area include ocean
                  area(jo,io) = area(jo,io) + sarea(j,i)
 
-                 lcs = lcdatas(j,i)
-                 lce = lcdatae(j,i)
+                 lcfr = lcdatafr(j,i)
+                 lcto = lcdatato(j,i)
 
-                 ! make ocean the 18th index
-                 IF (lcs == 0) lcs = 18
-                 IF (lce == 0) lce = 18
-
-                 sumarea(jo,io,lcs,lce) = sumarea(jo,io,lcs,lce) + sarea(j,i)
+                 sumarea(jo,io,lcfr,lcto) = sumarea(jo,io,lcfr,lcto) + sarea(j,i)
 
               ENDDO
            ENDDO
@@ -341,14 +330,12 @@ MODULE MOD_LuLccTransferMatrix
      ! Define the dimensions.
      CALL nccheck( nf90_def_dim(ncid, "lat",  lat_points , lat_dimid) )
      CALL nccheck( nf90_def_dim(ncid, "lon",  lon_points , lon_dimid) )
-     CALL nccheck( nf90_def_dim(ncid, "lcs",  nlc        , lcs_dimid) )
-     CALL nccheck( nf90_def_dim(ncid, "lce",  nlc        , lce_dimid) )
+     CALL nccheck( nf90_def_dim(ncid, "lc" ,  nlc+1      ,  lc_dimid) )
 
      ! Define the coordinate variables.
-     CALL nccheck( nf90_def_var(ncid, "lat" , NF90_FLOAT, lat_dimid , lat_vid) )
-     CALL nccheck( nf90_def_var(ncid, "lon" , NF90_FLOAT, lon_dimid , lon_vid) )
-     CALL nccheck( nf90_def_var(ncid, "lcs" , NF90_INT  , lcs_dimid , lcs_vid) )
-     CALL nccheck( nf90_def_var(ncid, "lce" , NF90_INT  , lce_dimid , lce_vid) )
+     CALL nccheck( nf90_def_var(ncid, "lat", NF90_FLOAT, lat_dimid, lat_vid) )
+     CALL nccheck( nf90_def_var(ncid, "lon", NF90_FLOAT, lon_dimid, lon_vid) )
+     CALL nccheck( nf90_def_var(ncid, "lc" , NF90_INT  ,  lc_dimid,  lc_vid) )
 
 
      ! Assign units attributes to coordinate variables.
@@ -356,16 +343,16 @@ MODULE MOD_LuLccTransferMatrix
      CALL nccheck( nf90_put_att(ncid, lat_vid , "units"    , "degrees_north" ) )
      CALL nccheck( nf90_put_att(ncid, lon_vid , "long_name", "Longitude"     ) )
      CALL nccheck( nf90_put_att(ncid, lon_vid , "units"    , "degrees_east"  ) )
-     CALL nccheck( nf90_put_att(ncid, lcs_vid , "long_name", "LC start index") )
-     CALL nccheck( nf90_put_att(ncid, lce_vid , "long_name", "LC end index"  ) )
+     CALL nccheck( nf90_put_att(ncid, lcfr_vid, "long_name", "The LC index Change from") )
+     CALL nccheck( nf90_put_att(ncid, lcto_vid, "long_name", "The LC index Change to"  ) )
 
 
      ! define output variables
      XY2D = (/ lon_dimid, lat_dimid /)
      CALL nccheck( nf90_def_var(ncid, "AREA"         , NF90_FLOAT, XY2D, varea   , deflate_level=6) )
 
-     LC4D  = (/ lon_dimid, lat_dimid, lcs_dimid , lce_dimid /)
-     CALL nccheck( nf90_def_var(ncid, "TRANSFER_PCT" , NF90_FLOAT, LC4D, vlccpct , deflate_level=6) )
+     LC4D  = (/ lon_dimid, lat_dimid, lc_dimid , lc_dimid /)
+     CALL nccheck( nf90_def_var(ncid, "PCT_LCC" , NF90_FLOAT, LC4D, vlccpct , deflate_level=6) )
 
      ! Assign units attributes to the netCDF variables.
      CALL nccheck( nf90_put_att(ncid, varea  , "units"    , "km^2"                          ) )
@@ -385,8 +372,8 @@ MODULE MOD_LuLccTransferMatrix
      CALL nccheck( nf90_put_var(ncid, lat_vid, latso      ) )
      CALL nccheck( nf90_put_var(ncid, lon_vid, lonso      ) )
 
-     CALL nccheck( nf90_put_var(ncid, lcs_vid, lct(1:nlc) ) )
-     CALL nccheck( nf90_put_var(ncid, lce_vid, lct(1:nlc) ) )
+     CALL nccheck( nf90_put_var(ncid, lcfr_vid, lc(0:nlc) ) )
+     CALL nccheck( nf90_put_var(ncid, lcto_vid, lc(0:nlc) ) )
 
      ! put variables
      CALL nccheck( nf90_put_var(ncid, varea  , area       ) )
@@ -399,8 +386,8 @@ MODULE MOD_LuLccTransferMatrix
      print *,"*** SUCCESS writing file ", trim(lndname), "!"
 
      ! deallocate memory
-     deallocate( lcdatas  )
-     deallocate( lcdatae  )
+     deallocate( lcdatafr )
+     deallocate( lcdatato )
      deallocate( area     )
      deallocate( sumarea  )
      deallocate( lccpct   )
@@ -420,11 +407,10 @@ MODULE MOD_LuLccTransferMatrix
       USE ncio
 
       IMPLICIT NONE
-!TODO: need coding below...
 
       CHARACTER(LEN=256) :: lndname
       INTEGER :: ncid
-      INTEGER :: lccpct_vid !lcfr_vid, lcto_vid, dchg_vid, selfchg_vid
+      INTEGER :: lccpct_vid
       INTEGER :: i, j, m, npatch
       INTEGER :: k,numtmp
       REAL(r8):: tmp
@@ -432,7 +418,7 @@ MODULE MOD_LuLccTransferMatrix
       CHARACTER(LEN=256), intent(in) :: casename
       CHARACTER(LEN=256), intent(in) :: dir_restart
 
-      REAL(r8), allocatable :: lccpctin(:,:,:,:)
+      REAL(r8), allocatable :: lccpct2d(:,:,:,:)
 
       write(syear,'(i4.4)') idate(1) - 1
       write(eyear,'(i4.4)') idate(1)
@@ -442,15 +428,17 @@ MODULE MOD_LuLccTransferMatrix
       CALL nccheck( nf90_open(trim(lndname), nf90_nowrite, ncid) )
 
 #ifdef IGBP_CLASSIFICATION
-      allocate ( lccpctin (1:lon_points, 1:lat_points, 1:nlc, 1:nlc) )
+      allocate ( lccpct2d (1:lon_points, 1:lat_points, 0:nlc, 0:nlc) )
 
-      CALL nccheck( nf90_inq_varid(ncid, "TRANSFER_PCT", lccpct_vid) )
+      CALL nccheck( nf90_inq_varid(ncid, "PCT_LCC", lccpct_vid) )
 
-      CALL nccheck( nf90_get_var(ncid, lccpct_vid, lccpctin, &
+      CALL nccheck( nf90_get_var(ncid, lccpct_vid, lccpct2d, &
                     start=(/1,1,1,1/), &
-                    count=(/lon_points,lat_points,nlc,nlc/)) )
+                    count=(/lon_points,lat_points,nlc+1,nlc+1/)) )
 
-      allocate ( lccpct  (numpatch,1:nlc, 1:nlc) )
+      !TODO: no deallocate, could put in energy&mass conserve
+      !or deallocate_LuLccTransferMatrix()
+      allocate ( lccpct  (numpatch,0:nlc, 0:nlc) )
 
 
 #ifdef OPENMP
@@ -463,7 +451,7 @@ MODULE MOD_LuLccTransferMatrix
          j = patch2lat(npatch)
          m = patchclass(npatch)
 
-        lccpct  (npatch,:,:) = lccpctin (i,j,:,:)
+        lccpct (npatch,:,:) = lccpct2d (i,j,:,:)
 
       ENDDO
 
@@ -471,7 +459,7 @@ MODULE MOD_LuLccTransferMatrix
 !$OMP END PARALLEL DO
 #endif
 
-      deallocate ( lccpctin )
+      deallocate ( lccpct2d )
 
 #endif
 

@@ -255,7 +255,7 @@ ENDIF
      ! surface albedo
      ssw = min(1.,1.e-3*wliq_soisno(1)/dz_soisno(1))
      CALL albland (ipatch,patchtype,soil_s_v_alb,soil_d_v_alb,soil_s_n_alb,soil_d_n_alb,&
-                   chil,rho,tau,fveg,green,lai,sai,coszen,wt,fsno,scv,sag,ssw,t_grnd,&
+                   chil,rho,tau,fveg,green,lai,sai,max(0.001,coszen),wt,fsno,scv,sag,ssw,t_grnd,&
                    alb,ssun,ssha,thermk,extkb,extkd)
 
   ELSE                 !ocean grid

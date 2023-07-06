@@ -141,9 +141,13 @@
 
       read(5,clmexp)
 
+      ! 07/06/2023, yuan: temporal solution to add #define here
+      ! need to update in future cause there could be no mksrf.stdin
+#ifdef LULCC
       mksrf_file = trim(dir_output)//'../'//'mksrf.stdin'
       open(55, status='OLD', file=mksrf_file, form="FORMATTED")
       read(55, nml=mksrfexp)
+#endif
 
       CALL Init_GlovalVars
       CALL Init_LC_Const

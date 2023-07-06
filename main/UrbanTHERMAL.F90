@@ -617,7 +617,7 @@
             rsr = (1-fsno_gper)*exp(8.206-4.255*fac)
          ENDIF
       ENDIF
-      
+
       qgper = qred*qsatg
       dqgperdT = qred*qsatgdT
 
@@ -1032,7 +1032,7 @@
          fsena  = fsenl + fseng
          fevpa  = fevpl + fevpg
          lfevpa = lfevpa + hvap*fevpl
-         
+
          fsen_urbl = fsenl
          lfevp_urbl= hvap*fevpl
       ELSE

@@ -29,10 +29,10 @@ MODULE MOD_UrbanTimeInvars
    REAL(r8), allocatable :: hroof       (:)  !average building height [m]
    REAL(r8), allocatable :: hwr         (:)  !average building height to their distance [-]
 
-   REAL(r8), allocatable :: z_roof    (:,:)  !thickness of roof [m]
-   REAL(r8), allocatable :: z_wall    (:,:)  !thickness of wall [m]
-   REAL(r8), allocatable :: dz_roof   (:,:)  !thickness of each layer [m]
-   REAL(r8), allocatable :: dz_wall   (:,:)  !thickness of each layer [m]
+   REAL(r8), allocatable :: z_roof    (:,:)  !depth of each roof layer [m]
+   REAL(r8), allocatable :: z_wall    (:,:)  !depth of each wall layer [m]
+   REAL(r8), allocatable :: dz_roof   (:,:)  !thickness of each roof layer [m]
+   REAL(r8), allocatable :: dz_wall   (:,:)  !thickness of each wall layer [m]
 
    ! albedo
    REAL(r8), allocatable :: alb_roof(:,:,:)  !albedo of roof [-]
@@ -80,7 +80,7 @@ CONTAINS
       IMPLICIT NONE
 
 
-      
+
       allocate (urbclass             (numurban))
       allocate (patch2urb            (numpatch))
       allocate (urb2patch            (numurban))
@@ -116,10 +116,10 @@ CONTAINS
       allocate (t_roommax            (numurban))
       allocate (t_roommin            (numurban))
       allocate (popcell              (numurban))
-      
+
       allocate (vehicle          (numurban,3  ))
-      allocate (week_holiday     (numurban,7  )) 
-      allocate (weh_prof         (numurban,24 )) 
+      allocate (week_holiday     (numurban,7  ))
+      allocate (weh_prof         (numurban,24 ))
       allocate (wdh_prof         (numurban,24 ))
       allocate (hum_prof         (numurban,24 ))
       allocate (fix_holiday      (numurban,365))

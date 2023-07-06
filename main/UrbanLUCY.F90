@@ -17,7 +17,7 @@ MODULE UrbanAnthropogenic
   IMPLICIT NONE
   SAVE
   PRIVATE :: timeweek, gmt2local
-  PUBLIC  :: LUCY 
+  PUBLIC  :: LUCY
 
 CONTAINS
 
@@ -28,7 +28,7 @@ CONTAINS
 
   ! !DESCRIPTION:
   ! Anthropogenic heat fluxes other than building heat were calculated
-  ! 
+  !
   ! The calling sequence is:
   ! -> gmt2local: convert GMT time to local time
   ! -> timeweek : calculate the day of the week
@@ -66,7 +66,7 @@ CONTAINS
       carscell, &! cars numbers per thousand people
       frescell, &! freights numbers per thousand people
       mbkscell   ! motobikes numbers per thousand people
-   
+
    REAL(r8), intent(out) :: &
       Fahe, &! flux from metabolic and vehicle
       vehc, &! flux from vehicle
@@ -96,10 +96,10 @@ CONTAINS
 
    ! set vehicle distance traveled
    car_sp = 50
-   
-   ! emission factor Sailor and Lu (2004), 
+
+   ! emission factor Sailor and Lu (2004),
    ! all vehicle are set to same value
-   EC = 3975  
+   EC = 3975
    EM = 3975
    EF = 3975
 
@@ -114,7 +114,7 @@ CONTAINS
 
    CALL julian2monthday(ldate(1), ldate(2), month, day)
    CALL timeweek(ldate(1), month, day, iweek)
-   
+
    ihour = CEILING(ldate(3)*1./3600)
 
    IF (day==366)  day=365
@@ -163,18 +163,19 @@ CONTAINS
    vehc = carflx + motflx + freflx
    ! total anthropogenic heat flux exclude building part
    Fahe = meta + vehc
-   
+
   END Subroutine LUCY
 
+  !TODO: write the below to timemanager.F90 @Wenzong
   ! -----------------------------------------------------------------------
   SUBROUTINE gmt2local(idate, long, ldate)
 
   ! !DESCRIPTION:
   ! A subroutine to calculate local time
   ! !PURPOSE
-  ! Convert GMT time to local time in global run 
+  ! Convert GMT time to local time in global run
   ! -----------------------------------------------------------------------
-    
+
     IMPLICIT NONE
 
     INTEGER , intent(in ) :: idate(3)

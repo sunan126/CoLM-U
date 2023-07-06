@@ -18,7 +18,7 @@ MODULE GlobalVars
    INTEGER, parameter :: N_land_classification = 17
    INTEGER, parameter :: WETLAND  = 11
    INTEGER, parameter :: URBAN    = 13
-   INTEGER, parameter :: GLACIER  = 15
+   INTEGER, parameter :: GLACIER  = 15 !TODO: conflict with GLACIER.F90
    INTEGER, parameter :: WATERBODY= 17
 #endif
 

@@ -16,6 +16,7 @@ MODULE MOD_LuLccTimeVars
   REAL(r8), allocatable :: t_soisno_    (:,:)  !soil temperature [K]
   REAL(r8), allocatable :: wliq_soisno_ (:,:)  !liquid water in layers [kg/m2]
   REAL(r8), allocatable :: wice_soisno_ (:,:)  !ice lens in layers [kg/m2]
+  REAL(r8), allocatable :: cvsoil_      (:,:)  !heat capacity [J/(m2 K)]
   REAL(r8), allocatable :: t_grnd_        (:)  !ground surface temperature [K]
 
   REAL(r8), allocatable :: tleaf_         (:)  !leaf temperature [K]
@@ -39,7 +40,7 @@ MODULE MOD_LuLccTimeVars
   REAL(r8), allocatable :: zwt_           (:)  !the depth to water table [m]
   REAL(r8), allocatable :: wa_            (:)  !water storage in aquifer [mm]
 
-  REAL(r8), allocatable :: t_lake_      (:,:)  !lake layer teperature [K]
+  REAL(r8), allocatable :: t_lake_      (:,:)  !lake layer temperature [K]
   REAL(r8), allocatable :: lake_icefrac_(:,:)  !lake mass fraction of lake layer that is frozen
 
   ! for PFT_CLASSIFICATION
@@ -171,6 +172,7 @@ MODULE MOD_LuLccTimeVars
      allocate (t_soisno_    (maxsnl+1:nl_soil,numpatch))
      allocate (wliq_soisno_ (maxsnl+1:nl_soil,numpatch))
      allocate (wice_soisno_ (maxsnl+1:nl_soil,numpatch))
+     allocate (cvsoil_             (1:nl_soil,numpatch))
      allocate (t_grnd_                       (numpatch))
      allocate (tleaf_                        (numpatch))
      allocate (ldew_                         (numpatch))
@@ -313,6 +315,7 @@ MODULE MOD_LuLccTimeVars
      t_soisno_     = t_soisno
      wliq_soisno_  = wliq_soisno
      wice_soisno_  = wice_soisno
+     cvsoil_       = cvsoil
      t_grnd_       = t_grnd
      tleaf_        = tleaf
      ldew_         = ldew
@@ -706,6 +709,7 @@ ENDIF
      deallocate (t_soisno_     )
      deallocate (wliq_soisno_  )
      deallocate (wice_soisno_  )
+     deallocate (cvsoil_       )
      deallocate (t_grnd_       )
      deallocate (tleaf_        )
      deallocate (ldew_         )

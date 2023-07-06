@@ -304,7 +304,7 @@ MODULE LEAF_temperature
 ! scaling-up coefficients from leaf to canopy
 !-----------------------------------------------------------------------
 
-       fsha   = 1. - fsun
+       fsha   = 1. -fsun
        laisun = lai*fsun
        laisha = lai*fsha
 

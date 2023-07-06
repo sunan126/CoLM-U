@@ -29,7 +29,7 @@ OBJS =  precision.o             \
 	MOD_UrbanTimeVars.o         \
 	MOD_TimeVariables.o         \
 	MOD_LuLccTimeVars.o         \
-	MOD_LuLccTMatrix.o          \
+	MOD_LuLccTransferMatrix.o   \
 	MOD_1D_PFTFluxes.o          \
 	MOD_1D_PCFluxes.o           \
 	MOD_1D_UrbanFluxes.o        \
@@ -99,8 +99,7 @@ OBJS =  precision.o             \
 	soil_parameters_readin.o    \
 	HTOP_readin_nc.o            \
 	LuLccInitialize.o           \
-	LuLccEnergyConserve.o       \
-	LuLccWaterConserve.o        \
+	LuLccEnergyMassConserve.o   \
 	LuLccDRIVER.o               \
 	UrbanCLMMAIN.o              \
 	CLMDRIVER.o                 \

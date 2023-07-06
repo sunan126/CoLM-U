@@ -19,7 +19,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
    USE MOD_PFTimeVars
    USE MOD_PCTimeVars
    USE MOD_UrbanTimeVars
-   USE MOD_LuLccTMatrix
+   USE MOD_LuLccTransferMatrix
    USE LC_Const
    USE PFT_Const
    USE timemanager
@@ -35,27 +35,27 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
    CHARACTER(LEN=256), intent(in) :: dir_restart   !case restart data directory
    CHARACTER(LEN=256), intent(in) :: nam_srfdata   !surface data filename
    CHARACTER(LEN=256), intent(in) :: nam_urbdata   !urban data filename
-   LOGICAL, intent(in)    :: greenwich   !true: greenwich time, false: local time
-   INTEGER, intent(inout) :: idate(3)    !year, julian day, seconds of the starting time
+   LOGICAL, intent(in)    :: greenwich             !true: greenwich time, false: local time
+   INTEGER, intent(inout) :: idate(3)              !year, julian day, seconds of the starting time
 
 ! ------------------------ local variables -----------------------------
 ! surface classification and soil information
 
-  REAL(r8) latixy  (lon_points,lat_points)          !latitude in radians
-  REAL(r8) longxy  (lon_points,lat_points)          !longitude in radians
-  REAL(r8) latdeg  (lat_points)                     !latitude in degree
-  REAL(r8) londeg  (lon_points)                     !longitude in degree
-  REAL(r8) area_gridcells (lon_points,lat_points)   !area of gridcells (km^2)
+  REAL(r8) latixy  (lon_points,lat_points)         !latitude in radians
+  REAL(r8) longxy  (lon_points,lat_points)         !longitude in radians
+  REAL(r8) latdeg  (lat_points)                    !latitude in degree
+  REAL(r8) londeg  (lon_points)                    !longitude in degree
+  REAL(r8) area_gridcells (lon_points,lat_points)  !area of gridcells (km^2)
 
-  REAL(r8), allocatable :: landfrac(:,:)            !land fractional cover
-  REAL(r8), allocatable :: pctlc(:,:,:)             !percent each land cover TYPE
-  REAL(r8), allocatable :: pctpft(:,:,:)            !percent PFT
-  REAL(r8), allocatable :: pcturban(:,:)            !percent urban
-  REAL(r8), allocatable :: pctwater(:,:)            !percent water body
-  REAL(r8), allocatable :: pctwetland(:,:)          !percent wetland
-  REAL(r8), allocatable :: pctglacier(:,:)          !percent glacier
-  REAL(r8), allocatable :: pctpc(:,:,:,:)           !percent each component in PC
-  REAL(r8), allocatable :: fraction_patches(:,:,:)  !fraction of the patch of landtypes in gridcells
+  REAL(r8), allocatable :: landfrac(:,:)           !land fractional cover
+  REAL(r8), allocatable :: pctlc(:,:,:)            !percent each land cover TYPE
+  REAL(r8), allocatable :: pctpft(:,:,:)           !percent PFT
+  REAL(r8), allocatable :: pcturban(:,:)           !percent urban
+  REAL(r8), allocatable :: pctwater(:,:)           !percent water body
+  REAL(r8), allocatable :: pctwetland(:,:)         !percent wetland
+  REAL(r8), allocatable :: pctglacier(:,:)         !percent glacier
+  REAL(r8), allocatable :: pctpc(:,:,:,:)          !percent each component in PC
+  REAL(r8), allocatable :: fraction_patches(:,:,:) !fraction of the patch of landtypes in gridcells
 
 ! 定义城市读取数据变量
 #if(defined URBAN_MODEL)
@@ -66,16 +66,16 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
   REAL(r8), allocatable :: z_soisno (:,:)
   REAL(r8), allocatable :: dz_soisno(:,:)
 
-  REAL(r8) :: calday                   !Julian cal day (1.xx to 365.xx)
-  INTEGER  :: year, jday, msec         !Julian day and seconds
-  INTEGER  :: month, mday              !month and day of month
-  INTEGER  :: i,j,l,m,u,t,npatch,np    !indices
-  INTEGER  :: numpatch_lat(lat_points) !number of patches of grids at lon. strip
+  REAL(r8) :: calday                       !Julian cal day (1.xx to 365.xx)
+  INTEGER  :: year, jday, msec             !Julian day and seconds
+  INTEGER  :: month, mday                  !month and day of month
+  INTEGER  :: i,j,l,m,u,t,npatch,np        !indices
+  INTEGER  :: numpatch_lat(lat_points)     !number of patches of grids at lon. strip
 
-  CHARACTER(LEN=255) :: cdate          !CHARACTER for date
-  CHARACTER(len=256) :: cyear          !character for year
-  CHARACTER(len=256) :: lndname        !land surface data file name
-  CHARACTER(LEN=256) :: finfolist      !file name of run information
+  CHARACTER(LEN=255) :: cdate              !CHARACTER for date
+  CHARACTER(len=256) :: cyear              !character for year
+  CHARACTER(len=256) :: lndname            !land surface data file name
+  CHARACTER(LEN=256) :: finfolist          !file name of run information
   INTEGER iunit
 
   INTEGER npft, npc, nurb
@@ -84,7 +84,7 @@ SUBROUTINE LuLccInitialize (casename,dir_srfdata,dir_restart,&
   INTEGER pcturban_vid, pctwater_vid, pctwetland_vid, pctglacier_vid
 
   REAL(r8) sumpctpft
-  REAL(r8), external :: orb_coszen     !cosine of the solar zenith angle
+  REAL(r8), external :: orb_coszen         !cosine of the solar zenith angle
 
 
 ! initial time of model run

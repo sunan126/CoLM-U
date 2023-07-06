@@ -11,20 +11,20 @@ NETCDF_INC = /usr/include
 
 FOPTS = -fdefault-real-8 -ffree-form -C -g -u -xcheck=stkovf \
 	-ffpe-trap=invalid,zero,overflow -fbounds-check \
-	-mcmodel=medium -fbacktrace -fdump-core -cpp
+	-mcmodel=medium -fbacktrace -fdump-core -cpp -ffree-line-length-0
 # =======================================================
 
 
 # =======================================================
 # ifort
 
-#FF = ifort -openmp
-
-#NETCDF_LIB = /opt/netcdf/lib
-#NETCDF_INC = /opt/netcdf/include
-
-#FOPTS = -r8 -free -g -check uninit -check bounds -check pointers \
-#	-traceback 
+# FF = ifort -qopenmp
+#
+# NETCDF_LIB = /home/zhwei/software/NETCDF/c-4.7.3-f4.5.2/lib
+# NETCDF_INC = /home/zhwei/software/NETCDF/c-4.7.3-f4.5.2/include
+#
+# FOPTS = -r8 -free -g -check uninit -check bounds -check pointers \
+# 	-traceback 
 # =======================================================
 
 

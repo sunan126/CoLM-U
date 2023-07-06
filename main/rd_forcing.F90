@@ -1,7 +1,7 @@
 
 #include <define.h>
 
-SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian)
+SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,deltim,s_julian,met_year)
 
   use precision
   USE GlobalVars
@@ -16,13 +16,14 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,delt
 
       IMPLICIT NONE
       real(r8), INTENT(in) :: deltim
-      integer,  INTENT(in) :: s_year, s_month, s_day, s_seconds, s_julian
+      integer,  INTENT(in) :: s_year, s_month, s_day, s_seconds, s_julian, met_year
       integer,  INTENT(in) :: idate(3)
       logical,  INTENT(in) :: solarin_all_band
 
 ! local variables:
       integer  :: i, j, np
       INTEGER  :: year, month, mday
+      integer  :: idate_fixed(3)
 !added by yuan, 07/06/2016
       real(r8) :: coszen  ! cosine of solar zenith angle
       real(r8) :: calday  ! Julian cal day (1.xx to 365.xx)
@@ -34,16 +35,26 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,delt
 
       real solar, frl, prcp, tm, us, vs, pres, qm
 
+      idate_fixed(2:3) = idate(2:3)
+      idate_fixed(1)   = met_year
 !------------------------------------------------------------
     ! GET ATMOSPHERE CO2 CONCENTRATION DATA
+#ifdef FIXED_MET_YEAR
+      year  = idate_fixed(1)
+      CALL julian2monthday (idate_fixed(1), idate(2), month, mday)
+#else
       year  = idate(1)
       CALL julian2monthday (idate(1), idate(2), month, mday)
+#endif     
       pco2m = get_monthly_co2_mlo(year, month)*1.e-6
 
 !------------------------------------------------------------
     ! READ IN THE ATMOSPHERIC FORCING
-
+#ifdef FIXED_MET_YEAR
+      CALL GETMET(idate_fixed,s_year,s_month,s_day,s_seconds,deltim,s_julian)
+#else
       CALL GETMET(idate,s_year,s_month,s_day,s_seconds,deltim,s_julian)
+#endif     
 
       forc_xy_t      (:,:) = forcn(:,:,1)
       forc_xy_q      (:,:) = forcn(:,:,2)
@@ -52,7 +63,7 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,delt
       forc_xy_solarin(:,:) = forcn(:,:,7)
       forc_xy_frl    (:,:) = forcn(:,:,8)
 
-#if(defined USE_POINT_DATA)
+#if(defined USE_POINT_DATA || defined USE_ERA5LAND_DATA)
       forc_xy_prl    (:,:) = forcn(:,:,4) * 2/3. ! ?
       forc_xy_prc    (:,:) = forcn(:,:,4) * 1/3. ! ?
       forc_xy_us     (:,:) = forcn(:,:,5)
@@ -83,8 +94,11 @@ SUBROUTINE rd_forcing(idate,solarin_all_band,s_year,s_month,s_day,s_seconds,delt
       forc_xy_hgt_q  (:,:) = 50.
 #endif
 
-
+#ifdef FIXED_MET_YEAR
+      calday = calendarday(idate_fixed, gridlond(1))
+#else
       calday = calendarday(idate, gridlond(1))
+#endif  
 
       if(solarin_all_band)then
 

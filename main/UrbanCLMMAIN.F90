@@ -2,7 +2,7 @@
 
 SUBROUTINE UrbanCLMMAIN ( &
 
-         ! 模式运行信息
+         ! model running information
            ipatch       ,idate        ,coszen       ,deltim       ,&
            patchlonr    ,patchlatr    ,patchclass   ,patchtype    ,&
 
@@ -13,7 +13,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            tk_roof      ,tk_wall      ,tk_gimp      ,z_roof       ,&
            z_wall       ,dz_roof      ,dz_wall                    ,&
            lakedepth    ,dz_lake                                  ,&
-         ! LUCY输入变量
+         ! LUCY model input parameters
            fix_holiday  ,week_holiday ,hum_prof     ,popcell      ,&
            vehicle      ,weh_prof     ,wdh_prof                   ,&
          ! soil ground and wall information
@@ -25,8 +25,8 @@ SUBROUTINE UrbanCLMMAIN ( &
            htop         ,hbot         ,sqrtdi       ,chil         ,&
            effcon       ,vmax25       ,slti         ,hlti         ,&
            shti         ,hhti         ,trda         ,trdm         ,&
-           trop         ,gradm        ,binter       ,extkd        ,&
-           rho          ,tau                                      ,&
+           trop         ,gradm        ,binter       ,extkd        ,& !TODO: bugs here, should be extkn
+           rho          ,tau                                      ,& !and need to add extkd
 
          ! atmospheric forcing
            forc_pco2m   ,forc_po2m    ,forc_us      ,forc_vs      ,&

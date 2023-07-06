@@ -23,10 +23,12 @@ MODULE METDAT
    integer  :: fid(NVAR)                         ! file id of nc file
    integer  :: vid(NVAR)                         ! variable id of nc file
    integer  :: land(nlands)                      ! coordinate infor
+#ifndef  USE_ERA5LAND_DATA
    real(r4) :: dlats(nlats)                      ! latitude values
    real(r4) :: dlons(nlons)                      ! longitude values
    real(r8) :: rlats(nlats)                      ! latitude values
    real(r8) :: rlons(nlons)                      ! longitude values
+#endif
    real(r4), allocatable :: latxy(:,:)           ! latitude values in 2d
    real(r4), allocatable :: lonxy(:,:)           ! longitude values in 2d
    real(r4), allocatable :: metdata(:,:)         ! forcing data
@@ -35,6 +37,15 @@ MODULE METDAT
    real(r8), allocatable :: avgcos(:,:)          ! time-average of cos(zenith)
    type(timestamp) :: tstamp_LB(NVAR)            ! time stamp of low boundary data
    type(timestamp) :: tstamp_UB(NVAR)            ! time stamp of up boundary data
+#ifdef USE_ERA5LAND_DATA
+   real(r4), allocatable :: metdata_int(:,:)     ! forcing data 
+   real(r4) :: dlats_int(nlats+1)                ! latitude values
+   real(r4) :: dlons_int(nlons)                ! latitude values
+   real(r4) :: dlats(nlats/5)                      ! latitude values
+   real(r4) :: dlons(nlons/5)                      ! longitude values
+   real(r8) :: rlats(nlats/5)                      ! latitude values
+   real(r8) :: rlons(nlons/5)                      ! longitude values
+#endif
 
  ! external functions
    real(r8), external :: orb_coszen              ! cosine of solar zenith angle
@@ -78,10 +89,17 @@ CONTAINS
     ! allocate memory for forcing data
       allocate(latxy(nlons,nlats))       ! latitudes for each point
       allocate(lonxy(nlons,nlats))       ! longitude for each point
+#ifdef USE_ERA5LAND_DATA
+      allocate(metdata_int(nlons,nlats+1))   ! forcing data
+      allocate(metdata(nlons/5,nlats/5))     ! forcing data
+      allocate(metdatatmp(nlons/5,nlats/5))  ! forcing data
+      allocate(avgcos(nlons/5,nlats/5))      ! time-average of cos(zenith)
+#else
       allocate(metdata(nlons,nlats))     ! forcing data
       allocate(metdatatmp(nlons,nlats))  ! forcing data
-      allocate(metdata1d(nlands))        ! forcing data
       allocate(avgcos(nlons,nlats))      ! time-average of cos(zenith)
+#endif
+      allocate(metdata1d(nlands))        ! forcing data
 
    END SUBROUTINE metinit
 
@@ -120,6 +138,9 @@ CONTAINS
       deallocate(metdata)
       deallocate(metdatatmp)
       deallocate(metdata1d)
+#ifdef USE_ERA5LAND_DATA
+      deallocate(metdata_int)
+#endif
       deallocate(avgcos)
 
    END SUBROUTINE metfinal
@@ -187,6 +208,22 @@ CONTAINS
             end if
          end if
 
+         ! modified by wanyi for fixed year
+         if (mtstamp%day == 1 .AND. mtstamp%sec == 0) then
+            call setstampLB(mtstamp, i, year, month, time_i)
+            call openmetfile(year, month, i)
+            call readvar(i, time_i)
+            forcn_LB(:,:,i) = metdata(lon_i:(lon_i+lon_n-1), lat_i:(lat_i+lat_n-1))
+            ! set upper boundary
+            tstamp_UB(i) = tstamp_LB(i) + dtime(i)
+            call openmetfile(year, month, i)
+            call readvar(i, time_i)
+            forcn_UB(:,:,i) = metdata(lon_i:(lon_i+lon_n-1), lat_i:(lat_i+lat_n-1))
+            if (i == 7) then  ! calculate time average coszen, for shortwave radiation
+               call calavgcos(lat_i, lon_i, lat_n, lon_n)
+            end if
+         end if
+
       end do
 
    END SUBROUTINE metreadLBUB
@@ -231,7 +268,7 @@ CONTAINS
       integer             :: latid
       integer             :: lonid
       integer             :: landid
-      integer             :: i, lati, loni
+      integer             :: i, lati, loni, j
       real(r8)            :: pi
       logical, save       :: firstcall = .true.
 
@@ -248,11 +285,26 @@ CONTAINS
                dlats = latxy(1,:)
                dlons = lonxy(:,1)
             else
-               call sanity( nf90_get_var(fid(var_i), latid, dlats) )
-               call sanity( nf90_get_var(fid(var_i), lonid, dlons) )
+#ifdef USE_ERA5LAND_DATA
+                call sanity( nf90_get_var(fid(var_i), latid, dlats_int) )
+                call sanity( nf90_get_var(fid(var_i), lonid, dlons_int) )
+                DO j = 1,nlats,5
+                   dlats((j+4)/5) = sum(dlats_int(j:(j+4)))/5.0
+                END do
+                DO j = 1,nlons,5
+                   dlons((j+4)/5) = sum(dlons_int(j:(j+4)))/5.0
+                ENDDO
+#else
+                call sanity( nf90_get_var(fid(var_i), latid, dlats) )
+                call sanity( nf90_get_var(fid(var_i), lonid, dlons) )
+#endif
+               
             end if
-
+#ifdef USE_ERA5LAND_DATA
+            if (latrev) dlats = dlats(360:1:-1)
+#else
             if (latrev) dlats = dlats(nlats:1:-1) ! reverse in latitude for axis
+#endif
             if (lonadj) dlons = dlons - 180.      ! adjust in longitude for axis
 
             pi = 4._r8 * atan(1._r8)  ! get PI
@@ -273,8 +325,74 @@ CONTAINS
                call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata(:,:), &
                                          start=(/1,1,1,time_i/), count=(/nlons,nlats,1,1/)) )
             else
+#ifdef USE_ERA5LAND_DATA
+               call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata_int(:,:), &
+                                         start=(/1,1,time_i/), count=(/nlons,nlats+1,1/)) )
+               ! do j = 1,nlats
+               !    metdata(:,j) = (metdata_int(:,j) + metdata_int(:,j+9))/10.0
+               ! END DO
+               IF (var_i==1) THEN
+                  ! >-100
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=280. 
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==2) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0.01
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==3) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=96000.
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==4) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==5) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=2
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==6) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=2
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==7) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<0) metdata_int(j:(j+4),i:(i+4))=0
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ELSE IF (var_i==8) THEN
+                  DO i=1,nlats,5
+                     DO j=1,nlons,5
+                        WHERE(metdata_int(j:(j+4),i:(i+4))<-300) metdata_int(j:(j+4),i:(i+4))=300
+                        metdata((j+4)/5,(i+4)/5) = sum(metdata_int(j:(j+4),i:(i+4)))/25
+                     ENDDO
+                  ENDDO
+               ENDIF
+#else
                call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata(:,:), &
                                          start=(/1,1,time_i/), count=(/nlons,nlats,1/)) )
+#endif
             end if
          else
             call sanity( nf90_get_var(fid(var_i), vid(var_i), metdata1d(:), &
@@ -291,8 +409,13 @@ CONTAINS
          if (latrev) metdata(:,:) = metdata(:,nlats:1:-1) ! reverse in latitude for data
          if (lonadj) then
             metdatatmp(:,:) = metdata(:,:)
+#ifdef USE_ERA5LAND_DATA
+            metdata(1:nlons/5/2,:) = metdatatmp((nlons/5/2+1):nlons/5,:) ! adjust in longitude for data
+            metdata((nlons/5/2+1):nlons/5,:) = metdatatmp(1:nlons/5/2,:) ! 0.5E~359.5E -> 179.5W~179.5E
+#else
             metdata(1:nlons/2,:) = metdatatmp((nlons/2+1):nlons,:) ! adjust in longitude for data
             metdata((nlons/2+1):nlons,:) = metdatatmp(1:nlons/2,:) ! 0.5E~359.5E -> 179.5W~179.5E
+#endif
          end if
       end if
 

@@ -222,8 +222,8 @@ MODULE UrbanFlux
         displa,   &! displacement height for urban
         displau,  &! displacement height for urban building
         z0mu,     &! roughless length
-        z0hu,     &! roughless length for sensible heat
-        z0qu,     &! roughless length for latent heat
+        z0h,     &! roughless length for sensible heat
+        z0q,     &! roughless length for latent heat
         tg,       &! ground temperature
         qg         ! ground specific humidity
 
@@ -451,7 +451,7 @@ MODULE UrbanFlux
 
 ! initialization and input values for Monin-Obukhov
      ! have been set before
-     z0hu = z0m; z0qu = z0m
+     z0h = z0m; z0q = z0m
      ur   = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
      dth  = thm - taf(2)
      dqh  =  qm - qaf(2)
@@ -469,7 +469,7 @@ MODULE UrbanFlux
         CALL abort
      ENDIF
 
-     CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mu,um,obu)
+     CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0m,um,obu)
 
      niters=6
 
@@ -486,7 +486,7 @@ MODULE UrbanFlux
 
         !NOTE: displat=hroof, z0mt=0, are set for roof
         ! fmtop is calculated at the same height of fht, fqt
-        CALL moninobukm(huu,htu,hqu,displa,z0mu,z0hu,z0qu,obu,um, &
+        CALL moninobukm(huu,htu,hqu,displa,z0m,z0h,z0q,obu,um, &
            hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
@@ -508,8 +508,8 @@ MODULE UrbanFlux
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
         z0qg = z0hg
 
-        z0hu = max(z0hg, z0hu)
-        z0qu = max(z0qg, z0qu)
+        z0h = max(z0hg, z0h)
+        z0q = max(z0qg, z0q)
 
 !-----------------------------------------------------------------------
 ! new method to calculate rd and ueffect
@@ -690,10 +690,10 @@ MODULE UrbanFlux
            fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2)) / &
+                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2)) / &
                     fact
 
-           IF ((qaf(2)-qgper) < 0.) THEN
+           IF (qgper < qaf(2)) THEN
              ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
@@ -786,7 +786,7 @@ MODULE UrbanFlux
 !    END stability iteration
 ! ======================================================================
 
-     z0m = z0mu
+     ! z0m = z0mu
      zol = zeta
      rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
@@ -829,8 +829,8 @@ MODULE UrbanFlux
      fsengper = cpair*rhoair*cgh(2)*(tgper-taf(2))
      fsengimp = cpair*rhoair*cgh(2)*(tgimp-taf(2))
 
-     fevpgper = rhoair*cgw(2)*(qgper-qaf(2))
-     fevpgimp = rhoair*cgw(2)*(qgimp-qaf(2))
+     fevpgper = rhoair*cgw_per*(qgper-qaf(2))
+     fevpgimp = rhoair*cgw_imp*(qgimp-qaf(2))
      fevpgimp = fevpgimp*fwet_gimp
 
 !-----------------------------------------------------------------------
@@ -838,8 +838,17 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 
      cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
-     cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
-     cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+     ! cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
+     ! cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+
+     cgperl = rhoair*cgw_per*(dqgperdT &
+              - (dqgperdT*cgw_per*fgper*fg+dqgimpdT*cgw_imp*fgimp*fg) &
+              /(caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg) &
+              /facq)
+     cgimpl = rhoair*cgw_imp*(dqgimpdT &
+              - (dqgperdT*cgw_per*fgper*fg+dqgimpdT*cgw_imp*fgimp*fg) &
+              /(caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg) &
+              /facq)
      cgimpl = cgimpl*fwet_gimp
 
      cgimp  = cgrnds + cgimpl*htvp_gimp
@@ -1019,12 +1028,12 @@ MODULE UrbanFlux
         tl,       &! leaf temperature [K]
         ldew       ! depth of water on foliage [mm]
 
-     REAL(r8), intent(in) :: Ainv(5,5)     !Inverse of Radiation transfer matrix
-     REAL(r8), intent(in) :: SkyVF(5)      !View factor to sky
-     REAL(r8), intent(in) :: VegVF(5)      !View factor to veg
-     REAL(r8), intent(inout) :: B(5)       !Vectors of incident radition on each surface
-     REAL(r8), intent(inout) :: B1(5)      !Vectors of incident radition on each surface
-     REAL(r8), intent(inout) :: dBdT(5)    !Vectors of incident radition on each surface
+     REAL(r8), intent(in)    :: Ainv(5,5) !Inverse of Radiation transfer matrix
+     REAL(r8), intent(in)    :: SkyVF (5) !View factor to sky
+     REAL(r8), intent(in)    :: VegVF (5) !View factor to veg
+     REAL(r8), intent(inout) :: B     (5) !Vectors of incident radition on each surface
+     REAL(r8), intent(inout) :: B1    (5) !Vectors of incident radition on each surface
+     REAL(r8), intent(inout) :: dBdT  (5) !Vectors of incident radition on each surface
 
      REAL(r8), intent(out) :: &
         taux,     &! wind stress: E-W [kg/m/s**2]
@@ -1094,8 +1103,8 @@ MODULE UrbanFlux
         zii,      &! convective boundary layer height [m]
         z0mv,     &! roughness length, momentum [m]
         z0mu,     &! roughness length, momentum [m]
-        z0hu,     &! roughness length, sensible heat [m]
-        z0qu,     &! roughness length, latent heat [m]
+        z0h,      &! roughness length, sensible heat [m]
+        z0q,      &! roughness length, latent heat [m]
         zeta,     &! dimensionless height used in Monin-Obukhov theory
         beta,     &! coefficient of conective velocity [-]
         wc,       &! convective velocity [m/s]
@@ -1391,31 +1400,37 @@ MODULE UrbanFlux
      CALL cal_z0_displa(lsai, htop, 1., z0mv, displav)
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
-     faiv = fc(3)*(1. - exp(-0.5*lsai))
+     ! faiv = fc(3)*(1. - exp(-0.5*lsai))
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
-     lambda = fcover(0) + faiv*htop/hroof
-     ! displau = hroof * (1 + 4.43**(-fcover(0))*(fcover(0) - 1))
+     lambda = fcover(0)
      displau = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
      fai  = 4/PI*hlr*fcover(0)
      z0mu = (hroof - displau) * &
-        !exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
-        exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
+            exp( -(0.5*1.2/vonkar/vonkar*(1-displau/hroof)*fai)**(-0.5) )
+
+     ! account for vegetation
+     faiv    = fc(3)*(1. - exp(-0.5*lsai))
+     lambda  = fcover(0) + faiv*htop/hroof
+     displa  = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
+     z0m     = (hroof - displa) * &
+               exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
      ! to compare z0 of urban and only the surface
      ! maximum assumption
      ! 11/26/2021, yuan: remove the below
      !IF (z0mu < z0mv_lay) z0mu = z0mv_lay
      !IF (displau < displav_lay) displau = displav_lay
-     IF (z0mu < z0mg) z0mu = z0mg
-     IF (displau >= hroof-z0mg) displau = hroof-z0mg
+     IF (z0m < z0mg) z0m = z0mg
+     IF (displa >= hroof-z0mg) displa = hroof-z0mg
 
-     displa = displau
-     z0m    = z0mu
-
+     ! minimum building displa limit
+     ! displa = displau
+     ! z0m    = z0mu
      displau = max(hroof/2., displau)
 
      ! Layer setting
+     ! NOTE: right now only for 2 layers
      !IF (z0mv+displav > z0mu+displau) THEN
         numlay = 2; botlay = 2; canlev(3) = 2
         fgh(2) = fg; fgw(2) = fg;
@@ -1461,8 +1476,8 @@ MODULE UrbanFlux
      IF (numlay .eq. 3) THEN
         taf(3) = (tg + 3.*thm)/4.
         qaf(3) = (qg + 3.*qm )/4.
-        taf(2) = (tg + thm)/2.
-        qaf(2) = (qg + qm )/2.
+        taf(2) = (tg + thm   )/2.
+        qaf(2) = (qg + qm    )/2.
         taf(1) = (3.*tg + thm)/4.
         qaf(1) = (3.*qg + qm )/4.
      ENDIF
@@ -1481,7 +1496,7 @@ MODULE UrbanFlux
 
 ! initialization and input values for Monin-Obukhov
      ! have been set before
-     z0hu = z0m; z0qu = z0m
+     z0h = z0m; z0q = z0m
      ur = max(0.1, sqrt(us*us+vs*vs))    !limit set to 0.1
      dth = thm - taf(2)
      dqh =  qm - qaf(2)
@@ -1499,7 +1514,7 @@ MODULE UrbanFlux
         CALL abort
      ENDIF
 
-     CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0mu,um,obu)
+     CALL moninobukini(ur,th,thm,thv,dth,dqh,dthv,zldis,z0m,um,obu)
 
 ! ======================================================================
 !    BEGIN stability iteration
@@ -1517,12 +1532,12 @@ MODULE UrbanFlux
 !-----------------------------------------------------------------------
 ! Evaluate stability-dependent variables using moz from prior iteration
 
-        CALL moninobukm(huu,htu,hqu,displa,z0mu,z0hu,z0qu,obu,um, &
+        CALL moninobukm(huu,htu,hqu,displa,z0m,z0h,z0q,obu,um, &
            hroof,0.,ustar,fh2m,fq2m,hroof,fmtop,fm,fh,fq,fht,fqt,phih)
 
 ! Aerodynamic resistance
         ! 09/16/2017:
-        ! note that for ram, it is the resistance from Href to z0mu+displa
+        ! note that for ram, it is the resistance from Href to z0m+displa
         ! however, for rah and raw is only from Href to canopy effective
         ! exchange height.
         ! so rah/raw is not comparable with that of 1D case
@@ -1538,8 +1553,8 @@ MODULE UrbanFlux
         z0hg = z0mg/exp(0.13 * (ustar*z0mg/1.5e-5)**0.45)
         z0qg = z0hg
 
-        z0hu = max(z0hg, z0hu)
-        z0qu = max(z0qg, z0qu)
+        z0h = max(z0hg, z0h)
+        z0q = max(z0qg, z0q)
 
 !-----------------------------------------------------------------------
 ! new method to calculate rd and ueffect
@@ -1716,7 +1731,7 @@ MODULE UrbanFlux
                  (1.-fwet)*delta* ( lai/(rb(i)+rs) )
            ELSE
               cfh(i) = 1 / rb(i)
-              
+
               IF (i == 0) THEN !roof
                  ! account for fwet
                  cfw(i) = fwet_roof / rb(i)
@@ -1824,10 +1839,10 @@ MODULE UrbanFlux
            fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
+                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
                     fact
 
-           IF ((qaf(2)-qgper) < 0.) THEN
+           IF (qgper < qaf(2)) THEN
              ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
@@ -1878,7 +1893,7 @@ MODULE UrbanFlux
            tmpw2  = cah(2)*(cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))
            tmpw3  = cah(1)*cah(1)/&
-                    (cah(1) + cfh(1)*fg + cfh(3)*fc(3))/&
+                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))/&
                     (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
            tmpw4  = cah(2)*cah(2)/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))/&
@@ -1895,7 +1910,7 @@ MODULE UrbanFlux
            taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))
 
-           IF ((qaf(1)-qgper) < 0.) THEN
+           IF (qgper < qaf(1)) THEN
              ! dew case. no soil resistance
              cgw_per= cgw(1)
            ELSE
@@ -2091,10 +2106,10 @@ MODULE UrbanFlux
            fact   = 1. - (cah(2)*cah(2)/(cah(3) + cah(2) + cfh(0)*fc(0))/&
                     (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)))
            taf(2) = (tmpw1 + tmpw2 + tmpw3) / &
-                    (cah(2) + cgh(2) + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
+                    (cah(2) + cgh(2)*fg + cfh(1)*fc(1) + cfh(2)*fc(2) + cfh(3)*fc(3)) / &
                     fact
 
-           IF ((qaf(2)-qgper) < 0.) THEN
+           IF (qgper < qaf(2)) THEN
              ! dew case. no soil resistance
              cgw_per= cgw(2)
            ELSE
@@ -2145,7 +2160,7 @@ MODULE UrbanFlux
            tmpw2  = cah(2)*(cah(3)*thm + cfh(0)*tu(0)*fc(0) + 1/(4*hlr+1)*(Fhac+Fwst)/(rhoair*cpair))/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))
            tmpw3  = cah(1)*cah(1)/&
-                    (cah(1) + cfh(1)*fg + cfh(3)*fc(3))/&
+                    (cah(1) + cgh(1)*fg + cfh(3)*fc(3))/&
                     (cah(1) + cah(2) + cfh(1)*fc(1) + cfh(2)*fc(2))
            tmpw4  = cah(2)*cah(2)/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))/&
@@ -2162,7 +2177,7 @@ MODULE UrbanFlux
            taf(3) = (cah(3)*thm + cah(2)*taf(2) + cfh(0)*tu(0)*fc(0) + tmpw1)/&
                     (cah(3) + cah(2) + cfh(0)*fc(0))
 
-           IF ((qaf(1)-qgper) < 0.) THEN
+           IF (qgper < qaf(1)) THEN
              ! dew case. no soil resistance
              cgw_per= cgw(1)
            ELSE
@@ -2280,7 +2295,7 @@ MODULE UrbanFlux
 !     END stability iteration
 ! ======================================================================
 
-     z0m = z0mu
+     ! z0m = z0mu
      zol = zeta
      rib = min(5.,zol*ustar**2/(vonkar**2/fh*um**2))
 
@@ -2411,8 +2426,8 @@ MODULE UrbanFlux
      fsengimp = cpair*rhoair*cgh(botlay)*(tgimp-taf(botlay))
      fsengper = cpair*rhoair*cgh(botlay)*(tgper-taf(botlay))
 
-     fevpgimp = rhoair*cgw(botlay)*(qgimp-qaf(botlay))
-     fevpgper = rhoair*cgw(botlay)*(qgper-qaf(botlay))
+     fevpgimp = rhoair*cgw_imp*(qgimp-qaf(botlay))
+     fevpgper = rhoair*cgw_per*(qgper-qaf(botlay))
 
      fevpgimp = fevpgimp*fwet_gimp
 
@@ -2422,13 +2437,21 @@ MODULE UrbanFlux
 
      IF (botlay == 2) THEN
         cgrnds = cpair*rhoair*cgh(2)*(1.-wtg0(2)/fact)
-        cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
-        cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+        ! cgperl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgperdT
+        ! cgimpl = rhoair*cgw(2)*(1.-wtgq0(2)/facq)*dqgimpdT
+        cgperl = rhoair*cgw_per*(dqgperdT &
+                 - (dqgperdT*cgw_per*fgper*fg+dqgimpdT*cgw_imp*fgimp*fg) &
+                 /(caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3)) &
+                 /facq)
+        cgimpl = rhoair*cgw_imp*(dqgimpdT &
+                 - (dqgperdT*cgw_per*fgper*fg+dqgimpdT*cgw_imp*fgimp*fg) &
+                 /(caw(2) + cgw_per*fgper*fg + cgw_imp*fgimp*fg + cfw(3)*fc(3)) &
+                 /facq)
         cgimpl = cgimpl*fwet_gimp
      ELSE !botlay == 1
         cgrnds = cpair*rhoair*cgh(1)*(1.-wta0(1)*wtg0(2)*wtg0(1)/fact-wtg0(1))
-        cgperl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgperdT
-        cgimpl = rhoair*cgw(1)*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
+        cgperl = rhoair*cgw_per*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgperdT
+        cgimpl = rhoair*cgw_imp*(1.-wtaq0(1)*wtgq0(2)*wtgq0(1)/facq-wtgq0(1))*dqgimpdT
         cgimpl = cgimpl*fwet_gimp
      ENDIF
 

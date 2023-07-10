@@ -508,6 +508,8 @@ SUBROUTINE UrbanCLMMAIN ( &
         bifall     ,&! bulk density of newly fallen dry snow [kg/m3]
         pg_rain    ,&! rainfall onto ground including canopy runoff [kg/(m2 s)]
         pgper_rain ,&! rainfall onto ground including canopy runoff [kg/(m2 s)]
+        pgl_rain   ,&
+        pgl_snow   ,&
         pg_snow    ,&! snowfall onto ground including canopy runoff [kg/(m2 s)]
         pgper_snow ,&! snowfall onto ground including canopy runoff [kg/(m2 s)]
         etrgper    ,&! etr for pervious ground
@@ -695,7 +697,6 @@ SUBROUTINE UrbanCLMMAIN ( &
       CALL LEAF_interception (deltim,dewmx,chil,sigf,lai,sai,tleaf,&
                               prc_rain,prc_snow,prl_rain,prl_snow,&
                               ldew,pgper_rain,pgper_snow,qintr)
-
       ! for output, patch scale
       qintr = qintr * fveg * (1-flake)
       qdrip_gper = pgper_rain + pgper_snow
@@ -705,6 +706,8 @@ SUBROUTINE UrbanCLMMAIN ( &
       ! without vegetation canopy
       pg_rain = prc_rain + prl_rain
       pg_snow = prc_snow + prl_snow
+      pgl_rain= prc_rain + prl_rain
+      pgl_snow= prc_snow + prl_snow
 
       ! for urban hydrology input, only for pervious ground
       fracveg = fveg/((1-froof)*fgper)
@@ -742,7 +745,7 @@ SUBROUTINE UrbanCLMMAIN ( &
            ! "in" arguments
            ! ---------------
            maxsnl        ,nl_lake       ,deltim          ,dz_lake         ,&
-           pg_rain       ,pg_snow       ,t_precip        ,bifall          ,&
+           pgl_rain      ,pgl_snow      ,t_precip        ,bifall          ,&
 
            ! "inout" arguments
            ! ------------------
@@ -751,7 +754,6 @@ SUBROUTINE UrbanCLMMAIN ( &
            fioldl(:0)    ,snll          ,sag_lake        ,scv_lake        ,&
            snowdp_lake   ,lake_icefrac                                     )
 
-!----------------------------------------------------------------------
 ! [4] Energy and Water balance
 !----------------------------------------------------------------------
 
@@ -850,7 +852,8 @@ SUBROUTINE UrbanCLMMAIN ( &
         ipatch               ,patchtype            ,lbr                  ,lbi                  ,&
         lbp                  ,lbl                  ,snll                 ,deltim               ,&
         ! 外强迫
-        pg_rain              ,pgper_rain           ,pg_snow                                    ,&
+        pg_rain              ,pgper_rain           ,pg_snow              ,pgl_rain             ,&
+        pgl_snow                                                                               ,&
         ! 地表参数及状态变量
         froof                ,fgper                ,flake                ,bsw                  ,&
         porsl                ,psi0                 ,hksati               ,wtfact               ,&
@@ -1030,7 +1033,7 @@ SUBROUTINE UrbanCLMMAIN ( &
 
 #if(defined CLMDEBUG)
       IF(abs(errorw)>1.e-3) THEN
-         write(6,*) 'Warning: water balance violation', errorw, ipatch, patchclass
+         write(6,*) 'Warning: water balance violation', errorw, ipatch, patchclass, fveg/((1-froof)*fgper)
          !stop
       ENDIF
 #endif

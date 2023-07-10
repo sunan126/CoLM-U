@@ -1400,7 +1400,6 @@ MODULE UrbanFlux
      CALL cal_z0_displa(lsai, htop, 1., z0mv, displav)
      CALL cal_z0_displa(lsai, htop, fc(3), z0mv_lay, displav_lay)
 
-     ! faiv = fc(3)*(1. - exp(-0.5*lsai))
 
      ! Macdonald et al., 1998, Eq. (23), A=4.43
      lambda = fcover(0)
@@ -1411,10 +1410,12 @@ MODULE UrbanFlux
 
      ! account for vegetation
      faiv    = fc(3)*(1. - exp(-0.5*lsai))
-     lambda  = fcover(0) !+ faiv*htop/hroof
+     lambda  = fcover(0)
+     !lambda  = fcover(0) + faiv*htop/hroof
      displa  = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
      z0m     = (hroof - displa) * &
-               exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
+               exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*fai)**(-0.5) )
+               !exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
      ! to compare z0 of urban and only the surface
      ! maximum assumption

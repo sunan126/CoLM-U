@@ -1064,11 +1064,11 @@
       ! 因为湖泊的水不平衡
       !fevpa  = fevpa *(1-flake) + fevpa_lake *flake
 
-      fsenl  = fsenl *(1-flake)
-      fevpl  = fevpl *(1-flake)
-      etr    = etr   *(1-flake)
-      assim  = assim *(1-flake)
-      respc  = respc *(1-flake)
+      !fsenl  = fsenl *(1-flake)
+      !fevpl  = fevpl *(1-flake)
+      !etr    = etr   *(1-flake)
+      !assim  = assim *(1-flake)
+      !respc  = respc *(1-flake)
 
       ! ground heat flux
       IF ( doveg ) THEN

@@ -5,8 +5,8 @@
         ipatch         ,patchtype      ,lbr            ,lbi            ,&
         lbp            ,lbl            ,snll           ,deltim         ,&
         ! forcing
-        pg_rain        ,pgper_rain     ,pg_snow        ,pgl_rain       ,&
-        pgl_snow                                                       ,&
+        pg_rain        ,pgper_rain     ,pgimp_rain     ,pg_snow        ,&
+        pg_rain_lake   ,pg_snow_lake                                   ,&
         ! surface parameters or status
         froof          ,fgper          ,flake          ,bsw            ,&
         porsl          ,psi0           ,hksati         ,wtfact         ,&
@@ -57,11 +57,12 @@
 
   REAL(r8), intent(in) :: &
         deltim           ,&! time step (s)
-        pgl_rain         ,&
-        pgl_snow         ,&
+        pg_rain_lake     ,&
+        pg_snow_lake     ,&
         pg_rain          ,&! rainfall after removal of interception (mm h2o/s)
         pg_snow          ,&! rainfall after removal of interception (mm h2o/s)
         pgper_rain       ,&! rainfall after removal of interception (mm h2o/s)
+        pgimp_rain       ,&! rainfall after removal of interception (mm h2o/s)
         froof            ,&! roof fractional cover [-]
         fgper            ,&! weith of impervious ground [-]
         flake            ,&! lake fractional cover [-]
@@ -163,19 +164,20 @@
       dfseng = 0.
       dfgrnd = 0.
 
-      !print *, " --- WATER ----"
-      tot =  sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      tot = tot + (-etr - qseva_gper + qsdew_gper - qsubl_gper + qfros_gper)*deltim
-      !print *, etr*deltim, qseva_gper*deltim, qsdew_gper,qsubl_gper,qfros_gper
-      tot = tot + pgper_rain*deltim + sm_gper*deltim
-      !print *, pgper_rain*deltim,sm_gper*deltim
-      tot = tot + wa
-      !print *, "tot water before water:", tot
-      !print *, wliq_gpersno
 !=======================================================================
 ! [1] for pervious road, the same as soil
 !=======================================================================
+
+!      print *, " --- WATER ----"
+!      tot =  sum(wice_gpersno(1:)+wliq_gpersno(1:))
+!      print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
+!      tot = tot + (-etr - qseva_gper + qsdew_gper - qsubl_gper + qfros_gper)*deltim
+!      print *, etr*deltim, qseva_gper*deltim, qsdew_gper,qsubl_gper,qfros_gper
+!      tot = tot + pgper_rain*deltim + sm_gper*deltim
+!      print *, pgper_rain*deltim,sm_gper*deltim
+!      tot = tot + wa
+!      print *, "tot water before water:", tot, "wa:", wa
+!      print *, wliq_gpersno
 
       CALL WATER ( ipatch,patchtype   ,lbp         ,nl_soil   ,deltim    ,&
              z_gpersno   ,dz_gpersno  ,zi_gpersno  ,&
@@ -186,20 +188,23 @@
              ssi         ,wimp        ,smpmin      ,zwt       ,wa        ,&
              qcharge                                                      )
 
-      !print *, " AFTER --- WATER ----"
-      !print *, wliq_gpersno
-      tot = sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      !print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
-      tot = tot + rnof_gper*deltim
-      tot = tot + wa
-      !print *, rnof_gper*deltim
-      !print *, "tot water after water: ", tot
+!      print *, " AFTER --- WATER ----"
+!      print *, wliq_gpersno
+!      tot = sum(wice_gpersno(1:)+wliq_gpersno(1:))
+!      print *, sum(wice_gpersno(1:)+wliq_gpersno(1:))
+!      tot = tot + rnof_gper*deltim
+!      tot = tot + wa
+!      print *, rnof_gper*deltim
+!      print *, "tot water after water: ", tot, "wa:", wa
 
 !=======================================================================
 ! [2] for roof and impervious road
 !=======================================================================
 
+      ! roof
+      ! ================================================
       tot = sum(wice_roofsno(1:)+wliq_roofsno(1:))
+
       IF (lbr >= 1) THEN
          gwat = pg_rain + sm_roof - qseva_roof
          tot = tot - qseva_roof*deltim
@@ -208,8 +213,10 @@
          CALL snowwater (lbr,deltim,ssi,wimp,&
                          pg_rain,qseva_roof,qsdew_roof,qsubl_roof,qfros_roof,&
                          dz_roofsno(lbr:0),wice_roofsno(lbr:0),wliq_roofsno(lbr:0),gwat)
-         tot = tot + gwat
+         tot = tot + gwat*deltim
       ENDIF
+
+      !print *, "tot water before roof hydro:", tot
 
       wliq_roofsno(1) = wliq_roofsno(1) + gwat*deltim
 
@@ -233,19 +240,26 @@
       rnof_roof = rsur_roof
 
       tot =  sum(wice_roofsno(1:)+wliq_roofsno(1:)) + rsur_roof*deltim
+      !print *, "tot water after roof hydro:", tot
+
+
+      ! impervious
       ! ================================================
 
       tot = sum(wice_gimpsno(1:)+wliq_gimpsno(1:))
+
       IF (lbi >= 1) THEN
-         gwat = pg_rain + sm_gimp - qseva_gimp
+         gwat = pgimp_rain + sm_gimp - qseva_gimp
          tot = tot - qseva_gimp*deltim
-         tot = tot + pg_rain*deltim + sm_gimp*deltim
+         tot = tot + pgimp_rain*deltim + sm_gimp*deltim
       ELSE
          CALL snowwater (lbi,deltim,ssi,wimp,&
-                         pg_rain,qseva_gimp,qsdew_gimp,qsubl_gimp,qfros_gimp,&
+                         pgimp_rain,qseva_gimp,qsdew_gimp,qsubl_gimp,qfros_gimp,&
                          dz_gimpsno(lbi:0),wice_gimpsno(lbi:0),wliq_gimpsno(lbi:0),gwat)
-         tot = tot + gwat
+         tot = tot + gwat*deltim
       ENDIF
+
+      !print *, "tot water before impervious hydro:", tot
 
       wliq_gimpsno(1) = wliq_gimpsno(1) + gwat*deltim
 
@@ -269,6 +283,8 @@
       rnof_gimp = rsur_gimp
 
       tot =  sum(wice_gimpsno(1:)+wliq_gimpsno(1:)) + rsur_gimp*deltim
+      !print *, "tot water before impervious hydro:", tot
+
 !=======================================================================
 ! [3] 湖泊水文过程
 !=======================================================================
@@ -277,8 +293,8 @@
            ! "in" snowater_lake arguments
            ! ---------------------------
            maxsnl       ,nl_soil      ,nl_lake         ,deltim          ,&
-           ssi          ,wimp         ,porsl           ,pgl_rain        ,&
-           pgl_snow     ,dz_lake      ,imelt_lake(:0)  ,fioldl(:0)      ,&
+           ssi          ,wimp         ,porsl           ,pg_rain_lake    ,&
+           pg_snow_lake ,dz_lake      ,imelt_lake(:0)  ,fioldl(:0)      ,&
            qseva_lake   ,qsubl_lake   ,qsdew_lake      ,qfros_lake      ,&
 
            ! "inout" snowater_lake arguments
@@ -293,7 +309,7 @@
       ! this unreasonable assumption should be updated in the future version
       a  = (sum(wliq_lakesno(snll+1:))-w_old)/deltim
       aa = qseva_lake-(qsubl_lake-qsdew_lake)
-      rsur_lake = max(0., pg_rain - aa - a)
+      rsur_lake = max(0., pg_rain_lake - aa - a)
       rnof_lake = rsur_lake
 
       ! Set zero to the empty node

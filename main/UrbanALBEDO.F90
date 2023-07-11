@@ -167,7 +167,7 @@ MODULE UrbanALBEDO
          RETURN  !only do albedo when coszen > 0
       ENDIF
 
-      czen=max(coszen,0.001)
+      czen=max(coszen,0.01)
       albsno(:,:)=0.      !set initial snow albedo
       cons = 0.2          !parameter for snow albedo
       conn = 0.5          !parameter for snow albedo

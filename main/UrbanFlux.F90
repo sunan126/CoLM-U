@@ -1410,12 +1410,12 @@ MODULE UrbanFlux
 
      ! account for vegetation
      faiv    = fc(3)*(1. - exp(-0.5*lsai))
-     lambda  = fcover(0)
-     !lambda  = fcover(0) + faiv*htop/hroof
+     lambda  = fcover(0) + faiv*htop/hroof
      displa  = hroof * (1 + 4.43**(-lambda)*(lambda - 1))
+     displa  = min(0.9*hroof, displa)
      z0m     = (hroof - displa) * &
-               exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*fai)**(-0.5) )
-               !exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
+               !exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*fai)**(-0.5) )
+               exp( -(0.5*1.2/vonkar/vonkar*(1-displa/hroof)*(fai+faiv*htop/hroof))**(-0.5) )
 
      ! to compare z0 of urban and only the surface
      ! maximum assumption
